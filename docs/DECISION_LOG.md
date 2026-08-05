@@ -218,6 +218,8 @@ Decision: The owner wants the website and backend hosted on a VPS using DigitalO
 
 Decision: Future implementation should plan for a DigitalOcean Droplet/VPS deployment rather than Vercel hosting.
 
+Reconciliation note: An earlier planning checkpoint listed Vercel and Neon Postgres as recommendations, not owner-confirmed decisions. The owner's later DigitalOcean VPS and same-VPS PostgreSQL decisions supersede those recommendations while preserving the persistent-PostgreSQL requirement.
+
 Decision: Actual provisioning will wait until scoped DigitalOcean access, final domain/DNS details, SSH access, Droplet size, backup settings, and other deployment inputs are available. The region and initial database placement were subsequently finalized below.
 
 ## 2026-08-05 — DigitalOcean account capabilities and billing
