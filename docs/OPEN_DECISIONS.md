@@ -18,40 +18,56 @@ Still open:
 
 No payment workflow should be claimed production-ready until the provider account, credentials, webhook secrets, approved consent wording, and test-mode validation are complete.
 
-## 2. Database provider
+## 2. Database operations
 
-Recommended provider discussed: Neon Postgres.
+Decision confirmed: PostgreSQL will initially run on the same DigitalOcean VPS as the application to reduce initial cost. DigitalOcean Managed PostgreSQL remains a possible future upgrade.
 
 Still open:
 
-- Final database hosting provider.
-- Production database plan.
 - Backup/retention settings.
+- Off-VPS encrypted backup destination.
+- Restore-test schedule and responsible operator.
 - Preview/staging database strategy.
 - Database access policy.
 
 ## 3. Hosting provider
 
-Recommended provider discussed: Vercel.
+Decision confirmed: use a DigitalOcean VPS/Droplet for website and backend hosting.
+
+Confirmed:
+
+- The DigitalOcean account supports Droplets, Managed PostgreSQL, backups/snapshots, and Spaces.
+- The account currently has free credit; paid billing will be activated when needed.
+- New York is the preferred region.
+- The production domain is being purchased.
+- The external domain provider will manage DNS and point it to DigitalOcean.
 
 Still open:
 
-- Final hosting provider.
-- Production domain.
-- DNS setup.
+- DigitalOcean account access or scoped API token.
+- Final production domain name.
+- Exact DNS records and timing for the domain-provider change.
+- Droplet size.
+- Backup/snapshot preference.
 - Environment variable management.
-- Preview deployment strategy.
+- Preview/staging deployment strategy.
+- Temporary test-access method before the production domain is connected (public IP or configured temporary hostname).
 
 ## 4. Email provider
 
-Recommended provider discussed: Resend.
+Decision confirmed: use Resend for transactional email. The owner has created the Resend account.
+
+Security prerequisite:
+
+- Completed: the owner revoked the API credential disclosed during planning and created a replacement.
+- Transfer the replacement through a secure secret-management channel; do not place it in chat, source control, documentation, logs, screenshots, or client-side code.
+- Store the replacement only as a server-side environment variable or deployment secret.
 
 Still open:
 
-- Final email provider.
 - Sender domain.
 - DNS records.
-- Production API key.
+- Secure installation of the already-created replacement production API credential.
 - Confirmation email wording approval.
 - Reminder email wording approval.
 - Delivery/retry policy.
@@ -92,14 +108,23 @@ Cancellation-fee and no-show-fee charging must remain disabled until final wordi
 
 ## 7. Final waiver wording
 
+The owner supplied an image of the current waiver during planning and provided a GitHub screenshot showing the original PDF at the repository root as `MD Waiver (1).pdf` on the `main` branch. The screenshot shows upload commit `f2a8ac3` (abbreviated). The PDF is not present in the current local checkout, and this checkout has no Git remote configured, so its contents and commit object cannot yet be inspected locally. It remains a draft/reference until legal approval. The confirmed validity period is one full year from the signing timestamp.
+
 Still open:
 
-- Final legal waiver text.
+- Sync or otherwise provide access to the `main` branch containing root-level `MD Waiver (1).pdf`, then verify its checksum, readable contents, and full source commit.
+- Editable source text for accessible HTML conversion if the PDF does not contain extractable text.
+- Final legal approval of the waiver and electronic-signature workflow by qualified New Jersey counsel.
 - Waiver version.
 - Parent/guardian signature language.
 - Whether adult participants need separate language.
-- Whether waiver covers one visit or multiple visits.
+- Whether a new waiver version immediately requires all customers to re-sign even when their prior waiver has not reached its one-year expiration.
+- Exact participant-matching rules for reusing a waiver on a later booking, including added/removed minors and spelling changes.
+- Leap-day expiration behavior for a waiver signed on February 29.
 - Whether paper/in-person waiver records require file upload.
+- Exact privacy/retention period for signed waiver records, audit metadata, and any generated PDFs.
+- Whether signed-waiver snapshots/PDFs will use encrypted local storage with off-VPS backup or DigitalOcean Spaces.
+- Final repository/document-storage location for the verified source PDF after it becomes available in this checkout.
 
 Do not launch live booking with placeholder waiver wording.
 
@@ -124,6 +149,7 @@ Still open:
 - Whether the system should store only the admin confirmation that the waiver was signed.
 - Whether the system should support upload of a scanned/photo waiver copy.
 - Whether in-person waiver signing will be paper-based or device-based.
+- Whether the owner approves the recommended first-party booking-linked electronic waiver page or prefers a dedicated third-party waiver/e-signature provider.
 
 ## 10. Production legal/policy review
 

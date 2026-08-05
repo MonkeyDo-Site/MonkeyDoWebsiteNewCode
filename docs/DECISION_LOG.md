@@ -98,9 +98,25 @@ Decision: If a booking has one baby and one adult, the confirmation should show 
 
 ## 2026-08-05 — Booking window opens previous day
 
-Decision: A booking date becomes available to customers starting at 12:00 AM America/New_York on the previous calendar day.
+Decision: The initial/default booking horizon is one calendar day. A booking date becomes available to customers starting at 12:00 AM America/New_York on the previous calendar day.
 
 Example: For an August 4 booking date, customers can begin booking on August 3 at 12:00 AM America/New_York.
+
+## 2026-08-05 — Admin-configurable booking horizon
+
+Decision: The owner can change the customer-facing booking horizon in the admin dashboard to any whole number from 1 through 10 calendar days.
+
+Decision: The horizon is measured in calendar days using the America/New_York time zone and opens at 12:00 AM on the applicable date.
+
+Decision: Changing the horizon does not alter or cancel existing bookings.
+
+## 2026-08-05 — Extended Sunday booking window
+
+Decision: A Sunday appointment must become available to customers no later than Friday at 12:00 AM America/New_York—the midnight immediately following Thursday night.
+
+Decision: If the general booking-horizon setting makes that Sunday available earlier than Friday at 12:00 AM, the earlier opening applies.
+
+Decision: The owner confirmed that “Thursday night at 12 AM” means the beginning of Friday, not the beginning of Thursday.
 
 ## 2026-08-05 — Same-day bookings
 
@@ -195,3 +211,71 @@ Decision: Do not store `arrivedAt` directly on the booking record.
 Decision: Do not store `arrivedByUserId` directly on the booking record.
 
 Decision: Arrival timestamps and the admin user who performed the action should be captured in the audit log instead.
+
+## 2026-08-05 — DigitalOcean VPS hosting
+
+Decision: The owner wants the website and backend hosted on a VPS using DigitalOcean.
+
+Decision: Future implementation should plan for a DigitalOcean Droplet/VPS deployment rather than Vercel hosting.
+
+Reconciliation note: An earlier planning checkpoint listed Vercel and Neon Postgres as recommendations, not owner-confirmed decisions. The owner's later DigitalOcean VPS and same-VPS PostgreSQL decisions supersede those recommendations while preserving the persistent-PostgreSQL requirement.
+
+Decision: Actual provisioning will wait until scoped DigitalOcean access, final domain/DNS details, SSH access, Droplet size, backup settings, and other deployment inputs are available. The region and initial database placement were subsequently finalized below.
+
+## 2026-08-05 — DigitalOcean account capabilities and billing
+
+Decision: The owner's existing DigitalOcean account can create Droplets, Managed PostgreSQL databases, backups/snapshots, and Spaces storage.
+
+Decision: The account currently has free credit. The owner will activate paid billing when the project needs it.
+
+## 2026-08-05 — DigitalOcean region
+
+Decision: Use a New York DigitalOcean region, subject to availability when infrastructure is provisioned.
+
+## 2026-08-05 — Initial PostgreSQL placement
+
+Decision: Run PostgreSQL on the same VPS as the application initially to reduce cost.
+
+Decision: The owner accepts the additional maintenance and recovery responsibility associated with sharing the application VPS. Off-VPS backups and restore testing are still to be configured before production launch.
+
+## 2026-08-05 — Domain and DNS direction
+
+Decision: The owner does not yet own the production domain and is in the process of purchasing it.
+
+Decision: The external domain provider will manage DNS and point the production domain to DigitalOcean.
+
+Decision: Before the production domain is connected, the deployed site may be tested through the Droplet public IP or a deliberately configured temporary hostname. The project must not assume DigitalOcean automatically supplies a permanent browser-ready URL.
+
+## 2026-08-05 — Transactional email provider and credential safety
+
+Decision: Use Resend as the transactional email provider. The owner has created the Resend account.
+
+Security action required: An API credential was disclosed during planning and must be treated as compromised. It must be revoked and replaced before integration or testing. The disclosed value is intentionally not recorded in this repository.
+
+Decision: The replacement credential must be transferred through a secure secret-management channel and stored only as a server-side environment variable or deployment secret. It must not be committed, documented, logged, exposed to client-side code, or shared in chat.
+
+## 2026-08-05 — Resend credential rotation completed
+
+Decision: The owner confirmed that the API credential disclosed during planning was revoked and that a replacement was created.
+
+Decision: The replacement value was not supplied for repository storage and must remain outside source control and documentation.
+
+## 2026-08-05 — Waiver draft supplied
+
+Decision: The owner supplied an image of the current MonkeyDo liability waiver for planning purposes.
+
+This records receipt only. It does not record legal approval of the waiver wording or approval of an electronic-signature implementation. The final legal text and signing workflow remain open pending qualified New Jersey legal review.
+
+## 2026-08-05 — Waiver validity period and source PDF
+
+Decision: A signed waiver remains in effect for one full year from the timestamp when the customer signs it.
+
+Decision at that point in the discussion: The owner had the original waiver as a PDF, but the conversation interface did not permit attaching it. A later entry below records the owner's GitHub upload and supersedes the earlier repository-availability status.
+
+This validity decision does not resolve how later waiver revisions, participant changes, identity matching, or February 29 expirations affect reuse; those implementation and legal rules remain open.
+
+## 2026-08-05 — Waiver PDF reported in GitHub
+
+Decision: The owner provided a GitHub screenshot showing the waiver PDF at the repository root with the exact filename `MD Waiver (1).pdf` on the `main` branch. The screenshot identifies abbreviated upload commit `f2a8ac3`.
+
+Verification status: The screenshot verifies the displayed branch, filename, location, and abbreviated commit identifier. The file is not present in the current local checkout, and no Git remote is configured for this checkout, so the PDF contents, checksum, and full commit object remain unverified until that repository state is available locally.

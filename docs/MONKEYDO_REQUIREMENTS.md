@@ -149,12 +149,18 @@ Availability must not be a static schedule.
 
 ### Customer booking window
 
-- A date becomes bookable starting at 12:00 AM America/New_York on the previous calendar day.
+- The default customer booking horizon is one calendar day: a date becomes bookable at 12:00 AM America/New_York on the previous calendar day.
+- The owner must be able to change the customer booking horizon in the admin dashboard to any whole number from 1 through 10 calendar days.
+- A horizon of `N` days means that a booking date becomes available at 12:00 AM America/New_York exactly `N` calendar days before the appointment date.
+- Changing the setting affects customer-facing availability and must not modify or cancel existing bookings.
+- Sunday appointments must become bookable no later than Friday at 12:00 AM America/New_York—the midnight immediately following Thursday night. If the configured general horizon opens that Sunday earlier, the earlier opening remains in effect.
 - Same-day bookings are allowed.
 - A customer may book a slot after it has started as long as it has not ended.
 - A slot closes after its end time.
 
 Example: for an August 4 booking date, customers may start booking on August 3 at 12:00 AM America/New_York.
+
+Sunday example: a Sunday appointment must be available by Friday at 12:00 AM America/New_York. This is Thursday night at midnight and the beginning of Friday.
 
 ### Saturday rules
 
@@ -174,6 +180,7 @@ The administrator must be able to:
 - Adjust pricing.
 - View remaining capacity for each slot.
 - Create admin-only slots, including Saturday slots.
+- Configure the customer booking horizon from 1 through 10 calendar days without editing code.
 - View, search, edit, and manage bookings.
 
 The schedule model should support slot visibility values such as public, admin-only, and hidden.
@@ -525,18 +532,40 @@ Once activated, cancellation or no-show charges must require proper customer con
 
 Customers must review and electronically sign a waiver before completing an online booking.
 
+Recommended implementation, pending owner approval and legal review:
+
+- Use a first-party, mobile-friendly waiver page integrated with the booking system rather than an image-only waiver or an admin checkbox as the electronic signature.
+- Render the complete active waiver as accessible HTML and provide a downloadable/printable copy.
+- Require the signer to affirmatively consent to electronic records and signatures, scroll through or otherwise be presented with the complete waiver, check an unselected agreement box, type their legal name, identify their relationship to the participating minor(s), enter the minor name(s), and select a clear `Sign waiver` action.
+- Do not use a prechecked agreement box or infer acceptance from booking submission alone.
+- Create an immutable signed-waiver record tied to the booking and active waiver version.
+- A completed waiver remains valid for one full year from its signing timestamp for the signer and participating minor(s) identified on that waiver, subject to final legal approval and any re-signing rule triggered by a later waiver revision.
+- Store both `signed_at` and the calculated `valid_until` timestamp. The customer must sign again when no matching, unexpired waiver covers the relevant participants.
+- Preserve an exact snapshot or generated PDF of the text signed, plus a tamper-evident hash, rather than relying only on whichever waiver text is currently active.
+- Send or make available a copy of the signed waiver to the signer.
+- Provide the same signing page through the confirmation/reminder link and on a customer-facing device at arrival.
+- Reserve the owner's `waiver signed` checkbox for recording a genuinely completed paper waiver; it must not substitute for the customer's signature.
+
 Record:
 
 - Waiver version.
 - Customer's typed legal name.
+- Signer's email address and phone number associated with the booking.
+- Signer's relationship to the participating minor(s).
+- Names of participating minors covered by the waiver.
 - Agreement checkbox.
+- Electronic-record/signature consent.
 - Date and time accepted.
 - Booking confirmation number.
-- Relevant audit information.
+- Signature method.
+- Valid-until timestamp.
+- Relevant audit information, including IP address, user agent, creation timestamp, and the immutable waiver snapshot/hash, subject to the final privacy and retention policy.
 
 Do not create final legal waiver wording. Use clearly marked placeholder content in development until approved waiver text is provided.
 
 Do not launch live booking with placeholder waiver wording.
+
+The owner supplied a waiver image during planning. Treat it as a draft/reference, not automatically as legally approved production wording. Obtain the original text or source document for accessible implementation and have qualified New Jersey counsel approve the final text, signer fields, electronic-consent language, minor/guardian workflow, and retention period before activation.
 
 ### Phone/admin bookings
 
@@ -554,6 +583,8 @@ Recommended confirmation/reminder waiver wording:
 > We prefer that you complete your waiver before your visit using this secure link: [Waiver Link]. If you don’t get to it before your appointment, you’ll be able to sign it when you arrive.
 
 ## 17. Confirmations and reminders
+
+Resend is the selected transactional email provider, and the owner has created the Resend account. The owner confirmed that the API credential disclosed during planning was revoked and replaced. Only the replacement credential may be used, and it must be supplied through a secure secret-management channel and stored in an environment variable or deployment secret—not in source code, documentation, logs, chat, or client-side code.
 
 After a booking is successfully created:
 
@@ -573,6 +604,8 @@ After a booking is successfully created:
 For phone/admin bookings, confirmation messages should include the waiver link and explain that signing before the visit is preferred, but signing on arrival is available.
 
 Reminder emails/texts should include the waiver reminder and link only if the waiver has not yet been signed.
+
+For waiver-reminder purposes, an expired waiver or a waiver that does not cover the relevant signer/minor participants must be treated as requiring a new signature. An unexpired matching waiver should suppress the reminder unless a final policy requires re-signing after a waiver-version change.
 
 The administrator must be able to configure reminder timing.
 
@@ -660,7 +693,24 @@ Automated tests must cover:
 - Duplicate booking prevention.
 - Duplicate charge prevention.
 
-## 21. Documentation requirements for future implementation
+## 21. DigitalOcean VPS hosting direction
+
+The owner wants the website and backend hosted on a VPS using DigitalOcean.
+
+Future implementation should plan for:
+
+- A DigitalOcean Droplet/VPS for the website, backend, and admin dashboard.
+- A persistent PostgreSQL database running initially on the same VPS to reduce cost, with automated encrypted off-VPS backups and tested restoration procedures.
+- An application architecture that permits a later move to DigitalOcean Managed PostgreSQL without rebuilding the application.
+- Deployment in a New York DigitalOcean region, subject to availability.
+- Secure server provisioning with SSH keys, firewall rules, HTTPS, backups, monitoring, and environment-variable based secrets.
+- No credentials, API keys, database passwords, or provider secrets committed to the repository.
+
+The owner has confirmed that the DigitalOcean account supports the required services and currently has free credit; paid billing will be activated when needed. The production domain is being purchased, and its external domain provider will manage DNS and point it to DigitalOcean.
+
+Actual VPS setup still requires scoped DigitalOcean access, the final domain/DNS records, an SSH public key, Droplet size, backup/retention choices, monitoring contact details, and production environment variables. Until the production domain is connected, testing may use the Droplet public IP or a configured temporary hostname.
+
+## 22. Documentation requirements for future implementation
 
 Future implementation should include clear documentation for:
 
@@ -673,3 +723,104 @@ Future implementation should include clear documentation for:
 - Deployment.
 - Provider account setup.
 - Production launch checklist.
+
+## 23. Recommended technical architecture
+
+This is the approved planning direction, not application or deployment code:
+
+- A server-rendered, mobile-first web application with public booking pages and a protected owner dashboard in one maintainable codebase.
+- A backend service that is the sole authority for availability, pricing, waiver state, booking creation, attendance, and payment-state transitions.
+- Persistent PostgreSQL running initially on the DigitalOcean VPS.
+- Database transactions and row-level locking or an equivalent atomic mechanism for capacity enforcement.
+- A background-job mechanism for confirmations, reminders, retries, webhook processing, and operational reconciliation; jobs must be durable and idempotent.
+- Provider-hosted/tokenized card collection; no raw card data passes through or is stored by MonkeyDo.
+- Resend for transactional email once the sender domain, DNS, replacement server-side credential, templates, and retry rules are configured.
+- An SMS provider only after selection, account/compliance setup, credentials, and wording approval.
+- HTTPS reverse proxy, application process supervision, monitoring, encrypted off-VPS database backups, and restore testing on DigitalOcean.
+- Environment-specific configuration and secrets supplied outside source control.
+
+The exact application framework, authentication library/provider, ORM/database migration tooling, background-job implementation, and SMS provider remain implementation selections. They must satisfy this requirements document and the unresolved constraints in `OPEN_DECISIONS.md`.
+
+## 24. Page and screen inventory
+
+### Public/customer pages
+
+- **Home:** introduction, brand story, visual overview, public Budleman Way/Lakewood location wording, hours, contact details, and prominent Book Now action.
+- **Book Now / availability:** dynamic date and slot availability shown before personal booking information is requested; exact group-rate message; pricing explanation.
+- **Booking details:** customer contact information, attendee quantities, referral source, confirmation preference, and payment-method choice.
+- **Card and consent:** provider-controlled card setup plus explicit card-on-file and later-charge consent.
+- **Review and sign:** itemized pricing, attendee totals, payment instructions, active cancellation terms, and required electronic waiver for customer-created online bookings.
+- **Booking confirmation:** confirmation number, appointment and attendee details, price, amount due, payment method/instructions, private full address and arrival details, contact details, cancellation information, and waiver status/link when applicable.
+- **Secure waiver link:** booking-linked signing page for pending phone/admin bookings and arrival signing.
+- **Contact:** public phone, email, Budleman Way/Lakewood wording, reservation-only hours, and no public exact street address.
+
+### Owner/admin pages
+
+- **Admin login:** protected authentication entry point.
+- **Dashboard:** operational summary, upcoming bookings, payment/waiver/message exceptions, and capacity alerts.
+- **Calendar:** slot/date occupancy and remaining capacity.
+- **Booking list:** searchable/filterable bookings and CSV export.
+- **Booking detail:** customer and attendee data, status, waiver, messages, payment history, arrival actions, edits/rescheduling, and audit history without re-entering customer data.
+- **Create booking:** phone/group/admin-only Saturday booking, custom price including $0, consent recording, and provider-controlled card setup when required.
+- **Schedule and availability settings:** recurring slots, date overrides, closures, capacity, public/admin-only visibility, and 1–10 day booking horizon.
+- **Pricing settings:** future effective pricing without changing historical booking snapshots.
+- **Payment operations:** expected/received payment recording, explicit backup-card charge confirmation, card charge after arrival, failures, refunds if enabled, and duplicate-payment review.
+- **Messaging settings:** reminder timing, templates/status, safe retry, and delivery history.
+- **Policy and waiver settings:** versioned cancellation terms, fee activation gates, waiver versions, validity/status, and business/contact settings.
+- **Admin users/security:** users and roles if enabled, credential/MFA controls, and session management.
+- **Audit log:** immutable searchable record of sensitive administrative, waiver, booking, and payment actions.
+
+## 25. Conceptual database structure
+
+The eventual schema may use different names, but it must preserve these entities and relationships:
+
+- **admin_users / roles / sessions:** owner or staff identities, authorization, and secure sessions.
+- **customers:** normalized contact information and payment-provider customer reference; never raw card details.
+- **schedule_templates:** recurring day-of-week slot definitions and visibility.
+- **slot_occurrences:** date-specific slot, start/end times, capacities, price configuration reference, status, and overrides.
+- **date_overrides:** open/closed/blocked dates, holiday reason, and admin-only availability.
+- **pricing_versions:** effective-dated child/adult/minimum-admission configuration for future bookings.
+- **bookings:** confirmation number, customer, slot occurrence, booking/attendance statuses, source, confirmation preference, attendee quantities, totals, selected payment method, immutable price snapshot, amount due/received, and timestamps.
+- **booking_participants:** signer/minor names or other participant identity data required for waiver coverage, subject to approved data-minimization rules.
+- **booking_price_items:** immutable itemized labels, quantities, unit prices, and line totals.
+- **payment_methods:** provider token/reference, limited safe display metadata, consent reference, status, and removal timestamp; never PAN, expiration date, or CVV.
+- **payment_consents / policy_acceptances:** consent type, exact terms/policy version, accepted timestamp, signer, booking, and audit metadata.
+- **payment_transactions:** charge/refund/provider references, amount, status, idempotency key, reason, initiating admin, and timestamps.
+- **payment_events:** append-only provider and manual status history used for reconciliation and duplicate-payment review.
+- **waiver_versions:** approved immutable text/source snapshot, version, effective state, and validity configuration.
+- **signed_waivers:** signer, covered participants, booking, waiver version, signed/valid-until timestamps, signature method, immutable snapshot/hash, and audit metadata.
+- **message_templates / reminder_settings:** versioned confirmation/reminder content and timing.
+- **message_deliveries:** channel, recipient, booking, template/version, provider reference, idempotency key, delivery status, attempts, and timestamps.
+- **audit_log:** append-only actor, action, target, before/after-safe metadata, reason, timestamp, and request context without secrets or card data.
+- **application_settings:** versioned business contact, booking-horizon, Zelle instructions, and other configurable operational settings.
+
+Capacity acceptance and booking insertion must occur in one database transaction. Payment actions and message deliveries require unique idempotency keys/constraints. Historical price, policy, consent, waiver, and message records must not be silently rewritten when future settings change.
+
+## 26. External services and accounts
+
+- **Hosting:** DigitalOcean account with Droplet, billing, backups/snapshots, monitoring, SSH access, and eventual production DNS records.
+- **Database:** PostgreSQL on the initial VPS plus a separate encrypted backup destination; DigitalOcean Managed PostgreSQL remains a migration option.
+- **Payments/saved cards:** provider still awaiting final approval; Stripe is the current recommendation. The account must support tokenized cards, SetupIntent-style authentication, later off-session charges, refunds, idempotency, and signed webhooks.
+- **Email:** Resend is selected and the account exists. The disclosed credential was revoked; the replacement must be installed securely. Sender-domain verification, DNS, templates, and delivery handling remain.
+- **Text messaging:** provider still awaiting final selection; Twilio is the current recommendation. Account/number, registration/compliance, opt-in/out language, templates, and credentials are required.
+- **Authentication:** no separate hosted authentication account is required if secure server-side authentication is implemented in the application; final implementation and MFA/role requirements remain open. If a hosted provider is selected later, its account and production configuration will be required.
+- **Waiver documents:** the approved source waiver and immutable signed snapshots require secure storage and retention; exact local encrypted storage versus DigitalOcean Spaces remains open.
+- **Domain/DNS:** the owner is purchasing the domain; the external registrar/DNS provider will point approved records to DigitalOcean.
+
+No provider-dependent feature is production-ready until the applicable account is verified, production credentials are installed securely, required policies/wording are approved, webhooks are verified, and end-to-end production-readiness tests pass.
+
+## 27. Phased implementation and launch gates
+
+1. **Requirements approval:** owner confirms this consolidated checkpoint and resolves implementation-blocking questions.
+2. **Foundation:** select framework/tooling; establish database migrations, validation, timezone handling, authentication, authorization, audit primitives, and test infrastructure.
+3. **Public experience:** implement accessible responsive branding, Home, Contact, availability, and pricing/group messaging using original assets.
+4. **Booking core:** implement schedule configuration, transactional capacity enforcement, pricing snapshots, booking creation, admin-created bookings, and automated rule tests.
+5. **Admin operations:** calendar/list/detail screens, search/export, attendance, rescheduling/cancellation, settings, and audit log.
+6. **Waiver:** implement versioned signing and annual validity only after approved text/workflow are supplied; test online, phone-link, reminder, and arrival scenarios.
+7. **Provider integrations:** integrate payment sandbox, Resend, and selected SMS provider with consent, authentication, idempotency, signed webhooks, retries, and reconciliation.
+8. **Payment operations:** implement arrival-triggered card charges, alternate-payment recording, backup-card safeguards, failures, refunds if approved, and duplicate review.
+9. **Infrastructure/staging:** provision hardened DigitalOcean staging, PostgreSQL backups/restore tests, HTTPS, monitoring, secrets, migrations, and smoke tests.
+10. **Production readiness:** accessibility, security, concurrency, workflow, backup/restore, provider, and owner acceptance testing; approve final policies/templates and legal wording.
+11. **Controlled launch:** configure production domain/DNS and credentials, run migrations/smoke tests, enable only approved workflows, monitor closely, and retain rollback procedures.
+
+Live booking must remain disabled if the displayed waiver or cancellation terms are placeholders or do not match enabled charging behavior. Cancellation/no-show charging remains disabled until separately approved. No documentation statement alone constitutes production readiness.
