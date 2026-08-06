@@ -108,23 +108,14 @@ Cancellation-fee and no-show-fee charging must remain disabled until final wordi
 
 ## 7. Final waiver wording
 
-The owner supplied an image of the current waiver during planning and provided a GitHub screenshot showing the original PDF at the repository root as `MD Waiver (1).pdf` on the `main` branch. The screenshot shows upload commit `f2a8ac3` (abbreviated). The PDF is not present in the current local checkout, and this checkout has no Git remote configured, so its contents and commit object cannot yet be inspected locally. It remains a draft/reference until legal approval. The confirmed validity period is one full year from the signing timestamp.
+The original PDF is present in the current checkout at `docs/waivers/source/MD Waiver (1).pdf`. Its readable text and SHA-256 checksum have been verified, and it remains a draft/reference until legal approval. The confirmed validity period is one full year from the signing timestamp.
 
 Still open:
 
-- Sync or otherwise provide access to the `main` branch containing root-level `MD Waiver (1).pdf`, then verify its checksum, readable contents, and full source commit.
-- Editable source text for accessible HTML conversion if the PDF does not contain extractable text.
 - Final legal approval of the waiver and electronic-signature workflow by qualified New Jersey counsel.
-- Waiver version.
-- Parent/guardian signature language.
-- Whether adult participants need separate language.
-- Whether a new waiver version immediately requires all customers to re-sign even when their prior waiver has not reached its one-year expiration.
-- Exact participant-matching rules for reusing a waiver on a later booking, including added/removed minors and spelling changes.
-- Leap-day expiration behavior for a waiver signed on February 29.
-- Whether paper/in-person waiver records require file upload.
-- Exact privacy/retention period for signed waiver records, audit metadata, and any generated PDFs.
-- Whether signed-waiver snapshots/PDFs will use encrypted local storage with off-VPS backup or DigitalOcean Spaces.
-- Final repository/document-storage location for the verified source PDF after it becomes available in this checkout.
+- Counsel confirmation of the approved production waiver version and final user-facing version label.
+- Counsel confirmation of the approved adult-participant and parent/legal-guardian language.
+- Counsel confirmation of the approved seven-years-after-expiration retention period, particularly for records concerning minors.
 
 Do not launch live booking with placeholder waiver wording.
 
@@ -146,10 +137,7 @@ The owner wants to check a box on the booking screen after the waiver is signed 
 
 Still open:
 
-- Whether the system should store only the admin confirmation that the waiver was signed.
-- Whether the system should support upload of a scanned/photo waiver copy.
-- Whether in-person waiver signing will be paper-based or device-based.
-- Whether the owner approves the recommended first-party booking-linked electronic waiver page or prefers a dedicated third-party waiver/e-signature provider.
+- Whether a scanned/photo paper waiver upload should be added after initial launch. Initial launch records only the audited completion checkbox and does not record minor names from paper waivers.
 
 ## 10. Production legal/policy review
 

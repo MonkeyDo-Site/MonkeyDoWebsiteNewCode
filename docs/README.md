@@ -9,6 +9,7 @@ This directory is the documentation-only source of truth for the future MonkeyDo
 - [`OPEN_DECISIONS.md`](OPEN_DECISIONS.md): only unresolved choices, approvals, credentials/configuration steps, and launch blockers. Confirmed requirements belong in the requirements document and decision log, not as unresolved bullets.
 - [`DIGITALOCEAN_VPS_PLAN.md`](DIGITALOCEAN_VPS_PLAN.md): detailed hosting, database-operation, hardening, provisioning, and deployment direction.
 - [`brand-assets/README.md`](brand-assets/README.md): handling rules and availability status for the original logo and advertisement assets.
+- [`waivers/README.md`](waivers/README.md): draft waiver source provenance, checksum, legal status, and handling rules.
 
 ## Precedence and maintenance
 
@@ -20,6 +21,6 @@ This directory is the documentation-only source of truth for the future MonkeyDo
 
 ## Current checkpoint limitation
 
-The original logo/advertisement source files and `MD Waiver (1).pdf` are not present in this local checkout. A supplied GitHub screenshot shows the waiver PDF on `main`, but this checkout has no Git remote configured, so that separate repository state cannot currently be fetched or inspected here.
+The original logo/advertisement source files are not present in this local checkout. The draft waiver PDF is preserved under `docs/waivers/source/`, and its accessible draft HTML transcription is at the repository root.
 
 No application implementation should begin until the owner approves the complete plan. No payment, messaging, waiver, cancellation/no-show, or deployment feature may be described as production-ready until its applicable provider setup, credentials, approved wording/policies, legal review, and end-to-end tests are complete.
