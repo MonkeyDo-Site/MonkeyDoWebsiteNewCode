@@ -561,6 +561,24 @@ Record:
 - Valid-until timestamp.
 - Relevant audit information, including IP address, user agent, creation timestamp, and the immutable waiver snapshot/hash, subject to the final privacy and retention policy.
 
+The booking confirmation number is linked to the waiver internally. Because electronic signing is part of the booking flow, the customer must not be asked to enter the confirmation number again.
+
+### Returning-customer waiver check
+
+- Begin booking by asking `Are you a new customer?`
+- If yes, proceed to the normal booking fields.
+- If no, ask for the customer's name and phone number. Phone numbers must be normalized and displayed in one uniform format, and each customer profile must have a unique phone number.
+- If no profile matches, ask `Did you do the previous booking with a different phone number?` If yes, search the supplied previous number.
+- If neither lookup matches, treat the person as a new customer.
+- If a profile matches, associate the new booking with that customer profile internally. Show only that the customer was identified; do not disclose prior bookings, email addresses, minor names, or other historical profile data in the public flow.
+- One customer profile may contain multiple bookings.
+- If the applicable waiver was signed more than one year ago, show `Please sign a waiver again. Waivers are valid for one year.`
+- Booking does not collect minor names, so the system must not infer which minors are attending from booking data. When an unexpired waiver for the active version exists, ask `Will minors not listed on the previous waiver be coming to MonkeyDo now?` If yes, require an electronic waiver for those additional minors.
+- Activating a new waiver version requires a new signature even when the prior version was signed less than one year ago.
+- A February 29 waiver expires at the same local time on February 28 of the following non-leap year in America/New_York.
+
+The authenticated owner/admin may search electronically signed waivers by minor name and see whether the minor has a signed waiver, its signer, version, signing time, and expiration. Paper waivers are represented only by an audited completion checkbox at initial launch; their minor names are not entered into the system, so they do not support minor-level search.
+
 Do not create final legal waiver wording. Use clearly marked placeholder content in development until approved waiver text is provided.
 
 Do not launch live booking with placeholder waiver wording.

@@ -278,4 +278,44 @@ This validity decision does not resolve how later waiver revisions, participant 
 
 Decision: The owner provided a GitHub screenshot showing the waiver PDF at the repository root with the exact filename `MD Waiver (1).pdf` on the `main` branch. The screenshot identifies abbreviated upload commit `f2a8ac3`.
 
-Verification status: The screenshot verifies the displayed branch, filename, location, and abbreviated commit identifier. The file is not present in the current local checkout, and no Git remote is configured for this checkout, so the PDF contents, checksum, and full commit object remain unverified until that repository state is available locally.
+Historical verification status at that checkpoint: The screenshot verified the displayed branch, filename, location, and abbreviated commit identifier. The file was not then present in the local checkout, and no Git remote was configured, so the PDF contents, checksum, and full commit object could not be verified at that time. The later 2026-08-06 decision below supersedes this availability status.
+
+## 2026-08-06 — Draft HTML waiver decisions
+
+Decision: Use `MONKEYDO LLC` consistently as the business name in the draft HTML waiver.
+
+Decision: Display a user-facing label identifying the waiver as a draft that is not approved for production.
+
+Decision: Signing the electronic waiver is part of the booking process. The system links the waiver to the booking and confirmation number internally; the customer must not re-enter a confirmation number.
+
+Decision: Approve the proposed accessible electronic-signature interaction, including complete HTML text, affirmative unselected acknowledgments, typed legal name, signer relationship, and a clear signing action. Legal approval remains a production prerequisite.
+
+Decision: Activating a new waiver version requires every customer to sign that version even if an earlier waiver is still within its one-year validity period.
+
+Decision: A waiver signed on February 29 expires at the same local time on February 28 of the following non-leap year using America/New_York.
+
+Decision: Prefer the electronic waiver at arrival. Paper signing is an allowed fallback, may be represented by an admin completion checkbox only after it was actually signed, and does not require an uploaded scan at initial launch. Verbal acceptance is not sufficient.
+
+Decision: Production signed HTML snapshots or generated PDFs should use encrypted DigitalOcean Spaces storage, with a secure reference and tamper-evident hash stored in PostgreSQL. Signed waivers must not be stored in Git or a public directory.
+
+Decision: Retain signed waivers and their audit records for seven years after expiration, subject to final approval by qualified New Jersey counsel, particularly for records concerning minors.
+
+Decision: Preserve the original source PDF unchanged under `docs/waivers/source/`, record its checksum, and store later approved source versions as separate files.
+
+Decision: The source PDF is now locally verified and preserved as `docs/waivers/source/MD Waiver (1).pdf` with SHA-256 `f159515b1c1c531bc57fce6a8813aa63f38f25da014459807759495f028ccdb6`.
+
+## 2026-08-06 — Returning customer and waiver lookup
+
+Decision: Start booking by asking whether the person is a new customer. A new customer continues to the normal booking fields. A returning customer enters a name and phone number, and the system uses the uniformly formatted phone number to locate the customer profile.
+
+Decision: Customer phone numbers are unique. One customer may have multiple bookings, but multiple customer profiles cannot share a phone number.
+
+Decision: If the initial returning-customer lookup does not match, ask whether the prior booking used a different phone number. Search that prior number if supplied; if it still does not match, treat the person as a new customer.
+
+Decision: A successful public lookup only says that the customer was identified. It must not display prior bookings, email addresses, minor names, or other prior profile data. The supplied phone number is used internally to associate the new booking with the customer profile.
+
+Decision: Booking does not collect minor names. Consequently, the system cannot infer which current minors a prior waiver covers. When an unexpired current-version waiver exists, ask the customer whether minors not listed on the previous waiver will attend. If yes, require an electronic waiver covering those additional minors.
+
+Decision: If the latest applicable waiver is more than one year old, show: “Please sign a waiver again. Waivers are valid for one year.”
+
+Decision: Minor-level electronic waiver lookup is available only to the authenticated owner/admin. Electronically signed waivers record minor names and can be searched for coverage. Paper waivers store only an audited completion checkbox; minor names from paper waivers are not entered into the system and cannot support minor-level lookup.
