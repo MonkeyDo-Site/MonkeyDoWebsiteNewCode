@@ -75,14 +75,15 @@ DigitalOcean Managed PostgreSQL remains a future upgrade option for stronger iso
 
 ## 6. Object/file storage
 
-DigitalOcean Spaces is not required for the basic booking website unless file uploads are added.
+DigitalOcean Spaces must not store completed signed customer waivers. Those files belong only in the confirmed private Cloudflare R2 bucket; DigitalOcean retains their secure R2 references and metadata but no duplicate file.
 
 Use Spaces later if the owner wants to store:
 
 - Uploaded/scanned paper waivers.
-- Signed waiver PDFs.
 - Uploaded customer documents.
 - Large media files.
+
+Any future use of Spaces for these other upload categories requires separate approval and must not be interpreted as approval to store completed signed-waiver files there. The Cloudflare R2 decision does not determine storage for unsigned templates or source waiver documents.
 
 If the owner only needs an admin checkbox that a waiver was signed in person, Spaces may not be necessary at launch.
 

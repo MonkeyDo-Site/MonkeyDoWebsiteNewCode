@@ -563,6 +563,22 @@ Record:
 
 The booking confirmation number is linked to the waiver internally. Because electronic signing is part of the booking flow, the customer must not be asked to enter the confirmation number again.
 
+### Signed-waiver storage and administrative access
+
+The following requirements apply specifically to completed, electronically signed customer waivers:
+
+- Store each completed signed-waiver file only in a private Cloudflare R2 bucket. Do not store signed-waiver files in DigitalOcean, DigitalOcean Spaces, GitHub, a public directory, or any other publicly accessible location.
+- Keep all application code, primary customer and booking records, waiver status, and waiver metadata in DigitalOcean. Customer information contained in the signed-waiver file necessarily remains with that file in R2; the primary customer and booking records remain in DigitalOcean.
+- Store only the secure R2 object reference and relevant metadata in the DigitalOcean PostgreSQL database, including the linked customer and booking, signing date, expiration date, waiver version, current status, and tamper-evident verification hash. Do not store a duplicate of the signed-waiver file in the database or elsewhere in DigitalOcean.
+- Automatically associate every signed waiver with the correct customer, booking, and waiver version as part of the website booking/signing transaction.
+- In the administrative customer record, show the waiver's current status, signing date, expiration date, and version, and allow authorized staff to view the signed file without leaving the application or manually searching R2.
+- Preserve and display the appropriate waiver history when a customer has signed multiple versions over time.
+- Permit only authenticated administrative users with explicit authorization to view signed waivers. The server must enforce authorization for every retrieval; hiding a browser control is not sufficient.
+- Retrieve or display a signed waiver through short-lived, authorized access, such as a short-expiry presigned request issued only after a server-side authorization check or an authenticated server proxy. Never expose a permanent public R2 URL or R2 credentials.
+- Store Cloudflare R2 credentials only as server-side DigitalOcean deployment secrets. They must never appear in browser code, GitHub, repository documentation, application logs, or public links.
+
+These storage requirements do not apply to unsigned waiver templates or source waiver documents. Their storage must not be moved to R2 without separate owner approval.
+
 ### Returning-customer waiver check
 
 - Begin booking by asking `Are you a new customer?`
@@ -806,7 +822,7 @@ The eventual schema may use different names, but it must preserve these entities
 - **payment_transactions:** charge/refund/provider references, amount, status, idempotency key, reason, initiating admin, and timestamps.
 - **payment_events:** append-only provider and manual status history used for reconciliation and duplicate-payment review.
 - **waiver_versions:** approved immutable text/source snapshot, version, effective state, and validity configuration.
-- **signed_waivers:** signer, covered participants, booking, waiver version, signed/valid-until timestamps, signature method, immutable snapshot/hash, and audit metadata.
+- **signed_waivers:** signer, covered participants, customer and booking links, waiver version, signed/valid-until timestamps, status, signature method, private R2 object reference, verification hash, and audit metadata. This database entity contains metadata only, not a duplicate signed-waiver file.
 - **message_templates / reminder_settings:** versioned confirmation/reminder content and timing.
 - **message_deliveries:** channel, recipient, booking, template/version, provider reference, idempotency key, delivery status, attempts, and timestamps.
 - **audit_log:** append-only actor, action, target, before/after-safe metadata, reason, timestamp, and request context without secrets or card data.
@@ -822,7 +838,8 @@ Capacity acceptance and booking insertion must occur in one database transaction
 - **Email:** Resend is selected and the account exists. The disclosed credential was revoked; the replacement must be installed securely. Sender-domain verification, DNS, templates, and delivery handling remain.
 - **Text messaging:** provider still awaiting final selection; Twilio is the current recommendation. Account/number, registration/compliance, opt-in/out language, templates, and credentials are required.
 - **Authentication:** no separate hosted authentication account is required if secure server-side authentication is implemented in the application; final implementation and MFA/role requirements remain open. If a hosted provider is selected later, its account and production configuration will be required.
-- **Waiver documents:** the approved source waiver and immutable signed snapshots require secure storage and retention; exact local encrypted storage versus DigitalOcean Spaces remains open.
+- **Completed signed-waiver files:** private Cloudflare R2 storage, accessed only through short-lived server-authorized retrieval. R2 credentials remain server-side DigitalOcean deployment secrets; DigitalOcean stores only the secure object reference and waiver metadata.
+- **Unsigned waiver templates/source documents:** the signed-waiver R2 decision does not determine their storage; changing their storage requires separate owner approval.
 - **Domain/DNS:** the owner is purchasing the domain; the external registrar/DNS provider will point approved records to DigitalOcean.
 
 No provider-dependent feature is production-ready until the applicable account is verified, production credentials are installed securely, required policies/wording are approved, webhooks are verified, and end-to-end production-readiness tests pass.
