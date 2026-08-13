@@ -542,6 +542,9 @@ Recommended implementation, pending owner approval and legal review:
 - A completed waiver remains valid for one full year from its signing timestamp for the signer and participating minor(s) identified on that waiver, subject to final legal approval and any re-signing rule triggered by a later waiver revision.
 - Store both `signed_at` and the calculated `valid_until` timestamp. The customer must sign again when no matching, unexpired waiver covers the relevant participants.
 - Preserve an exact snapshot or generated PDF of the text signed, plus a tamper-evident hash, rather than relying only on whichever waiver text is currently active.
+- Store every waiver file in a private Cloudflare R2 bucket, including approved source documents, immutable signed HTML snapshots, and generated signed-waiver PDFs. Store only the secure object reference, tamper-evident hash, waiver metadata, and related customer/booking records in PostgreSQL on DigitalOcean.
+- Do not make R2 waiver objects public. Retrieval must be authenticated and authorized, using short-lived access when a permitted owner or signer requests a copy.
+- Keep Cloudflare R2 credentials exclusively in server-side DigitalOcean deployment secrets. Never expose them to client-side code, source control, documentation, or logs.
 - Send or make available a copy of the signed waiver to the signer.
 - Provide the same signing page through the confirmation/reminder link and on a customer-facing device at arrival.
 - Reserve the owner's `waiver signed` checkbox for recording a genuinely completed paper waiver; it must not substitute for the customer's signature.
@@ -560,6 +563,24 @@ Record:
 - Signature method.
 - Valid-until timestamp.
 - Relevant audit information, including IP address, user agent, creation timestamp, and the immutable waiver snapshot/hash, subject to the final privacy and retention policy.
+
+The booking confirmation number is linked to the waiver internally. Because electronic signing is part of the booking flow, the customer must not be asked to enter the confirmation number again.
+
+### Returning-customer waiver check
+
+- Begin booking by asking `Are you a new customer?`
+- If yes, proceed to the normal booking fields.
+- If no, ask for the customer's name and phone number. Phone numbers must be normalized and displayed in one uniform format, and each customer profile must have a unique phone number.
+- If no profile matches, ask `Did you do the previous booking with a different phone number?` If yes, search the supplied previous number.
+- If neither lookup matches, treat the person as a new customer.
+- If a profile matches, associate the new booking with that customer profile internally. Show only that the customer was identified; do not disclose prior bookings, email addresses, minor names, or other historical profile data in the public flow.
+- One customer profile may contain multiple bookings.
+- If the applicable waiver was signed more than one year ago, show `Please sign a waiver again. Waivers are valid for one year.`
+- Booking does not collect minor names, so the system must not infer which minors are attending from booking data. When an unexpired waiver for the active version exists, ask `Will minors not listed on the previous waiver be coming to MonkeyDo now?` If yes, require an electronic waiver for those additional minors.
+- Activating a new waiver version requires a new signature even when the prior version was signed less than one year ago.
+- A February 29 waiver expires at the same local time on February 28 of the following non-leap year in America/New_York.
+
+The authenticated owner/admin may search electronically signed waivers by minor name and see whether the minor has a signed waiver, its signer, version, signing time, and expiration. Paper waivers are represented only by an audited completion checkbox at initial launch; their minor names are not entered into the system, so they do not support minor-level search.
 
 Do not create final legal waiver wording. Use clearly marked placeholder content in development until approved waiver text is provided.
 
@@ -700,6 +721,7 @@ The owner wants the website and backend hosted on a VPS using DigitalOcean.
 Future implementation should plan for:
 
 - A DigitalOcean Droplet/VPS for the website, backend, and admin dashboard.
+- All deployed application code and all customer information remain in DigitalOcean; waiver file objects are the defined exception and reside in private Cloudflare R2.
 - A persistent PostgreSQL database running initially on the same VPS to reduce cost, with automated encrypted off-VPS backups and tested restoration procedures.
 - An application architecture that permits a later move to DigitalOcean Managed PostgreSQL without rebuilding the application.
 - Deployment in a New York DigitalOcean region, subject to availability.
@@ -804,7 +826,7 @@ Capacity acceptance and booking insertion must occur in one database transaction
 - **Email:** Resend is selected and the account exists. The disclosed credential was revoked; the replacement must be installed securely. Sender-domain verification, DNS, templates, and delivery handling remain.
 - **Text messaging:** provider still awaiting final selection; Twilio is the current recommendation. Account/number, registration/compliance, opt-in/out language, templates, and credentials are required.
 - **Authentication:** no separate hosted authentication account is required if secure server-side authentication is implemented in the application; final implementation and MFA/role requirements remain open. If a hosted provider is selected later, its account and production configuration will be required.
-- **Waiver documents:** the approved source waiver and immutable signed snapshots require secure storage and retention; exact local encrypted storage versus DigitalOcean Spaces remains open.
+- **Waiver documents:** Cloudflare R2 is the required private object store for all approved source waiver files, immutable signed snapshots, and generated signed-waiver PDFs. DigitalOcean PostgreSQL stores customer and booking data, waiver metadata, secure object references, and tamper-evident hashes. R2 credentials remain server-side deployment secrets on DigitalOcean.
 - **Domain/DNS:** the owner is purchasing the domain; the external registrar/DNS provider will point approved records to DigitalOcean.
 
 No provider-dependent feature is production-ready until the applicable account is verified, production credentials are installed securely, required policies/wording are approved, webhooks are verified, and end-to-end production-readiness tests pass.

@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Draft electronic liability waiver for MONKEYDO LLC.">
+  <title>Liability Waiver | MONKEYDO LLC</title>
+  <style>
+    :root {
+      --sage-900: #253d36;
+      --sage-700: #45675c;
+      --sage-500: #78998b;
+      --sage-100: #e6eee9;
+      --coral: #d97968;
+      --coral-dark: #a94335;
+      --cream: #fbf7ef;
+      --paper: #fffdf8;
+      --taupe: #76695d;
+      --ink: #26332f;
+      --line: #d9d0c4;
+      --warning: #fff2d9;
+      --warning-border: #bc731f;
+      --radius: 1.25rem;
+      font-family: "Trebuchet MS", "Avenir Next", Avenir, system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 8% 10%, rgb(120 153 139 / 18%) 0 7rem, transparent 7.1rem),
+        radial-gradient(circle at 92% 28%, rgb(217 121 104 / 14%) 0 9rem, transparent 9.1rem),
+        var(--cream);
+      line-height: 1.65;
+    }
+
+    a { color: var(--sage-900); }
+    a:hover { color: var(--coral-dark); }
+
+    .site-header {
+      padding: 1rem clamp(1rem, 4vw, 3rem);
+      border-bottom: 1px solid rgb(69 103 92 / 24%);
+      background: rgb(255 253 248 / 92%);
+    }
+
+    .header-inner {
+      width: min(70rem, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      color: var(--sage-900);
+      font-size: clamp(1.15rem, 3vw, 1.45rem);
+      font-weight: 900;
+      letter-spacing: .035em;
+    }
+
+    .help-link { font-weight: 700; }
+
+    main {
+      width: min(58rem, calc(100% - 2rem));
+      margin: clamp(1.5rem, 5vw, 3.5rem) auto 4rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 .4rem;
+      color: var(--coral-dark);
+      font-size: .8rem;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 {
+      color: var(--sage-900);
+      line-height: 1.2;
+    }
+
+    h1 {
+      max-width: 13ch;
+      margin: 0;
+      font-size: clamp(2.25rem, 8vw, 4rem);
+      letter-spacing: -.04em;
+    }
+
+    h2 { margin-top: 0; font-size: clamp(1.45rem, 4vw, 2rem); }
+    h3 { margin-top: 1.8rem; font-size: 1.1rem; }
+
+    .intro {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .version-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: .5rem .85rem;
+      border: 1px solid var(--coral);
+      border-radius: 999px;
+      color: var(--coral-dark);
+      background: #fff8f5;
+      font-size: .82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .notice, .card {
+      border-radius: var(--radius);
+      background: var(--paper);
+      box-shadow: 0 1rem 2.8rem rgb(37 61 54 / 8%);
+    }
+
+    .notice {
+      margin-bottom: 1rem;
+      padding: 1rem 1.15rem;
+      border: 2px solid var(--warning-border);
+      background: var(--warning);
+    }
+
+    .notice strong { color: #75420b; }
+
+    .card {
+      margin-top: 1rem;
+      padding: clamp(1.25rem, 5vw, 2.5rem);
+      border: 1px solid var(--line);
+    }
+
+    .legal-copy {
+      max-height: 31rem;
+      overflow-y: auto;
+      padding: 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: .9rem;
+      background: #fff;
+      scrollbar-color: var(--sage-500) var(--sage-100);
+    }
+
+    .legal-copy:focus {
+      outline: 3px solid var(--coral);
+      outline-offset: 3px;
+    }
+
+    .legal-copy p:first-of-type {
+      font-weight: 900;
+      letter-spacing: .025em;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .field { margin-top: 1rem; }
+    .field.full { grid-column: 1 / -1; }
+
+    label, legend {
+      display: block;
+      margin-bottom: .4rem;
+      color: var(--sage-900);
+      font-weight: 800;
+    }
+
+    .hint {
+      display: block;
+      margin: -.15rem 0 .5rem;
+      color: var(--taupe);
+      font-size: .9rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 3rem;
+      padding: .75rem .85rem;
+      border: 1.5px solid #9c9288;
+      border-radius: .7rem;
+      color: var(--ink);
+      background: #fff;
+      font: inherit;
+    }
+
+    textarea { min-height: 7rem; resize: vertical; }
+
+    input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {
+      outline: 3px solid var(--coral);
+      outline-offset: 2px;
+      border-color: var(--sage-900);
+    }
+
+    fieldset {
+      margin: 1.5rem 0 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 1.35rem 1fr;
+      gap: .75rem;
+      align-items: start;
+      margin-top: .9rem;
+      padding: 1rem;
+      border-radius: .8rem;
+      background: var(--sage-100);
+      font-weight: 600;
+    }
+
+    .check input {
+      width: 1.25rem;
+      min-height: 1.25rem;
+      margin: .2rem 0 0;
+      accent-color: var(--sage-700);
+    }
+
+    .check label { margin: 0; font-weight: 700; }
+
+    button {
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: .95rem 1.25rem;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--sage-900);
+      box-shadow: 0 .55rem 1.2rem rgb(37 61 54 / 20%);
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--sage-700); }
+
+    .fine-print {
+      margin: 1rem 0 0;
+      color: var(--taupe);
+      font-size: .85rem;
+      text-align: center;
+    }
+
+    .prototype-message {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 2px solid var(--sage-700);
+      border-radius: .8rem;
+      background: var(--sage-100);
+      font-weight: 700;
+    }
+
+    .prototype-message:target, .prototype-message.visible { display: block; }
+
+    footer {
+      padding: 2rem 1rem;
+      color: var(--taupe);
+      text-align: center;
+    }
+
+    @media (max-width: 42rem) {
+      .intro { grid-template-columns: 1fr; gap: 1rem; }
+      .version-pill { width: fit-content; white-space: normal; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .header-inner { align-items: flex-start; }
+      .legal-copy { max-height: 26rem; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .site-header, .notice, .signing-card, footer { display: none; }
+      main { width: 100%; margin: 0; }
+      .intro { display: block; }
+      .version-pill { margin-top: .5rem; }
+      .card { border: 0; box-shadow: none; padding: 0; }
+      .legal-copy { max-height: none; overflow: visible; border: 0; padding: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="brand">MONKEYDO LLC</span>
+      <a class="help-link" href="tel:+18482385147">Questions? 848-238-5147</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="intro">
+      <div>
+        <p class="eyebrow">Before adventurous play</p>
+        <h1>Liability waiver</h1>
+      </div>
+      <span class="version-pill">Draft waiver — not approved for production</span>
+    </div>
+
+    <aside class="notice" aria-label="Draft notice">
+      <strong>This is a draft.</strong> It is an accessible HTML transcription of the supplied PDF and is not approved for production use or legal reliance.
+    </aside>
+
+    <section class="card" aria-labelledby="waiver-heading">
+      <h2 id="waiver-heading">MONKEYDO LLC Liability Waiver</h2>
+      <p id="reading-instructions">Please read the complete waiver before continuing. You can also <a href="javascript:window.print()">print this draft</a>.</p>
+
+      <div class="legal-copy" tabindex="0" role="region" aria-label="Complete liability waiver text" aria-describedby="reading-instructions">
+        <p>THIS IS A RELEASE OF LIABILITY. READ BEFORE SIGNING.</p>
+
+        <p>This agreement releases MONKEYDO LLC from all liability relating to injuries that may occur on site and/or during one of the events. By signing this agreement, I agree to hold MONKEYDO LLC entirely free from any liability, including financial responsibility for injuries, regardless of whether injuries are caused by negligence.</p>
+
+        <p>I also acknowledge the risks involved in this activity. These include, but are not limited to, injury, psychological, emotional, spiritual, and physical distress, and/or death. I affirm that I am participating voluntarily and that all risks have been made clear to me. Additionally, I do not have any conditions that will increase my likelihood of experiencing injuries while engaging in this activity.</p>
+
+        <p>I also agree to reimburse MONKEYDO LLC for damages I inflict on the property or any material goods owned by MONKEYDO LLC, intentionally or unintentionally during the event, at all costs deemed appropriate by MONKEYDO LLC, its owners, or staff. I also acknowledge that MONKEYDO LLC staff reserves the right to refuse anyone for any reason and at any time during the event, without refunding any portion of the cost of admission.</p>
+
+        <p>By signing below, I forfeit all rights to bring a suit against MONKEYDO LLC for any reason. I will also make every effort to obey safety precautions as listed in writing and as explained to me verbally. I will ask for clarification when needed.</p>
+
+        <h3>For parents or guardians of a participant who is a minor (under 18)</h3>
+        <p>This is to certify that I, as guardian with legal responsibility for this participant, consent and agree to their release as provided above of all the Releases. For myself, my heirs, assigns, and next of kin, I release and agree to indemnify and hold harmless MONKEYDO LLC and its owners, employees, representatives, and agents from any and all liability incident to my minor child’s involvement or participation in the activity as provided above, EVEN IF ARISING FROM THE NEGLIGENCE OF MONKEYDO LLC, to the fullest extent permitted by law.</p>
+      </div>
+    </section>
+
+    <form class="card signing-card" id="waiver-form">
+      <h2>Sign the waiver</h2>
+      <p>Your waiver will be linked to this booking automatically. You do not need to enter your booking confirmation number.</p>
+
+      <div class="field-grid">
+        <div class="field full">
+          <label for="minor-names">Names of minors covered by this electronic waiver</label>
+          <span class="hint" id="minor-hint">Enter each minor’s full name on a separate line. Leave blank if you are signing only for yourself.</span>
+          <textarea id="minor-names" name="minorNames" aria-describedby="minor-hint" autocomplete="off"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="signer-name">Your full legal name</label>
+          <input id="signer-name" name="signerName" type="text" autocomplete="name" required>
+        </div>
+
+        <div class="field">
+          <label for="relationship">Your relationship to the participant(s)</label>
+          <select id="relationship" name="relationship" required>
+            <option value="">Select one</option>
+            <option>Self</option>
+            <option>Parent</option>
+            <option>Legal guardian</option>
+            <option>Self and parent/legal guardian</option>
+          </select>
+        </div>
+      </div>
+
+      <fieldset>
+        <legend>Required acknowledgments</legend>
+
+        <div class="check">
+          <input id="adult-confirmation" name="adultConfirmation" type="checkbox" required>
+          <label for="adult-confirmation">I confirm that I am at least 18 years old and legally authorized to sign for myself and/or the minors listed above.</label>
+        </div>
+
+        <div class="check">
+          <input id="waiver-agreement" name="waiverAgreement" type="checkbox" required>
+          <label for="waiver-agreement">I have read and agree to the complete MONKEYDO LLC Liability Waiver shown above.</label>
+        </div>
+
+        <div class="check">
+          <input id="electronic-consent" name="electronicConsent" type="checkbox" required>
+          <label for="electronic-consent">I consent to use electronic records and signatures. I understand that typing my legal name and selecting “Sign waiver” constitutes my electronic signature.</label>
+        </div>
+      </fieldset>
+
+      <button type="submit">Sign waiver</button>
+      <p class="fine-print">Waivers are valid for one year, subject to the active waiver version and participant coverage.</p>
+      <div class="prototype-message" id="prototype-message" role="status" tabindex="-1">
+        This draft form is not connected to the booking system and did not save a signature.
+      </div>
+    </form>
+  </main>
+
+  <footer>
+    <strong>MONKEYDO LLC</strong><br>
+    Budleman Way, Lakewood, New Jersey · <a href="mailto:monkeydoplay@gmail.com">monkeydoplay@gmail.com</a>
+  </footer>
+
+  <script>
+    const form = document.querySelector('#waiver-form');
+    const prototypeMessage = document.querySelector('#prototype-message');
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+
+      prototypeMessage.classList.add('visible');
+      prototypeMessage.focus();
+    });
+  </script>
+</body>
+</html>

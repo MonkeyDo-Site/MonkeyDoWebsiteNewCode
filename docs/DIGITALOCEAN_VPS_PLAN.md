@@ -10,6 +10,7 @@ Recommended interpretation:
 
 - Use a DigitalOcean Droplet as the VPS for the web application and backend.
 - Keep the public website and backend API/admin dashboard on the same deployed application unless the future implementation requires separation.
+- Keep all deployed application code and customer information in DigitalOcean. Only waiver file objects use Cloudflare R2, as described below.
 - Use Docker Compose or a similar process-managed deployment approach during implementation.
 - Use HTTPS with automatic certificate renewal.
 - Use environment variables or a secure secrets mechanism for credentials.
@@ -36,7 +37,7 @@ Recommended services:
 
 1. DigitalOcean Droplet for the website/backend application.
 2. PostgreSQL on the same Droplet for the initial production database, as selected by the owner to reduce initial cost.
-3. DigitalOcean Spaces only if the project later needs file uploads, such as scanned in-person waivers or image/document storage.
+3. Cloudflare R2 as the private object store for all waiver files. DigitalOcean Spaces is not used for waiver storage.
 4. DigitalOcean monitoring and backups/snapshots for operational safety.
 5. DNS records pointing the production domain to the Droplet.
 
@@ -75,16 +76,17 @@ DigitalOcean Managed PostgreSQL remains a future upgrade option for stronger iso
 
 ## 6. Object/file storage
 
-DigitalOcean Spaces is not required for the basic booking website unless file uploads are added.
+Cloudflare R2 is the selected private object store for all waiver files, including approved source waiver documents, immutable signed HTML snapshots, and generated signed-waiver PDFs.
 
-Use Spaces later if the owner wants to store:
+The storage boundary is:
 
-- Uploaded/scanned paper waivers.
-- Signed waiver PDFs.
-- Uploaded customer documents.
-- Large media files.
+- DigitalOcean hosts the application code, backend, and PostgreSQL database.
+- DigitalOcean PostgreSQL stores customer profiles, bookings, waiver metadata, secure R2 object references, and tamper-evident hashes.
+- Cloudflare R2 stores waiver file objects. Customer information should not be duplicated into R2 except where it is necessarily part of the signed waiver itself.
+- The R2 bucket must not permit public access. The application must authorize retrieval and use short-lived access for a permitted owner or signer.
+- R2 account identifiers, access keys, and secrets must be installed only as server-side DigitalOcean deployment secrets and must never be committed, exposed to browser code, documented, or logged.
 
-If the owner only needs an admin checkbox that a waiver was signed in person, Spaces may not be necessary at launch.
+Paper waivers use an audited completion checkbox at initial launch and do not produce an uploaded file. If scanned paper-waiver uploads are approved later, those files must also be stored in the private R2 bucket.
 
 ## 7. Required information before provisioning
 
@@ -106,6 +108,7 @@ To actually set up the DigitalOcean VPS, the implementer will still need:
 - Backup/snapshot preference.
 - Monitoring/alert email.
 - Production environment variables once providers are chosen.
+- A Cloudflare account, private R2 bucket, scoped server-side R2 credentials, retention/lifecycle configuration, and an approved retrieval policy before waiver-file storage is production-ready.
 
 Sensitive credentials must not be committed to the repository.
 
