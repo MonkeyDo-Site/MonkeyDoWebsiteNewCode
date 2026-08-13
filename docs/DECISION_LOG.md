@@ -296,7 +296,7 @@ Decision: A waiver signed on February 29 expires at the same local time on Febru
 
 Decision: Prefer the electronic waiver at arrival. Paper signing is an allowed fallback, may be represented by an admin completion checkbox only after it was actually signed, and does not require an uploaded scan at initial launch. Verbal acceptance is not sufficient.
 
-Decision: Production signed HTML snapshots or generated PDFs should use encrypted DigitalOcean Spaces storage, with a secure reference and tamper-evident hash stored in PostgreSQL. Signed waivers must not be stored in Git or a public directory.
+Superseded decision: Production signed HTML snapshots or generated PDFs would use encrypted DigitalOcean Spaces storage. The 2026-08-13 Cloudflare R2 decision below replaces this storage arrangement; completed signed-waiver files must not be stored in DigitalOcean Spaces.
 
 Decision: Retain signed waivers and their audit records for seven years after expiration, subject to final approval by qualified New Jersey counsel, particularly for records concerning minors.
 
@@ -319,3 +319,21 @@ Decision: Booking does not collect minor names. Consequently, the system cannot 
 Decision: If the latest applicable waiver is more than one year old, show: “Please sign a waiver again. Waivers are valid for one year.”
 
 Decision: Minor-level electronic waiver lookup is available only to the authenticated owner/admin. Electronically signed waivers record minor names and can be searched for coverage. Paper waivers store only an audited completion checkbox; minor names from paper waivers are not entered into the system and cannot support minor-level lookup.
+
+## 2026-08-13 — Completed signed-waiver storage and staff access
+
+Decision: Customers complete and electronically sign the waiver as part of the website booking process, and the system automatically links each completed waiver to the correct customer, booking, and waiver version.
+
+Decision: Store completed signed-waiver files only in a private Cloudflare R2 bucket. They must not be stored in DigitalOcean, DigitalOcean Spaces, GitHub, or any publicly accessible location.
+
+Decision: Application code, database records, primary customer profiles, booking information, waiver status, and waiver metadata remain in DigitalOcean. Customer information contained within a signed-waiver file necessarily resides with that file in R2, while the primary customer and booking records remain in DigitalOcean.
+
+Decision: The DigitalOcean database stores the secure R2 object reference, customer and booking relationships, signing date, expiration date, waiver version, current status, and verification hash. It must not contain a duplicate copy of the signed-waiver file.
+
+Decision: An authenticated and authorized administrative user can see waiver status, signing date, expiration date, version, and applicable waiver history from the customer's record and view a signed waiver there without signing in to Cloudflare or manually searching R2.
+
+Decision: Every signed-waiver retrieval requires server-side authentication and authorization and uses short-lived authorized access. The application must not expose permanent public R2 links or R2 credentials.
+
+Decision: Cloudflare R2 credentials are server-side DigitalOcean deployment secrets only. They must never appear in browser code, GitHub, documentation, logs, or public links.
+
+Scope clarification: These decisions apply only to completed, signed customer waivers. They do not place unsigned templates or source waiver documents in R2; doing so requires separate owner approval.
