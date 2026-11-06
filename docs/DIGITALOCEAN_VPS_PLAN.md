@@ -1,164 +1,84 @@
-# MonkeyDo DigitalOcean VPS Hosting Plan
+# DigitalOcean, Cloudflare, staging, storage, and backups
 
-Documentation-only checkpoint created on 2026-08-05. This file documents the requested DigitalOcean VPS direction. It does not provision infrastructure, create application code, add deployment configuration, or store credentials.
+Current planning direction, November 5, 2026. This file is requirements, not provisioning or deployed configuration. Owner authorizes documentation PR only; later build/production approvals are separate.
 
-## 1. Confirmed hosting direction
+## 1. Hosting and public addresses
 
-The owner wants the website and backend hosted on a VPS using DigitalOcean.
+- DigitalOcean hosts public application/backend/admin and initial persistent PostgreSQL. Keep a maintainable unified application; allow later migration to Managed PostgreSQL without rebuilding business logic. No production JSON-file database.
+- **https://monkeydoplay.com** canonical; **www.monkeydoplay.com** redirect. Domain purchased. **Cloudflare manages DNS and proxies production/staging traffic**, with strict verified HTTPS from visitor to Cloudflare to origin. This replaces external-registrar/temporary-DigitalOcean-public-address launch language.
+- **staging.monkeydoplay.com** is protected test site. Protected IP/temporary hostname may be used internally before approved DNS, never presented as final public address.
+- Do not cache private/dynamic booking/customer/admin/payment/waiver/confirmation responses. Static public media/assets may cache. Email/verification DNS records follow provider instructions, not ordinary website proxy treatment.
+- Prefer New York region, supported Ubuntu LTS, approximately **2 vCPU/4GB RAM** initial proposal. Final CPU/RAM/disk/region availability/current recurring price and backup costs need presentation/approval before purchase. Old2GB suggestion is superseded.
+- Owner prefers separate staging Droplet for stronger isolation; final choice deferred until current prices/capacity reviewed. Do not silently commit to shared resources or purchase either arrangement.
+- Existing provider-account free-credit/billing statements are historical, not verification of current balance or a free-hosting promise.
 
-Recommended interpretation:
+## 2. Separation and staging
 
-- Use a DigitalOcean Droplet as the VPS for the web application and backend.
-- Keep the public website and backend API/admin dashboard on the same deployed application unless the future implementation requires separation.
-- Use Docker Compose or a similar process-managed deployment approach during implementation.
-- Use HTTPS with automatic certificate renewal.
-- Use environment variables or a secure secrets mechanism for credentials.
+- Separate processes, databases, environment settings, provider credentials and buckets per environment. No production customer/participant/payment/waiver data in staging; use artificial test records. Staging never accesses production R2 buckets.
+- **Banquest sandbox only** for staging; transactions cannot migrate into live. Before separately authorized launch validate production endpoint/key selection explicitly; do not “move” sandbox transactions/customers into production.
+- Shared staging password known to owner, owner-changeable in settings, **90-day rotation**. Staging access password is separate from owner/staff authentication and permission checks.
+- Real Resend test emails may go to **any tester-entered address**, not a mandatory allowlist. Prefix **[MONKEYDO TEST]**, visible **This is a test message from the MonkeyDo staging website. This is not a real booking, payment, membership, or reservation.**, staging-only links, conspicuous TEST MODE admin indicator. Distinguishable sender where supported. Test delivery/bounce/retry states.
+- **Manual owner-confirmed staging resets** only, no automatic deletion of test progress. Reset affects artificial staging data, never production or original source artifacts. Decide exact reset scope/retention with visible preview during implementation.
+- Owner visual review after staging: left-vs-top navigation, card arrangement/colors, spacing, image crops, print layout, responsive behavior. Do not recast approved business rules as unresolved because layouts have not been seen.
 
-## 2. What can and cannot be set up now
+## 3. Storage ownership
 
-This repository currently contains only documentation. The application has not been built yet by request.
+| Data | Location |
+|---|---|
+| Application code, primary customers/bookings/memberships/participants/program/payment metadata | DigitalOcean/PostgreSQL |
+| Signed completed waiver files | Dedicated private **Cloudflare R2** waiver bucket only |
+| Waiver object reference/hash/status/signing/expiry/coverage metadata | PostgreSQL, no duplicate signed file |
+| Encrypted PostgreSQL backups | Separate dedicated private R2 backup bucket |
+| Future customer documents/paper scans if authorized | Separate private R2 documents bucket, not backup/waiver bucket |
+| Original unsigned waiver/templates | Separate from signed files; DigitalOcean/repository-preserved source as appropriate |
+| Public logo/ad/facility images | Website assets; originals preserved |
+| Private backup recovery key | Outside DigitalOcean and R2, at least two protected owner-controlled copies |
 
-Therefore, this checkpoint can document the DigitalOcean plan, but it should not add:
+No completed signed files in Spaces, public links/directories, repository, database or duplicate DO copies. Previously suggested Spaces for documents/scans is superseded by dedicated R2 documents direction. Bucket separation and least privilege do not guarantee a provider feature exists; verify supported retention/credential controls before claiming them configured.
 
-- Application deployment code.
-- Dockerfiles.
-- Reverse proxy configuration.
-- Database migrations.
-- Payment integration configuration.
-- Production secrets.
-- DigitalOcean API credentials.
+Random waiver object IDs, no permanent public URLs; authorize every file access and issue short-lived access. Server-only R2 credentials. Isolated test buckets and no production waiver content in staging.
 
-Actual VPS provisioning requires access to a DigitalOcean account and several final choices listed below.
+## 4. Database access and server hardening
 
-## 3. Recommended DigitalOcean production architecture
+- PostgreSQL local/private, not public Internet. Administrative database access via SSH/secure tunnel, scoped least privilege.
+- Generate SSH public key and explain DigitalOcean installation only when setup is authorized. Never request/store owner's DO password; any API token project-scoped and supplied securely.
+- Non-root deploy user, key-only SSH, disable password/root SSH after setup, firewall only required SSH/HTTP/HTTPS, security updates, process supervision, monitoring/disk alerts, TLS renewal, sensitive-log redaction.
+- Reverse proxy such as Caddy/Nginx and process management/container approach to be selected later; no Dockerfiles/Compose/reverse-proxy configs/migrations installed by this documentation PR.
+- Protected per-environment server settings for secrets, never Git/chat/logs/browser. Rotate previously exposed credentials; Resend replacement is already owner-reported created, not an outstanding instruction to create another token.
+- Application operational logs90days, security logs1year, business audit indefinite. Don't log card/secret/password/waiver document contents.
 
-Recommended services:
+## 5. Backup architecture and retention
 
-1. DigitalOcean Droplet for the website/backend application.
-2. PostgreSQL on the same Droplet for the initial production database, as selected by the owner to reduce initial cost.
-3. DigitalOcean Spaces only if the project later needs file uploads, such as scanned in-person waivers or image/document storage.
-4. DigitalOcean monitoring and backups/snapshots for operational safety.
-5. DNS records pointing the production domain to the Droplet.
+Confirmed plan (not a working backup implementation):
 
-## 4. Droplet recommendation
+1. Nightly consistent PostgreSQL backup on DigitalOcean.
+2. Encrypt **before upload**, fresh random encryption material per backup, stable versioned public/private recovery-key arrangement. Public encryption key may be on application server; private key not on DO/R2.
+3. Upload encrypted archive plus integrity-check metadata only to dedicated private R2 backup bucket. Unique nonreused object names, verify completion/integrity and record outcome before expiring old recovery points. Securely remove temporary plaintext.
+4. Keep **seven rolling nightly recovery points**, replacing older30daily planning. Keep **twelve monthly backups**.
+5. Monthly restoration test in isolated nonproduction database: decrypt, restore, integrity checks, clean up, record result; alert exceptions. This must not replace production or expose real data to normal staging users.
+6. Dashboard and business-email alerts for backup/upload/verification/deletion/restore failures. Dashboard is persistent fallback if email unavailable.
+7. Only owner may authorize/perform production restoration, access backup controls/downloads/delete/retention settings. Staff cannot operate backups.
 
-For the initial production launch, use an Ubuntu LTS Droplet sized for a small business booking website.
+Private-key handling and unattended restore runner remain a **technical design gate**: true automatic decrypt tests cannot be claimed while no permitted runner/key access has been established. Propose separate protected runner or explicitly owner-assisted procedure; do not put private key on DO/R2 just to satisfy automation. At least two protected recovery-key copies in separate locations; owner reports BitLocker desktop. Password-manager/encrypted offline copy are example mechanisms, not selected products.
 
-Recommended starting size:
+No fixed routine two-year rotation requirement; owner rejected it. Exposure-triggered rotation procedure and old-key retention until dependent backups expire need operational design. Never keep recovery key with the R2 encrypted archive or email it.
 
-- 2 vCPU / 2 GiB RAM or better for the application VPS.
-- New York region, subject to availability when the Droplet is provisioned.
-- Backups enabled.
-- SSH key authentication only.
-- Root login disabled after initial setup.
-- Firewall restricted to SSH, HTTP, and HTTPS.
+Proposed R2 controls subject to capabilities/cost review: upload-scoped credentials separate from retention authority, unique names, minimum required deletion rights, retention/overwrite protection if supported, separate bucket credentials, deletion failure alerts. Do not claim unsupported object versioning or upload-only permissions are established.
 
-DigitalOcean bills Droplets per second with a minimum charge. A powered-off Droplet can still incur charges because compute resources remain reserved; destroying the Droplet ends billing.
+Owner-approved investigation preservation action can pause expiry of selected recovery points for investigation; record scope/actor and release, avoiding silent permanent suspension.
 
-## 5. Database recommendation
+### Desktop copy
 
-The production database must be persistent PostgreSQL.
+Monthly reminder with **Download now**, owner-triggered encrypted download, dated filename. Keep **two newest** desktop copies; owner manually deletes oldest. Browser download settings choose destination folder; website does not silently select folders/delete local files. Desktop copies supplement R2, not replace nightly archive or alter server retention. Keep recovery-key protection distinct from archive storage.
 
-Selected initial option:
+### Production restore proposal for operational review
 
-- Run PostgreSQL on the same Droplet as the application to reduce initial cost.
+Preserve current database, restore selected backup into isolated temporary database, validate, present outcome to owner, explicitly authorize replacement, audit. Owner reauthentication/confirmation appropriate to restoration must be reviewed as part of procedure; it does not reinstate rejected export reauthentication. Staff cannot restore. Reapply expired-waiver deletion/retention after recovery; historical backup metadata may naturally persist until archive expires, but no duplicate signed files are created by PG backups.
 
-Accepted tradeoffs and required safeguards:
+## 6. Monitoring and approval gates
 
-- Lower monthly cost, but more operational risk and maintenance responsibility.
-- Application and database share CPU, memory, disk, and a failure domain.
-- Requires automated encrypted backups stored outside the Droplet, a documented retention policy, and routine restore testing.
-- Requires PostgreSQL security updates, monitoring, disk-capacity alerts, and maintenance by the operator.
-- The architecture must allow a later migration to DigitalOcean Managed PostgreSQL without rebuilding the application.
+Business alerts to **monkeydoplay@gmail.com**. Dashboard retains failed/bounced/unknown email and operational issues without relying on Resend being able to email itself. External uptime monitoring would detect app/server outages where Dashboard cannot run; provider/cost still to propose, not a purchased service.
 
-DigitalOcean Managed PostgreSQL remains a future upgrade option for stronger isolation, managed backups, and reduced database-maintenance responsibility.
+Before provisioning, present exact plan/price and scoped access, SSH/public IP/DNS records, provider settings, backup-key design, monitoring and restoration instructions. Framework/auth/ORM/jobs/packaging are implementation selections, not resolved by this file.
 
-## 6. Object/file storage
-
-DigitalOcean Spaces must not store completed signed customer waivers. Those files belong only in the confirmed private Cloudflare R2 bucket; DigitalOcean retains their secure R2 references and metadata but no duplicate file.
-
-Use Spaces later if the owner wants to store:
-
-- Uploaded/scanned paper waivers.
-- Uploaded customer documents.
-- Large media files.
-
-Any future use of Spaces for these other upload categories requires separate approval and must not be interpreted as approval to store completed signed-waiver files there. The Cloudflare R2 decision does not determine storage for unsigned templates or source waiver documents.
-
-If the owner only needs an admin checkbox that a waiver was signed in person, Spaces may not be necessary at launch.
-
-## 7. Required information before provisioning
-
-The owner has confirmed:
-
-- The existing DigitalOcean account can create Droplets, Managed PostgreSQL databases, backups/snapshots, and Spaces storage.
-- The account currently has free credit; the owner will add paid billing when it is needed.
-- The production domain is being purchased and is not yet available.
-- The domain provider will manage DNS and point the production domain to DigitalOcean.
-- New York is the preferred DigitalOcean region.
-- PostgreSQL will initially run on the same VPS as the application.
-
-To actually set up the DigitalOcean VPS, the implementer will still need:
-
-- DigitalOcean account access or a scoped DigitalOcean API token.
-- Final production domain name and the required DNS records applied by the owner/domain provider.
-- SSH public key for server access.
-- Confirmation of Droplet size.
-- Backup/snapshot preference.
-- Monitoring/alert email.
-- Production environment variables once providers are chosen.
-
-Sensitive credentials must not be committed to the repository.
-
-Before the production domain is connected, testing can use the Droplet's public IP address or a deliberately configured temporary hostname. A browser-ready DigitalOcean URL should not be assumed to exist automatically; the exact temporary-access method will be confirmed during provisioning.
-
-## 8. Proposed server hardening checklist
-
-When provisioning is approved and credentials are available, the VPS should be configured with:
-
-- Ubuntu LTS.
-- Non-root deploy user.
-- SSH key authentication.
-- Password SSH login disabled.
-- Root SSH login disabled.
-- UFW firewall allowing only SSH, HTTP, and HTTPS.
-- Automatic security updates.
-- Fail2ban or equivalent SSH protection.
-- Nginx or Caddy reverse proxy.
-- HTTPS certificates with automatic renewal.
-- Application process supervision.
-- Centralized application logs with sensitive-data redaction.
-- Database backups and restore testing.
-- Monitoring and disk-space alerts.
-
-## 9. Deployment approach for future implementation
-
-Recommended future deployment flow:
-
-1. Build the application in the repository.
-2. Add production Dockerfile and Docker Compose configuration only after implementation is approved.
-3. Configure environment variables on the server, not in source code.
-4. Run database migrations against the production database.
-5. Start the application behind Nginx or Caddy.
-6. Configure HTTPS.
-7. Configure provider webhooks for Stripe, email, and SMS.
-8. Run smoke tests.
-9. Document rollback and backup restore steps.
-
-## 10. Production readiness guardrails
-
-DigitalOcean hosting does not make payments, messaging, waiver, or cancellation/no-show workflows production-ready by itself.
-
-The following are still required before live launch:
-
-- Built application code.
-- Persistent production database.
-- Stripe account and approved consent wording.
-- Email provider account and approved templates.
-- SMS provider account, compliance approval, and approved text wording if SMS is enabled.
-- Final waiver wording.
-- Final cancellation/no-show policy.
-- Zelle business details and payment deadline.
-- Full security review.
-- Automated tests.
-- Production smoke tests.
+Before launch: functional authorized staging, actual restore evidence, sandbox results, no production test secrets/URLs, sender verification, server secrets, approved production tax rate, reconciled provider/account behavior, WCAG/browser/mobile/security/concurrency/payment/waiver/owner acceptance. Require separate written approvals for production deployment, Cloudflare DNS connection, live payments and opening bookings. Publishing the Codex development environment is not any of those approvals.

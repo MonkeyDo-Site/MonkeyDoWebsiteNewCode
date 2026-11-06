@@ -1,186 +1,45 @@
-# MonkeyDo Open Decisions
+# Remaining decisions and implementation inputs
 
-Documentation-only checkpoint created on 2026-08-05. This file lists items that are not yet finalized. Unresolved items must not be treated as decided during implementation.
+Consolidated November 5, 2026. Owner authorized documentation reconciliation and PR. These items do not block recording approved requirements or imply that already-settled business questions must be answered again.
 
-## 1. Payment processor
+## 1. Genuine remaining owner/account decisions
 
-Recommended provider discussed: Stripe.
+| Item | Known direction | Remaining action |
+|---|---|---|
+| Production sales tax | Product categories and fee formula settled; staging6.6% | Owner supplies production rate/UEZ outcome before live billing. Do not use staging rate as production default. |
+| Tax on retained original processing fee after admission-to-membership conversion | Reverse replaced admission/base tax; original fee nonrefundable | Owner/accountant to say whether tax on retained fee stays/reverses. Example .03 tax on retained .45 fee. Do not silently settle. |
+| Exact hosting/staging/monitoring cost | DO~2vCPU4GB NY, separate staging preferred | Present actual resource/provider/backup/monitoring costs for approval before purchase; owner explicitly deferred until pricing known. |
 
-Still open:
+## 2. Technical design and provider verification (developer work)
 
-- Final approval of payment processor.
-- Stripe account creation/verification.
-- Final Stripe pricing/fees confirmation from the active account.
-- Stripe webhook configuration.
-- Final card-saving and delayed-charge consent wording.
-- Final phone consent script for owner-entered phone bookings.
-- Final handling for charges requiring additional authentication.
+- Select framework/authentication/ORM/migrations/durable jobs after separate build approval; provide a maintainable implementation meeting requirements, not an unapproved stack presented as existing code.
+- Banquest actual sandbox processor (Fiserv default reported, account unidentified); confirm from configuration/provider before processor-specific payment test claims. Not a blocker to general staging work.
+- Banquest 3DS/Paay enablement, account costs, authentication-required responses/recovery, appropriate recurring/installment/source permissions, exact date/DST/no-retry behavior, metadata fees if any, complete deletion/derived-reference semantics and fraud behavior on amount change. Owner reports token storage free, no holds wanted and automatic gateway surcharge disabled. Do not reopen those choices merely because integration untested.
+- Safe payment-operation identity/reconciliation when response is unknown; public duplicate detection is not verified exactly-once idempotency. Validate sandbox timeout/replay and no receipts/retries before payment-readiness claim.
+- Approved proportional split allocation needs deterministic cent/rounding handling for actual inclusive tender amounts. No extra customer question on whether proportional allocation is allowed.
+- Protected isolated restore runner/decryption-key access with key outside DO/R2; supported R2 credential/deletion/retention protection; exact production restoration and incident/key-rotation procedure. Do not claim automatic restoration tested before execution.
+- Final photo mapping, accessible image alternative text and staging presentation. These do not reopen approved visible copy, four About areas or logo handling.
 
-No payment workflow should be claimed production-ready until the provider account, credentials, webhook secrets, approved consent wording, and test-mode validation are complete.
+## 3. Inputs/configuration for future authorized setup
 
-## 2. Database operations
+Owner-supplied logo/ad/photos are visible in conversation but original image files are not present in this checkout. Preserve exact originals when available; do not generate substitutes or report them recovered. Original PDF/HTML waiver exist and wording is owner-approved; verify implementation matches them, do not ask again for counsel review.
 
-Decision confirmed: PostgreSQL will initially run on the same DigitalOcean VPS as the application to reduce initial cost. DigitalOcean Managed PostgreSQL remains a possible future upgrade.
+Secure installation/verification is still needed for existing provider accounts: DO scoped access/SSH, R2 test/production buckets and keys, Resend replacement key/sender DNS, Banquest sandbox/live/private/public keys and webhook endpoint key, production DNS/TLS, test-card material. Owner already has sandbox credentials/test-card PDF; don't ask for values in chat or commit them. Existing account ownership is not proof configuration/testing done.
 
-Still open:
+Email wording is collected in [EMAIL_TEMPLATES.md](EMAIL_TEMPLATES.md) for this PR's review, including latest owner edits. Conditional variant construction and delivery tests remain implementation work, not a broad unanswered “supply all email text” requirement.
 
-- Backup/retention settings.
-- Off-VPS encrypted backup destination.
-- Restore-test schedule and responsible operator.
-- Preview/staging database strategy.
-- Database access policy.
+## 4. Explicitly resolved — do not reopen
 
-## 3. Hosting provider
+Banquest selection (not Stripe), purchased monkeydoplay.com/Cloudflare proxy, bookings@ sender/Reply-To, Zelle account and sender-name flow, no appointment reminders, staff/owner permissions/MFA, Last Name-only customers and IDs, card history/consent/removal distinction, normal35child/50combined capacity and owner/arrival overrides, cancellation amounts, party package/discount order, memberships/mixed adult allowances, January29leap reset, actual-date grace renewal, no unpaid phantom credit, credit eligible uses/retention, socks35online/unrestricted in person, physical gift cards **without** digital ledger/PIN, split failure preservation/proportional allocation, waiver wording/no counsel gate/two-year file retention, nightly/monthly backup retention, monthly two-copy manual desktop download, manual staging resets, and test-email recipients.
 
-Decision confirmed: use a DigitalOcean VPS/Droplet for website and backend hosting.
+## 5. Deferred beyond initial launch
 
-Confirmed:
+- SMS provider/compliance/opt-in/number/template/cost implementation, optional extra text confirmations only; no appointment reminders.
+- Participant merging tool.
+- Day-camp/group invoice generation.
+- Optional payment-retry policy review after owner uses initial no-retry workflow and observes failure frequency. Separate approval required.
+- Potential paper-waiver scanning/uploads, if later requested; not an initial requirement.
 
-- The DigitalOcean account supports Droplets, Managed PostgreSQL, backups/snapshots, and Spaces.
-- The account currently has free credit; paid billing will be activated when needed.
-- New York is the preferred region.
-- The production domain is being purchased.
-- The external domain provider will manage DNS and point it to DigitalOcean.
+## 6. Authorization, not another business question
 
-Still open:
-
-- DigitalOcean account access or scoped API token.
-- Final production domain name.
-- Exact DNS records and timing for the domain-provider change.
-- Droplet size.
-- Backup/snapshot preference.
-- Environment variable management.
-- Preview/staging deployment strategy.
-- Temporary test-access method before the production domain is connected (public IP or configured temporary hostname).
-
-## 4. Email provider
-
-Decision confirmed: use Resend for transactional email. The owner has created the Resend account.
-
-Security prerequisite:
-
-- Completed: the owner revoked the API credential disclosed during planning and created a replacement.
-- Transfer the replacement through a secure secret-management channel; do not place it in chat, source control, documentation, logs, screenshots, or client-side code.
-- Store the replacement only as a server-side environment variable or deployment secret.
-
-Still open:
-
-- Sender domain.
-- DNS records.
-- Secure installation of the already-created replacement production API credential.
-- Confirmation email wording approval.
-- Reminder email wording approval.
-- Delivery/retry policy.
-
-## 5. Text/SMS provider
-
-Recommended provider discussed: Twilio.
-
-Still open:
-
-- Final SMS provider.
-- Twilio account setup.
-- SMS-capable number or messaging service.
-- A2P 10DLC registration if required.
-- SMS opt-in wording.
-- SMS opt-out wording.
-- Confirmation text wording.
-- Reminder text wording.
-- Whether SMS is enabled at launch.
-
-No SMS workflow should be claimed production-ready until account setup, compliance approval, credentials, and final message wording are complete.
-
-## 6. Final cancellation and no-show policy
-
-Still open:
-
-- Final cancellation policy wording.
-- Cancellation deadline/window.
-- Cancellation fee.
-- No-show fee.
-- Refund policy.
-- Exceptions.
-- Whether cancellation/no-show fees are taxable.
-- Final customer consent wording.
-- Activation date.
-
-Cancellation-fee and no-show-fee charging must remain disabled until final wording, amounts, rules, and consent language are supplied and approved.
-
-## 7. Final waiver wording
-
-The original PDF is present in the current checkout at `docs/waivers/source/MD Waiver (1).pdf`. Its readable text and SHA-256 checksum have been verified, and it remains a draft/reference until legal approval. The confirmed validity period is one full year from the signing timestamp.
-
-Still open:
-
-- Final legal approval of the waiver and electronic-signature workflow by qualified New Jersey counsel.
-- Counsel confirmation of the approved production waiver version and final user-facing version label.
-- Counsel confirmation of the approved adult-participant and parent/legal-guardian language.
-- Counsel confirmation of the approved seven-years-after-expiration retention period, particularly for records concerning minors.
-
-Do not launch live booking with placeholder waiver wording.
-
-## 8. Zelle business information and payment deadline
-
-Still open:
-
-- Business Zelle email, phone number, or Zelle Tag.
-- When Zelle payment is due.
-- Exact Zelle instruction wording.
-- Whether Zelle bookings expire if not paid by a deadline.
-- Operational process for duplicate payment review and refund handling.
-
-Do not invent Zelle details.
-
-## 9. Waiver storage for in-person signatures
-
-The owner wants to check a box on the booking screen after the waiver is signed in person.
-
-Still open:
-
-- Whether a scanned/photo paper waiver upload should be added after initial launch. Initial launch records only the audited completion checkbox and does not record minor names from paper waivers.
-
-## 10. Production legal/policy review
-
-Still open:
-
-- Legal approval for waiver.
-- Legal approval for cancellation/no-show policy.
-- Legal approval for card-saving and later-charge consent.
-- Legal approval for phone consent script.
-- Legal approval for SMS opt-in/opt-out text.
-
-## 11. Domain and branding assets
-
-Still open:
-
-- Production domain name.
-- Final high-resolution brand assets for implementation.
-- Whether “Every little monkey needs a jungle” may be used as a main homepage headline.
-- Whether “designed by moms and professional therapists” may be used on the website.
-- Whether “Go Bananas Here” may be used as a playful graphic accent.
-
-## 12. Refund workflow
-
-Still open:
-
-- Whether refunds should be issued directly through the admin dashboard.
-- Whether refunds should be recorded manually at first.
-- Who may approve refunds.
-- Refund notification wording.
-
-## 13. Card removal policy
-
-Still open:
-
-- Whether backup card removal after cash/check/Zelle payment should be manual or automatic.
-- Whether owner can remove card before payment is received under any exception.
-- Exact card removal wording and audit reason requirements.
-
-## 14. Staff/admin roles
-
-Still open:
-
-- Whether there will only be one owner account.
-- Whether additional staff accounts are needed.
-- Whether role levels are needed, such as owner, admin, staff, or read-only.
-- Whether multi-factor authentication is required at launch.
+The present instruction authorizes documentation edits, commit and PR. It does not authorize application development. Owner review/approval of this checkpoint is followed by separate explicit development authorization. Production deployment, DNS connection, live payments and opening booking keep their independent written gates. Costs/purchases require review before commitment. Never treat the copied sample authorization in history AG as an actual instruction to build.
