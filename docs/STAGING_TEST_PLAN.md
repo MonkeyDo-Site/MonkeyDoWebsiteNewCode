@@ -160,3 +160,11 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 - Verify private labels/reasons never appear on the public schedule. Mark Chol Hamoed once for the whole date; membership pricing is deferred, not claimed active.
 - Attempt stale simultaneous calendar edits, reduce capacity below reservations and change booked session timing. Each must reject safely. Staff cannot use these owner controls even with model permissions.
 - Confirm every successful edit is audited and does not send a message or process a payment. Recurring schedule editing remains unavailable.
+
+## Membership draft calendar acceptance
+
+- Create Subscription and Unlimited drafts for anonymous places, including mixed separate cohorts and nonstandard whole-month durations. Reject a new term shorter than three months. Drafts must never activate benefits or record customer acceptance/payment.
+- Check January 29 leap/non-leap cases, January 30/31 and October 31. Compare each planned charge date against the separate cycle start/end and restored original anchor. DST must not shift civil dates.
+- Compare monthly/prepaid estimates, card/noncard fees and nontaxable membership treatment. Prepaid should have one whole-term payment estimate and no later installments.
+- Change future product prices and fee policy; existing draft/cycle history must remain unchanged. Staff cannot change owner pricing. Repeat a submission and verify no duplicate draft/cycles/audit.
+- Confirm customer-filtered draft history, permissions, pagination and desktop/mobile rendering. Actual benefit allocation, renewal sale, admission conversion, customer credit and Banquest collection cannot yet be accepted from these screens.

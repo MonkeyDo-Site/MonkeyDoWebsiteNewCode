@@ -18,6 +18,7 @@
   </article>
   <article class="panel">
     <h2>Bookings</h2>
+{% if perms.core.view_membershipdraft %}<p><a href="{% url 'membership_drafts' %}?customer={{ customer.pk }}">Membership drafts for this customer</a></p>{% endif %}
 {% if perms.core.add_booking and perms.core.view_booking %}<p><a href="{% url 'booking_create' %}?customer={{ customer.pk }}">Create test booking</a></p>{% endif %}
     {% if can_view_bookings %}
     {% if first_today %}<h3>Today · {{ first_today.session.starts_at|date:'g:i A' }}</h3>

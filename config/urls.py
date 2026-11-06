@@ -8,6 +8,7 @@ from core import (
     booking_views,
     customer_views,
     dashboard,
+    membership_views,
     scheduling_views,
     staging_access,
     views,
@@ -15,6 +16,12 @@ from core import (
 from core.security import ProtectedLoginView
 
 urlpatterns = [
+    path("staff/memberships/", membership_views.drafts, name="membership_drafts"),
+    path("staff/memberships/new/", membership_views.draft_create, name="membership_create"),
+    path(
+        "staff/memberships/pricing/", membership_views.membership_pricing, name="membership_pricing"
+    ),
+    path("staff/memberships/<int:pk>/", membership_views.draft_detail, name="membership_detail"),
     path("staff/scheduling/", scheduling_views.scheduling, name="scheduling"),
     path("staff/scheduling/new/", scheduling_views.session_edit, name="session_create"),
     path("staff/scheduling/date/", scheduling_views.date_edit, name="date_edit"),

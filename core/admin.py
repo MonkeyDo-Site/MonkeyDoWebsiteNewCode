@@ -8,6 +8,9 @@ from .models import (
     BookingQuote,
     CalendarDate,
     Customer,
+    MembershipDraft,
+    MembershipDraftCycle,
+    MembershipPricing,
     PricingPolicy,
     Session,
     SiteSettings,
@@ -66,3 +69,6 @@ admin.site.register(PricingPolicy, ReadOnlyAdmin)
 admin.site.register(BookingQuote, ReadOnlyAdmin)
 
 admin.site.register(CalendarDate, ReadOnlyAdmin)
+
+for model in (MembershipPricing, MembershipDraft, MembershipDraftCycle):
+    admin.site.register(model, ReadOnlyAdmin)

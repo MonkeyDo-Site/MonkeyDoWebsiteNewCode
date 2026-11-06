@@ -12,6 +12,8 @@ Owner MFA/recovery, staff accounts, session invalidation and shared staging acce
 
 Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
 
+The inactive membership draft foundation is documented in [MEMBERSHIP_DEVELOPMENT.md](MEMBERSHIP_DEVELOPMENT.md).
+
 ## Reading order and authority
 
 | Document | Responsibility |
