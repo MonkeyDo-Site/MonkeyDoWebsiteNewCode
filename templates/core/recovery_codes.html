@@ -1,0 +1,12 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>Save your recovery codes</h1>
+<p>These codes are shown only on this page. Store them securely offline. Each replaces an email verification code once; your password is still required.</p>
+<ul>{% for code in codes %}
+<li>
+<code>{{ code }}</code>
+</li>{% endfor %}
+</ul>
+<p>
+<a href="{% url 'owner_security' %}">Return to owner security</a>
+</p>{% endblock %}

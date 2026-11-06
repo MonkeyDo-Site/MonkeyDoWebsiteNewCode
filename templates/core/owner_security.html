@@ -1,0 +1,24 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>Owner security</h1>
+<article class="panel">
+<h2>Recovery email</h2>
+<p>This secondary email can receive owner verification codes and password-reset links.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Save recovery email</button>
+</form>
+</article>
+<article class="panel">
+<h2>Offline recovery codes</h2>
+<p>Generate ten single-use codes and keep them offline in a protected location. Generating a new set replaces the previous unused set.</p>
+<form method="post" action="{% url 'recovery_codes' %}">{% csrf_token %}
+<button class="button">Generate replacement recovery codes</button>
+</form>
+</article>
+<article class="panel">
+<h2>Sign out everywhere</h2>
+<p>This ends all sessions for your account and removes its remembered-browser access. Shared staging access is managed separately. You will sign in and verify again.</p>
+<form method="post" action="{% url 'revoke_sessions' %}">{% csrf_token %}
+<button class="button">Sign out all sessions</button>
+</form>
+</article>
+{% endblock %}

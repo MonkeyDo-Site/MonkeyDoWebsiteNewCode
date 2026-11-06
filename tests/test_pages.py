@@ -66,15 +66,21 @@ class PageTests(TestCase):
 
     @override_settings(APP_ENV="staging", SECURE_SSL_REDIRECT=False)
     def test_staging_gate_protects_pages_and_health(self):
+        from django.contrib.auth.hashers import make_password
+        from django.utils import timezone
+
+        SiteSettings.objects.create(
+            staging_password_hash=make_password("Artificial-staging-password-172!"),
+            staging_password_changed_at=timezone.now(),
+        )
         for path in ("/", "/book/", "/health/", "/admin/"):
             self.assertEqual(self.client.get(path).status_code, 302)
         self.assertEqual(self.client.get("/accounts/login/").status_code, 200)
-        user = get_user_model().objects.create_user(username="customer", is_staff=False)
-        self.client.force_login(user)
-        self.assertEqual(self.client.get("/").status_code, 403)
-        user.is_staff = True
-        user.save()
-        self.assertEqual(self.client.get("/").status_code, 200)
+        self.client.post(
+            "/staging/access/", {"password": "Artificial-staging-password-172!"}, secure=True
+        )
+        self.assertEqual(self.client.get("/", secure=True).status_code, 200)
+        self.assertEqual(self.client.get("/staff/today/", secure=True).status_code, 302)
 
     def test_seed_is_idempotent_and_never_changes_existing_sessions(self):
         call_command("seed_staging", stdout=StringIO())

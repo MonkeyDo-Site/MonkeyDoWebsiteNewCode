@@ -8,6 +8,8 @@ Private preview timing, estimated costs and deployment approval steps are in [ST
 
 The customer-management increment, staff group setup and login protection are described in [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md). Public booking and provider integration remain unfinished.
 
+Owner MFA/recovery, staff accounts, session invalidation and shared staging access are documented in [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). Email delivery remains in-memory until integration.
+
 ## Reading order and authority
 
 | Document | Responsibility |

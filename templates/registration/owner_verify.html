@@ -1,0 +1,24 @@
+{% extends 'core/base.html' %}
+{% block title %}Owner verification · MonkeyDo{% endblock %}
+{% block content %}
+<section class="login panel">
+<h1>One more step.</h1>
+{% if test_email_backend %}<p class="notice">This development build uses an in-memory test mailbox. External email delivery is not configured.</p>{% endif %}
+{% if not delivered %}
+<p class="notice">We could not send the email. Try your configured recovery email or an offline recovery code.</p>{% endif %}
+<p>Enter the code sent to your owner email, or use one of your offline recovery codes. Email codes expire in ten minutes.</p>
+{% for message in messages %}
+<p role="status">{{ message }}</p>{% endfor %}
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Verify and sign in</button>
+</form>
+<form method="post" action="{% url 'owner_resend' %}">{% csrf_token %}
+<button class="text-button" name="destination" value="primary">Send another code to primary email</button>
+{% if secondary_available %}
+<p>
+<button class="text-button" name="destination" value="secondary">Send a code to my recovery email</button>
+</p>{% endif %}
+</form>
+<p>
+<a href="{% url 'login' %}">Return to sign in</a>
+</p>
+</section>{% endblock %}

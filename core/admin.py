@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 from .models import AuditEvent, Booking, Customer, Session, SiteSettings
 
@@ -30,6 +32,23 @@ class BookingAdmin(ReadOnlyAdmin):
     list_display = ("reference", "customer", "session", "children", "adults", "attendance")
 
 
-admin.site.register(SiteSettings, ReadOnlyAdmin)
+class SettingsInspector(ReadOnlyAdmin):
+    exclude = ("staging_password_hash",)
+
+
+admin.site.register(SiteSettings, SettingsInspector)
 admin.site.register(AuditEvent, ReadOnlyAdmin)
 admin.site.site_header = "MonkeyDo · TEST MODE"
+
+
+# Identity changes must pass through owner workflows and session revocation.
+
+
+class UserInspector(ReadOnlyAdmin):
+    exclude = ("password",)
+
+
+for model in (get_user_model(), Group):
+    if admin.site.is_registered(model):
+        admin.site.unregister(model)
+    admin.site.register(model, UserInspector if model == get_user_model() else ReadOnlyAdmin)

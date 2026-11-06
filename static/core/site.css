@@ -394,3 +394,7 @@ summary { cursor: pointer; font-weight: bold; }
 @media(max-width:850px) { .customer-cards { grid-template-columns:1fr; } }
 
 .customer-list .panel,.staff-layout h1,.record-form { overflow-wrap: anywhere; }
+
+input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right:8px; }
+.staff-layout .panel { min-width:0; overflow-wrap:anywhere; }
+.staff-layout code { overflow-wrap:anywhere; }

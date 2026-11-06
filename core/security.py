@@ -4,9 +4,11 @@ import math
 import unicodedata
 from datetime import timedelta
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.views import LoginView
+from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
 
@@ -16,6 +18,35 @@ from .models import AuditEvent, LoginThrottle, SecurityAlert
 
 class ProtectedLoginView(LoginView):
     authentication_form = StaffAuthenticationForm
+
+    def form_valid(self, form):
+        from .account_security import TRUST_COOKIE, start_owner_challenge, trusted_browser
+        from .models import AccountSecurity
+
+        user = form.get_user()
+        if not user.is_superuser:
+            return super().form_valid(form)
+        browser = trusted_browser(user, self.request.COOKIES.get(TRUST_COOKIE))
+        if browser:
+            response = super().form_valid(form)
+            self.request.session["owner_verified_at"] = (
+                browser.expires_at - timedelta(days=30)
+            ).timestamp()
+            self.request.session["owner_mfa_version"] = AccountSecurity.objects.get(
+                user=user
+            ).version
+            return response
+        target = self.get_success_url()
+        logout(self.request)
+        try:
+            challenge = start_owner_challenge(user)
+        except ValidationError as exc:
+            form.add_error(None, " ".join(exc.messages))
+            return self.form_invalid(form)
+        self.request.session.cycle_key()
+        self.request.session["owner_challenge"] = str(challenge.pk)
+        self.request.session["owner_next"] = target
+        return redirect("owner_verify")
 
     def blocked_response(self, request, seconds):
         # An empty password avoids running credential verification on a blocked request.
