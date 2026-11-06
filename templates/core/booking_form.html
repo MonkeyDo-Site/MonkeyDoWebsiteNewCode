@@ -1,0 +1,10 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>{{ heading }}</h1>
+<p class="notice">This saves a pending test reservation and holds capacity. It does not confirm a visit, save a signature, send an email or collect payment. Membership benefits are not yet included.</p>
+{% if booking %}
+<p>{{ booking.customer.last_name }} · {{ booking.status_label }} · {{ booking.session.starts_at|date:'D, M j, Y g:i A' }}</p>{% endif %}
+<form class="record-form panel" method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Save test reservation</button>{% if booking %}
+<a href="{% url 'booking_detail' booking.pk %}">Cancel</a>{% else %}
+<a href="{% url 'bookings' %}">Cancel</a>{% endif %}
+</form>{% endblock %}

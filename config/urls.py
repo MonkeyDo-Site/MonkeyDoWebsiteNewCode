@@ -3,7 +3,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.views.generic import RedirectView
 
-from core import account_views, customer_views, dashboard, staging_access, views
+from core import account_views, booking_views, customer_views, dashboard, staging_access, views
 from core.security import ProtectedLoginView
 
 urlpatterns = [
@@ -12,6 +12,13 @@ urlpatterns = [
     path("memberships-clubs-parties/", views.page, {"name": "programs"}, name="programs"),
     path("contact/", views.page, {"name": "contact"}, name="contact"),
     path("book/", views.schedule, name="schedule"),
+    path("staff/bookings/", booking_views.bookings, name="bookings"),
+    path("staff/bookings/new/", booking_views.booking_create, name="booking_create"),
+    path("staff/bookings/<int:pk>/", booking_views.booking_detail, name="booking_detail"),
+    path("staff/bookings/<int:pk>/edit/", booking_views.booking_edit, name="booking_edit"),
+    path("staff/bookings/<int:pk>/timing/", booking_views.booking_move, name="booking_move"),
+    path("staff/bookings/<int:pk>/release/", booking_views.booking_release, name="booking_release"),
+    path("staff/pricing/", booking_views.pricing_settings, name="pricing_settings"),
     path("staff/today/", views.today, name="today"),
     path("accounts/login/", ProtectedLoginView.as_view(), name="login"),
     path("accounts/owner/verify/", account_views.verify_owner, name="owner_verify"),

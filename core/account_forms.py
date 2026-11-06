@@ -5,6 +5,8 @@ from django.contrib.auth.models import Permission
 
 SAFE_STAFF_PERMISSIONS = {
     "view_booking",
+    "add_booking",
+    "change_booking",
     "view_customer",
     "add_customer",
     "change_customer",

@@ -18,15 +18,16 @@
   </article>
   <article class="panel">
     <h2>Bookings</h2>
+{% if perms.core.add_booking and perms.core.view_booking %}<p><a href="{% url 'booking_create' %}?customer={{ customer.pk }}">Create test booking</a></p>{% endif %}
     {% if can_view_bookings %}
     {% if first_today %}<h3>Today · {{ first_today.session.starts_at|date:'g:i A' }}</h3>
-    <p>{{ first_today.children }} children · {{ first_today.adults }} adults · {{ first_today.babies }} babies · {{ first_today.get_attendance_display|default:'Upcoming' }}</p>
+    <p>{{ first_today.children }} children · {{ first_today.adults }} adults · {{ first_today.babies }} babies · {{ first_today.status_label }}</p>
     {% else %}<p>No bookings today.</p>{% endif %}
     {% if more_today %}<details><summary>View {{ more_today|length }} more booking{{ more_today|length|pluralize }} today</summary>
     {% for booking in more_today %}<p>{{ booking.session.starts_at|date:'g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults</p>{% endfor %}</details>{% endif %}
     <p>Other bookings: {{ upcoming_count }} upcoming · {{ previous_count }} previous</p>
     <details><summary>View all bookings</summary>
-    {% for booking in bookings %}<p>{{ booking.session.starts_at|date:'D, M j, Y g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.get_attendance_display|default:'Upcoming' }}</p>{% empty %}<p>No bookings yet.</p>{% endfor %}
+    {% for booking in bookings %}<p>{{ booking.session.starts_at|date:'D, M j, Y g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.status_label }} · <a href="{% url 'booking_detail' booking.pk %}">Open booking</a></p>{% empty %}<p>No bookings yet.</p>{% endfor %}
     </details>
     {% else %}<p>Booking access is not enabled for this account.</p>{% endif %}
   </article>

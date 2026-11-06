@@ -62,7 +62,7 @@ class PageTests(TestCase):
         self.client.force_login(user)
         response = self.client.get("/staff/today/")
         self.assertContains(response, "No test bookings for today.")
-        self.assertContains(response, "Read-only foundation preview.")
+        self.assertContains(response, "Test booking management is available.")
 
     @override_settings(APP_ENV="staging", SECURE_SSL_REDIRECT=False)
     def test_staging_gate_protects_pages_and_health(self):

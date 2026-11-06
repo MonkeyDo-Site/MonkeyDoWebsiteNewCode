@@ -114,6 +114,27 @@ class Booking(models.Model):
         NO_SHOW = "no_show", "No show"
         CANCELLED = "cancelled", "Cancelled"
 
+    creation_actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="created_bookings",
+    )
+    edit_version = models.PositiveIntegerField(default=1)
+    socks = models.PositiveIntegerField(default=0)
+    expected_method = models.CharField(
+        max_length=12,
+        choices=[
+            ("card", "Credit card"),
+            ("cash", "Cash"),
+            ("check", "Check"),
+            ("zelle", "Zelle"),
+            ("gift_card", "Gift card"),
+        ],
+        default="card",
+    )
+    setup_pending = models.BooleanField(default=True)
+    creation_key = models.UUIDField(null=True, unique=True, editable=False)
     reference = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="bookings")
     session = models.ForeignKey(Session, on_delete=models.PROTECT, related_name="bookings")
@@ -136,6 +157,14 @@ class Booking(models.Model):
                 name="booking_mode_attendees",
             ),
         ]
+
+    @property
+    def status_label(self):
+        if self.setup_pending and self.attendance == self.Attendance.CANCELLED:
+            return "Released test reservation"
+        if self.setup_pending and not self.attendance:
+            return "Setup pending"
+        return self.get_attendance_display() or "Upcoming"
 
 
 class AuditQuerySet(models.QuerySet):
@@ -239,3 +268,94 @@ class SecurityRequestLimit(models.Model):
     key = models.CharField(max_length=80, unique=True)
     started_at = models.DateTimeField()
     count = models.PositiveIntegerField(default=0)
+
+
+class PriceRecordQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError("Historical pricing records are immutable.")
+
+    def delete(self):
+        raise ValidationError("Historical pricing records are immutable.")
+
+
+class ImmutablePriceRecord(models.Model):
+    objects = PriceRecordQuerySet.as_manager()
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Historical pricing records are immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Historical pricing records are immutable.")
+
+
+class PricingPolicy(ImmutablePriceRecord):
+    child_price = models.DecimalField(
+        max_digits=9, decimal_places=2, default="15.00", validators=[MinValueValidator(0)]
+    )
+    extra_adult_price = models.DecimalField(
+        max_digits=9, decimal_places=2, default="5.00", validators=[MinValueValidator(0)]
+    )
+    minimum_admission = models.DecimalField(
+        max_digits=9, decimal_places=2, default="15.00", validators=[MinValueValidator(0)]
+    )
+    supervised_price = models.DecimalField(
+        max_digits=9, decimal_places=2, default="18.99", validators=[MinValueValidator(0)]
+    )
+    sock_price = models.DecimalField(
+        max_digits=9, decimal_places=2, default="1.99", validators=[MinValueValidator(0)]
+    )
+    tax_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default="0.0660",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+    )
+    card_fee_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default="0.0300",
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+    )
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(
+                    tax_rate__gte=0,
+                    tax_rate__lte=1,
+                    card_fee_rate__gte=0,
+                    card_fee_rate__lte=1,
+                    child_price__gte=0,
+                    extra_adult_price__gte=0,
+                    minimum_admission__gte=0,
+                    supervised_price__gte=0,
+                    sock_price__gte=0,
+                ),
+                name="pricing_policy_valid_amounts",
+            )
+        ]
+
+
+class BookingQuote(ImmutablePriceRecord):
+    booking = models.ForeignKey(Booking, on_delete=models.PROTECT, related_name="quotes")
+    policy = models.ForeignKey(PricingPolicy, on_delete=models.PROTECT)
+    revision = models.PositiveIntegerField()
+    snapshot = models.JSONField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-revision"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["booking", "revision"], name="booking_quote_unique_revision"
+            )
+        ]

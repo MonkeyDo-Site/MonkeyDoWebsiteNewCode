@@ -2,7 +2,15 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 
-from .models import AuditEvent, Booking, Customer, Session, SiteSettings
+from .models import (
+    AuditEvent,
+    Booking,
+    BookingQuote,
+    Customer,
+    PricingPolicy,
+    Session,
+    SiteSettings,
+)
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -52,3 +60,6 @@ for model in (get_user_model(), Group):
     if admin.site.is_registered(model):
         admin.site.unregister(model)
     admin.site.register(model, UserInspector if model == get_user_model() else ReadOnlyAdmin)
+
+admin.site.register(PricingPolicy, ReadOnlyAdmin)
+admin.site.register(BookingQuote, ReadOnlyAdmin)
