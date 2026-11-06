@@ -9,6 +9,8 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         names = {
+            "view_membershipdraft",
+            "add_membershipdraft",
             "view_booking",
             "add_booking",
             "change_booking",

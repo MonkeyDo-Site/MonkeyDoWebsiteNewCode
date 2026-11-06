@@ -1,0 +1,6 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>{{ heading }}</h1>
+<p class="notice">Test planning only. Saving does not record a sale, customer acceptance, payment, active benefits or scheduled charges. New purchases have a three-month minimum. Renewal, complimentary membership and conversion workflows are not connected.</p>
+<form class="record-form panel" method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Save test draft settings</button> <a href="{% url 'membership_drafts' %}">Back to membership drafts</a></form>
+{% endblock %}

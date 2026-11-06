@@ -1,0 +1,18 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<p class="eyebrow">Test membership draft · Benefits inactive</p>
+<h1>{{ draft.customer.last_name }}</h1>
+<p class="notice">No purchase, customer consent, paid installment, benefit entitlement, automatic charge or email is recorded. Dates and amounts below are a saved planning estimate.</p>
+<article class="panel"><h2>{{ draft.places }} {{ draft.get_kind_display }} place{{ draft.places|pluralize }}</h2>
+<p>{{ draft.months }} months · {{ draft.get_billing_display }} · Expected payment: {{ draft.get_expected_method_display }}</p>
+<p>Starts {{ draft.starts_on|date:'l, F j, Y' }} · Ends {{ draft.ends_on|date:'l, F j, Y' }}</p>
+<p>Monthly price per place: ${{ draft.unit_price }} · Monthly subtotal: ${{ draft.snapshot.monthly_subtotal }} · Term subtotal: ${{ draft.snapshot.term_subtotal }}</p>
+<p class="caption">Membership price version {{ draft.pricing_id }} · Fee policy {{ draft.fee_policy_id }} · Original day anchor {{ draft.snapshot.original_anchor_day }}. Prices and cycle dates are immutable for this draft.</p>
+{% if draft.kind == 'subscription' %}<p>Package being planned: two free child visits per place per membership month, then $5.99 visits; two free adults when Subscription benefits apply; 25% off supervised play; 15% off parties. Unused visits do not roll over.</p>{% else %}<p>Package being planned: one free child visit per place per New York calendar day, with two free adults when benefits apply; 15% off parties. Supervised play and Chol Hamoed are excluded.</p>{% endif %}
+<p>Places are anonymous and are not assigned to named children. These benefits are descriptions only and cannot be used from a draft.</p>
+<a href="{% url 'customer_detail' draft.customer_id %}">Open customer</a></article>
+<h2>Planned membership months and payments</h2>
+{% for cycle in cycles %}<article class="panel"><h3>Membership month {{ cycle.number }}</h3><p>Benefit window if activated: {{ cycle.starts_on|date:'M j, Y' }} – {{ cycle.ends_on|date:'M j, Y' }}</p>
+{% if cycle.charge_on %}<p>Planned payment date: {{ cycle.charge_on|date:'M j, Y' }}. Nothing is scheduled for collection.</p><dl><dt>Membership subtotal</dt><dd>${{ cycle.quote.subtotal }}</dd><dt>Card processing fee</dt><dd>${{ cycle.quote.processing_fee }}</dd><dt>Sales tax</dt><dd>${{ cycle.quote.sales_tax }}</dd><dt>Planned payment total</dt><dd>${{ cycle.quote.total }}</dd></dl>{% else %}<p>No separate installment planned: included in the initial prepaid amount.</p>{% endif %}</article>{% endfor %}
+{% include 'core/pagination.html' with page=cycles %}
+{% endblock %}

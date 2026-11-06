@@ -4,6 +4,8 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import Permission
 
 SAFE_STAFF_PERMISSIONS = {
+    "view_membershipdraft",
+    "add_membershipdraft",
     "view_booking",
     "add_booking",
     "change_booking",
