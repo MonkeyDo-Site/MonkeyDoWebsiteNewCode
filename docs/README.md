@@ -6,6 +6,8 @@ Current development authorization and implementation evidence are in [DEVELOPMEN
 
 Private preview timing, estimated costs and deployment approval steps are in [STAGING_DEPLOYMENT_PROPOSAL.md](STAGING_DEPLOYMENT_PROPOSAL.md). The example configurations under `deploy/` are preparation only, not a deployment.
 
+The customer-management increment, staff group setup and login protection are described in [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md). Public booking and provider integration remain unfinished.
+
 ## Reading order and authority
 
 | Document | Responsibility |

@@ -1,0 +1,15 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="staff-layout">
+  <aside aria-label="Staff navigation">
+    {% if perms.core.view_booking %}<a href="{% url 'today' %}">Today</a><a href="{% url 'dashboard' %}">Dashboard</a>{% endif %}
+    {% if perms.core.view_customer %}<a href="{% url 'customers' %}">Customers</a>{% endif %}
+    <a href="/admin/">Database inspector</a>
+    <p class="caption">Test workspace · No real payments</p>
+  </aside>
+  <section>
+    {% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
+    {% block staff_content %}{% endblock %}
+  </section>
+</div>
+{% endblock %}

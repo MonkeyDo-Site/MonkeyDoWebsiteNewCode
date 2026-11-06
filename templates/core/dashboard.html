@@ -1,0 +1,13 @@
+{% extends 'core/staff_base.html' %}
+{% block title %}Dashboard · MonkeyDo Staff{% endblock %}
+{% block staff_content %}
+<p class="eyebrow">Keep an eye on things</p><h1>Dashboard</h1>
+{% if user.is_superuser %}
+<h2>Security alerts</h2>
+{% for alert in alerts %}<article class="panel"><h3>{{ alert.subject }}</h3><p>{{ alert.created_at|date:'M j, Y g:i A' }} · {{ alert.details.scope }} · {{ alert.details.attempts }} attempts</p>
+<p>{% if alert.details.account_username %}Staff account: {{ alert.details.account_username }}{% elif alert.details.scope == 'account' %}Unrecognized username{% else %}Network sign-in attempts{% endif %} · Reference: {{ alert.pk }}</p>
+<form method="post" action="{% url 'resolve_alert' alert.pk %}">{% csrf_token %}<button class="button small" type="submit">Mark reviewed</button></form></article>
+{% empty %}<p>No unresolved security alerts.</p>{% endfor %}
+{% endif %}
+<p class="notice">Payment and email monitoring are not yet connected in this test workspace.</p>
+{% endblock %}

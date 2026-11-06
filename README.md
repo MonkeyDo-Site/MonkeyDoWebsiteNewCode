@@ -6,7 +6,7 @@ Start with the [documentation index](docs/README.md) and [current requirements](
 
 ## Current state and authorization
 
-The owner has authorized staging development and explicitly approved **Django with PostgreSQL**. The first increment provides local page previews and a database/availability foundation; it is not yet a functioning public booking application. See [development setup](docs/DEVELOPMENT.md), [build status](docs/BUILD_STATUS.md), and the [staging test plan](docs/STAGING_TEST_PLAN.md). The preserved [HTML waiver](waiver.html) is a standalone prototype: it displays the waiver but does not save signatures or connect to bookings. The source PDF remains unchanged.
+The owner has authorized staging development and explicitly approved **Django with PostgreSQL**. The local build provides page previews, a database/availability foundation, staff customer records/corrections/history and temporary login protection; it is not yet a functioning public booking application. See [development setup](docs/DEVELOPMENT.md), [build status](docs/BUILD_STATUS.md), and the [staging test plan](docs/STAGING_TEST_PLAN.md). The preserved [HTML waiver](waiver.html) is a standalone prototype: it displays the waiver but does not save signatures or connect to bookings. The source PDF remains unchanged.
 
 Staging development and review PRs are authorized. Infrastructure purchases, production deployment, DNS changes, live payments, and opening customer bookings retain their separate approval gates. Start with staging only on DigitalOcean; assess shared staging/production resources before launch. No hosting has been purchased or deployed by this increment.
 

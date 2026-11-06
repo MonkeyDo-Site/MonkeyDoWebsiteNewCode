@@ -1,6 +1,8 @@
 # Private staging preview: deployment proposal
 
-**Approval status:** development and configuration preparation only. No purchase, service activation, deployment, DNS change or provider credential installation is authorized by this proposal. Nothing below has been installed on DigitalOcean.
+**Latest owner update:** an existing smaller DigitalOcean Droplet is already purchased; a necessary size upgrade and its higher hosting fee are authorized when needed. Assess it first and coordinate downtime. The estimates below describe the full proposed server price, not a verified incremental charge; the increase depends on the existing plan. No resize has been performed.
+
+**Approval status:** development and configuration preparation, plus the deferred resize authorization above. No new service purchase/activation, deployment, DNS change or provider credential installation is authorized by this proposal. Nothing below has been installed on DigitalOcean.
 
 ## Preview timing
 
@@ -36,7 +38,7 @@ No separate managed PostgreSQL subscription, second Droplet, load balancer, paid
 
 1. Present verified final plan/price and any paid options for approval. Confirm account ownership and scoped access without requesting the owner's password.
 2. Review/merge the tested application increment and pin the release commit. Prepare a separate staging database/app identity, protected configuration and test-only seed data. No production data or credentials.
-3. Provision the approved Droplet only, install supported packages, create a non-root deploy user and SSH access, firewall public database/Gunicorn access, enable security updates and review recovery access.
+3. Assess the existing Droplet and resize only as needed under the owner authorization (coordinate downtime); do not purchase a second server. Then install supported packages, create a non-root deploy user and SSH access, firewall public database/Gunicorn access, enable security updates and review recovery access.
 4. Install PostgreSQL and an isolated staging database with an application role. Use an administrative role for migrations where needed; do not grant the runtime role schema ownership merely to run the application. Do not expose port 5432 publicly.
 5. Install the pinned Python environment and application release. Supply private server configuration and run reviewed migrations/static collection. Inspect the example systemd/nginx files before installation; they are not an automated deployment script.
 6. Complete the separate shared staging-password gate and application authentication controls appropriate to the exposed preview. Restrict unfinished workflows. Do not describe the current temporary gate as the full required owner/staff security implementation.
@@ -52,7 +54,7 @@ No separate managed PostgreSQL subscription, second Droplet, load balancer, paid
 - Sign-in and a read-only staff Today view appropriate to the restricted preview.
 - Accessibility/layout feedback and the test-mode indicators.
 
-Not yet an end-to-end test: completed bookings, customer corrections/search flows, arrival charging, memberships/benefit/credit rules, clubs/parties workflows, electronic signature saving/private retrieval, real sandbox payments, emails, automated jobs, backups/restores or final permission/MFA flows. Enable and test each only when implemented, not through a simulated success screen. See [BUILD_STATUS.md](BUILD_STATUS.md) and [STAGING_TEST_PLAN.md](STAGING_TEST_PLAN.md).
+Not yet an end-to-end test: completed bookings, public returning-customer verification and booking-linked emails, arrival charging, memberships/benefit/credit rules, clubs/parties workflows, electronic signature saving/private retrieval, real sandbox payments, emails, automated jobs, backups/restores or final permission/MFA flows. Enable and test each only when implemented, not through a simulated success screen. See [BUILD_STATUS.md](BUILD_STATUS.md) and [STAGING_TEST_PLAN.md](STAGING_TEST_PLAN.md).
 
 ## Preparation completed locally
 
@@ -61,3 +63,5 @@ Not yet an end-to-end test: completed bookings, customer corrections/search flow
 - Protected server environment paths and credential timing are documented in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 Official pages to verify before purchase: [Droplets](https://www.digitalocean.com/pricing/droplets), [server backups](https://www.digitalocean.com/pricing/backups), [R2](https://developers.cloudflare.com/r2/pricing/), [Resend](https://resend.com/pricing). These links are references, not evidence of successful current-price verification.
+
+Customer-management update: the local build now also supports staff customer creation/search/corrections/comments/history and Dashboard security alerts. Those can be included in the private preview once access protections are completed. Full booking/payment/waiver/member workflows remain unfinished.

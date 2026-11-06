@@ -8,7 +8,7 @@ Consolidated November 5, 2026. Owner authorized documentation reconciliation and
 |---|---|---|
 | Production sales tax | Product categories and fee formula settled; staging6.6% | Owner supplies production rate/UEZ outcome before live billing. Do not use staging rate as production default. |
 | Tax on retained original processing fee after admission-to-membership conversion | Reverse replaced admission/base tax; original fee nonrefundable | Owner/accountant to say whether tax on retained fee stays/reverses. Example .03 tax on retained .45 fee. Do not silently settle. |
-| Exact hosting/staging/monitoring cost | DO~2vCPU4GB NY, start with staging only; later assess shared production resources | Present actual resource/provider/backup/monitoring costs for approval before purchase; owner explicitly deferred until pricing known. |
+| Exact hosting/staging/monitoring cost | DO~2vCPU4GB NY, start with staging only; later assess shared production resources | The owner reports an existing smaller Droplet and preauthorizes a necessary resize/higher fee when needed. Verify its size/price and coordinate downtime. Additional paid services still need cost review and approval. |
 
 ## 2. Technical design and provider verification (developer work)
 

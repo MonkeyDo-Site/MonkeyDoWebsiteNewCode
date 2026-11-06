@@ -1,0 +1,6 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1 class="form-heading">Customer history</h1><p><a href="{% url 'customer_detail' customer.pk %}">{{ customer.last_name }} · {{ customer.customer_number }}</a></p>
+{% for event in events %}<article class="panel"><h2>{{ event.display_action }}</h2><p>{{ event.actor.username|default:'System' }} · {{ event.created_at|date:'M j, Y g:i A' }}</p><dl>{% for row in event.change_rows %}<dt>{{ row.label }}</dt><dd><strong>Before:</strong> {{ row.before|default:'—'|linebreaksbr }}<br><strong>After:</strong> {{ row.after|default:'—'|linebreaksbr }}</dd>{% endfor %}</dl></article>{% empty %}<p>No recorded changes.</p>{% endfor %}
+{% include 'core/pagination.html' with page=events %}
+{% endblock %}

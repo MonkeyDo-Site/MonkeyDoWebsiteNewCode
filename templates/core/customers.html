@@ -1,0 +1,23 @@
+{% extends 'core/staff_base.html' %}
+{% block title %}Customers · MonkeyDo Staff{% endblock %}
+{% block staff_content %}
+<p class="eyebrow">Families and familiar faces</p>
+<h1>Customers</h1>
+<form method="get" class="search-form">
+  <label for="customer-search">Search Last Name, ID, phone, email or comments</label>
+  <input id="customer-search" name="q" value="{{ query }}" maxlength="120" type="search">
+  <button class="button small" type="submit">Search</button>
+</form>
+{% if perms.core.add_customer %}<p><a class="button small" href="{% url 'customer_create' %}">Create customer</a></p>{% endif %}
+<div class="customer-list">
+{% for customer in customers %}
+  <article class="panel">
+    <h2><a href="{% url 'customer_detail' customer.pk %}">{{ customer.last_name }}</a></h2>
+    <p>{{ customer.customer_number }} · {{ customer.get_customer_type_display }}</p>
+    <p>{{ customer.phone }} · {{ customer.email }}</p>
+    {% if customer.search_matches %}<p class="caption">Matched: {{ customer.search_matches }}</p>{% endif %}
+  </article>
+{% empty %}<p>No customers match your search.</p>{% endfor %}
+</div>
+{% include 'core/pagination.html' with page=customers %}
+{% endblock %}
