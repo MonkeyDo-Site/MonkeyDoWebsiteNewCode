@@ -1,4 +1,35 @@
-# MonkeyDo Decision Log
+# MonkeyDo decision log
+
+## 2026-11-05 — Coordinated requirements reconstruction (current)
+
+Owner authorized documentation update and creation of a pull request after complete review of history prompts A–AG and later clarifications. This does not authorize application development, purchases, deployment, DNS changes, live payments or opening customer bookings.
+
+Current authority: [documentation index](README.md), [main requirements](MONKEYDO_REQUIREMENTS.md) and specialized linked documents. Source ranges/limitations and observed Git mutations: [RECONSTRUCTION.md](RECONSTRUCTION.md). This is a reconstruction of intended requirements, not recovery of a completed application.
+
+| Subject | Current decision replacing older checkpoint |
+|---|---|
+| Domain/hosting | Purchased monkeydoplay.com, www redirect, Cloudflare DNS/proxy/strict HTTPS; DO app+PG; protected staging; ~2vCPU4GB subject cost approval |
+| Pages/copy | Home/About/combined Memberships-Clubs-Parties/Book Now/Contact; no Play page; exact revised mothers/professionals and four About areas |
+| Customers/admin | Last Name only, six-digit IDs, Family/Day Camp, current/previous contact history, Today+Dashboard separate, card-grid records, permissions/exports |
+| Capacity | 35children/50combined, babies excluded, manual2yearclosures, owner exclusive/advance overrides and staff arrival override, explicit full/party labels |
+| Payments | Banquest selected; no holds, tokens not issuer approval, optional future-use retention, safe last4 history indefinite, review then explicit arrival charge, no automatic payment retries initially |
+| Tax/fee | 3% on pretax card-funded amount; tax on taxable goods+their fee portion, one fee/one tax row, proportional splits. Staging6.6%; production UEZ rate and retained-fee tax reversal still pending |
+| Cancellation | $3per applicable ordinary/member/supervised child, partial fee at arrival, no extraadultfee, owner/staff ordinary waiver; party$50ownerwaivable; no ordinary refund program but owner error corrections/member/club exceptions |
+| Memberships | Subscription17.99 and Unlimited39.99 anonymous places, documented benefit/adult allocation, three-month new minimum, selected term, exact billing calendars, grace7actualdate/no gap benefits, paid/unpaid conversion and usable customer credit |
+| Programs | Supervised18.99/Subscription14.24, clubs279/1298week/dropoff3–8, participants/waivers/attendancefollowup; party28975minutes10+10extras19.99/5member15%beforetax |
+| Gift cards/socks | Physical giftcards no system balance/ID/PIN, staff verified atarrival/max2tenders; sock1.99nontax35online/unlimited inperson, bookingpaymentflow |
+| Waivers | Owner wording/e-sign approved, insurance-broker approval reported, NO counsel-required gate; valid1year, re-sign nextbooking/newversion, private R2, delete file2yearsfromsigning with minimal history |
+| Email | Resend bookings@ sender/Gmailreplyalerts, mandatory email/no number, no appointment reminders, edited membership/club/party and combined templates, no installment receipts, conditional shared waiver/PDF |
+| Security/retention | OwneremailMFA30days, staffnoMFA,10charpasswords,12hridle,5failure delays, immediate sessionrevocation, archiveusernames, indefinite businessaudit/90dayoperational/1yearsecurity, no ownerexportreauth |
+| Backups | Separate privateR2, encrypted beforeupload,7nightly+12monthly, monthlyisolatedrestore design, keyoutsideDO/R2, owneronlyrestore, monthlyDownloadnow/twolocalcopies/manualdelete |
+| Post-launch | SMS, participantmerge, daycamp/groupinvoices, possible owner-approved retryreview, potential paperscans |
+
+The owner re-confirmed the five-child80.98 versus three-child50.98 pretax membership examples; they are different headcounts under one rule, not competing prices. Counsel approval, current sender/domain, cancellation amounts, clubs/parties/gift rules, reminder removal and approved tax formula must not be reopened as unanswered because old files below used different language.
+
+## Historical archive — not current implementation instructions
+
+**Everything below preserves the original dated checkpoint for provenance. Later owner decisions above and the current subject documents supersede conflicting statements here. In particular, draft/legal-review conditions, seven-year waiver retention, full customer names, general appointment reminders, old temporary-domain/Spaces plans, unselected providers and previous field/workflow descriptions are historical. Their presence does not reinstate them.**
+
 
 Documentation-only checkpoint created on 2026-08-05. This file records business-rule decisions confirmed by the owner. Open or unresolved items are not marked as decided here.
 
