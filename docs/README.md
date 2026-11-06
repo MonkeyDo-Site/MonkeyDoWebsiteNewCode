@@ -36,4 +36,4 @@ The owner authorized this documentation update and pull request. Application dev
 
 Confirmed waiver wording and signature interaction are owner-approved; counsel review is not an owner-required gate. This does not mean the existing HTML prototype implements electronic-signature persistence.
 
-Local source coverage and missing original asset files are described in [RECONSTRUCTION.md](RECONSTRUCTION.md). Do not describe code or attachments as recovered without verifying their actual contents.
+Local source coverage and original-asset provenance are described in [RECONSTRUCTION.md](RECONSTRUCTION.md). Do not describe code or attachments as recovered without verifying their actual contents.
