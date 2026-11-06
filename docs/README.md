@@ -4,6 +4,8 @@ Consolidated November 5, 2026. These documents capture the future website's curr
 
 Current development authorization and implementation evidence are in [DEVELOPMENT.md](DEVELOPMENT.md) and [BUILD_STATUS.md](BUILD_STATUS.md); the owner explicitly approved Django/PostgreSQL. The business requirements below remain authoritative. Owner acceptance cases are in [STAGING_TEST_PLAN.md](STAGING_TEST_PLAN.md).
 
+Private preview timing, estimated costs and deployment approval steps are in [STAGING_DEPLOYMENT_PROPOSAL.md](STAGING_DEPLOYMENT_PROPOSAL.md). The example configurations under `deploy/` are preparation only, not a deployment.
+
 ## Reading order and authority
 
 | Document | Responsibility |

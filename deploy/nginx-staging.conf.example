@@ -1,0 +1,36 @@
+# REVIEW TEMPLATE ONLY: requires a real origin certificate, password file,
+# Cloudflare origin firewall/trust review, and explicit deployment approval.
+# Include in the nginx http context via sites-enabled only after review.
+server {
+    listen 80;
+    server_name staging.monkeydoplay.com;
+    return 301 https://staging.monkeydoplay.com$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name staging.monkeydoplay.com;
+    ssl_certificate /etc/monkeydo/tls/staging.fullchain.pem;
+    ssl_certificate_key /etc/monkeydo/tls/staging.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+
+    # Separate shared staging gate, in addition to application staff login.
+    auth_basic "MonkeyDo private staging";
+    auth_basic_user_file /etc/monkeydo/staging.htpasswd;
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    add_header Cache-Control "private, no-store" always;
+    client_max_body_size 2m;
+    # Do not log private URLs/signing tokens. Redacted operational logging
+    # and retention are separate implementation tasks.
+    access_log off;
+
+    location / {
+        proxy_pass http://unix:/run/monkeydo-staging/gunicorn.sock;
+        proxy_set_header Host staging.monkeydoplay.com;
+        # Overwrite the visitor-supplied header. HTTPS terminates here too.
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_read_timeout 65s;
+    }
+}
