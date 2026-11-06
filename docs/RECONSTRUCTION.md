@@ -22,7 +22,7 @@ Original DOCX remains a private task attachment, not committed wholesale: it may
 
 - Literal masked text P3498/P3507, duplicated P3641/P3648, cannot be reconstructed from asterisks. Later phone/contact answers resolve much associated behavior; do not invent original strings.
 - P2348 and P19723 contain cut-off command-output lines. Complete available text was reviewed; related material appears more fully elsewhere and current files were inspected.
-- DOCX contains no embedded original image binaries/other attachments. Owner reattached visible logo/ad/photos in reconstruction chat, but actual image files are not locally exposed in this checkout. Do not claim recovered binaries or create substitutes.
+- DOCX contains no embedded original image binaries/other attachments. At initial consolidation, the reattached images were visible in chat but original files were unavailable locally. Subsequently, the owner uploaded `monkeydo.zip`; its 12 original images are now preserved unchanged with checksums in [brand-assets/README.md](brand-assets/README.md). This resolves image availability, not recovery of code from the original task.
 - **AG is the last user prompt and contains inline answers to a copied assistant response. There is no assistant response to AG**: owner confirmed this is the prompt that stuck. Copied final blocker lists are stale, not a later assessment.
 - Historical public Banquest requests failed. Later permitted public specification retrieval succeeded; neither establishes authenticated account behavior or transaction test results.
 - OpenAI Support is investigating original task. Do not operate on it, reset its history, or assume its files are recovered.
@@ -35,7 +35,7 @@ Before this documentation update local `work` and read-only remote `main` were b
 |---|---|
 | README and planning/decision/hosting/open-documents | Functional application/backend/database schema/migrations |
 | Waiver source PDF and standalone HTML prototype | Persistent signatures/booking integration/provider transactions |
-| Brand asset handling notes | Original logo/ad/photo files in checkout |
+| Brand asset handling notes | Original image files at the initial baseline (subsequently supplied; see above) |
 | Prior requirements prose | Memberships/programs/admin/auth/jobs/payment/email/export/deployment code |
 
 `waiver.html` added in `a5b5f5e`, merged PR#3. It deliberately prevents form submission and reports that no signature was saved. Existing conversion is preserved; calling it a prototype refers to missing persistence, not missing HTML. PDF and HTML stay byte-for-byte unchanged in this documentation PR, including historical draft labels. Wording approval and later implementation status are separate.
@@ -104,7 +104,7 @@ Late reconstruction clarification confirms80.98pretax is **five total children**
 ## 5. Phased future reconstruction/build
 
 1. Review this coordinated documentation PR, preserving existing source/code. No original-task history changes.
-2. After separate development authorization, obtain actual original image assets and select implementation stack/auth/ORM/jobs. Preserve approved source PDF/logo and document environment setup.
+2. After separate development authorization, verify the supplied original image inventory and select implementation stack/auth/ORM/jobs. Preserve approved source PDF/logo and document environment setup.
 3. Shared foundation: identities/permissions/audit, versioned settings/pricing/tax, PostgreSQL transactions, capacity and benefit/credit ledgers, durable operations.
 4. Public responsive content and ordinary booking/customer/waiver/admin arrival workflows.
 5. Membership cohorts/cycles/renewals/conversions/failures plus supervised mode.

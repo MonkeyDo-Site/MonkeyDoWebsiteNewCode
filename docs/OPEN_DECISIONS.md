@@ -22,7 +22,7 @@ Consolidated November 5, 2026. Owner authorized documentation reconciliation and
 
 ## 3. Inputs/configuration for future authorized setup
 
-Owner-supplied logo/ad/photos are visible in conversation but original image files are not present in this checkout. Preserve exact originals when available; do not generate substitutes or report them recovered. Original PDF/HTML waiver exist and wording is owner-approved; verify implementation matches them, do not ask again for counsel review.
+The owner subsequently supplied the original logo, two advertisements and nine facility photos in `monkeydo.zip`. Exact files and checksums are recorded in [brand-assets/README.md](brand-assets/README.md). Preserve these originals; final placement and accessible image descriptions remain staging choices. Original PDF/HTML waiver exist and wording is owner-approved; verify implementation matches them, do not ask again for counsel review.
 
 Secure installation/verification is still needed for existing provider accounts: DO scoped access/SSH, R2 test/production buckets and keys, Resend replacement key/sender DNS, Banquest sandbox/live/private/public keys and webhook endpoint key, production DNS/TLS, test-card material. Owner already has sandbox credentials/test-card PDF; don't ask for values in chat or commit them. Existing account ownership is not proof configuration/testing done.
 
