@@ -10,6 +10,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         names = {
             "view_booking",
+            "add_booking",
+            "change_booking",
             "view_customer",
             "add_customer",
             "change_customer",

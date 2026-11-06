@@ -1,0 +1,14 @@
+<dl>{% for item in data.lines %}
+<dt>{{ item.label }} · {{ item.quantity }} × ${{ item.unit_price }}</dt>
+<dd>${{ item.amount }}</dd>{% endfor %}
+<dt>Subtotal</dt>
+<dd>${{ data.subtotal }}</dd>
+<dt>Credit-card processing fee</dt>
+<dd>${{ data.processing_fee }}</dd>
+<dt>Sales tax</dt>
+<dd>${{ data.sales_tax }}</dd>
+<dt>Estimated total at arrival</dt>
+<dd>
+<strong>${{ data.total }}</strong>
+</dd>
+</dl>

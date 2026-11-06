@@ -147,3 +147,7 @@ Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The foundation's automa
 ## Owner training video
 
 Prepare the final walkthrough after the operational UI stabilizes: sign-in/Today, booking/customer search, arrival/payment/waiver handling, membership sales/renewals/conversion, clubs/attendance, parties/gift cards/socks, alerts/corrections, owner settings/exports/backups, and safe staging versus production use. Use artificial records; do not record credentials, test-card numbers or recovery codes. A script or screenshot document is not a completed video. Track the actual video artifact, duration and build version when recorded.
+
+## Current increment: pending test reservations
+
+Use artificial customers and future sessions only. Confirm creating an ordinary/supervised reservation stores the displayed quote and Setup pending status. Test card versus cash quotes, extra adults, babies-only minimum admission, socks, blocked/ended sessions and supervised cutoff. Change attendees and check prior quotes remain visible; change timing and verify capacity moves without repricing. Release a test reservation and verify its space returns without recording a fee. Try a stale browser tab and repeated submission; neither may silently overwrite or duplicate. Staff cannot use owner pricing/capacity privileges. Owner future-price changes must not rewrite earlier quotes. Membership benefits, confirmed-booking cancellation, arrivals, split collection and provider operations cannot yet be accepted through these screens.

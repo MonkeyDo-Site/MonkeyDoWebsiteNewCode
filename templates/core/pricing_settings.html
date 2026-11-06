@@ -1,0 +1,7 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>Staging pricing</h1>
+<p class="notice">These are test settings, not approved production tax rates. A new version applies to new test bookings. Existing quotes and their rates remain unchanged.</p>{% if policy %}
+<p>Current version: {{ policy.pk }} · Saved {{ policy.created_at|date:'M j, Y g:i A' }}</p>{% endif %}
+<form class="record-form panel" method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Save new staging pricing version</button>
+</form>{% endblock %}

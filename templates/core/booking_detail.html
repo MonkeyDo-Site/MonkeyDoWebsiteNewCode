@@ -1,0 +1,45 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>{{ booking.customer.last_name }}</h1>
+<p class="eyebrow">{{ booking.status_label }}</p>
+<p>{{ booking.session.starts_at|date:'l, F j, Y' }} · {{ booking.session.starts_at|date:'g:i A' }} – {{ booking.session.ends_at|date:'g:i A' }}</p>
+<article class="panel">
+<h2>Visit details</h2>
+<p>{{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
+<p>{% if booking.supervised %}Supervised play{% else %}Accompanied play{% endif %} · {{ booking.socks }} pairs of grip socks</p>
+<p>Expected payment: {{ booking.get_expected_method_display }}</p>
+{% if perms.core.view_customer %}
+<a href="{% url 'customer_detail' booking.customer_id %}">Open customer</a>{% endif %}
+</article>
+<p class="notice">Setup is pending. No verified card, waiver coverage, confirmation delivery, arrival or payment is recorded by this workflow. Membership benefits are not included in these quotes.</p>
+{% if quote %}
+<article class="panel">
+<h2>Saved price estimate</h2>{% include 'core/quote_items.html' with data=quote.snapshot %}
+<p class="caption">Pricing version {{ quote.policy_id }} · Quote revision {{ quote.revision }} · Saved {{ quote.created_at|date:'M j, Y g:i A' }}. Test tax only; production rate is not approved.</p>
+</article>{% else %}
+<p>No price snapshot exists for this earlier test record. Historical amounts have not been invented.</p>{% endif %}
+{% if perms.core.change_booking and booking.setup_pending and not booking.attendance %}
+<p>
+<a class="button small" href="{% url 'booking_edit' booking.pk %}">Edit attendees / payment choice</a> <a class="button small" href="{% url 'booking_move' booking.pk %}">Change timing</a>
+</p>
+<article class="panel">
+<h2>Release test reservation</h2>
+<p>This releases the unconfirmed capacity hold. It does not apply a customer cancellation fee or process a payment.</p>
+<form method="post" action="{% url 'booking_release' booking.pk %}">{% csrf_token %}
+<input type="hidden" name="version" value="{{ booking.edit_version }}">
+<button class="button small">Release test reservation</button>
+</form>
+</article>{% endif %}
+<details>
+<summary>Price history</summary>{% for old in quotes %}
+<article class="panel">
+<h3>Quote revision {{ old.revision }}</h3>{% include 'core/quote_items.html' with data=old.snapshot %}
+</article>{% empty %}
+<p>No saved price history.</p>{% endfor %}
+</details>
+<details>
+<summary>Change history</summary>{% for event in history %}
+<p>{{ event.created_at|date:'M j, Y g:i A' }} · {{ event.actor.username }} · {{ event.action }}</p>{% empty %}
+<p>No recorded changes.</p>{% endfor %}
+</details>
+{% endblock %}

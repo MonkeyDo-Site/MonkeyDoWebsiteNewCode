@@ -1,11 +1,12 @@
 {% extends 'core/staff_base.html' %}{% block title %}Today · MonkeyDo Staff{% endblock %}{% block staff_content %}
 <p class="eyebrow">Your day at MonkeyDo</p>
 <h1>Today</h1>
-<p class="notice">Read-only foundation preview. Booking arrival and charging are not enabled.</p>{% for booking in bookings %}
+<p class="notice">Test booking management is available. Arrival and charging are not enabled.</p>{% for booking in bookings %}
 <article class="panel">
 <h2>{% if perms.core.view_customer %}<a href="{% url 'customer_detail' booking.customer_id %}">{{ booking.customer.last_name }}</a>{% else %}{{ booking.customer.last_name }}{% endif %}</h2>
 <p>{{ booking.session.starts_at|date:'g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
-<p>{{ booking.get_attendance_display|default:'Upcoming' }}</p>
+<p>{{ booking.status_label }}</p>
+<p><a href="{% url 'booking_detail' booking.pk %}">Open booking</a></p>
 </article>{% empty %}
 <article class="panel">
 <h2>A fresh day of adventures</h2>
