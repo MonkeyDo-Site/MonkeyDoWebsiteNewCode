@@ -1,0 +1,6 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>{{ heading }}</h1>
+<p class="notice">Times are New York local time. Private labels and closure reasons stay off public pages. Saturday stays hidden publicly. Changes do not cancel bookings, reprice visits, send messages or process payments.</p>
+<form method="post" class="record-form panel">{% csrf_token %}{{ form.as_p }}<button class="button">Save calendar settings</button> <a href="{% url 'scheduling' %}">Back to calendar</a></form>
+{% endblock %}

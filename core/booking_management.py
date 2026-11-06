@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.utils import timezone
 
+from .calendar import date_closed, lock_calendar
 from .models import AuditEvent, Booking, BookingQuote, PricingPolicy, Session
 from .permissions import require_actor
 from .pricing import booking_quote, validate_attendees
@@ -34,8 +35,12 @@ def assert_capacity(
     if override:
         if not actor.is_superuser:
             raise ValidationError("Only the owner may override advance capacity.")
+    if (supervised and session.play_mode == "accompanied") or (
+        not supervised and session.play_mode == "supervised"
+    ):
+        raise ValidationError("This play type is not enabled for the session.")
     now = timezone.now()
-    if session.closed or session.kind != Session.Kind.ORDINARY:
+    if session.closed or date_closed(session) or session.kind != Session.Kind.ORDINARY:
         raise ValidationError("This session is blocked for ordinary reservations.")
     if now >= session.ends_at or (supervised and now >= session.starts_at):
         raise ValidationError("This session is no longer open for the selected play type.")
@@ -98,6 +103,7 @@ def create_test_booking(
     creation_key,
     override_capacity=False,
 ):
+    lock_calendar()
     require_actor(actor, "core.add_booking")
     require_actor(actor, "core.view_customer")
     require_actor(actor, "core.view_booking")
@@ -185,6 +191,7 @@ def edit_test_booking(
     expected_method,
     override_capacity=False,
 ):
+    lock_calendar()
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
@@ -233,6 +240,7 @@ def edit_test_booking(
 
 @transaction.atomic
 def move_test_booking(*, actor, booking_id, version, session_id, override_capacity=False):
+    lock_calendar()
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
@@ -276,6 +284,7 @@ def move_test_booking(*, actor, booking_id, version, session_id, override_capaci
 
 @transaction.atomic
 def release_test_booking(*, actor, booking_id, version):
+    lock_calendar()
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)

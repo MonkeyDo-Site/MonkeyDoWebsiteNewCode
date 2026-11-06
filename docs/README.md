@@ -10,6 +10,8 @@ The customer-management increment, staff group setup and login protection are de
 
 Owner MFA/recovery, staff accounts, session invalidation and shared staging access are documented in [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). Email delivery remains in-memory until integration.
 
+Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
+
 ## Reading order and authority
 
 | Document | Responsibility |

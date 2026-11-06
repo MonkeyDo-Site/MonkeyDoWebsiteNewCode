@@ -5,11 +5,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from .availability import availability, occupancy
+from .calendar import lock_calendar
 from .models import AuditEvent, Booking, Session, SiteSettings
 
 
 @transaction.atomic
 def reserve_booking(*, actor, customer, session_id, children, adults, babies=0, supervised=False):
+    lock_calendar()
     if not actor.is_active or not actor.is_staff or not actor.has_perm("core.add_booking"):
         raise PermissionError("Booking permission is required.")
     if any(type(n) is not int or n < 0 for n in (children, adults, babies)):
@@ -21,6 +23,10 @@ def reserve_booking(*, actor, customer, session_id, children, adults, babies=0, 
     if not supervised and adults < 1:
         raise ValidationError("Accompanied play requires an adult.")
     session = Session.objects.select_for_update().get(pk=session_id)
+    if (supervised and session.play_mode == "accompanied") or (
+        not supervised and session.play_mode == "supervised"
+    ):
+        raise ValidationError("This play type is not enabled for the session.")
     horizon = (
         SiteSettings.objects.filter(pk=1).values_list("booking_horizon_days", flat=True).first()
         or 1

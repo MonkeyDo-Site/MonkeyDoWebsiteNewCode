@@ -75,6 +75,16 @@ class Session(models.Model):
         PARTY = "party", "Party"
         EXCLUSIVE = "exclusive", "Exclusive group"
 
+    revision = models.PositiveIntegerField(default=1)
+    play_mode = models.CharField(
+        max_length=12,
+        choices=[
+            ("both", "Accompanied and supervised"),
+            ("accompanied", "Accompanied only"),
+            ("supervised", "Supervised only"),
+        ],
+        default="both",
+    )
     starts_at = models.DateTimeField(unique=True)
     ends_at = models.DateTimeField()
     kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.ORDINARY)
@@ -359,3 +369,14 @@ class BookingQuote(ImmutablePriceRecord):
                 fields=["booking", "revision"], name="booking_quote_unique_revision"
             )
         ]
+
+
+class CalendarDate(models.Model):
+    day = models.DateField(unique=True)
+    closed = models.BooleanField(default=False)
+    private_reason = models.CharField(max_length=500, blank=True)
+    chol_hamoed = models.BooleanField(default=False)
+    revision = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ["day"]

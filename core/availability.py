@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from django.db.models import Sum
 from django.utils import timezone
 
+from .calendar import date_closed
 from .models import Booking, Session
 
 NEW_YORK = ZoneInfo("America/New_York")
@@ -36,20 +37,28 @@ def availability(session, horizon=1, now=None):
         return {"available": False, "label": "Unavailable", "hidden": True}
     if session.kind == Session.Kind.PARTY:
         label = "A party is booked for this slot."
-    elif session.closed or session.kind == Session.Kind.EXCLUSIVE:
+    elif session.closed or date_closed(session) or session.kind == Session.Kind.EXCLUSIVE:
         label = "Unavailable"
     elif now < opening_time(day, horizon):
         label = "Not yet open"
     elif now >= session.ends_at:
         label = "Session ended"
-    elif children >= session.child_capacity or children + adults >= session.total_capacity:
+    elif session.play_mode == "supervised" and now >= session.starts_at:
+        label = "Unavailable"
+    elif (
+        children >= session.child_capacity
+        or children + adults >= session.total_capacity
+        or (session.play_mode == "supervised" and supervised >= session.supervised_capacity)
+    ):
         label = "Fully booked"
     else:
         return {
             "available": True,
             "label": "Available",
             "hidden": False,
-            "supervised_available": now < session.starts_at
+            "accompanied_available": session.play_mode != "supervised",
+            "supervised_available": session.play_mode != "accompanied"
+            and now < session.starts_at
             and supervised < session.supervised_capacity,
         }
     return {"available": False, "label": label, "hidden": False}

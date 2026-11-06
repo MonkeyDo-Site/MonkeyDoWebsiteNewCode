@@ -3,10 +3,22 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 from django.views.generic import RedirectView
 
-from core import account_views, booking_views, customer_views, dashboard, staging_access, views
+from core import (
+    account_views,
+    booking_views,
+    customer_views,
+    dashboard,
+    scheduling_views,
+    staging_access,
+    views,
+)
 from core.security import ProtectedLoginView
 
 urlpatterns = [
+    path("staff/scheduling/", scheduling_views.scheduling, name="scheduling"),
+    path("staff/scheduling/new/", scheduling_views.session_edit, name="session_create"),
+    path("staff/scheduling/date/", scheduling_views.date_edit, name="date_edit"),
+    path("staff/scheduling/<int:pk>/", scheduling_views.session_edit, name="session_edit"),
     path("", views.page, name="home"),
     path("about/", views.page, {"name": "about"}, name="about"),
     path("memberships-clubs-parties/", views.page, {"name": "programs"}, name="programs"),
