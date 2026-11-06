@@ -1,0 +1,17 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>Owner scheduling</h1>
+<p class="notice">Test calendar · Times use America/New_York. Closures block new reservations without cancelling existing bookings. Recurring schedule editing and customer notifications are not connected.</p>
+<form method="get" class="search-form"><label for="schedule-day">Date</label><input id="schedule-day" type="date" name="day" value="{{ day|date:'Y-m-d' }}"><button class="button">View date</button></form>
+<p><a class="button small" href="{% url 'session_create' %}">Add one-time session</a> <a class="button small" href="{% url 'date_edit' %}?day={{ day|date:'Y-m-d' }}">Edit date settings</a></p>
+<h2>{{ day|date:'l, F j, Y' }}</h2>
+{% if date_rule.closed %}<p class="notice">Date closed. Private reason: {{ date_rule.private_reason }}</p>{% endif %}
+{% if date_rule.chol_hamoed %}<p>Chol Hamoed marked for this date. Membership pricing integration remains pending.</p>{% endif %}
+{% for item in sessions %}<article class="panel">
+<h3>{{ item.session.starts_at|date:'g:i A' }} – {{ item.session.ends_at|date:'g:i A' }}</h3>
+<p>{{ item.session.private_label }} · {{ item.session.get_kind_display }} · {{ item.session.get_play_mode_display }}</p>
+<p>{% if item.session.public %}Public{% else %}Backend only{% endif %} · {% if item.session.closed %}Closed{% else %}Open{% endif %}</p>
+<p>Reserved: {{ item.counts.0 }} children / {{ item.counts.1 }} adults / {{ item.counts.2 }} supervised children. Limits: {{ item.session.child_capacity }} children / {{ item.session.total_capacity }} combined / {{ item.session.supervised_capacity }} supervised.</p>
+{% if item.session.kind == 'ordinary' %}<a href="{% url 'session_edit' item.session.pk %}">Edit session</a>{% else %}<p>Managed by its future program workflow.</p>{% endif %}
+</article>{% empty %}<p>No sessions for this date.</p>{% endfor %}
+{% endblock %}

@@ -6,6 +6,7 @@ from .models import (
     AuditEvent,
     Booking,
     BookingQuote,
+    CalendarDate,
     Customer,
     PricingPolicy,
     Session,
@@ -63,3 +64,5 @@ for model in (get_user_model(), Group):
 
 admin.site.register(PricingPolicy, ReadOnlyAdmin)
 admin.site.register(BookingQuote, ReadOnlyAdmin)
+
+admin.site.register(CalendarDate, ReadOnlyAdmin)

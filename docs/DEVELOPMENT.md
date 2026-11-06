@@ -89,3 +89,7 @@ Owner MFA/recovery, staff account controls, versioned session revocation, passwo
 ## Pricing and staff test-booking increment
 
 See [BOOKING_DEVELOPMENT.md](BOOKING_DEVELOPMENT.md). After migrations, rerun `configure_staff_group` for the new booking capabilities. Pending test reservations, versioned quotes and audited count/timing changes are now implemented locally. They do not confirm bookings, allocate membership benefits or process payments.
+
+## Owner scheduling increment
+
+Owner calendar controls now support one-time sessions, session settings and date closures. See [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md) for usage, concurrency controls and deferred recurring/member/notification workflows. Existing test reservations remain Setup pending. No deployment or provider operations were enabled.

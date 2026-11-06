@@ -151,3 +151,12 @@ Prepare the final walkthrough after the operational UI stabilizes: sign-in/Today
 ## Current increment: pending test reservations
 
 Use artificial customers and future sessions only. Confirm creating an ordinary/supervised reservation stores the displayed quote and Setup pending status. Test card versus cash quotes, extra adults, babies-only minimum admission, socks, blocked/ended sessions and supervised cutoff. Change attendees and check prior quotes remain visible; change timing and verify capacity moves without repricing. Release a test reservation and verify its space returns without recording a fee. Try a stale browser tab and repeated submission; neither may silently overwrite or duplicate. Staff cannot use owner pricing/capacity privileges. Owner future-price changes must not rewrite earlier quotes. Membership benefits, confirmed-booking cancellation, arrivals, split collection and provider operations cannot yet be accepted through these screens.
+
+## Owner calendar acceptance
+
+- Create a backend-only one-time session; verify it stays off the public schedule. Select public and check normal horizon/Saturday rules remain in force.
+- Exercise accompanied-only, supervised-only and mixed sessions; unsupported play types must fail reservation server checks. Test invalid limits, overlap and ambiguous/nonexistent DST times.
+- Close a date with a private reason; verify existing bookings/quotes persist and new test reservations and moves are blocked, including owner capacity overrides. Create another session on that closed date and confirm it remains blocked. Reopen the date; individually closed sessions must stay closed.
+- Verify private labels/reasons never appear on the public schedule. Mark Chol Hamoed once for the whole date; membership pricing is deferred, not claimed active.
+- Attempt stale simultaneous calendar edits, reduce capacity below reservations and change booked session timing. Each must reject safely. Staff cannot use these owner controls even with model permissions.
+- Confirm every successful edit is audited and does not send a message or process a payment. Recurring schedule editing remains unavailable.
