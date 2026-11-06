@@ -1,0 +1,43 @@
+{% extends 'core/staff_base.html' %}
+{% block title %}{{ customer.last_name }} · MonkeyDo Staff{% endblock %}
+{% block staff_content %}
+<p class="eyebrow">Customer {{ customer.customer_number }}</p>
+<h1>{{ customer.last_name }}</h1>
+<div class="customer-cards">
+  <article class="panel">
+    <h2>Customer info</h2>
+    <dl><dt>Type</dt><dd>{{ customer.get_customer_type_display }}</dd>
+    <dt>Current phone</dt><dd>{{ customer.phone }}</dd><dt>Previous phone</dt><dd>{{ customer.previous_phone|default:'—' }}</dd>
+    <dt>Current email</dt><dd>{{ customer.email }}</dd><dt>Previous email</dt><dd>{{ customer.previous_email|default:'—' }}</dd></dl>
+    {% if perms.core.change_customer %}<p><a href="{% url 'customer_edit' customer.pk %}">Edit customer</a></p>{% endif %}
+    {% if user.is_superuser %}<p><a href="{% url 'previous_phone' customer.pk %}">Correct previous phone</a></p>{% endif %}
+    {% if perms.core.view_customer_history %}<p><a href="{% url 'customer_history' customer.pk %}">Customer history</a></p>{% endif %}
+  </article>
+  <article class="panel">
+    <h2>Waivers</h2><p>Waiver records will be connected in a later development increment. No coverage is verified by this preview.</p>
+  </article>
+  <article class="panel">
+    <h2>Bookings</h2>
+    {% if can_view_bookings %}
+    {% if first_today %}<h3>Today · {{ first_today.session.starts_at|date:'g:i A' }}</h3>
+    <p>{{ first_today.children }} children · {{ first_today.adults }} adults · {{ first_today.babies }} babies · {{ first_today.get_attendance_display|default:'Upcoming' }}</p>
+    {% else %}<p>No bookings today.</p>{% endif %}
+    {% if more_today %}<details><summary>View {{ more_today|length }} more booking{{ more_today|length|pluralize }} today</summary>
+    {% for booking in more_today %}<p>{{ booking.session.starts_at|date:'g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults</p>{% endfor %}</details>{% endif %}
+    <p>Other bookings: {{ upcoming_count }} upcoming · {{ previous_count }} previous</p>
+    <details><summary>View all bookings</summary>
+    {% for booking in bookings %}<p>{{ booking.session.starts_at|date:'D, M j, Y g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.get_attendance_display|default:'Upcoming' }}</p>{% empty %}<p>No bookings yet.</p>{% endfor %}
+    </details>
+    {% else %}<p>Booking access is not enabled for this account.</p>{% endif %}
+  </article>
+  <article class="panel">
+    <h2>Comments</h2>
+    {% if perms.core.add_customercomment %}<p><a href="{% url 'comment_add' customer.pk %}">Add comment</a></p>{% endif %}
+    {% if perms.core.view_customercomment %}
+    {% for comment in comments %}<div class="comment"><p>{{ comment.body|linebreaksbr }}</p><p class="caption">{{ comment.author.username }} · {{ comment.created_at|date:'M j, Y g:i A' }}{% if comment.revision > 1 %} · Edited {{ comment.updated_at|date:'M j, Y g:i A' }}{% endif %}</p>
+    {% if perms.core.change_customercomment and not comment.system_generated %}<a href="{% url 'comment_edit' customer.pk comment.pk %}">Edit comment</a>{% endif %}</div>
+    {% empty %}<p>No comments yet.</p>{% endfor %}
+    {% else %}<p>Comment access is not enabled for this account.</p>{% endif %}
+  </article>
+</div>
+{% endblock %}

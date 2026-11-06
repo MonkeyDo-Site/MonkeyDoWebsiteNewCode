@@ -372,3 +372,25 @@ footer p {
   object-fit:cover;
   border-radius:32px 32px 50px 25px
 }
+
+.customer-list,.customer-cards { display: grid; gap: 20px; }
+.customer-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.customer-cards h2 { font-size: 28px; }
+.customer-cards .panel { min-width: 0; overflow-wrap: anywhere; }
+.staff-layout > section { min-width: 0; }
+.staff-layout h1 { font-size: clamp(36px,4vw,60px); }
+.search-form { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.search-form label { width: 100%; }
+.search-form input { flex: 1; min-width: 180px; }
+.record-form { max-width: 650px; }
+.record-form textarea,.record-form select { width: 100%; font: inherit; border: 1px solid #657567; border-radius: 10px; padding: 12px; }
+.record-form a { margin-left: 20px; }
+.comment { border-top: 1px solid #b1c1ae; padding-top: 12px; margin-top: 15px; }
+dt { font-size: 13px; font-weight: bold; }
+dd { margin: 0 0 12px; }
+summary { cursor: pointer; font-weight: bold; }
+.audit-details { white-space: pre-wrap; overflow-wrap: anywhere; }
+.customer-list h2 { font-size: 28px; }
+@media(max-width:850px) { .customer-cards { grid-template-columns:1fr; } }
+
+.customer-list .panel,.staff-layout h1,.record-form { overflow-wrap: anywhere; }

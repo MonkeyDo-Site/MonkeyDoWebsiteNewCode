@@ -8,6 +8,7 @@ from django.db.models import F, Q
 
 
 class Customer(models.Model):
+    revision = models.PositiveIntegerField(default=1)
     # Database sequence provides never-reused identifiers on PostgreSQL; records are protected.
     last_name = models.CharField(max_length=120)
     phone = models.CharField(
@@ -22,6 +23,19 @@ class Customer(models.Model):
         max_length=10, choices=[("family", "Family"), ("day_camp", "Day Camp")], default="family"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        permissions = [("view_customer_history", "View customer correction history")]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(phone__regex=r"^[0-9]{10}$"), name="customer_phone_normalized"
+            ),
+            models.CheckConstraint(
+                condition=Q(previous_phone="") | Q(previous_phone__regex=r"^[0-9]{10}$"),
+                name="customer_previous_phone_normalized",
+            ),
+            models.CheckConstraint(condition=Q(revision__gte=1), name="customer_revision_positive"),
+        ]
 
     @property
     def customer_number(self):
@@ -146,6 +160,38 @@ class AuditEvent(models.Model):
     record_id = models.CharField(max_length=80)
     changes = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class CustomerComment(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    body = models.TextField(max_length=4000)
+    search_digits = models.CharField(max_length=4000, blank=True, editable=False)
+    system_generated = models.BooleanField(default=False, editable=False)
+    revision = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+
+class LoginThrottle(models.Model):
+    key = models.CharField(max_length=80, unique=True)
+    failures = models.PositiveIntegerField(default=0)
+    last_failure = models.DateTimeField(null=True)
+    blocked_until = models.DateTimeField(null=True)
+
+
+class SecurityAlert(models.Model):
+    subject = models.CharField(max_length=160)
+    details = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
 
     class Meta:
         ordering = ["-created_at"]

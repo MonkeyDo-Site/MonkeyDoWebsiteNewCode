@@ -1,6 +1,6 @@
 # Staging build status
 
-First increment: Django/PostgreSQL foundation. This is a local development checkpoint, not a deployed or complete staging application.
+Current checkpoint: Django/PostgreSQL foundation plus staff customer-management and login-protection increment. This is a local development checkpoint, not a deployed or complete staging application.
 
 | Area | Implemented in this increment | Remaining |
 | --- | --- | --- |
@@ -9,7 +9,8 @@ First increment: Django/PostgreSQL foundation. This is a local development check
 | Database | Customer, session, booking, settings and append-only audit migrations | Full business-domain entities and immutable pricing/payment state |
 | Availability | New York calendar horizon, Sunday opening, Saturday hiding, party/full labels, session end/supervised cutoff and capacity | Owner scheduling/closure/override screens and atomic rescheduling |
 | Reservations | Internal atomic capacity check and audit | Integrated payment/waiver/benefit lifecycle; public booking remains disabled |
-| Staff | Login, permission-checked read-only Today and inspector | Full custom portal, owner MFA/recovery, throttling, staff lifecycle and separate staging password |
+| Customers | Search/create/contact corrections, comments/history, revision protection, permission enforcement | Public returning-customer verification and booking-linked email resends |
+| Staff | Protected login with temporary throttling, read-only Today, separate Dashboard/security alerts, customer screens and inspector | Owner MFA/recovery, complete staff lifecycle/session controls, security email delivery and shared staging password |
 | Providers | No external operations enabled | Banquest sandbox, Resend, R2, durable workers and real integration evidence |
 | Infrastructure | Local databases only | Cost-reviewed DigitalOcean staging, TLS/DNS, backups/restore and monitoring |
 | Training/testing | Scenario document started | Owner video and completed acceptance results after working workflows exist |
@@ -27,3 +28,7 @@ Future work must update this record rather than describe planned workflows as co
 ## Private-preview deployment preparation
 
 Prepared the [deployment/cost proposal](STAGING_DEPLOYMENT_PROPOSAL.md) and review-only nginx/systemd examples. Added explicit opt-in trusted-proxy configuration, default off. All 37 tests pass on local PostgreSQL after this change. No server configuration was installed and no service was started on DigitalOcean. Official live pricing verification was blocked by the environment proxy, so listed costs are estimates awaiting checkout verification and purchase approval.
+
+## Customer records and login protection
+
+All 76 tests pass on PostgreSQL 17 after this increment, including concurrent contact creation/correction and concurrent sign-in attempts. Local Chromium workflow checks passed for customer creation, email correction, comments, history/search and desktop/mobile layouts. Details and remaining boundaries: [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md). No DigitalOcean resize/deployment, paid-service activation, live transaction or outbound email occurred.

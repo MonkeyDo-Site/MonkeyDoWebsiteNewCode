@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.test import TestCase, TransactionTestCase
 
 from core.models import AuditEvent, Booking, Customer, Session
@@ -141,7 +141,7 @@ class ConcurrentReservationTests(TransactionTestCase):
                 except ValidationError:
                     return "full"
             finally:
-                close_old_connections()
+                connections.close_all()
 
         with (
             patch("django.utils.timezone.now", return_value=NOW),

@@ -10,6 +10,7 @@ Current planning direction, November 5, 2026. This file is requirements, not pro
 - Do not cache private/dynamic booking/customer/admin/payment/waiver/confirmation responses. Static public media/assets may cache. Email/verification DNS records follow provider instructions, not ordinary website proxy treatment.
 - Prefer New York region, supported Ubuntu LTS, approximately **2 vCPU/4GB RAM** initial proposal. Final CPU/RAM/disk/region availability/current recurring price and backup costs need presentation/approval before purchase. Old2GB suggestion is superseded.
 - Latest owner direction: start with one DigitalOcean server for staging only. Before production, assess whether it can safely host both environments with separate processes/databases/secrets/buckets; a second server is optional, not a requirement. Present actual costs before purchasing either arrangement.
+- Latest owner update: an existing smaller Droplet has been purchased, and a necessary resize with its increased hosting fee is preauthorized for the appropriate development stage. Assess actual size/usage first, choose the smallest suitable upgrade and coordinate any required downtime. No resize is performed by this local increment. Additional services and deployment/DNS/live-payment approvals remain separate.
 - Existing provider-account free-credit/billing statements are historical, not verification of current balance or a free-hosting promise.
 
 ## 2. Separation and staging
