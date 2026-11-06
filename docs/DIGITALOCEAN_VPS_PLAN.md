@@ -1,6 +1,6 @@
 # DigitalOcean, Cloudflare, staging, storage, and backups
 
-Current planning direction, November 5, 2026. This file is requirements, not provisioning or deployed configuration. Owner authorizes documentation PR only; later build/production approvals are separate.
+Current planning direction, November 5, 2026. This file is requirements, not provisioning or deployed configuration. The owner subsequently authorized staging development and approved Django/PostgreSQL. Paid provisioning and production actions retain their separate approvals.
 
 ## 1. Hosting and public addresses
 
@@ -9,7 +9,7 @@ Current planning direction, November 5, 2026. This file is requirements, not pro
 - **staging.monkeydoplay.com** is protected test site. Protected IP/temporary hostname may be used internally before approved DNS, never presented as final public address.
 - Do not cache private/dynamic booking/customer/admin/payment/waiver/confirmation responses. Static public media/assets may cache. Email/verification DNS records follow provider instructions, not ordinary website proxy treatment.
 - Prefer New York region, supported Ubuntu LTS, approximately **2 vCPU/4GB RAM** initial proposal. Final CPU/RAM/disk/region availability/current recurring price and backup costs need presentation/approval before purchase. Old2GB suggestion is superseded.
-- Owner prefers separate staging Droplet for stronger isolation; final choice deferred until current prices/capacity reviewed. Do not silently commit to shared resources or purchase either arrangement.
+- Latest owner direction: start with one DigitalOcean server for staging only. Before production, assess whether it can safely host both environments with separate processes/databases/secrets/buckets; a second server is optional, not a requirement. Present actual costs before purchasing either arrangement.
 - Existing provider-account free-credit/billing statements are historical, not verification of current balance or a free-hosting promise.
 
 ## 2. Separation and staging
@@ -79,6 +79,6 @@ Preserve current database, restore selected backup into isolated temporary datab
 
 Business alerts to **monkeydoplay@gmail.com**. Dashboard retains failed/bounced/unknown email and operational issues without relying on Resend being able to email itself. External uptime monitoring would detect app/server outages where Dashboard cannot run; provider/cost still to propose, not a purchased service.
 
-Before provisioning, present exact plan/price and scoped access, SSH/public IP/DNS records, provider settings, backup-key design, monitoring and restoration instructions. Framework/auth/ORM/jobs/packaging are implementation selections, not resolved by this file.
+Before provisioning, present exact plan/price and scoped access, SSH/public IP/DNS records, provider settings, backup-key design, monitoring and restoration instructions. Django with its ORM/migrations and PostgreSQL are now owner-approved. Custom identity/security, durable jobs and deployment packaging remain implementation work.
 
 Before launch: functional authorized staging, actual restore evidence, sandbox results, no production test secrets/URLs, sender verification, server secrets, approved production tax rate, reconciled provider/account behavior, WCAG/browser/mobile/security/concurrency/payment/waiver/owner acceptance. Require separate written approvals for production deployment, Cloudflare DNS connection, live payments and opening bookings. Publishing the Codex development environment is not any of those approvals.

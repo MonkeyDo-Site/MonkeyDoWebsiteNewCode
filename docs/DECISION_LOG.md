@@ -1,6 +1,14 @@
 # MonkeyDo decision log
 
-## 2026-11-05 — Coordinated requirements reconstruction (current)
+## 2026-11-06 — Staging development authorization and framework approval
+
+The owner explicitly authorized staging website/database development and subsequently confirmed: “OK we can go ahead and use Django. Continue development.” Django was a developer recommendation, not a framework selected in the original requirements. PostgreSQL remains the approved database. Django adds no separate software subscription.
+
+Start with staging only on one DigitalOcean server, subject to price approval before provisioning. Before launch assess shared staging/production capacity; a separate staging server is optional. Retain isolated databases/processes/secrets/provider accounts or endpoints/buckets. No production deployment, DNS changes, live payments, customer booking opening or purchases are authorized by this development instruction.
+
+The original images are now supplied and preserved unchanged. Implementation/verification progress: [BUILD_STATUS.md](BUILD_STATUS.md). Setup/architecture: [DEVELOPMENT.md](DEVELOPMENT.md). The owner requested a comprehensive staging scenario document and a final owner video tutorial after working workflows stabilize.
+
+## 2026-11-05 — Coordinated requirements reconstruction (historical checkpoint)
 
 Owner authorized documentation update and creation of a pull request after complete review of history prompts A–AG and later clarifications. This does not authorize application development, purchases, deployment, DNS changes, live payments or opening customer bookings.
 

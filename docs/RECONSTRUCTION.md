@@ -103,6 +103,8 @@ Late reconstruction clarification confirms80.98pretax is **five total children**
 
 ## 5. Phased future reconstruction/build
 
+Subsequent authorization: the owner has now approved staging development and Django/PostgreSQL. The sequence below is the original reconstruction roadmap; actual completion evidence is tracked in [BUILD_STATUS.md](BUILD_STATUS.md).
+
 1. Review this coordinated documentation PR, preserving existing source/code. No original-task history changes.
 2. After separate development authorization, verify the supplied original image inventory and select implementation stack/auth/ORM/jobs. Preserve approved source PDF/logo and document environment setup.
 3. Shared foundation: identities/permissions/audit, versioned settings/pricing/tax, PostgreSQL transactions, capacity and benefit/credit ledgers, durable operations.

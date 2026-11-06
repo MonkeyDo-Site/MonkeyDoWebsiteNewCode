@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}{% load static %}{% block title %}About · MonkeyDo{% endblock %}{% block content %}
+<section class="page-heading">
+<p class="eyebrow">Welcome to your jungle</p>
+<h1>Little explorers.<br>
+<em>Big adventures.</em>
+</h1>
+<p class="lead">Have you been looking for a place where your children can spread their wings and engage in a combination of stimulating, energizing and relaxing play spaces, in a warm and welcoming setting? Monkey Do is that place. Designed by mothers and professionals who get kids.</p>
+</section>
+<section class="area-grid">
+<article>
+<img class="area-photo" src="{% static 'brand/Image 5.jpeg' %}" alt="Pretend café with a play kitchen, counter, and stools" width="2400" height="1792" loading="lazy">
+<h2>Imaginative Play</h2>
+<p>Creative stations and playful props invite children to invent stories, explore ideas, and bring imaginary adventures to life.</p>
+</article>
+<article>
+<img class="area-photo" src="{% static 'brand/Image 6.jpeg' %}" alt="Game room with illuminated wall buttons and a score screen" width="2400" height="1792" loading="lazy">
+<h2>Game Room</h2>
+<p>Lights, action, and sound come together for fun, collaborative team play.</p>
+</article>
+<article>
+<img class="area-photo" src="{% static 'brand/Image 4.jpeg' %}" alt="Indoor slide leading into a green foam pit beneath monkey bars" width="2400" height="1792" loading="lazy">
+<h2>Climbing Area</h2>
+<p>Energetic fun with slides, a ball pit, foam pit, climbing wall, and monkey bars.</p>
+</article>
+<article>
+<img class="area-photo" src="{% static 'brand/Image 2.jpg' %}" alt="Toddler play area with a low ball pit, activity table, and basket swing" width="2400" height="1792" loading="lazy">
+<h2>Toddler Zone</h2>
+<p>A welcoming space designed for little ones, with swings, a toddler-friendly ball pit, and tabletop toys.</p>
+</article>
+</section>
+<section class="split">
+<article>
+<p class="eyebrow">Together time</p>
+<h2>Ordinary play</h2>
+<p>75 minutes of adventure. Children ages 1–11: $15. One adult is included; additional adults ages 12 and up: $5 each. Babies under one are free with a paid child admission.</p>
+<p>An adult must accompany your group. For babies-only or adults-only visits, the first admission is $15.</p>
+<a class="button" href="{% url 'schedule' %}">See available sessions</a>
+</article>
+<article>
+<p class="eyebrow">A little time for you</p>
+<h2>Supervised play</h2>
+<p>Drop-off play for children ages 3–11, in owner-designated sessions. $18.99 per child; eligible Subscription members receive 25% off.</p>
+<p>Supervised play must be booked before the session starts.</p>
+</article>
+</section>{% endblock %}

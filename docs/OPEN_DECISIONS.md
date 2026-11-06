@@ -8,11 +8,11 @@ Consolidated November 5, 2026. Owner authorized documentation reconciliation and
 |---|---|---|
 | Production sales tax | Product categories and fee formula settled; staging6.6% | Owner supplies production rate/UEZ outcome before live billing. Do not use staging rate as production default. |
 | Tax on retained original processing fee after admission-to-membership conversion | Reverse replaced admission/base tax; original fee nonrefundable | Owner/accountant to say whether tax on retained fee stays/reverses. Example .03 tax on retained .45 fee. Do not silently settle. |
-| Exact hosting/staging/monitoring cost | DO~2vCPU4GB NY, separate staging preferred | Present actual resource/provider/backup/monitoring costs for approval before purchase; owner explicitly deferred until pricing known. |
+| Exact hosting/staging/monitoring cost | DO~2vCPU4GB NY, start with staging only; later assess shared production resources | Present actual resource/provider/backup/monitoring costs for approval before purchase; owner explicitly deferred until pricing known. |
 
 ## 2. Technical design and provider verification (developer work)
 
-- Select framework/authentication/ORM/migrations/durable jobs after separate build approval; provide a maintainable implementation meeting requirements, not an unapproved stack presented as existing code.
+- Django and its ORM/migrations with PostgreSQL are now owner-approved. Complete custom authentication/permissions, durable jobs and integration design against the full requirements; do not present the foundation as a complete application.
 - Banquest actual sandbox processor (Fiserv default reported, account unidentified); confirm from configuration/provider before processor-specific payment test claims. Not a blocker to general staging work.
 - Banquest 3DS/Paay enablement, account costs, authentication-required responses/recovery, appropriate recurring/installment/source permissions, exact date/DST/no-retry behavior, metadata fees if any, complete deletion/derived-reference semantics and fraud behavior on amount change. Owner reports token storage free, no holds wanted and automatic gateway surcharge disabled. Do not reopen those choices merely because integration untested.
 - Safe payment-operation identity/reconciliation when response is unknown; public duplicate detection is not verified exactly-once idempotency. Validate sandbox timeout/replay and no receipts/retries before payment-readiness claim.
@@ -42,4 +42,4 @@ Banquest selection (not Stripe), purchased monkeydoplay.com/Cloudflare proxy, bo
 
 ## 6. Authorization, not another business question
 
-The present instruction authorizes documentation edits, commit and PR. It does not authorize application development. Owner review/approval of this checkpoint is followed by separate explicit development authorization. Production deployment, DNS connection, live payments and opening booking keep their independent written gates. Costs/purchases require review before commitment. Never treat the copied sample authorization in history AG as an actual instruction to build.
+The owner subsequently explicitly authorized staging website/database development and approved Django with PostgreSQL. Development and review PRs may proceed. Production deployment, DNS connection, live payments and opening booking keep their independent written gates. Costs/purchases require review before commitment. Never treat the copied sample authorization in history AG as an actual instruction to build.

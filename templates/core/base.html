@@ -1,0 +1,47 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>{% block title %}MonkeyDo · Adventurous Play{% endblock %}
+</title>
+<link rel="stylesheet" href="{% static 'core/site.css' %}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="test-banner">TEST MODE · Staging preview · No real bookings or payments</div>
+<header>
+<a class="brand" href="{% url 'home' %}" aria-label="MonkeyDo home">
+<img src="{% static 'brand/Final MonkeyDo logo.jpg' %}" alt="MonkeyDo Adventurous Play" width="2071" height="1451">
+</a>
+<nav aria-label="Main navigation">
+<a href="{% url 'about' %}">About</a>
+<a href="{% url 'programs' %}">Memberships, Clubs &amp; Parties</a>
+<a href="{% url 'contact' %}">Contact Us</a>
+<a class="button small" href="{% url 'schedule' %}">Book Now</a>
+</nav>
+</header>
+<main id="main">{% block content %}{% endblock %}
+</main>
+<footer>
+<div>
+<strong>Every little monkey needs a jungle.</strong>
+<p>Budleman Way, Lakewood, New Jersey</p>
+<p>Open Sunday through Friday by reservation, with four daily time slots.</p>
+</div>
+<div>
+<a href="tel:8482385147">848-238-5147</a>
+<br>
+<a href="mailto:monkeydoplay@gmail.com">monkeydoplay@gmail.com</a>
+<p>{% if user.is_authenticated %}
+<a href="{% url 'today' %}">Staff Today</a> · <form class="inline" action="{% url 'logout' %}" method="post">{% csrf_token %}
+<button class="text-button">Sign out</button>
+</form>{% else %}
+<a href="{% url 'login' %}">Staff sign in</a>{% endif %}
+</p>
+</div>
+</footer>
+</body>
+</html>

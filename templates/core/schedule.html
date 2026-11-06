@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}{% block title %}Book Now · MonkeyDo{% endblock %}{% block content %}
+<section class="page-heading">
+<p class="eyebrow">Your next adventure</p>
+<h1>Find a time<br>
+<em>to play.</em>
+</h1>
+<p>For group bookings of 10 or more and discounted group rates, please call or text us at 848-238-5147.</p>
+<p class="notice">This is a schedule preview using test sessions. Booking checkout is not yet enabled; no reservation or payment will be created.</p>
+</section>
+<section aria-label="Play session availability">{% for day in dates %}
+<article class="day">
+<h2>{{ day.date|date:'l, F j' }}</h2>{% if day.full %}
+<p>We're all booked for the date you want. We would love to see you another time.</p>{% endif %}
+<div class="slots">{% for slot in day.slots %}
+<div class="slot {% if not slot.available %}unavailable{% endif %}">
+<strong>{{ slot.session.starts_at|date:'g:i A' }} – {{ slot.session.ends_at|date:'g:i A' }}</strong>
+<span>{{ slot.label }}</span>{% if slot.available %}
+<span class="caption">Checkout coming soon</span>{% endif %}
+</div>{% endfor %}
+</div>
+</article>{% empty %}
+<div class="panel">
+<h2>No test sessions to show yet</h2>
+<p>The staging schedule has not been populated, or today’s test sessions have ended.</p>
+</div>{% endfor %}
+</section>{% endblock %}
