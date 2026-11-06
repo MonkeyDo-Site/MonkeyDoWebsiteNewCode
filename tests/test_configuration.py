@@ -40,3 +40,20 @@ class ConfigurationTests(SimpleTestCase):
             with self.subTest(missing=missing):
                 self.assertNotEqual(self.load_settings(**values).returncode, 0)
         self.assertEqual(self.load_settings(**common).returncode, 0)
+
+    def test_forwarded_https_is_not_trusted_by_default(self):
+        for enabled, expected in (("0", "False"), ("1", "True")):
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "import config.settings as s; print(hasattr(s, 'SECURE_PROXY_SSL_HEADER'))",
+                ],
+                cwd=settings.BASE_DIR,
+                env={**os.environ, "APP_ENV": "test", "DJANGO_TRUST_PROXY": enabled},
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout.strip(), expected)

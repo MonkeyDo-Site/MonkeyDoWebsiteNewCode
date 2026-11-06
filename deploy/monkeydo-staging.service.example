@@ -1,0 +1,25 @@
+# REVIEW TEMPLATE ONLY. Do not install/start before deployment approval.
+[Unit]
+Description=MonkeyDo private staging application
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=monkeydo
+Group=www-data
+WorkingDirectory=/srv/monkeydo/staging/current
+EnvironmentFile=/etc/monkeydo/staging.env
+RuntimeDirectory=monkeydo-staging
+RuntimeDirectoryMode=0750
+UMask=0007
+ExecStart=/srv/monkeydo/staging/venv/bin/gunicorn config.wsgi:application --env APP_ENV=staging --workers 2 --umask 7 --bind unix:/run/monkeydo-staging/gunicorn.sock --timeout 60
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/monkeydo-staging
+
+[Install]
+WantedBy=multi-user.target

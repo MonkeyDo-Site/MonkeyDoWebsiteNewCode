@@ -113,5 +113,8 @@ SECURE_SSL_REDIRECT = APP_ENV == "staging"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
-# No proxy trust is assumed: TLS termination configuration must be reviewed at deployment.
+# Only enable behind the reviewed local reverse proxy, which overwrites this
+# header. Gunicorn must not be reachable directly from the Internet.
+if os.environ.get("DJANGO_TRUST_PROXY") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
