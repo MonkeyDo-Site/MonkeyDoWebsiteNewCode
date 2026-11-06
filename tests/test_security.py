@@ -6,6 +6,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from core.models import LoginThrottle, SecurityAlert
+from tests.helpers import verified_owner_login
 from tests.test_customers import staff_user
 
 
@@ -87,7 +88,7 @@ class LoginProtectionTests(TestCase):
         self.assertEqual(
             self.client.post(f"/staff/security-alerts/{alert.pk}/resolve/").status_code, 403
         )
-        self.client.force_login(owner)
+        verified_owner_login(self.client, owner)
         self.assertContains(self.client.get("/staff/dashboard/"), "Sensitive security notice")
         self.assertEqual(
             self.client.get(f"/staff/security-alerts/{alert.pk}/resolve/").status_code, 405

@@ -41,6 +41,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.AccountAccessMiddleware",
     "core.middleware.StagingAccessMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -118,3 +119,6 @@ X_FRAME_OPTIONS = "DENY"
 if os.environ.get("DJANGO_TRUST_PROXY") == "1":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+PASSWORD_RESET_TIMEOUT = 60 * 60
+DEFAULT_FROM_EMAIL = "bookings@monkeydoplay.com"

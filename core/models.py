@@ -46,6 +46,9 @@ class Customer(models.Model):
 
 
 class SiteSettings(models.Model):
+    staging_password_hash = models.CharField(max_length=128, blank=True, editable=False)
+    staging_password_changed_at = models.DateTimeField(null=True, editable=False)
+    staging_access_version = models.UUIDField(default=uuid.uuid4, editable=False)
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     booking_horizon_days = models.PositiveSmallIntegerField(
         default=1, validators=[MinValueValidator(1), MaxValueValidator(10)]
@@ -195,3 +198,44 @@ class SecurityAlert(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class AccountSecurity(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="account_security"
+    )
+    version = models.PositiveIntegerField(default=1)
+    secondary_email = models.EmailField(blank=True)
+
+
+class OwnerChallenge(models.Model):
+    delivered = models.BooleanField(default=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    digest = models.CharField(max_length=64)
+    credential_hash = models.CharField(max_length=64)
+    version = models.PositiveIntegerField()
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True)
+    last_sent_at = models.DateTimeField()
+
+
+class TrustedOwnerBrowser(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    digest = models.CharField(max_length=64, unique=True)
+    version = models.PositiveIntegerField()
+    expires_at = models.DateTimeField()
+
+
+class OwnerRecoveryCode(models.Model):
+    retired_at = models.DateTimeField(null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    digest = models.CharField(max_length=64, unique=True)
+    used_at = models.DateTimeField(null=True)
+
+
+class SecurityRequestLimit(models.Model):
+    key = models.CharField(max_length=80, unique=True)
+    started_at = models.DateTimeField()
+    count = models.PositiveIntegerField(default=0)

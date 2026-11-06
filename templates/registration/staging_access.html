@@ -1,0 +1,10 @@
+{% extends 'core/base.html' %}{% block content %}
+<section class="login panel">
+<h1>Private staging preview</h1>
+<p>Enter the shared staging password supplied by the owner. Staff areas require a separate account sign-in.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Open preview</button>
+</form>{% if user.is_superuser %}
+<p>
+<a href="{% url 'staging_settings' %}">Owner: update staging password</a>
+</p>{% endif %}
+</section>{% endblock %}

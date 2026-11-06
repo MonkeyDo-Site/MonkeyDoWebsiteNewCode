@@ -1,4 +1,4 @@
-# REVIEW TEMPLATE ONLY: requires a real origin certificate, password file,
+# REVIEW TEMPLATE ONLY: requires a real origin certificate, configured application gate,
 # Cloudflare origin firewall/trust review, and explicit deployment approval.
 # Include in the nginx http context via sites-enabled only after review.
 server {
@@ -15,9 +15,8 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     server_tokens off;
 
-    # Separate shared staging gate, in addition to application staff login.
-    auth_basic "MonkeyDo private staging";
-    auth_basic_user_file /etc/monkeydo/staging.htpasswd;
+    # The owner-managed application gate protects previews separately from
+    # staff login/MFA. Do not add a second unmanaged shared password here.
     add_header X-Robots-Tag "noindex, nofollow" always;
     add_header Cache-Control "private, no-store" always;
     client_max_body_size 2m;

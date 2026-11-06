@@ -53,9 +53,9 @@ Available: five public page previews, shared navigation/test banner, original lo
 
 The internal reservation function is not a finished confirmed-booking workflow. It is not exposed publicly and cannot charge a card, save a waiver, send an email or calculate membership benefits. No public write endpoint exists. Checkout is visibly disabled. It must be integrated with immutable pricing revisions, payment/waiver state, benefit reservations and confirmation operations before customer booking is enabled.
 
-Not yet implemented: custom staff account lifecycle and full permission matrix; owner MFA/recovery; outbound owner security emails; immediate permission/session revocation; shared staging access password/rotation separate from staff login; public returning-customer lookup and booking-linked confirmation resends; administrative edits/overrides/rescheduling; pricing/payment/tender ledgers; membership cohorts; clubs/parties workflows; waivers/R2; email/Resend; durable jobs; backups/restores/monitoring. These remain approved requirements, not dropped scope.
+Not yet implemented: external email delivery/security alerts and security retention jobs; capability expansion for the unfinished booking/payment/program/export/backup features; public returning-customer lookup and booking-linked confirmation resends; administrative edits/overrides/rescheduling; pricing/payment/tender ledgers; membership cohorts; clubs/parties workflows; waivers/R2; email/Resend; durable jobs; backups/restores/monitoring. These remain approved requirements, not dropped scope.
 
-`APP_ENV=staging` requires PostgreSQL, explicit allowed hosts and a strong private Django secret, switches on secure cookies/HTTPS redirection and places page previews behind active-staff login. That temporary gate does not implement the final shared staging password or owner MFA. Complete and test the security/hosting controls before opening a hosted staging site for acceptance. `APP_ENV=production` deliberately fails startup; production activation is separate work and approval.
+`APP_ENV=staging` requires PostgreSQL, explicit allowed hosts and a strong private Django secret, switches on secure cookies/HTTPS redirection and protects previews with the independent shared staging password. Staff pages require staff sign-in; owner actions also require owner MFA. These controls are locally tested; external owner email delivery is not yet connected. Complete and test the security/hosting controls before opening a hosted staging site for acceptance. `APP_ENV=production` deliberately fails startup; production activation is separate work and approval.
 
 Audit records are append-only through the application manager and a PostgreSQL update/delete trigger. A privileged database administrator can still alter schema or disable triggers; least-privilege deployment roles and operational controls remain necessary.
 
@@ -81,3 +81,7 @@ See [STAGING_TEST_PLAN.md](STAGING_TEST_PLAN.md) for acceptance coverage and [BU
 ## Customer-management increment
 
 Staff customer creation/search/contact corrections, comments, readable audit history, default permissions and temporary login delays are now implemented. See [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md) for setup and exact limitations. Today remains read-only for booking operations; Dashboard/security alerts and customer corrections are functional locally. No messages or payments are sent.
+
+## Owner/staff security increment
+
+Owner MFA/recovery, staff account controls, versioned session revocation, password reset and shared staging password/rotation are locally implemented; see [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). Configure real test email before hosted owner acceptance. No console/code-printing workaround or staff recovery bypass is permitted.

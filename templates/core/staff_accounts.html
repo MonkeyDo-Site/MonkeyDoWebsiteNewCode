@@ -1,0 +1,20 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>Staff accounts</h1>
+<section>
+<h2>{% if editing %}Edit {{ editing.username }}{% else %}Create staff account{% endif %}
+</h2>
+<p>Usernames are permanent. Disable an account when it is no longer needed. Passwords are never displayed.</p>
+<form method="post" class="record-form panel">{% csrf_token %}{{ form.as_p }}<button class="button">Save staff account</button>
+</form>
+</section>
+<section>
+<h2>Existing staff</h2>{% for account in accounts %}
+<article class="panel">
+<h3>{{ account.username }}</h3>
+<p>{{ account.email }} · {% if account.is_active %}Enabled{% else %}Disabled{% endif %}
+</p>
+<a href="{% url 'staff_account_edit' account.pk %}">Edit account</a>
+</article>{% empty %}
+<p>No staff accounts yet.</p>{% endfor %}
+</section>{% endblock %}

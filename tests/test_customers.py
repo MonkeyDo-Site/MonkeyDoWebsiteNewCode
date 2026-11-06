@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from core.customers import correct_previous_phone, create_customer, save_comment, update_customer
 from core.models import AuditEvent, Booking, Customer, CustomerComment, Session
+from tests.helpers import verified_owner_login
 
 
 def staff_user(username="staff", owner=False):
@@ -273,7 +274,7 @@ class CustomerPageTests(TestCase):
         self.assertEqual(
             self.client.get(f"/staff/customers/{self.customer.pk}/previous-phone/").status_code, 403
         )
-        self.client.force_login(self.owner)
+        verified_owner_login(self.client, self.owner)
         self.assertEqual(
             self.client.get(f"/staff/customers/{self.customer.pk}/previous-phone/").status_code, 200
         )
