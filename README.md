@@ -6,9 +6,9 @@ Start with the [documentation index](docs/README.md) and [current requirements](
 
 ## Current state and authorization
 
-This is a **documentation checkpoint**, not a functioning booking application. The preserved [HTML waiver](waiver.html) is a standalone prototype: it displays the waiver but does not save signatures or connect to bookings. The source PDF remains unchanged.
+The owner has authorized staging development and explicitly approved **Django with PostgreSQL**. The first increment provides local page previews and a database/availability foundation; it is not yet a functioning public booking application. See [development setup](docs/DEVELOPMENT.md), [build status](docs/BUILD_STATUS.md), and the [staging test plan](docs/STAGING_TEST_PLAN.md). The preserved [HTML waiver](waiver.html) is a standalone prototype: it displays the waiver but does not save signatures or connect to bookings. The source PDF remains unchanged.
 
-The owner has authorized updating documentation and creating a pull request. **Website development still requires separate explicit approval.** Documentation approval does not authorize infrastructure purchases, deployment, DNS changes, live payments, or opening customer bookings. Those production actions retain their separate approval gates.
+Staging development and review PRs are authorized. Infrastructure purchases, production deployment, DNS changes, live payments, and opening customer bookings retain their separate approval gates. Start with staging only on DigitalOcean; assess shared staging/production resources before launch. No hosting has been purchased or deployed by this increment.
 
 The official future public address is **https://monkeydoplay.com**, with `www` redirecting to it. This repository does not establish that a deployment is live.
 

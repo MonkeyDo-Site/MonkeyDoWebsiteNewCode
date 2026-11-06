@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}{% block title %}Today · MonkeyDo Staff{% endblock %}{% block content %}
+<div class="staff-layout">
+<aside aria-label="Staff navigation">
+<a aria-current="page" href="{% url 'today' %}">Today</a>
+<a href="/admin/">Database inspector</a>
+<p class="caption">More staff workflows are in development.</p>
+</aside>
+<section>
+<p class="eyebrow">Your day at MonkeyDo</p>
+<h1>Today</h1>
+<p class="notice">Read-only foundation preview. Arrival, charging, and corrections are not enabled.</p>{% for booking in bookings %}
+<article class="panel">
+<h2>{{ booking.customer.last_name }}</h2>
+<p>{{ booking.session.starts_at|date:'g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
+<p>{{ booking.get_attendance_display|default:'Upcoming' }}</p>
+</article>{% empty %}
+<article class="panel">
+<h2>A fresh day of adventures</h2>
+<p>No test bookings for today.</p>
+</article>{% endfor %}
+</section>
+</div>{% endblock %}

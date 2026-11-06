@@ -8,7 +8,7 @@ Build a welcoming, polished, mobile-friendly, accessible website for MonkeyDo, a
 
 SMS, participant merging, day-camp/group invoicing, and possible automatic payment retries after operational review are post-launch enhancements. Scanning/uploading paper waivers is not required initially.
 
-This change is documentation only. The owner authorized documentation edits and a PR; application development needs separate explicit authorization. Production deployment, Cloudflare DNS connection, live payments (including approved cancellation charging), and opening customer booking each need separate written approval. Cancellation activation is not a separate fifth production approval. Present current recurring costs before purchasing or provisioning infrastructure.
+The owner subsequently authorized staging website/database development and explicitly approved Django with PostgreSQL; see [development status](DEVELOPMENT.md). The original documentation checkpoint was not an implementation. Production deployment, Cloudflare DNS connection, live payments (including approved cancellation charging), and opening customer booking each need separate written approval. Cancellation activation is not a separate fifth production approval. Present current recurring costs before purchasing or provisioning infrastructure.
 
 ## 2. Public identity and visual direction
 

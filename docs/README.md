@@ -2,6 +2,8 @@
 
 Consolidated November 5, 2026. These documents capture the future website's current intended behavior, not an implementation or a production-readiness claim.
 
+Current development authorization and implementation evidence are in [DEVELOPMENT.md](DEVELOPMENT.md) and [BUILD_STATUS.md](BUILD_STATUS.md); the owner explicitly approved Django/PostgreSQL. The business requirements below remain authoritative. Owner acceptance cases are in [STAGING_TEST_PLAN.md](STAGING_TEST_PLAN.md).
+
 ## Reading order and authority
 
 | Document | Responsibility |
@@ -32,7 +34,7 @@ Each subject has one primary home. Cross-references are used instead of maintain
 
 ## Approval boundary
 
-The owner authorized this documentation update and pull request. Application development remains separately gated. Do not deploy, purchase infrastructure, connect DNS, enable live payments, open booking, or send real customer messages on the strength of this checkpoint alone.
+The owner subsequently authorized staging application/database development and explicitly approved Django. This supersedes the earlier documentation-only boundary. Do not purchase infrastructure, deploy production, connect DNS, enable live payments, open customer bookings, or send real customer messages on the strength of staging development authorization alone.
 
 Confirmed waiver wording and signature interaction are owner-approved; counsel review is not an owner-required gate. This does not mean the existing HTML prototype implements electronic-signature persistence.
 
