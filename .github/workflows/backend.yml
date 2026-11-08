@@ -43,4 +43,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test Windows PowerShell deployment wrapper with mocked SSH
         shell: powershell
-        run: ./tests/deployment/check_wrapper.ps1
+        run: |
+          try {
+            & ./tests/deployment/check_wrapper.ps1
+          } catch {
+            $detail = ($_ | Out-String).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error title=Deployment wrapper test::$detail"
+            exit 1
+          }
