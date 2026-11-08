@@ -55,3 +55,7 @@ try {
     Remove-Item Function:\ssh -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $temporary -Recurse -Force
 }
+
+# The deliberate native-command failure test must not leak its simulated exit
+# status into GitHub runner shell epilogues.
+$global:LASTEXITCODE = 0
