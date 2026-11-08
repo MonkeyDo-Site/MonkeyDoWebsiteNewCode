@@ -1,6 +1,6 @@
 # Staging build status
 
-Current checkpoint: Django/PostgreSQL foundation, customer management, owner/staff security, saved pricing, staff test reservations and owner calendar controls. This is a local development checkpoint, not a deployed or complete staging application.
+Current checkpoint: Django/PostgreSQL foundation, customer management, owner/staff security, saved pricing, staff test reservations and owner calendar controls and membership draft calendars. This is a local development checkpoint, not a deployed or complete staging application.
 
 | Area | Implemented in this increment | Remaining |
 | --- | --- | --- |
@@ -50,3 +50,9 @@ Verification: the full 156-test suite passed on PostgreSQL 17; two subsequently 
 Owner one-time sessions, per-session times/visibility/play types/capacity, private date closures and date-level Chol Hamoed marking are implemented locally. Existing bookings and quotes survive closures. Owner changes and reservations coordinate with PostgreSQL transaction locks. See [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md) for limits, particularly recurring schedules and deferred membership/notification integration.
 
 Verification for this checkpoint: **177 tests pass on PostgreSQL 17**. SQLite passes the same suite with 15 explicit PostgreSQL-only skips. Calendar tests cover overlap/date-edit races, committed closure enforcement, capacity protection, stale revisions, privacy, owner-only permissions/CSRF, DST validation and audit rollback. Isolated Chromium completed owner sign-in/MFA, one-time session creation, date closure/Chol Hamoed marking and desktop/mobile layouts. Ruff, migration drift, static collection and diff checks pass. No hosted deployment, Droplet resize, provider request or outbound email occurred.
+
+## Membership draft foundation
+
+Added staff-created test membership drafts, separate immutable draft cohorts/cycles, monthly/prepaid estimates and owner versioned product pricing. The approved short-month/leap-year/original-anchor rules are implemented in civil-date calculations. All records explicitly remain inactive drafts, with no accepted terms, payment, benefit allocation or scheduled job. See [MEMBERSHIP_DEVELOPMENT.md](MEMBERSHIP_DEVELOPMENT.md) for setup and deferred operational workflows.
+
+Verification: **194 tests pass on PostgreSQL 17**; SQLite passes with 16 explicit PostgreSQL-only skips. Coverage includes original-anchor/leap-year/short-month calendars, grace-renewal date helper, monthly/prepaid estimates, pricing immutability, permissions/CSRF, atomic rollback and concurrent duplicate submissions. Isolated Chromium passed owner MFA, draft creation/review, future product-pricing changes and desktop/mobile layouts. Ruff, migration drift and static collection checks pass. No deployment, Droplet resize, external payment/email/storage operation or paid service occurred.

@@ -1,0 +1,8 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>Membership drafts</h1>
+<p class="notice">Test planning only. These are not purchased or active memberships. No benefits, card charges, reminders or confirmation emails are enabled.</p>
+{% if perms.core.add_membershipdraft %}<p><a class="button" href="{% url 'membership_create' %}">Create test membership draft</a></p>{% endif %}
+{% for draft in drafts %}<article class="panel"><h2>{{ draft.customer.last_name }}</h2><p>{{ draft.places }} {{ draft.get_kind_display }} place{{ draft.places|pluralize }} · {{ draft.months }} months · {{ draft.get_billing_display }}</p><p>{{ draft.starts_on|date:'M j, Y' }} – {{ draft.ends_on|date:'M j, Y' }}</p><a href="{% url 'membership_detail' draft.pk %}">Review draft</a></article>{% empty %}<p>No membership drafts yet.</p>{% endfor %}
+{% include 'core/pagination.html' with page=drafts %}
+{% endblock %}

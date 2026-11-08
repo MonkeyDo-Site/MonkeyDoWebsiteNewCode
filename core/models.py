@@ -380,3 +380,88 @@ class CalendarDate(models.Model):
 
     class Meta:
         ordering = ["day"]
+
+
+class MembershipPricing(ImmutablePriceRecord):
+    subscription = models.DecimalField(
+        max_digits=9, decimal_places=2, default="17.99", validators=[MinValueValidator(0)]
+    )
+    unlimited = models.DecimalField(
+        max_digits=9, decimal_places=2, default="39.99", validators=[MinValueValidator(0)]
+    )
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(subscription__gte=0, unlimited__gte=0),
+                name="membership_prices_nonnegative",
+            )
+        ]
+
+
+class MembershipDraft(ImmutablePriceRecord):
+    customer = models.ForeignKey(
+        Customer, related_name="membership_drafts", on_delete=models.PROTECT
+    )
+    kind = models.CharField(
+        max_length=12, choices=[("subscription", "Subscription"), ("unlimited", "Unlimited")]
+    )
+    places = models.PositiveIntegerField()
+    months = models.PositiveIntegerField()
+    billing = models.CharField(
+        max_length=12, choices=[("monthly", "Monthly"), ("prepaid", "Prepaid")]
+    )
+    starts_on = models.DateField()
+    ends_on = models.DateField()
+    unit_price = models.DecimalField(max_digits=9, decimal_places=2)
+    pricing = models.ForeignKey(MembershipPricing, on_delete=models.PROTECT)
+    fee_policy = models.ForeignKey(PricingPolicy, on_delete=models.PROTECT)
+    expected_method = models.CharField(
+        max_length=12,
+        choices=[
+            ("card", "Credit card"),
+            ("cash", "Cash"),
+            ("check", "Check"),
+            ("zelle", "Zelle"),
+            ("gift_card", "Gift card"),
+        ],
+    )
+    snapshot = models.JSONField()
+    creation_key = models.UUIDField(unique=True, editable=False)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(
+                    places__gte=1, months__gte=3, ends_on__gte=F("starts_on"), unit_price__gte=0
+                ),
+                name="membership_draft_valid_term",
+            )
+        ]
+
+
+class MembershipDraftCycle(ImmutablePriceRecord):
+    draft = models.ForeignKey(MembershipDraft, related_name="cycles", on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    starts_on = models.DateField()
+    ends_on = models.DateField()
+    charge_on = models.DateField(null=True)
+    quote = models.JSONField(null=True)
+
+    class Meta:
+        ordering = ["number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["draft", "number"], name="membership_draft_unique_cycle"
+            ),
+            models.CheckConstraint(
+                condition=Q(number__gte=1, ends_on__gte=F("starts_on")),
+                name="membership_draft_cycle_valid_bounds",
+            ),
+        ]

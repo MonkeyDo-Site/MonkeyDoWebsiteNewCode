@@ -93,3 +93,7 @@ See [BOOKING_DEVELOPMENT.md](BOOKING_DEVELOPMENT.md). After migrations, rerun `c
 ## Owner scheduling increment
 
 Owner calendar controls now support one-time sessions, session settings and date closures. See [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md) for usage, concurrency controls and deferred recurring/member/notification workflows. Existing test reservations remain Setup pending. No deployment or provider operations were enabled.
+
+## Membership draft increment
+
+Test membership planning and persisted calendar/price history are available; rerun `configure_staff_group` after migration for the new draft capabilities. See [MEMBERSHIP_DEVELOPMENT.md](MEMBERSHIP_DEVELOPMENT.md). These are inactive draft cohorts, not completed sales or active memberships.
