@@ -16,6 +16,8 @@ The inactive membership draft foundation is documented in [MEMBERSHIP_DEVELOPMEN
 
 Weekly templates, dated generation and horizon controls are documented in [RECURRING_SCHEDULE_DEVELOPMENT.md](RECURRING_SCHEDULE_DEVELOPMENT.md).
 
+The frozen V1 [design gallery](design-review/v1/README.md), [feedback log](DESIGN_FEEDBACK.md) and [review workflow](DESIGN_REVIEW_WORKFLOW.md) support owner design review independently of continuing backend work.
+
 ## Reading order and authority
 
 | Document | Responsibility |
