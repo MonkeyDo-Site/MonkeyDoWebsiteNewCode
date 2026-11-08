@@ -66,3 +66,7 @@ Verification: **212 tests pass on PostgreSQL 17**; SQLite passes with 17 explici
 ## Stable design review V1
 
 Prepared 16 read-only rendered layouts plus desktop/phone captures, pinned to source `7a7b674` (PR #15), with artificial sample records. See [gallery](design-review/v1/README.md) and [feedback tracker](DESIGN_FEEDBACK.md). Application layouts/copy/assets and backend behavior are unchanged. Local browser checks validate assets/links, disabled forms, responsive widths and no scripts/CSRF tokens. A hosted URL still awaits secure DigitalOcean/SSH access; no deployment, DNS change, paid service or resize occurred.
+
+## Hosted read-only review release preparation
+
+Added an opt-in design-only URL mode, using the existing shared staging gate, with no operational staff/customer/booking routes. Frozen V1 files remain unchanged. An interactive owner CLI sets the shared password without printing it. [Host setup checkpoint](HOSTED_DESIGN_PREVIEW.md) records operator-reported Ubuntu/PostgreSQL/firewall/account setup and the remaining guided upload/configuration steps. All 219 tests pass on local PostgreSQL 17; targeted gate tests pass on SQLite. Browser checks pass for password access, desktop/phone snapshots, asset loads and disabled operational routes. Hosted TLS/DNS and real-host deployment remain unverified.

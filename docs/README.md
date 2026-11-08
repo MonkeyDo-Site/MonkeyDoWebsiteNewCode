@@ -18,6 +18,8 @@ Weekly templates, dated generation and horizon controls are documented in [RECUR
 
 The frozen V1 [design gallery](design-review/v1/README.md), [feedback log](DESIGN_FEEDBACK.md) and [review workflow](DESIGN_REVIEW_WORKFLOW.md) support owner design review independently of continuing backend work.
 
+The guided server setup and restricted hosted-review release are documented in [HOSTED_DESIGN_PREVIEW.md](HOSTED_DESIGN_PREVIEW.md).
+
 ## Reading order and authority
 
 | Document | Responsibility |

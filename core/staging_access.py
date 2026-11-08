@@ -99,7 +99,12 @@ def staging_access(request):
         form.add_error(
             None, "A current staging password is required. Contact the owner if it has expired."
         )
-    return render(request, "registration/staging_access.html", {"form": form})
+    template = (
+        "registration/design_review_access.html"
+        if getattr(settings, "DESIGN_REVIEW_ONLY", False)
+        else "registration/staging_access.html"
+    )
+    return render(request, template, {"form": form})
 
 
 @staff_permission("core.change_sitesettings")
