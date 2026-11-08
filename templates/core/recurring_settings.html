@@ -1,0 +1,11 @@
+{% extends 'core/staff_base.html' %}
+{% block staff_content %}
+<h1>Weekly schedule</h1>
+<p class="notice">Times use America/New_York. Saving a weekly template does not change dated sessions until you generate/apply it to a date range. Existing bookings, manual overrides and independent sessions are preserved. Checkout remains disabled.</p>
+<p><a class="button small" href="{% url 'weekly_create' %}">Add weekly template</a> <a href="{% url 'horizon_settings' %}">Booking horizon</a> · <a href="{% url 'scheduling' %}">Dated calendar</a></p>
+{% for slot in slots %}<article class="panel"><h2>{{ slot.label }}</h2><p>{{ slot.starts_at|time:'g:i A' }} – {{ slot.ends_at|time:'g:i A' }} · {% if slot.active %}Active{% else %}Inactive{% endif %} · {% if slot.public %}Public{% else %}Backend only{% endif %} · {{ slot.get_play_mode_display }}</p><p>Weekdays: {% for day in slot.weekdays %}{% if day == 0 %}Mon{% elif day == 1 %}Tue{% elif day == 2 %}Wed{% elif day == 3 %}Thu{% elif day == 4 %}Fri{% elif day == 5 %}Sat{% else %}Sun{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</p><a href="{% url 'weekly_edit' slot.pk %}">Edit template</a></article>{% endfor %}
+<h2>Generate dated sessions</h2>
+<p>Choose dates from today through two years ahead. With updates enabled, changing weekdays or disabling a template closes its untouched, unbooked generated sessions in this range. Manual edits end automatic management. Date closures remain effective. Saturday stays hidden publicly.</p>
+<form class="record-form panel" method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Generate / apply dated sessions</button></form>
+{% if results != None %}<h2>Generation results</h2><p>Created/updated rows and preserved conflicts appear below. An empty list means nothing needed changing.</p>{% for result in results %}<p>{{ result.day }} · {{ result.slot }} · {{ result.outcome }}. {{ result.reason }}</p>{% empty %}<p>No changes needed.</p>{% endfor %}{% endif %}
+{% endblock %}

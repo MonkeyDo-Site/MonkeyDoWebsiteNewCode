@@ -44,7 +44,7 @@ def values(record, fields):
 
 
 @transaction.atomic
-def save_session(*, actor, data, pk=None, revision=None):
+def save_session(*, actor, data, pk=None, revision=None, preserve_management=False):
     require_actor(actor, "core.change_session", owner=True)
     lock_calendar(exclusive=True)
     current = Session.objects.select_for_update().get(pk=pk) if pk else None
@@ -105,13 +105,22 @@ def save_session(*, actor, data, pk=None, revision=None):
         ):
             raise ValidationError("Capacity cannot be reduced below existing reserved attendance.")
         row.revision += 1
+    # Explicit per-date editing ends automatic template management.
+    management_ended = row.recurring_managed and not preserve_management
+    if not preserve_management:
+        row.recurring_managed = False
     row.save()
     AuditEvent.objects.create(
         actor=actor,
         action="schedule.session_updated" if current else "schedule.session_created",
         record_type="session",
         record_id=str(row.pk),
-        changes={"before": before, "after": values(row, SESSION_FIELDS), "revision": row.revision},
+        changes={
+            "before": before,
+            "after": values(row, SESSION_FIELDS),
+            "revision": row.revision,
+            "automatic_management_ended": management_ended,
+        },
     )
     return row
 

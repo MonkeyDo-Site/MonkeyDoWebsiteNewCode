@@ -75,6 +75,12 @@ class Session(models.Model):
         PARTY = "party", "Party"
         EXCLUSIVE = "exclusive", "Exclusive group"
 
+    source_slot = models.ForeignKey(
+        "WeeklySlot", null=True, blank=True, on_delete=models.PROTECT, related_name="sessions"
+    )
+    source_day = models.DateField(null=True, blank=True)
+    source_revision = models.PositiveIntegerField(null=True, blank=True)
+    recurring_managed = models.BooleanField(default=False)
     revision = models.PositiveIntegerField(default=1)
     play_mode = models.CharField(
         max_length=12,
@@ -109,6 +115,9 @@ class Session(models.Model):
             models.CheckConstraint(
                 condition=Q(child_capacity__lte=F("total_capacity")),
                 name="child_within_total_capacity",
+            ),
+            models.UniqueConstraint(
+                fields=["source_slot", "source_day"], name="session_unique_source_day"
             ),
         ]
 
@@ -464,4 +473,36 @@ class MembershipDraftCycle(ImmutablePriceRecord):
                 condition=Q(number__gte=1, ends_on__gte=F("starts_on")),
                 name="membership_draft_cycle_valid_bounds",
             ),
+        ]
+
+
+class WeeklySlot(models.Model):
+    def __str__(self):
+        return self.label
+
+    label = models.CharField(max_length=120)
+    weekdays = models.JSONField(default=list)
+    starts_at = models.TimeField()
+    ends_at = models.TimeField()
+    active = models.BooleanField(default=True)
+    public = models.BooleanField(default=False)
+    play_mode = models.CharField(
+        max_length=12, choices=Session._meta.get_field("play_mode").choices, default="accompanied"
+    )
+    child_capacity = models.PositiveSmallIntegerField(default=35)
+    total_capacity = models.PositiveSmallIntegerField(default=50)
+    supervised_capacity = models.PositiveSmallIntegerField(default=0)
+    revision = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ["starts_at", "pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(
+                    ends_at__gt=F("starts_at"),
+                    supervised_capacity__lte=F("child_capacity"),
+                    child_capacity__lte=F("total_capacity"),
+                ),
+                name="weekly_slot_valid_bounds",
+            )
         ]

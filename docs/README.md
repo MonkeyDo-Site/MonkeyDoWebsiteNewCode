@@ -14,6 +14,8 @@ Owner scheduling controls and their current limits are documented in [SCHEDULING
 
 The inactive membership draft foundation is documented in [MEMBERSHIP_DEVELOPMENT.md](MEMBERSHIP_DEVELOPMENT.md).
 
+Weekly templates, dated generation and horizon controls are documented in [RECURRING_SCHEDULE_DEVELOPMENT.md](RECURRING_SCHEDULE_DEVELOPMENT.md).
+
 ## Reading order and authority
 
 | Document | Responsibility |
