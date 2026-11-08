@@ -14,6 +14,7 @@ from .models import (
     PricingPolicy,
     Session,
     SiteSettings,
+    WeeklySlot,
 )
 
 
@@ -72,3 +73,5 @@ admin.site.register(CalendarDate, ReadOnlyAdmin)
 
 for model in (MembershipPricing, MembershipDraft, MembershipDraftCycle):
     admin.site.register(model, ReadOnlyAdmin)
+
+admin.site.register(WeeklySlot, ReadOnlyAdmin)

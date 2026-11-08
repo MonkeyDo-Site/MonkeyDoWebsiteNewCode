@@ -97,3 +97,7 @@ Owner calendar controls now support one-time sessions, session settings and date
 ## Membership draft increment
 
 Test membership planning and persisted calendar/price history are available; rerun `configure_staff_group` after migration for the new draft capabilities. See [MEMBERSHIP_DEVELOPMENT.md](MEMBERSHIP_DEVELOPMENT.md). These are inactive draft cohorts, not completed sales or active memberships.
+
+## Weekly schedule increment
+
+Owners can edit weekly templates, explicitly generate/apply dated sessions and configure the booking horizon. See [RECURRING_SCHEDULE_DEVELOPMENT.md](RECURRING_SCHEDULE_DEVELOPMENT.md). Generation retains booked/manual/independent sessions; it is not a recurring worker or a public checkout activation.

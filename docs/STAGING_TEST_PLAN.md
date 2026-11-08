@@ -159,7 +159,7 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 - Close a date with a private reason; verify existing bookings/quotes persist and new test reservations and moves are blocked, including owner capacity overrides. Create another session on that closed date and confirm it remains blocked. Reopen the date; individually closed sessions must stay closed.
 - Verify private labels/reasons never appear on the public schedule. Mark Chol Hamoed once for the whole date; membership pricing is deferred, not claimed active.
 - Attempt stale simultaneous calendar edits, reduce capacity below reservations and change booked session timing. Each must reject safely. Staff cannot use these owner controls even with model permissions.
-- Confirm every successful edit is audited and does not send a message or process a payment. Recurring schedule editing remains unavailable.
+- Confirm every successful edit is audited and does not send a message or process a payment. Weekly template controls are covered in the following acceptance cases.
 
 ## Membership draft calendar acceptance
 
@@ -168,3 +168,12 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 - Compare monthly/prepaid estimates, card/noncard fees and nontaxable membership treatment. Prepaid should have one whole-term payment estimate and no later installments.
 - Change future product prices and fee policy; existing draft/cycle history must remain unchanged. Staff cannot change owner pricing. Repeat a submission and verify no duplicate draft/cycles/audit.
 - Confirm customer-filtered draft history, permissions, pagination and desktop/mobile rendering. Actual benefit allocation, renewal sale, admission conversion, customer credit and Banquest collection cannot yet be accepted from these screens.
+
+## Weekly templates and horizon acceptance
+
+- Review the four initialized Sunday–Friday templates; create an evening/backend-only or Saturday template. Saving a template must not expose or change dated sessions by itself.
+- Generate a selected inclusive date range. Repeat it and verify no duplicate sessions. Update a template, apply with updates off/on, and inspect the results. Unbooked untouched generated sessions may change; manual, booked, program and independent sessions must be preserved.
+- Disable a template or remove a weekday and apply updates: obsolete eligible sessions close without cancelling bookings. Reactivate and apply: only eligible generated sessions reopen; date-wide/manual closures stay effective.
+- Try active template overlap, stale edits, invalid capacity/weekdays and ambiguous/nonexistent DST times. A failed generation must roll back its changes and audit.
+- Change the horizon to 10, verify date openings and Sunday Friday-midnight behavior, then use the default-one-day reset with/without confirmation. Existing bookings and quotes must remain unchanged. Generation is separate from horizon changes.
+- Confirm staff cannot access owner template/horizon actions even with model permissions; verify audit history, CSRF, concurrent generation and desktop/mobile screens.

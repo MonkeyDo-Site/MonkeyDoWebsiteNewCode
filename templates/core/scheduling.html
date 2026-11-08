@@ -1,7 +1,8 @@
 {% extends 'core/staff_base.html' %}
 {% block staff_content %}
 <h1>Owner scheduling</h1>
-<p class="notice">Test calendar · Times use America/New_York. Closures block new reservations without cancelling existing bookings. Recurring schedule editing and customer notifications are not connected.</p>
+<p><a href="{% url 'recurring_settings' %}">Weekly schedule</a> · <a href="{% url 'horizon_settings' %}">Booking horizon</a></p>
+<p class="notice">Test calendar · Times use America/New_York. Closures block new reservations without cancelling existing bookings. Customer notifications are not connected.</p>
 <form method="get" class="search-form"><label for="schedule-day">Date</label><input id="schedule-day" type="date" name="day" value="{{ day|date:'Y-m-d' }}"><button class="button">View date</button></form>
 <p><a class="button small" href="{% url 'session_create' %}">Add one-time session</a> <a class="button small" href="{% url 'date_edit' %}?day={{ day|date:'Y-m-d' }}">Edit date settings</a></p>
 <h2>{{ day|date:'l, F j, Y' }}</h2>
