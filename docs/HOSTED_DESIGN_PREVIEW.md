@@ -34,3 +34,7 @@ Create the owner account privately through Django `createsuperuser` after migrat
 ## Verification boundary
 
 Local tests exercise the restricted routes/gate, safe file allowlist, read-only responses, CSRF, secure ticket, password rotation and hidden CLI input. Browser checks exercise the gate and desktop/phone snapshot layouts. No host installation, HTTPS certificate, DNS change or service startup is claimed by repository preparation.
+
+## Subsequent deployment automation
+
+The owner reports HTTPS/private access is now working after guided nginx/Certbot configuration. The agent has not directly audited that host. [DEPLOYMENT_COMMAND.md](DEPLOYMENT_COMMAND.md) prepares a Windows update wrapper and root-owned design-preview controller. Installation alone leaves the existing release unchanged; no automated host deployment is claimed until the operator runs and verifies it.

@@ -36,3 +36,11 @@ jobs:
       - run: python manage.py makemigrations --check --dry-run
       - run: python manage.py collectstatic --noinput
       - run: python manage.py test --verbosity 2
+
+  deployment-wrapper:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Windows PowerShell deployment wrapper with mocked SSH
+        shell: powershell
+        run: ./tests/deployment/check_wrapper.ps1
