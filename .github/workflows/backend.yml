@@ -48,6 +48,7 @@ jobs:
             $info = [Diagnostics.ProcessStartInfo]::new()
             $info.FileName = 'powershell.exe'
             $info.Arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/deployment/check_wrapper.ps1'
+            $info.EnvironmentVariables['PSModulePath'] = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules;$env:ProgramFiles\WindowsPowerShell\Modules"
             $info.UseShellExecute = $false
             $info.RedirectStandardOutput = $true
             $info.RedirectStandardError = $true

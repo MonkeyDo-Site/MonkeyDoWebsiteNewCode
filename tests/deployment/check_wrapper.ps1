@@ -29,7 +29,10 @@ try {
     & $wrapper -Archive $archive -Commit $commit
     if ($global:Calls.Count -ne 2) { throw 'Deploy must upload then invoke SSH once.' }
     if ($global:Calls[0].arguments[-2] -ne $archive) { throw 'Archive path with spaces was not preserved.' }
-    if ($global:Calls[1].arguments -notcontains (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'Checksum not passed.' }
+    $hashStream = [IO.File]::OpenRead($archive)
+    $hashAlgorithm = [Security.Cryptography.SHA256]::Create()
+    try { $expectedDigest = [BitConverter]::ToString($hashAlgorithm.ComputeHash($hashStream)).Replace('-', '').ToLowerInvariant() } finally { $hashStream.Dispose(); $hashAlgorithm.Dispose() }
+    if ($global:Calls[1].arguments -notcontains $expectedDigest) { throw 'Checksum not passed.' }
     if ($global:Calls[1].arguments -notcontains 'StrictHostKeyChecking=yes') { throw 'Host verification missing.' }
     $global:Calls.Clear()
     & $wrapper -Install -Archive $archive -Commit $commit

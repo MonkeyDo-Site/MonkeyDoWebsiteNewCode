@@ -27,6 +27,15 @@ function Invoke-CheckedNative {
     }
 }
 
+function Get-MonkeyDoDigest {
+    param([string]$Path)
+    $stream = [IO.File]::OpenRead($Path)
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    try {
+        return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    } finally { $algorithm.Dispose(); $stream.Dispose() }
+}
+
 $sshOptions = @('-o', 'StrictHostKeyChecking=yes')
 if ($Rollback -or $Status) {
     $operation = if ($Rollback) { 'rollback' } else { 'status' }
@@ -36,7 +45,7 @@ if ($Rollback -or $Status) {
 $Commit = $Commit.ToLowerInvariant()
 $archivePath = (Resolve-Path -LiteralPath $Archive).Path
 if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf)) { throw 'Choose the approved downloaded ZIP file.' }
-$digest = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+$digest = Get-MonkeyDoDigest $archivePath
 $uploadId = [Guid]::NewGuid().ToString('N')
 
 if ($Install) {
@@ -51,7 +60,7 @@ if ($Install) {
         $inputStream = $entry.Open()
         $outputStream = [IO.File]::Open($temporary, [IO.FileMode]::CreateNew)
         try { $inputStream.CopyTo($outputStream) } finally { $inputStream.Dispose(); $outputStream.Dispose() }
-        $helperHash = (Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash.ToLowerInvariant()
+        $helperHash = Get-MonkeyDoDigest $temporary
         $remote = "/usr/local/sbin/monkeydo-deploy-new-$uploadId"
         Invoke-CheckedNative 'scp' ($sshOptions + @($temporary, "root@${Server}:$remote"))
         # Only validated hex values enter this fixed bootstrap. Never downloads
