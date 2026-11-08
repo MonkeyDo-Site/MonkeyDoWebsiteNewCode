@@ -20,6 +20,8 @@ The frozen V1 [design gallery](design-review/v1/README.md), [feedback log](DESIG
 
 The guided server setup and restricted hosted-review release are documented in [HOSTED_DESIGN_PREVIEW.md](HOSTED_DESIGN_PREVIEW.md).
 
+The [deployment command and rollback guide](DEPLOYMENT_COMMAND.md) describes one-time installation, routine preview updates and the database-migration boundary.
+
 ## Reading order and authority
 
 | Document | Responsibility |
