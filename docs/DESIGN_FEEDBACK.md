@@ -118,3 +118,10 @@ below titles, separated from the detail lists. Memberships has eyebrow “More w
 to go bananas” plus decorative original-monkey imagery. Removed the named-children
 sentence from current public copy; anonymous membership allocation rules remain
 unchanged internally. Earlier approved pricing and benefit bullets are preserved.
+
+## V14: owner-selected play-card image subjects
+
+Open Play uses a close crop of the child tossing green foam blocks. Supervised
+Play uses the child climbing on the monkey bars. Both use the supplied original
+photo without generative editing, with 4:3 display proportions to keep subjects
+visible. Wording, card colors, spacing and other requested changes stay intact.

@@ -19,3 +19,11 @@ with individual checksums. Homepage cards and matching About areas use them.
 `booking-monkey.webp` isolates the existing taupe monkey from the original logo
 for the owner's requested booking-button icon. Background and adjacent lettering
 are masked; the monkey is not redrawn or recolored. Original full logo is intact.
+
+The two 720×540 play-option crops come from the original uploaded
+`docs/brand-assets/children-originals/Image 2 (1).jpg` (2042×1525):
+- `open-play-foam-blocks.webp`: source box (160,450)–(880,990), child tossing foam blocks.
+- `supervised-play-monkey-bars.webp`: source box (520,160)–(1240,700), child on monkey bars.
+
+The owner selected these subjects for the corresponding cards. No people or
+objects were generated, removed or retouched; originals remain unchanged.
