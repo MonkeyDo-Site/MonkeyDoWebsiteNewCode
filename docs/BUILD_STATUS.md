@@ -251,3 +251,14 @@ and 320px: correct order/font/line spacing, visible icon/arrow and no overflow.
 All 17 desktop/phone review pages and seven hosted-preview tests passed. Ruff,
 whitespace and deployment-bundle checks passed. Updated homepage JPGs captured;
 no deployment.
+
+## Design review V17: scroll motion throughout remaining homepage sections
+
+Added progressive CSS view-timeline fade/slide effects to 22 homepage section
+headings/cards and the intro. All remain fully visible without animation support;
+reduced motion disables effects and keyboard focus stops motion on that card.
+No scripts were added or preview restrictions weakened. Standalone pages are static.
+All 22 public-page/hosted-preview tests passed on PostgreSQL. All 17 desktop/phone
+review screens passed Chromium checks. Dedicated normal/reduced-motion browser
+checks verified actual scroll progress, focus, scope and no overflow at both
+widths. Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
