@@ -1,0 +1,4 @@
+{% load static %}<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>MonkeyDo — Private design review</title><link rel="stylesheet" href="{% static 'core/site.css' %}"></head>
+<body><a class="skip" href="#main">Skip to content</a><header><a class="brand" href="{% url 'home' %}"><img src="{% static 'brand/Final MonkeyDo logo.jpg' %}" alt="MonkeyDo Adventurous Play" width="2071" height="1451"></a></header>
+<main id="main"><section class="login panel"><h1>Private design review</h1><p>Enter the shared preview password. This review uses fictional sample records; forms, payments and staff actions are disabled.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Open preview</button></form></section></main></body></html>

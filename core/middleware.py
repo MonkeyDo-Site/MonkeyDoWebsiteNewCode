@@ -30,7 +30,11 @@ class StagingAccessMiddleware:
                 and request.user.is_authenticated
                 and request.user.is_superuser
             )
-            if not request.path.startswith(public_auth) and not owner_setup:
+            if (
+                request.path != "/staff/"
+                and not request.path.startswith(public_auth)
+                and not owner_setup
+            ):
                 if not access_valid(request, SiteSettings.objects.filter(pk=1).first()):
                     response = redirect("staging_access")
                     response["Cache-Control"] = "private, no-store"

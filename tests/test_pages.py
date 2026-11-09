@@ -30,6 +30,37 @@ class PageTests(TestCase):
         self.assertIn("no-store", response["Cache-Control"])
         self.assertEqual(response["X-Robots-Tag"], "noindex, nofollow")
 
+    def test_customer_pages_never_link_to_staff_even_for_signed_in_staff(self):
+        for signed_in in (False, True):
+            if signed_in:
+                user = get_user_model().objects.create_user(username="footer-staff", is_staff=True)
+                self.client.force_login(user)
+            for path in ("/", "/about/", "/memberships-clubs-parties/", "/contact/", "/book/"):
+                response = self.client.get(path)
+                for target in ("/staff/", "/accounts/", "/admin/"):
+                    self.assertNotContains(response, f'href="{target}')
+                    self.assertNotContains(response, f'action="{target}')
+
+    def test_staff_entry_is_noindex_and_rejects_customer_login(self):
+        response = self.client.get("/staff/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["X-Robots-Tag"], "noindex, nofollow")
+        self.assertContains(response, 'name="robots" content="noindex,nofollow"')
+        get_user_model().objects.create_user(
+            username="customer-login", password="artificial-test-password-123"
+        )
+        response = self.client.post(
+            "/staff/", {"username": "customer-login", "password": "artificial-test-password-123"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertEqual(self.client.get("/staff/today/").status_code, 302)
+
+    @override_settings(APP_ENV="staging", SECURE_SSL_REDIRECT=False)
+    def test_staff_entry_is_accessible_before_shared_staging_gate(self):
+        self.assertEqual(self.client.get("/staff/").status_code, 200)
+        self.assertEqual(self.client.get("/staff/customers/").url, "/staging/access/")
+
     def test_password_login_lands_on_today(self):
         user = get_user_model().objects.create_user(
             username="login-staff", password="artificial-test-password-123", is_staff=True

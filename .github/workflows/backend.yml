@@ -36,3 +36,34 @@ jobs:
       - run: python manage.py makemigrations --check --dry-run
       - run: python manage.py collectstatic --noinput
       - run: python manage.py test --verbosity 2
+
+  deployment-wrapper:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Windows PowerShell deployment wrapper with mocked SSH
+        shell: pwsh
+        run: |
+          try {
+            $info = [Diagnostics.ProcessStartInfo]::new()
+            $info.FileName = 'powershell.exe'
+            $info.Arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/deployment/check_wrapper.ps1'
+            $info.EnvironmentVariables['PSModulePath'] = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules;$env:ProgramFiles\WindowsPowerShell\Modules"
+            $info.UseShellExecute = $false
+            $info.RedirectStandardOutput = $true
+            $info.RedirectStandardError = $true
+            $process = [Diagnostics.Process]::Start($info)
+            $output = $process.StandardOutput.ReadToEnd()
+            $errors = $process.StandardError.ReadToEnd()
+            $process.WaitForExit()
+            $detail = ($output + $errors).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            if ($process.ExitCode -ne 0) {
+              Write-Host "::error title=Windows PowerShell wrapper test::$detail"
+              exit 1
+            }
+            Write-Host "::notice title=Windows PowerShell wrapper test::$detail"
+          } catch {
+            $detail = ($_ | Out-String).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error title=Windows test harness::$detail"
+            exit 1
+          }
