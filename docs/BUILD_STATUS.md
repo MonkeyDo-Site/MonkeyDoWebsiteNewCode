@@ -152,3 +152,11 @@ paragraph for baby-only $15 admission. No price/operational rule changes.
 All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
 Chromium phone/desktop layout and asset checks. Ruff, whitespace and deployment
 bundle checks passed. No deployment.
+
+## Design review V7: Supervised Play wording
+
+Applied the owner's exact four lines and separate session-availability paragraph.
+Heading: Supervised Play. Booking cutoff and other operating rules unchanged.
+All 14 public-page tests passed on PostgreSQL; all 16 review pages passed phone/
+desktop Chromium layout and image checks. Ruff, whitespace and deployment-bundle
+validation passed. No deployment or database changes.
