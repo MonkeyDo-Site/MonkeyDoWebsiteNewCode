@@ -76,3 +76,17 @@ Added an opt-in design-only URL mode, using the existing shared staging gate, wi
 Added a Windows upload/install/update wrapper and design-only server controller with separate per-release environments, validation, private-gate/HTTPS checks, durable recovery checkpoints and code rollback. It refuses pending migrations and does not reverse database schema/data. See [DEPLOYMENT_COMMAND.md](DEPLOYMENT_COMMAND.md). Host installation and actual systemd switching remain operator verification steps; preparation/testing has not changed the live V1 release.
 
 Verification: **243 tests pass on local PostgreSQL 17**, including 23 deployment unit/integration checks plus the real pending-migration guard on the disposable database. Actual frozen V1 files pass the bundle guard. Official portable PowerShell 7.6.9 passes wrapper tests with mocked SSH/SCP; CI also runs the wrapper under Windows PowerShell. No helper installation, live release switch or database migration occurred during preparation. The installation-only command checks the existing site without deploying it.
+
+## Staff portal discovery
+
+Added `/staff/` as a protected staff-login entry, using the existing throttled
+staff authentication and owner verification. Removed staff/login/logout links
+from the customer layout even for signed-in staff; sign-out remains in the staff
+layout. Existing noindex headers and HTML tags cover login, staff, admin and
+account pages; no public sitemap exists. Requirements explicitly exclude those
+routes from any future sitemap. No frozen V1 files or hosted server changed.
+
+Verification: all 246 tests passed on disposable PostgreSQL 17; Django system
+checks, Ruff lint/format and whitespace checks passed. New checks cover removal
+of staff links from anonymous and signed-in customer pages, noindex login,
+customer credential rejection and the staging entry gate boundary.

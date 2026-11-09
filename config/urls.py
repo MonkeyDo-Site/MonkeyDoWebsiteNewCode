@@ -17,6 +17,7 @@ from core import (
 from core.security import ProtectedLoginView
 
 urlpatterns = [
+    path("staff/", ProtectedLoginView.as_view(), name="staff_login"),
     path("staff/scheduling/weekly/", recurring_views.recurring_settings, name="recurring_settings"),
     path("staff/scheduling/weekly/new/", recurring_views.slot_edit, name="weekly_create"),
     path("staff/scheduling/weekly/<int:pk>/", recurring_views.slot_edit, name="weekly_edit"),

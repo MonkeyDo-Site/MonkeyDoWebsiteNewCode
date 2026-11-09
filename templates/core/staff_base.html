@@ -15,3 +15,9 @@
   </section>
 </div>
 {% endblock %}
+
+{% block staff_footer %}
+<form class="inline" action="{% url 'logout' %}" method="post">{% csrf_token %}
+<button class="text-button">Sign out</button>
+</form>
+{% endblock %}
