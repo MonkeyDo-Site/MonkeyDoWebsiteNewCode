@@ -520,3 +520,5 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   object-fit:contain;
   transform:rotate(-8deg)
 }
+
+.play-card .button { gap:12px; max-width:100%; text-align:center }

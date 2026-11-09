@@ -125,3 +125,10 @@ Open Play uses a close crop of the child tossing green foam blocks. Supervised
 Play uses the child climbing on the monkey bars. Both use the supplied original
 photo without generative editing, with 4:3 display proportions to keep subjects
 visible. Wording, card colors, spacing and other requested changes stay intact.
+
+## V15: play-option booking buttons
+
+Open Play button: “Book your session now →” with a decorative arrow.
+Supervised Play now has a “See available sessions” button. Both point to the
+booking schedule. Tightened button icon gap and constrained width for phones;
+photo choices, copy and business rules remain unchanged.
