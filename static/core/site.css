@@ -487,3 +487,5 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   padding-top:16px;
   scroll-margin-top:24px
 }
+
+#play-sessions { scroll-margin-top:24px }

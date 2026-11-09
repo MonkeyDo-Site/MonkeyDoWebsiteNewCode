@@ -103,6 +103,7 @@ class PageTests(TestCase):
                 'id="about"',
                 'id="memberships"',
                 'id="clubs-and-parties"',
+                'id="gift-cards"',
                 'id="contact"',
             )
         ]
@@ -119,6 +120,10 @@ class PageTests(TestCase):
         self.assertIn('href="/memberships/"', home)
         self.assertIn('href="/clubs-parties/"', home)
         self.assertNotIn('href="/memberships-clubs-parties/"', home)
+        self.assertIn('href="#play-sessions">See play sessions', home)
+        self.assertEqual(home.count('id="play-sessions"'), 1)
+        self.assertEqual(home.count("<h2>MonkeyDo Gift Cards</h2>"), 1)
+        self.assertIn('href="/book/">See available sessions', home)
 
     def test_club_visibility_does_not_delete_data(self):
         SiteSettings.objects.create(clubs_visible=False)

@@ -99,3 +99,12 @@ Implemented both dedicated routes/navigation and full scrolling homepage section
 from shared templates. Earlier combined route stays unlinked for old bookmarks.
 Clubs visibility applies to dedicated and homepage sections. Latest owner request
 supersedes the earlier combined-program page inventory; business rules unchanged.
+
+## V12: play-session jump and separate homepage gift-card section
+
+Come play now says “See play sessions” and links to #play-sessions on the same
+homepage. The target contains both Open Play and Supervised Play and retains its
+booking link. Gift Cards is its own homepage section after Clubs & Parties and
+before Contact Us, using the approved in-person purchase notice. The notice also
+remains on the dedicated Clubs & Parties page and in Contact information. No
+digital gift-card checkout or balance ledger is added.

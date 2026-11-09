@@ -47,7 +47,7 @@ Use owner-supplied photos for these four areas; do not substitute a new area inv
 
 ## 3. Public pages and navigation
 
-- **Home:** approved headline/introduction, facility visuals and prominent Book Now, followed by full About, Memberships, Clubs & Parties and Contact Us sections in that order as visitors scroll. Use shared content with the separate pages.
+- **Home:** approved headline/introduction, facility visuals and prominent Book Now, followed by full About, Memberships, Clubs & Parties, Gift Cards and Contact Us sections in that order as visitors scroll. Use shared content with the separate pages.
 - **About:** introduction, four approved photo areas, ordinary and supervised-play options. No separate Play page. The isolated phrase “reserved play” in AG is not authorization for a new product.
 - **Memberships:** separate page with approved package descriptions, bulleted benefits and membership purchase entry.
 - **Clubs & Parties:** separate combined page with seasonal club information, party inclusions/pricing and gift-card notice. This later owner decision supersedes the earlier all-programs combined-page instruction.

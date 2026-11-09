@@ -25,7 +25,7 @@
 <img class="card-photo" src="{% static 'children/Image 10b.jpeg' %}" width="2400" height="1792" alt="Children enjoying the spiral slide, climbing ladder, and ball pit" loading="lazy">
 <h2>Come play</h2>
 <p>Climb, swing, slide, and imagine. Find a session that fits your family.</p>
-<a href="{% url 'schedule' %}">See available play sessions →</a>
+<a href="#play-sessions">See play sessions →</a>
 </article>
 <article>
 <img class="card-photo" src="{% static 'children/Image 11.jpg' %}" width="1671" height="2238" alt="A child climbing the jungle-themed climbing wall above the ball pit" loading="lazy">
@@ -43,5 +43,6 @@
 <div id="about" class="home-section">{% include 'core/partials/about.html' with embedded=True %}</div>
 <div class="home-section">{% include 'core/partials/memberships.html' %}</div>
 <div id="clubs-and-parties" class="home-section">{% include 'core/partials/clubs_parties.html' %}</div>
+<div class="home-section">{% include 'core/partials/gift_cards.html' %}</div>
 <div id="contact" class="home-section">{% include 'core/partials/contact.html' with embedded=True %}</div>
 {% endblock %}
