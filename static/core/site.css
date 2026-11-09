@@ -542,3 +542,10 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 }
 
 .area-grid h2,.play-card h3,#clubs h3 { color:var(--rose-ink) }
+
+.customer-booking-form { max-width:800px }
+.customer-booking-form input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+.customer-booking-form select { width:100%; font:inherit; padding:10px; border:1px solid #657567; border-radius:10px }
+.customer-booking-form label { display:block; font-weight:600 }
+.customer-booking-form .errorlist { color:#8a243c }
+.customer-booking-form form + form { margin-top:24px }

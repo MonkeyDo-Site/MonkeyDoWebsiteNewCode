@@ -37,6 +37,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "core.middleware.LocalProxyClientIPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -129,3 +130,33 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 PASSWORD_RESET_TIMEOUT = 60 * 60
 DEFAULT_FROM_EMAIL = "bookings@monkeydoplay.com"
+
+# Opt-in functional staging; the frozen design preview stays the default host.
+CUSTOMER_TEST_BOOKING = os.environ.get("MONKEYDO_CUSTOMER_TEST_BOOKING") == "1"
+if CUSTOMER_TEST_BOOKING and DESIGN_REVIEW_ONLY:
+    raise ImproperlyConfigured(
+        "Customer testing and frozen design review require separate services."
+    )
+
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+STAGING_EMAIL_RECIPIENTS = tuple(
+    x.strip() for x in os.environ.get("MONKEYDO_TEST_EMAIL_RECIPIENTS", "").split(",") if x.strip()
+)
+if os.environ.get("MONKEYDO_EMAIL_TRANSPORT") == "resend":
+    if APP_ENV not in {"staging", "test"} or not RESEND_API_KEY or not STAGING_EMAIL_RECIPIENTS:
+        raise ImproperlyConfigured(
+            "Resend staging delivery requires protected credentials and an explicit test-recipient allowlist."
+        )
+    EMAIL_BACKEND = "core.test_email.StagingEmailBackend"
+if (
+    APP_ENV == "staging"
+    and CUSTOMER_TEST_BOOKING
+    and EMAIL_BACKEND != "core.test_email.StagingEmailBackend"
+):
+    raise ImproperlyConfigured(
+        "Functional staging requires controlled test email delivery for staff/owner authentication."
+    )
+
+TRUST_LOCAL_CLIENT_IP = os.environ.get("MONKEYDO_TRUST_LOCAL_CLIENT_IP") == "1"
+if TRUST_LOCAL_CLIENT_IP and os.environ.get("DJANGO_TRUST_PROXY") != "1":
+    raise ImproperlyConfigured("Client-IP trust requires the reviewed local reverse proxy.")

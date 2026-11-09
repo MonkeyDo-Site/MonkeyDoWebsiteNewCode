@@ -1,0 +1,28 @@
+# Separate functional-test service; never overwrite the design-review unit.
+[Unit]
+Description=MonkeyDo private functional testing
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=monkeydo-functional
+Group=www-data
+WorkingDirectory=/srv/monkeydo-functional/staging/current
+EnvironmentFile=/etc/monkeydo/functional.env
+Environment=APP_ENV=staging
+Environment=MONKEYDO_DESIGN_ONLY=0
+Environment=MONKEYDO_CUSTOMER_TEST_BOOKING=1
+RuntimeDirectory=monkeydo-functional
+RuntimeDirectoryMode=0750
+UMask=0007
+ExecStart=/srv/monkeydo-functional/staging/current/.venv/bin/gunicorn config.wsgi:application --workers 1 --umask 7 --bind unix:/run/monkeydo-functional/gunicorn.sock --timeout 60
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/monkeydo-functional
+
+[Install]
+WantedBy=multi-user.target
