@@ -58,3 +58,12 @@ accompanied by an adult; Children ages 1-11: $15 each; 1 free adult; additional
 adults ages 12 and up: $5 each; Babies under one are free. Separate paragraph:
 “if you are coming just with a baby, there is a $15 admission.” Heading: Open Play.
 This is customer-facing copy/layout; established pricing rules are unchanged.
+
+## V7: Supervised Play wording
+
+Used the owner's exact Supervised Play heading and lines: “Your child plays and
+our capable staff supervises”; “For children ages 3-11”; “$18.99 per child”;
+“Subscription members enjoy 25% off supervised play”. Separate paragraph:
+“Supervised play is available for select sessions. Check the booking page to see
+which sessions offer it.” This replaces the earlier public description; the
+established booking cutoff remains an operational rule.
