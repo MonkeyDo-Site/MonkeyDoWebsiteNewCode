@@ -233,3 +233,11 @@ Use 4:3 proportions to retain the selected subjects. No generative edits or
 business-rule changes. All 17 phone/desktop review screens and dedicated card
 layout checks passed in Chromium; seven hosted-preview tests passed on PostgreSQL.
 Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
+
+## Design review V15: play-option buttons
+
+Open Play uses “Book your session now →”. Supervised Play now has “See available
+sessions”. Both target the booking schedule; button width/gap adapts to phones.
+All 17 review pages and dedicated card checks passed on desktop/phone Chromium.
+Seven hosted-preview tests passed on PostgreSQL; Ruff, whitespace and deployment
+bundle checks passed. No deployment or business-rule changes.
