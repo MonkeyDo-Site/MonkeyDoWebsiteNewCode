@@ -521,3 +521,21 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 }
 
 .play-card .button { gap:12px; max-width:100%; text-align:center }
+
+/* Progressive CSS scroll motion: no scripts and no hidden-content dependency. */
+@supports (animation-timeline:view()) {
+  @media (prefers-reduced-motion:no-preference) {
+    .home-intro.scroll-reveal,.home-section .scroll-reveal {
+      animation:home-scroll-welcome linear both;
+      animation-timeline:view();
+      animation-range:entry 0% entry 100%
+    }
+    .home-intro.scroll-reveal:focus-within,.home-section .scroll-reveal:focus-within {
+      animation:none
+    }
+  }
+}
+@keyframes home-scroll-welcome {
+  from { opacity:.6; transform:translateY(20px) }
+  to { opacity:1; transform:translateY(0) }
+}

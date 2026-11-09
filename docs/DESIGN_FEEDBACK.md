@@ -140,3 +140,12 @@ paragraph, before the booking button, using the paragraph's font and line spacin
 The button retains the original monkey and now ends with a decorative right arrow.
 This later owner request supersedes the prior age-line/buton placement; all other
 approved content, imagery and behavior remain unchanged.
+
+## V17: scroll motion for the remaining homepage sections
+
+Add gentle CSS view-timeline fade/slide effects to the intro and About, play,
+Memberships, Clubs & Parties, Gift Cards and Contact headings/cards. Effects are
+homepage-scoped, require browser support and no reduced-motion preference, and
+stop on keyboard focus. Unsupported browsers and reduced-motion visitors retain
+fully visible static content. No scripts, automatic scrolling, flashing or loops
+are introduced; frozen preview script restrictions remain unchanged.
