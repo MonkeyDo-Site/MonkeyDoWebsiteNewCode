@@ -48,3 +48,13 @@ fishing/camping, a climbing wall, foam/ball-pit play, the toddler area and the
 spiral slide. The owner authorized website placement. Photos illustrate play;
 they do not change approved pricing, areas or party inclusions. Original filenames
 are preserved separately to avoid collisions with the earlier facility photos.
+
+## Owner-approved edited variants
+
+The owner approved two retouched variants and requested using them on Home and
+About while keeping originals in storage. Full-size PNG masters and checksums
+are saved in [approved-edits](approved-edits/). Browser derivatives are separate
+WebPs. Original JPEGs remain byte-for-byte intact in their existing directories.
+The approved full scene replaces its displayed counterpart on the homepage party
+card and Climbing Area; the approved close-up replaces the Supervised Play image.
+This stores assets in the repository; it does not perform an R2 upload/deployment.

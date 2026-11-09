@@ -158,3 +158,12 @@ and the eight requested area/play/club headings. This replaces the brown accent;
 original logo and photographs remain unchanged. Calculated text contrast is 5.47:1
 on cream, 4.82:1 on sage cards and 4.58:1 on coral cards. Color is proposed for
 owner review, not independently marked approved.
+
+## V19: use owner-approved photo edits, preserve originals
+
+Owner approved the latest full-photo and close-up edits with the smaller fitted
+head covering and cleaned-up face/neck areas. Save approved PNG masters separately
+from untouched originals, and use browser derivatives on the homepage Celebrate
+together card, Climbing Area on Home/About, and Supervised Play on Home/About.
+Keep the different-child Open Play foam-block crop unchanged. Original and edited
+master checksums verified. No live site update is implied by repository storage.
