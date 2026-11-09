@@ -212,3 +212,15 @@ All 15 public-page tests passed; all 17 review pages passed phone/desktop browse
 asset/layout checks. Browser click checks verified the anchor lands at both play
 options, the booking link remains and Gift Cards is in order. Ruff, whitespace
 and deployment-bundle validation passed. No deployment/business-rule changes.
+
+## Design review V13: colored photo play cards and membership headings
+
+Added a thin divider, Ready to play eyebrow and full-size Open play or supervised
+play heading. Play options now have sage/coral backgrounds and supplied activity
+photos; subtitles sit 6px below titles with 24px separation before details.
+Memberships has More ways to go bananas above it and decorative original monkeys.
+Removed named-children sentence from public copy without changing allocation.
+All 15 public-page and seven hosted-preview tests passed on PostgreSQL. All 17
+review pages passed Chromium phone/desktop asset/overflow checks; dedicated browser
+checks verified colors, images, heading text, spacing, removed copy and jump link.
+Ruff, whitespace and deployment-bundle validation passed. No deployment.
