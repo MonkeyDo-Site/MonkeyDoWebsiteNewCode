@@ -463,3 +463,21 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 @media (prefers-reduced-motion:reduce) {
   html { scroll-behavior:auto }
 }
+
+.home-hero .hero-booking-button {
+  position:relative;
+  top:10px;
+  display:inline-flex;
+  gap:10px
+}
+.hero-booking-button img {
+  width:34px;
+  height:24px;
+  object-fit:contain;
+  flex-shrink:0
+}
+.home-hero .hero-ages {
+  font-size:18px;
+  font-weight:600;
+  line-height:20.8px
+}

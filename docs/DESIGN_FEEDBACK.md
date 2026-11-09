@@ -67,3 +67,10 @@ our capable staff supervises”; “For children ages 3-11”; “$18.99 per chi
 “Supervised play is available for select sessions. Check the booking page to see
 which sessions offer it.” This replaces the earlier public description; the
 established booking cutoff remains an operational rule.
+
+## V8: homepage booking button and age line
+
+Owner requested moving the booking button slightly lower without shifting the
+remaining page text, adding the original logo monkey to the button, and enlarging
+the ages 1–10 line. Use a 10px relative button offset, a decorative extracted
+original monkey, and an 18px age line. Verify spacing at desktop and phone widths.

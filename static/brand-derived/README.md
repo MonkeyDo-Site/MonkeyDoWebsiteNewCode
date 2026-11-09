@@ -15,3 +15,7 @@ https://github.com/google/fonts/tree/main/ofl/nunito
 The five child/activity photographs have now been supplied in New ImagesMonkey.zip.
 Their original bytes are preserved under docs/brand-assets/children-originals,
 with individual checksums. Homepage cards and matching About areas use them.
+
+`booking-monkey.webp` isolates the existing taupe monkey from the original logo
+for the owner's requested booking-button icon. Background and adjacent lettering
+are masked; the monkey is not redrawn or recolored. Original full logo is intact.
