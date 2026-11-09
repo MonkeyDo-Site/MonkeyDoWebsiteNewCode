@@ -201,3 +201,14 @@ shared-section body caught by the new page test. All 17 review pages passed
 Chromium desktop/phone image/layout checks. Ruff, whitespace and deployment-bundle
 validation passed. PR #20 now targets main after the parent PRs merged. No
 migration, deployment or provider operation occurred.
+
+## Design review V12: play jump and homepage Gift Cards
+
+Come play says “See play sessions” and jumps to #play-sessions on the homepage,
+where both types and the existing booking link are present. Gift Cards now has a
+separate section after Clubs & Parties and before Contact Us. Reuses the approved
+in-person purchase notice, also preserved on the dedicated/legacy program pages.
+All 15 public-page tests passed; all 17 review pages passed phone/desktop browser
+asset/layout checks. Browser click checks verified the anchor lands at both play
+options, the booking link remains and Gift Cards is in order. Ruff, whitespace
+and deployment-bundle validation passed. No deployment/business-rule changes.
