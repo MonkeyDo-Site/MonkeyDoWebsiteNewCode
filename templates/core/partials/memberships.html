@@ -1,7 +1,10 @@
+{% load static %}
 <section id="memberships">
+<p class="eyebrow">More ways to go bananas</p>
 <h2>Memberships</h2>
 <div class="split">
-<article class="panel">
+<article class="panel membership-card">
+<img class="membership-mascot" src="{% static 'brand-derived/booking-monkey.webp' %}" width="56" height="40" alt="" aria-hidden="true" loading="lazy">
 <p class="eyebrow">Subscription Membership</p>
 <h3>$17.99 <small>per child, per month</small></h3>
 <ul>
@@ -13,7 +16,8 @@
 <li>Three-month minimum</li>
 </ul>
 </article>
-<article class="panel coral">
+<article class="panel coral membership-card">
+<img class="membership-mascot" src="{% static 'brand-derived/booking-monkey.webp' %}" width="56" height="40" alt="" aria-hidden="true" loading="lazy">
 <p class="eyebrow">Unlimited Membership</p>
 <h3>$39.99 <small>per child, per month</small></h3>
 <ul>
@@ -24,6 +28,5 @@
 <p>* Excludes Chol Hamoed and supervised play. Unlimited Members pay full price for Chol Hamoed and supervised-play visits.</p>
 </article>
 </div>
-<p>Memberships are not assigned to named children.</p>
 <p class="notice">Membership checkout is being built and is not available in this preview.</p>
 </section>

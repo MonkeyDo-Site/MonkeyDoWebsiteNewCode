@@ -108,3 +108,13 @@ booking link. Gift Cards is its own homepage section after Clubs & Parties and
 before Contact Us, using the approved in-person purchase notice. The notice also
 remains on the dedicated Clubs & Parties page and in Contact information. No
 digital gift-card checkout or balance ledger is added.
+
+## V13: livelier play cards and membership headings
+
+Added a thin divider before play options, eyebrow “Ready to play?” and full-size
+heading “Open play or supervised play”. Open/Supervised Play now have sage/coral
+card backgrounds and owner-supplied activity photos. Descriptions sit immediately
+below titles, separated from the detail lists. Memberships has eyebrow “More ways
+to go bananas” plus decorative original-monkey imagery. Removed the named-children
+sentence from current public copy; anonymous membership allocation rules remain
+unchanged internally. Earlier approved pricing and benefit bullets are preserved.

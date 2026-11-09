@@ -29,25 +29,28 @@
 <p>A welcoming space designed for little ones, with swings, a toddler-friendly ball pit, and tabletop toys.</p>
 </article>
 </section>
-<section id="play-sessions" aria-label="Play session options">
-<p class="lead"><strong>Choose open play or supervised play, when available.</strong></p>
+<section id="play-sessions" class="play-options" aria-labelledby="play-heading">
+<p class="eyebrow">Ready to play?</p>
+<h2 id="play-heading">Open play or supervised play</h2>
 <div class="split">
-<article>
+<article class="panel play-card">
+<img class="play-photo" src="{% static 'children/Image 10b.jpeg' %}" width="2400" height="1792" alt="Children enjoying the spiral slide, climbing ladder, and ball pit" loading="lazy">
 <p class="eyebrow">Together time</p>
-<h2>Open Play</h2>
-<p>Play accompanied by an adult<br>
-Children ages 1-11: $15 each<br>
+<h3>Open Play</h3>
+<p class="play-subtitle">Play accompanied by an adult</p>
+<p>Children ages 1-11: $15 each<br>
 1 free adult<br>
 additional adults ages 12 and up: $5 each<br>
 Babies under one are free</p>
 <p>if you are coming just with a baby, there is a $15 admission.</p>
 <a class="button" href="{% url 'schedule' %}">See available sessions</a>
 </article>
-<article>
+<article class="panel coral play-card">
+<img class="play-photo" src="{% static 'children/Image 6.jpg' %}" width="2400" height="1792" alt="Children sharing imaginative fishing and boating play" loading="lazy">
 <p class="eyebrow">A little time for you</p>
-<h2>Supervised Play</h2>
-<p>Your child plays and our capable staff supervises<br>
-For children ages 3-11<br>
+<h3>Supervised Play</h3>
+<p class="play-subtitle">Your child plays and our capable staff supervises</p>
+<p>For children ages 3-11<br>
 $18.99 per child<br>
 Subscription members enjoy 25% off supervised play</p>
 <p>Supervised play is available for select sessions. Check the booking page to see which sessions offer it.</p>

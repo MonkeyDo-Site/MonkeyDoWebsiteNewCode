@@ -489,3 +489,34 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 }
 
 #play-sessions { scroll-margin-top:24px }
+
+.play-options {
+  border-top:1px solid var(--line);
+  padding-top:36px
+}
+.play-card { min-width:0 }
+.play-photo {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:16/9;
+  object-fit:cover;
+  border-radius:22px;
+  margin-bottom:24px
+}
+.play-card h3 {
+  font-size:clamp(28px,3vw,36px);
+  margin:8px 0 6px
+}
+.play-card .play-subtitle { margin:0 0 24px }
+.membership-card { position:relative }
+.membership-card > .eyebrow { padding-right:70px }
+.membership-mascot {
+  position:absolute;
+  right:22px;
+  top:22px;
+  width:56px;
+  height:40px;
+  object-fit:contain;
+  transform:rotate(-8deg)
+}

@@ -225,3 +225,6 @@ Cloudflare Access gate is selected by this clarification. The frozen hosted V1
 snapshot remains unchanged; apply this behavior to the functional application
 when it is deployed. Customer testing should eventually enter at the homepage;
 this does not replace the current frozen design-review index during review.
+
+Public membership marketing must omit “Memberships are not assigned to named children.”
+The anonymous-place operating rule remains internal; this copy removal does not change it.
