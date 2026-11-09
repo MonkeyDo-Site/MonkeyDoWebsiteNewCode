@@ -160,3 +160,13 @@ Heading: Supervised Play. Booking cutoff and other operating rules unchanged.
 All 14 public-page tests passed on PostgreSQL; all 16 review pages passed phone/
 desktop Chromium layout and image checks. Ruff, whitespace and deployment-bundle
 validation passed. No deployment or database changes.
+
+## Design review V8: homepage booking button and ages
+
+Booking button moves 10px lower and includes the original logo monkey as a
+small decorative icon. Age line is enlarged to 18px (responsive minimum 15px).
+Measured before/after positions at 1440px, 390px and 320px: hero paragraph, age
+line, intro and cards moved 0px; only the button moved 10px. No overlaps/overflow.
+All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
+Chromium phone/desktop asset and layout checks. Ruff, whitespace and deployment
+bundle validation passed. No deployment or database changes.
