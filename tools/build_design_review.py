@@ -30,7 +30,7 @@ def main():
     parser.add_argument("--output", type=Path, default=ROOT / "docs/design-review/v1")
     parser.add_argument("--source-commit", required=True)
     parser.add_argument(
-        "--version", choices=("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8"), default="V1"
+        "--version", choices=("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"), default="V1"
     )
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9a-f]{40}", args.source_commit):

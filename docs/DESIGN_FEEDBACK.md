@@ -74,3 +74,10 @@ Owner requested moving the booking button slightly lower without shifting the
 remaining page text, adding the original logo monkey to the button, and enlarging
 the ages 1–10 line. Use a 10px relative button offset, a decorative extracted
 original monkey, and an 18px age line. Verify spacing at desktop and phone widths.
+
+## V9: homepage card wording
+
+Come play link: “See available play sessions”. Celebrate together description:
+“A private party filled with MonkeyDo fun, family and friends.” Earlier requested
+card-number removal, photos, typography and motion remain in place. This is a
+wording change only; party package inclusions and booking rules are unchanged.
