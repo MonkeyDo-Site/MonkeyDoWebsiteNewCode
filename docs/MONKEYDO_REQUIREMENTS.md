@@ -47,14 +47,15 @@ Use owner-supplied photos for these four areas; do not substitute a new area inv
 
 ## 3. Public pages and navigation
 
-- **Home:** approved headline/introduction, facility visuals, public location/hours/contact, prominent Book Now.
+- **Home:** approved headline/introduction, facility visuals and prominent Book Now, followed by full About, Memberships, Clubs & Parties, Gift Cards and Contact Us sections in that order as visitors scroll. Use shared content with the separate pages.
 - **About:** introduction, four approved photo areas, ordinary and supervised-play options. No separate Play page. The isolated phrase “reserved play” in AG is not authorization for a new product.
-- **Memberships, Clubs & Parties:** one combined page; membership purchase entry, approved package descriptions, party inclusions/pricing, seasonal club information, gift-card notice.
+- **Memberships:** separate page with approved package descriptions, bulleted benefits and membership purchase entry.
+- **Clubs & Parties:** separate combined page with seasonal club information, party inclusions/pricing and gift-card notice. This later owner decision supersedes the earlier all-programs combined-page instruction.
 - **Book Now:** show schedule and availability before requesting personal information; pricing/group message, customer lookup/details, attendee counts, payment/consent, waiver, review, confirmation.
 - **Contact Us:** public phone/email/location/hours, gift-card notice, no public exact street address. General secondary contact actions say Contact Us; group instructions retain call/text wording.
 - Secure booking-linked waiver page for phone/admin booking, shared parent links and signing at arrival.
 
-Owner controls public Clubs visibility and individual program visibility without developer deployment or deleting backend history. Do not display exact semester dates or “Spaces are limited” publicly. Club confirmation emails do include actual dates. Keep gift-card notice on the combined page and Contact initially; no separate gift-card page.
+Owner controls public Clubs visibility and individual program visibility without developer deployment or deleting backend history. Do not display exact semester dates or “Spaces are limited” publicly. Club confirmation emails do include actual dates. Keep gift-card notice on Clubs & Parties and Contact (including their homepage sections); no separate gift-card page.
 
 Public club wording is in [PROGRAMS.md](PROGRAMS.md). Final navigation arrangement and image crops are staging acceptance choices, not new requirements blockers.
 
@@ -224,3 +225,6 @@ Cloudflare Access gate is selected by this clarification. The frozen hosted V1
 snapshot remains unchanged; apply this behavior to the functional application
 when it is deployed. Customer testing should eventually enter at the homepage;
 this does not replace the current frozen design-review index during review.
+
+Public membership marketing must omit “Memberships are not assigned to named children.”
+The anonymous-place operating rule remains internal; this copy removal does not change it.

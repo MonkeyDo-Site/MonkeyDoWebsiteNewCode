@@ -1,43 +1,48 @@
 {% extends 'core/base.html' %}{% load static %}{% block content %}
-<section class="hero">
+<section class="hero home-hero">
 <div>
 <p class="eyebrow">A little adventure. A whole lot of joy.</p>
 <h1>Every little monkey needs a <em>jungle.</em>
 </h1>
-<p class="lead">Where sensory stimulation, imaginative play, swinging, climbing, sliding and endless enjoyment combine to give children an enriching and engaging experience they will want to return to time and again.</p>
-<a class="button" href="{% url 'schedule' %}">Book your next adventure <span aria-hidden="true">→</span>
+<p class="lead">Where sensory stimulation, imaginative play, swinging, climbing, sliding and endless enjoyment combine to give children an enriching and engaging experience they will want to return to time and again.
+<span class="hero-ages">Designed for little monkeys ages 1–10.</span></p>
+<a class="button hero-booking-button" href="{% url 'schedule' %}"><img src="{% static 'brand-derived/booking-monkey.webp' %}" width="34" height="24" alt="" aria-hidden="true"><span>Book your next adventure</span><span class="button-arrow" aria-hidden="true">→</span>
 </a>
-<p class="caption">Designed for little monkeys ages 1–10.</p>
 </div>
-<div class="hero-photo">
-<img src="{% static 'brand/Image 1.jpg' %}" width="2400" height="1792" alt="Jungle-themed climbing structure with a spiral slide and ball pit" fetchpriority="high">
-<span class="photo-badge">Go Bananas<br>Here</span>
+<div class="hero-photo ad-photo">
+<img src="{% static 'brand-derived/home-ad-photo.webp' %}" width="1291" height="1650" alt="A child climbing and sliding at MonkeyDo, framed by the ad’s sage border" fetchpriority="high">
+
 </div>
 </section>
-<section class="intro">
+<section class="intro home-intro scroll-reveal">
 <p class="eyebrow">Room to explore. Space to grow.</p>
 <h2>Designed by mothers and professionals who get kids.</h2>
 <p>Discover the play spaces that make every visit an adventure.</p>
 <a class="text-link" href="{% url 'about' %}">Explore MonkeyDo →</a>
 </section>
-<section class="cards">
+<section class="cards home-cards">
 <article>
-<span class="number">01</span>
+<img class="card-photo" src="{% static 'children/Image 10b.jpeg' %}" width="2400" height="1792" alt="Children enjoying the spiral slide, climbing ladder, and ball pit" loading="lazy">
 <h2>Come play</h2>
 <p>Climb, swing, slide, and imagine. Find a session that fits your family.</p>
-<a href="{% url 'schedule' %}">See play sessions →</a>
+<a href="#play-sessions">See play sessions →</a>
 </article>
 <article>
-<span class="number">02</span>
+<img class="card-photo" src="{% static 'children/Image 11.jpg' %}" width="1671" height="2238" alt="A child climbing the jungle-themed climbing wall above the ball pit" loading="lazy">
 <h2>Play more</h2>
 <p>Make room for more adventures with Subscription and Unlimited Memberships.</p>
-<a href="{% url 'programs' %}#memberships">Explore memberships →</a>
+<a href="{% url 'memberships' %}">Explore memberships →</a>
 </article>
 <article>
-<span class="number">03</span>
+<img class="card-photo" src="{% static 'brand-derived/play-space-approved-full.webp' %}" width="1451" height="1084" alt="Children playing together in the foam pit, on monkey bars, and on the slide" loading="lazy">
 <h2>Celebrate together</h2>
-<p>A private party filled with MonkeyDo fun, grip socks, and goody bags.</p>
-<a href="{% url 'programs' %}#parties">Plan a party →</a>
+<p>A private party filled with MonkeyDo fun, family and friends.</p>
+<a href="{% url 'clubs_parties' %}#parties">Plan a party →</a>
 </article>
 </section>
+<div id="about" class="home-section">{% include 'core/partials/about.html' with embedded=True %}</div>
+<div class="home-section">{% include 'core/partials/memberships.html' %}</div>
+<div id="clubs-and-parties" class="home-section">{% include 'core/partials/clubs_parties.html' %}</div>
+<div class="home-section">{% include 'core/partials/gift_cards.html' %}</div>
+<div id="contact" class="home-section">{% include 'core/partials/contact.html' with embedded=True %}</div>
 {% endblock %}

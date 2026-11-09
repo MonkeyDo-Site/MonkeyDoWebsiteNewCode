@@ -1,7 +1,15 @@
+@font-face {
+  font-family:"Nunito";
+  src:url("../fonts/Nunito-Variable.ttf") format("truetype");
+  font-style:normal;
+  font-weight:200 1000;
+  font-display:swap
+}
 :root {
   --ink:#293c33;
   --sage:#709785;
   --coral:#efa397;
+  --rose-ink:#aa405a;
   --cream:#faf7f1;
   --taupe:#d8cbb7;
   --line:#d8dfd6
@@ -16,7 +24,7 @@ body {
   margin:0;
   background:var(--cream);
   color:var(--ink);
-  font:17px/1.65 ui-rounded,"Trebuchet MS",Arial,sans-serif
+  font:17px/1.65 "Nunito",ui-rounded,"Trebuchet MS",Arial,sans-serif
 }
 a {
   color:inherit;
@@ -117,7 +125,7 @@ h3 {
 }
 em {
   font-style:normal;
-  color:#916055
+  color:var(--rose-ink)
 }
 p {
   margin:16px 0
@@ -201,10 +209,6 @@ p {
 }
 .cards h2 {
   font-size:30px
-}
-.number {
-  font-size:12px;
-  letter-spacing:.15em
 }
 .text-link {
   font-weight:bold
@@ -398,3 +402,143 @@ summary { cursor: pointer; font-weight: bold; }
 input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right:8px; }
 .staff-layout .panel { min-width:0; overflow-wrap:anywhere; }
 .staff-layout code { overflow-wrap:anywhere; }
+
+/* Preserve the owner's ad photograph and its original organic sage frame. */
+.hero-photo.ad-photo img {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:680px;
+  object-fit:contain;
+  border:0;
+  border-radius:0
+}
+
+.card-photo {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  border-radius:20px;
+  margin-bottom:22px
+}
+.cards article:nth-child(2) .card-photo {
+  object-position:50% 24%
+}
+
+/* Homepage motion is optional: all content remains visible without animation. */
+@media (prefers-reduced-motion:no-preference) {
+  .home-hero > div {
+    animation:home-welcome 650ms ease-out both
+  }
+  .home-hero > .ad-photo {
+    animation-delay:100ms
+  }
+  .home-cards article {
+    transition:transform 220ms ease,box-shadow 220ms ease
+  }
+  .home-cards article:focus-within {
+    transform:translateY(-6px);
+    box-shadow:0 14px 30px #293c3317
+  }
+  .home-hero .button,.home-intro .text-link {
+    display:inline-block;
+    transition:transform 180ms ease
+  }
+  .home-hero .button:hover,.home-hero .button:focus-visible,
+  .home-intro .text-link:hover,.home-intro .text-link:focus-visible {
+    transform:translateY(-2px)
+  }
+  @media (hover:hover) and (pointer:fine) {
+    .home-cards article:hover {
+      transform:translateY(-6px);
+      box-shadow:0 14px 30px #293c3317
+    }
+  }
+}
+@keyframes home-welcome {
+  from { opacity:.6; transform:translateY(14px) }
+  to { opacity:1; transform:translateY(0) }
+}
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto }
+}
+
+.home-hero .hero-booking-button {
+  position:relative;
+  top:10px;
+  display:inline-flex;
+  gap:10px;
+  max-width:100%;
+  text-align:center
+}
+.hero-booking-button img {
+  width:34px;
+  height:24px;
+  object-fit:contain;
+  flex-shrink:0
+}
+.home-hero .hero-ages { display:block; margin-top:14px; font:inherit }
+.hero-booking-button .button-arrow { flex-shrink:0 }
+
+.home-section {
+  border-top:1px solid var(--line);
+  padding-top:16px;
+  scroll-margin-top:24px
+}
+
+#play-sessions { scroll-margin-top:24px }
+
+.play-options {
+  border-top:1px solid var(--line);
+  padding-top:36px
+}
+.play-card { min-width:0 }
+.play-photo {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  border-radius:22px;
+  margin-bottom:24px
+}
+.play-card h3 {
+  font-size:clamp(28px,3vw,36px);
+  margin:8px 0 6px
+}
+.play-card .play-subtitle { margin:0 0 24px }
+.membership-card { position:relative }
+.membership-card > .eyebrow { padding-right:70px }
+.membership-mascot {
+  position:absolute;
+  right:22px;
+  top:22px;
+  width:56px;
+  height:40px;
+  object-fit:contain;
+  transform:rotate(-8deg)
+}
+
+.play-card .button { gap:12px; max-width:100%; text-align:center }
+
+/* Progressive CSS scroll motion: no scripts and no hidden-content dependency. */
+@supports (animation-timeline:view()) {
+  @media (prefers-reduced-motion:no-preference) {
+    .home-intro.scroll-reveal,.home-section .scroll-reveal {
+      animation:home-scroll-welcome linear both;
+      animation-timeline:view();
+      animation-range:entry 0% entry 100%
+    }
+    .home-intro.scroll-reveal:focus-within,.home-section .scroll-reveal:focus-within {
+      animation:none
+    }
+  }
+}
+@keyframes home-scroll-welcome {
+  from { opacity:.6; transform:translateY(20px) }
+  to { opacity:1; transform:translateY(0) }
+}
+
+.area-grid h2,.play-card h3,#clubs h3 { color:var(--rose-ink) }

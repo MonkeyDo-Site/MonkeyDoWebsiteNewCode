@@ -34,6 +34,9 @@ urlpatterns = [
     path("staff/scheduling/<int:pk>/", scheduling_views.session_edit, name="session_edit"),
     path("", views.page, name="home"),
     path("about/", views.page, {"name": "about"}, name="about"),
+    path("memberships/", views.page, {"name": "memberships"}, name="memberships"),
+    path("clubs-parties/", views.page, {"name": "clubs_parties"}, name="clubs_parties"),
+    # Preserve earlier bookmarks; this compatibility page is not in navigation.
     path("memberships-clubs-parties/", views.page, {"name": "programs"}, name="programs"),
     path("contact/", views.page, {"name": "contact"}, name="contact"),
     path("book/", views.schedule, name="schedule"),

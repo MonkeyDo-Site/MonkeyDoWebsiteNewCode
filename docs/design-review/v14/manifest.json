@@ -1,0 +1,94 @@
+{
+  "review_version": "Design review V14",
+  "source_commit": "7548f280e8e0ec6743ca154aa11f3dcd8bd31f95",
+  "fixture_date": "2026-11-08 America/New_York",
+  "fixture_data": "Artificial Sample Family; reserved 555 phone and example.invalid emails.",
+  "read_only": true,
+  "pages": [
+    {
+      "id": "01-home",
+      "title": "Home",
+      "file": "01-home.html"
+    },
+    {
+      "id": "02-about",
+      "title": "About",
+      "file": "02-about.html"
+    },
+    {
+      "id": "03-programs",
+      "title": "Memberships",
+      "file": "03-programs.html"
+    },
+    {
+      "id": "17-clubs-parties",
+      "title": "Clubs & Parties",
+      "file": "17-clubs-parties.html"
+    },
+    {
+      "id": "04-book",
+      "title": "Book Now \u2014 schedule preview",
+      "file": "04-book.html"
+    },
+    {
+      "id": "05-contact",
+      "title": "Contact Us",
+      "file": "05-contact.html"
+    },
+    {
+      "id": "06-today",
+      "title": "Staff Today",
+      "file": "06-today.html"
+    },
+    {
+      "id": "07-customers",
+      "title": "Customer list",
+      "file": "07-customers.html"
+    },
+    {
+      "id": "08-customer",
+      "title": "Customer detail",
+      "file": "08-customer.html"
+    },
+    {
+      "id": "09-customer-edit",
+      "title": "Customer edit",
+      "file": "09-customer-edit.html"
+    },
+    {
+      "id": "10-bookings",
+      "title": "Booking list",
+      "file": "10-bookings.html"
+    },
+    {
+      "id": "11-booking",
+      "title": "Booking detail \u2014 setup pending",
+      "file": "11-booking.html"
+    },
+    {
+      "id": "12-memberships",
+      "title": "Membership draft list",
+      "file": "12-memberships.html"
+    },
+    {
+      "id": "13-membership",
+      "title": "Membership draft detail",
+      "file": "13-membership.html"
+    },
+    {
+      "id": "14-membership-new",
+      "title": "New membership draft",
+      "file": "14-membership-new.html"
+    },
+    {
+      "id": "15-calendar",
+      "title": "Owner dated calendar",
+      "file": "15-calendar.html"
+    },
+    {
+      "id": "16-weekly",
+      "title": "Owner weekly schedule",
+      "file": "16-weekly.html"
+    }
+  ]
+}

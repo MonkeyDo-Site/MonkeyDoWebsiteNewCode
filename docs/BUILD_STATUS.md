@@ -90,3 +90,196 @@ Verification: all 246 tests passed on disposable PostgreSQL 17; Django system
 checks, Ruff lint/format and whitespace checks passed. New checks cover removal
 of staff links from anonymous and signed-in customer pages, noindex login,
 customer credential rejection and the staging entry gate boundary.
+
+## Design review V2: first owner typography and homepage edits
+
+Use locally hosted Nunito as an explicitly temporary match for the rounded ad
+body/button lettering. Homepage hero uses the original ad's photo composition
+and sage border, isolated from surrounding promotional text, with no generated
+or retouched people. Original ad/logo remain unchanged. V2 is a new frozen review
+folder; V1 remains preserved. Additional five inline child/activity photos still
+need file uploads before About/card placement; their bytes are unavailable in
+the workspace. This is not a completed photo-placement change or deployment.
+
+V2 browser validation: all 16 pages checked at desktop 1440px and phone 390px;
+all images loaded, no horizontal overflow or JavaScript errors. The existing
+deployment helper's bundle validation passes for both V1 and V2. Initial test
+run raced screenshot generation (one missing-artifact error); the affected hosted
+preview tests were rerun after artifact generation, with the result recorded in
+the PR. No migration is introduced.
+
+## Design review V3: uploaded child/activity photographs
+
+Received all five photos in New ImagesMonkey.zip. Preserved originals with
+checksums, added photos to Come play / Play more / Celebrate together, and replaced
+matching Imaginative Play, Climbing Area and Toddler Zone images. Game Room keeps
+its matching facility photo. V3 preserves the ad hero and Nunito from V2; V1/V2
+artifacts remain unchanged. No text/pricing or database changes; no deployment.
+
+V3 verification: all 246 tests passed on disposable PostgreSQL 17. All 16 pages
+passed Chromium checks at desktop/phone widths; Nunito loading and all three
+card-photo aspect ratios were explicitly checked. Static collection, Ruff
+lint/format, whitespace checks and deployment-bundle validation passed.
+
+## Design review V4: remove card numbers and add optional motion
+
+Removed decorative 01/02/03 labels from the homepage cards. Added a brief hero
+entrance, card lift/shadow for mouse hover and keyboard focus, and slight button/
+intro-link movement. Motion is scoped to homepage classes and enabled only when
+reduced motion is not requested; reduced motion also disables smooth scrolling.
+There is no looping animation, hidden content or JavaScript dependency. Frozen
+captures use reduced motion for stable screenshots; interactive CSS is retained.
+No deployment or operational behavior changed.
+
+V4 checks: all 21 public-page/hosted-preview tests passed on PostgreSQL 17. All
+16 pages passed desktop/phone Chromium validation; dedicated browser checks
+passed for animation, hover, keyboard focus and reduced-motion behavior. Existing
+deployment helper validates every preserved review bundle. Ruff and whitespace
+checks passed. Full 246-test suite passed at the preceding photo checkpoint.
+
+## Design review V5: About play choices
+
+Added “Choose open play or supervised play, when available.” above the two play
+options and renamed the first heading to Open play. Pricing/rules unchanged.
+All 14 public-page tests passed on PostgreSQL; all 16 review pages passed phone/
+desktop browser asset and overflow checks. Ruff, whitespace and deployment-bundle
+validation passed. Older snapshots preserved; no deployment.
+
+## Design review V6: line-by-line Open Play copy
+
+Applied the owner's exact Open Play heading and individual lines, with a separate
+paragraph for baby-only $15 admission. No price/operational rule changes.
+All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
+Chromium phone/desktop layout and asset checks. Ruff, whitespace and deployment
+bundle checks passed. No deployment.
+
+## Design review V7: Supervised Play wording
+
+Applied the owner's exact four lines and separate session-availability paragraph.
+Heading: Supervised Play. Booking cutoff and other operating rules unchanged.
+All 14 public-page tests passed on PostgreSQL; all 16 review pages passed phone/
+desktop Chromium layout and image checks. Ruff, whitespace and deployment-bundle
+validation passed. No deployment or database changes.
+
+## Design review V8: homepage booking button and ages
+
+Booking button moves 10px lower and includes the original logo monkey as a
+small decorative icon. Age line is enlarged to 18px (responsive minimum 15px).
+Measured before/after positions at 1440px, 390px and 320px: hero paragraph, age
+line, intro and cards moved 0px; only the button moved 10px. No overlaps/overflow.
+All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
+Chromium phone/desktop asset and layout checks. Ruff, whitespace and deployment
+bundle validation passed. No deployment or database changes.
+
+## Design review V9: homepage card wording
+
+Updated Come play link to “See available play sessions” and Celebrate together
+copy to “A private party filled with MonkeyDo fun, family and friends.” Retains
+earlier number removal and all prior requested visual changes. All 16 review
+screens passed desktop/phone Chromium asset and overflow checks; Ruff, whitespace
+and deployment-bundle validation passed. No deployment or business-rule changes.
+
+## Design review V10: approved membership benefits
+
+Restored both membership marketing cards to the approved semantic bullet lists
+and per-child/month prices in MEMBERSHIPS.md/AG, including party discount,
+three-month minimum and Unlimited exclusions. Pricing/eligibility rules unchanged.
+All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
+phone/desktop Chromium image/layout checks. Ruff, whitespace and deployment
+bundle checks passed. No deployment or database changes.
+
+## Design review V11: separate pages and scrolling homepage
+
+Memberships and Clubs & Parties now have separate routes/navigation. Homepage
+continues through full shared About, Memberships, Clubs & Parties and Contact Us
+content in that order. The existing combined URL remains unlinked for bookmarks.
+Clubs visibility works on dedicated/legacy pages and homepage, leaving parties
+visible. Earlier owner wording and business rules remain intact.
+
+All 247 tests passed on disposable PostgreSQL 17 after correcting a missing
+shared-section body caught by the new page test. All 17 review pages passed
+Chromium desktop/phone image/layout checks. Ruff, whitespace and deployment-bundle
+validation passed. PR #20 now targets main after the parent PRs merged. No
+migration, deployment or provider operation occurred.
+
+## Design review V12: play jump and homepage Gift Cards
+
+Come play says “See play sessions” and jumps to #play-sessions on the homepage,
+where both types and the existing booking link are present. Gift Cards now has a
+separate section after Clubs & Parties and before Contact Us. Reuses the approved
+in-person purchase notice, also preserved on the dedicated/legacy program pages.
+All 15 public-page tests passed; all 17 review pages passed phone/desktop browser
+asset/layout checks. Browser click checks verified the anchor lands at both play
+options, the booking link remains and Gift Cards is in order. Ruff, whitespace
+and deployment-bundle validation passed. No deployment/business-rule changes.
+
+## Design review V13: colored photo play cards and membership headings
+
+Added a thin divider, Ready to play eyebrow and full-size Open play or supervised
+play heading. Play options now have sage/coral backgrounds and supplied activity
+photos; subtitles sit 6px below titles with 24px separation before details.
+Memberships has More ways to go bananas above it and decorative original monkeys.
+Removed named-children sentence from public copy without changing allocation.
+All 15 public-page and seven hosted-preview tests passed on PostgreSQL. All 17
+review pages passed Chromium phone/desktop asset/overflow checks; dedicated browser
+checks verified colors, images, heading text, spacing, removed copy and jump link.
+Ruff, whitespace and deployment-bundle validation passed. No deployment.
+
+## Design review V14: selected play-card photo crops
+
+Open Play now shows the child tossing soft green foam blocks; Supervised Play
+shows the child on monkey bars, cropped from the original uploaded photograph.
+Use 4:3 proportions to retain the selected subjects. No generative edits or
+business-rule changes. All 17 phone/desktop review screens and dedicated card
+layout checks passed in Chromium; seven hosted-preview tests passed on PostgreSQL.
+Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
+
+## Design review V15: play-option buttons
+
+Open Play uses “Book your session now →”. Supervised Play now has “See available
+sessions”. Both target the booking schedule; button width/gap adapts to phones.
+All 17 review pages and dedicated card checks passed on desktop/phone Chromium.
+Seven hosted-preview tests passed on PostgreSQL; Ruff, whitespace and deployment
+bundle checks passed. No deployment or business-rule changes.
+
+## Design review V16: hero age-line order and booking arrow
+
+Ages 1–10 now appears on the next line of the introductory paragraph, above the
+booking button, with inherited paragraph typography. The button keeps the original
+monkey and ends with an arrow. Dedicated Chromium checks passed at 1440px, 390px
+and 320px: correct order/font/line spacing, visible icon/arrow and no overflow.
+All 17 desktop/phone review pages and seven hosted-preview tests passed. Ruff,
+whitespace and deployment-bundle checks passed. Updated homepage JPGs captured;
+no deployment.
+
+## Design review V17: scroll motion throughout remaining homepage sections
+
+Added progressive CSS view-timeline fade/slide effects to 22 homepage section
+headings/cards and the intro. All remain fully visible without animation support;
+reduced motion disables effects and keyboard focus stops motion on that card.
+No scripts were added or preview restrictions weakened. Standalone pages are static.
+All 22 public-page/hosted-preview tests passed on PostgreSQL. All 17 desktop/phone
+review screens passed Chromium checks. Dedicated normal/reduced-motion browser
+checks verified actual scroll progress, focus, scope and no overflow at both
+widths. Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
+
+## Design review V18: proposed darker pink and hero spacing
+
+Added 14px before the ages line, still above booking in paragraph typography.
+Proposed #AA405A rose replaces brown accent and colors the eight selected area,
+play and club headings. Contrast ratios: cream 5.47:1, sage 4.82:1, coral 4.58:1.
+This is a color preview for owner review. All 17 desktop/phone review screens,
+specific color/gap/order/font browser checks and seven hosted-preview tests passed.
+Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
+
+## Design review V19: approved edited photos and preserved originals
+
+Saved approved full-scene and close-up PNG masters separately with checksums.
+Use WebP derivatives for the Home Celebrate together card, Climbing Area on
+Home/About, and Supervised Play on Home/About. The different-child Open Play
+crop stays unchanged. All 17 original-image checksums and two approved-master
+checksums passed. Originals and historical reviews remain untouched.
+All 15 public-page and seven hosted-preview tests passed on PostgreSQL. All 17
+review screens and dedicated image-placement checks passed desktop/phone Chromium
+validation. Ruff, whitespace and deployment-bundle checks passed. Assets saved in
+the repository, not uploaded to R2; no deployment or database changes.

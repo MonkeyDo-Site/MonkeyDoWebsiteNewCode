@@ -98,7 +98,11 @@ TIME_ZONE = "America/New_York"
 USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static", ("brand", BASE_DIR / "docs/brand-assets/originals")]
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+    ("brand", BASE_DIR / "docs/brand-assets/originals"),
+    ("children", BASE_DIR / "docs/brand-assets/children-originals"),
+]
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
