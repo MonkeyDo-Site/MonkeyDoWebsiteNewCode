@@ -178,3 +178,12 @@ copy to “A private party filled with MonkeyDo fun, family and friends.” Reta
 earlier number removal and all prior requested visual changes. All 16 review
 screens passed desktop/phone Chromium asset and overflow checks; Ruff, whitespace
 and deployment-bundle validation passed. No deployment or business-rule changes.
+
+## Design review V10: approved membership benefits
+
+Restored both membership marketing cards to the approved semantic bullet lists
+and per-child/month prices in MEMBERSHIPS.md/AG, including party discount,
+three-month minimum and Unlimited exclusions. Pricing/eligibility rules unchanged.
+All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
+phone/desktop Chromium image/layout checks. Ruff, whitespace and deployment
+bundle checks passed. No deployment or database changes.
