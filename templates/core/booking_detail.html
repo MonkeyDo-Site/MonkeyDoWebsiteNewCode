@@ -25,11 +25,11 @@
 <a class="button small" href="{% url 'booking_edit' booking.pk %}">Edit attendees / payment choice</a> <a class="button small" href="{% url 'booking_move' booking.pk %}">Change timing</a>
 </p>
 <article class="panel">
-<h2>Release test reservation</h2>
-<p>This releases the unconfirmed capacity hold. It does not apply a customer cancellation fee or process a payment.</p>
+<h2>Cancel booking</h2>
+<p>This cancels the pending test booking and makes its spaces available. No cancellation fee is recorded or charged.</p>
 <form method="post" action="{% url 'booking_release' booking.pk %}">{% csrf_token %}
 <input type="hidden" name="version" value="{{ booking.edit_version }}">
-<button class="button small">Release test reservation</button>
+<button class="button small">Cancel booking</button>
 </form>
 </article>{% endif %}
 <details>
@@ -41,7 +41,7 @@
 </details>
 <details>
 <summary>Change history</summary>{% for event in history %}
-<p>{{ event.created_at|date:'M j, Y g:i A' }} · {{ event.actor.username|default:"Customer / system" }} · {{ event.action }}</p>{% empty %}
+<p>{{ event.created_at|date:'M j, Y g:i A' }} · {{ event.actor.username|default:"Customer / system" }} · {% if event.action == 'booking.test_released' %}Booking cancelled{% else %}{{ event.action }}{% endif %}</p>{% empty %}
 <p>No recorded changes.</p>{% endfor %}
 </details>
 {% endblock %}

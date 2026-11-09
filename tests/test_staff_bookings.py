@@ -161,7 +161,7 @@ class StaffBookingTests(TestCase):
         booking = self.create()
         release_test_booking(actor=self.staff, booking_id=booking.pk, version=1)
         booking.refresh_from_db()
-        self.assertEqual(booking.status_label, "Released test reservation")
+        self.assertEqual(booking.status_label, "Cancelled")
         self.assertFalse(
             AuditEvent.objects.get(action="booking.test_released").changes["fee_processed"]
         )
@@ -257,6 +257,15 @@ class StaffBookingPageTests(TestCase):
         booking = self.create()
         self.client.force_login(self.staff)
         self.assertEqual(self.client.get(f"/staff/bookings/{booking.pk}/release/").status_code, 405)
+        page = self.client.get(f"/staff/bookings/{booking.pk}/")
+        self.assertContains(page, "Cancel booking")
+        self.assertNotContains(page, "Release test reservation")
+        response = self.client.post(
+            f"/staff/bookings/{booking.pk}/release/", {"version": booking.edit_version}, follow=True
+        )
+        self.assertContains(response, "Test booking cancelled.")
+        self.assertContains(response, "Booking cancelled")
+        self.assertNotContains(response, "booking.test_released")
 
     def test_missing_booking_permission_is_enforced_by_view_and_service(self):
         from django.contrib.auth import get_user_model

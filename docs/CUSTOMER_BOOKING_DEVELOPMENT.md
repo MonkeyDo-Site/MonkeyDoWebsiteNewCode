@@ -10,9 +10,9 @@ The flow collects phone number and returning/new status. A current-phone match r
 
 Customers enter attendees, play type, socks, intended payment method and optional referral, then review a server-calculated itemized quote. They can revise before submitting. The explicit test acknowledgement creates one pending reservation and immutable quote. No customer record or capacity reservation is created merely by reviewing a quote. Duplicate submissions are idempotent; final submission rechecks pricing, contact revision, availability and capacity inside a transaction. Capacity races and failed writes do not leave orphan customer records.
 
-Authorized staff find these records in Bookings, inspect the customer/test source and quote, and release them. A customer's same-browser receipt reflects a later release. Receipt access is bound to the browser flow, not a public booking ID. Staff routes remain unlinked from public navigation and enforce staff permissions.
+Authorized staff find these records in Bookings and inspect the customer/test source and quote. They can use **Cancel booking** when cancellation is wanted; this is not a required review or approval step. A customer's same-browser receipt reflects a later cancellation. Receipt access is bound to the browser flow, not a public booking ID. Staff routes remain unlinked from public navigation and enforce staff permissions.
 
-There is no checkout payment, stored card, waiver/signature, active membership allocation, arrival workflow or customer confirmation email here. Booking-linked customer email correction/resending remains future work. Pending records reserve capacity until staff release them; no automatic expiry/reset job is provided. Test with fictional data and release test reservations deliberately.
+There is no checkout payment, stored card, waiver/signature, active membership allocation, arrival workflow or customer confirmation email here. Booking-linked customer email correction/resending remains future work. Pending records reserve capacity until staff cancel them; no automatic expiry/reset job is provided. Test with fictional data. Cancellation is optional and makes the cancelled booking’s spaces available again.
 
 ## Controlled account email
 
@@ -39,11 +39,13 @@ The helper checks for pending migrations and **never applies them**. Rollback re
 
 Use fake contacts and distinct browser sessions for customers and staff:
 
-- New family: choose Open Play, review/revise attendees/socks, submit, find the same amount in staff Bookings, release, refresh customer receipt.
+- New family: choose Open Play, review/revise attendees/socks, submit, find the same amount in staff Bookings, cancel, refresh customer receipt.
 - Returning family: current phone plus Last Name; wrong name stops. Previous phone plus approved current-phone confirmation. Staff contact changes invalidate an already-verified flow.
 - Supervised Play: only eligible slots, no accompanying adults, cutoff and capacity enforced.
 - Two customers compete for the last space; only one reservation succeeds. Duplicate confirmation creates one record. Price/closure changes between review and submit require a fresh review.
 - Another browser cannot retrieve a receipt; public sessions cannot open staff pages. POST without CSRF fails. No card fields or confirmation claims appear.
 - Real host only: HTTPS/private gate, owner MFA/reset delivery, staff permission isolation, new account/recovery, proxy IP buckets and code rollback smoke test. These checks remain unperformed on DigitalOcean.
 
-Local evidence: 278 tests passed on PostgreSQL 17, including concurrent final-space/duplicate submissions, transaction rollback, privacy/CSRF and mocked mail/deployment guards. Portable PowerShell wrapper tests passed with SSH/SCP mocked. Chromium completed customer review/revision/save, actual staff sign-in/search/release and updated customer receipt at 1440px and 390px, without overflow or JavaScript errors. These results do not establish actual provider delivery, Windows execution, hosted TLS or real service switching.
+Local evidence: 278 tests passed on PostgreSQL 17, including concurrent final-space/duplicate submissions, transaction rollback, privacy/CSRF and mocked mail/deployment guards. Portable PowerShell wrapper tests passed with SSH/SCP mocked. Chromium completed customer review/revision/save, actual staff sign-in/search/cancellation and updated customer receipt at 1440px and 390px, without overflow or JavaScript errors. These results do not establish actual provider delivery, Windows execution, hosted TLS or real service switching.
+
+Terminology follow-up: the planned action is **Cancel booking**, with status **Cancelled**. The staff message/history and customer receipt now match. Existing stored cancellation values and immutable audit records are preserved; no database migration or change to fee behavior is required. All 33 staff/public booking tests passed after the wording change. The browser evidence above predates this label correction.

@@ -188,7 +188,7 @@ class Booking(models.Model):
     @property
     def status_label(self):
         if self.setup_pending and self.attendance == self.Attendance.CANCELLED:
-            return "Released test reservation"
+            return "Cancelled"
         if self.setup_pending and not self.attendance:
             return "Setup pending"
         return self.get_attendance_display() or "Upcoming"

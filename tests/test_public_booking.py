@@ -267,8 +267,8 @@ class PublicBookingTests(TestCase):
         self.confirm()
         Booking.objects.update(attendance="cancelled")
         response = self.client.get("/book/receipt/")
-        self.assertContains(response, "Released")
-        self.assertContains(response, "This test reservation has been released")
+        self.assertContains(response, "Cancelled")
+        self.assertContains(response, "This test booking has been cancelled")
 
     @override_settings(APP_ENV="staging", DESIGN_REVIEW_ONLY=False)
     def test_shared_staging_gate_lands_on_home_and_does_not_grant_staff_access(self):

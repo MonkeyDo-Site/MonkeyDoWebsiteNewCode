@@ -156,13 +156,13 @@ def booking_release(request, pk):
         version = int(request.POST.get("version", ""))
         release_test_booking(actor=request.user, booking_id=pk, version=version)
     except ValueError:
-        messages.error(request, "Reload the record before releasing it.")
+        messages.error(request, "Reload the record before cancelling it.")
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages))
     else:
         messages.success(
             request,
-            "Unconfirmed test reservation released. No cancellation fee was recorded or charged.",
+            "Test booking cancelled. No cancellation fee was recorded or charged.",
         )
     return redirect("booking_detail", pk=pk)
 

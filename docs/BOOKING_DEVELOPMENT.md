@@ -8,7 +8,7 @@ Apply migrations, then rerun `python manage.py configure_staff_group` to grant t
 
 Saving holds capacity and stores a price snapshot with status **Setup pending**. It does not assert verified card setup, waiver coverage, arrival, payment or confirmation delivery. Membership benefits are explicitly absent. Use artificial customers only.
 
-Open a reservation to edit counts/payment choice, change timing, or release the unconfirmed hold. Releasing is a test operation, not the final customer cancellation/no-show workflow, and does not waive or charge a customer fee. Only pending records with blank attendance support these tools. Legacy records without a price snapshot retain that absence; attendee repricing is blocked rather than inventing historical amounts.
+Open a reservation to edit counts/payment choice, change timing, or use **Cancel booking**. Cancellation marks the test booking **Cancelled** and makes its spaces available. This pending-test action does not implement the final cancellation/no-show fee workflow and does not waive or charge a customer fee. Only pending records with blank attendance support these tools. Legacy records without a price snapshot retain that absence; attendee repricing is blocked rather than inventing historical amounts.
 
 Owner capacity overrides are explicit and audited. They cannot override closures, party/exclusive sessions, ended sessions or supervised-play cutoff. Staff permissions are checked in both views and service functions. Competing capacity requests serialize on PostgreSQL session locks; stale edits are rejected. Repeated identical creation identifiers return the original record; changed payloads using that identifier are rejected.
 
