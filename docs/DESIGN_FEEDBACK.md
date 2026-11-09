@@ -50,3 +50,11 @@ Added the owner's line “Choose open play or supervised play, when available.�
 immediately above the two About-page options. The first option is titled
 “Open play” to match that wording. Prices, ages and attendance rules are unchanged.
 Prepared for owner review; earlier review versions remain preserved.
+
+## V6: Open Play line-by-line wording
+
+Replaced the Open Play paragraph with the owner's requested lines: Play
+accompanied by an adult; Children ages 1-11: $15 each; 1 free adult; additional
+adults ages 12 and up: $5 each; Babies under one are free. Separate paragraph:
+“if you are coming just with a baby, there is a $15 admission.” Heading: Open Play.
+This is customer-facing copy/layout; established pricing rules are unchanged.

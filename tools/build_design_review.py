@@ -29,7 +29,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "docs/design-review/v1")
     parser.add_argument("--source-commit", required=True)
-    parser.add_argument("--version", choices=("V1", "V2", "V3", "V4", "V5"), default="V1")
+    parser.add_argument("--version", choices=("V1", "V2", "V3", "V4", "V5", "V6"), default="V1")
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9a-f]{40}", args.source_commit):
         parser.error("Supply the full reviewed source commit hash.")
