@@ -108,6 +108,14 @@ class PageTests(TestCase):
         ]
         self.assertEqual(positions, sorted(positions))
         self.assertEqual(home.count("<h1>"), 1)
+        for text in (
+            "Imaginative Play",
+            "Two free play sessions per month",
+            "Sunday Club",
+            "MonkeyDo parties",
+            "Find your jungle",
+        ):
+            self.assertIn(text, home)
         self.assertIn('href="/memberships/"', home)
         self.assertIn('href="/clubs-parties/"', home)
         self.assertNotIn('href="/memberships-clubs-parties/"', home)
@@ -118,7 +126,9 @@ class PageTests(TestCase):
         self.assertNotContains(response, "<h3>Sunday Club</h3>")
         self.assertEqual(SiteSettings.objects.count(), 1)
         for path in ("/", "/clubs-parties/"):
-            self.assertNotContains(self.client.get(path), "<h3>Sunday Club</h3>")
+            response = self.client.get(path)
+            self.assertNotContains(response, "<h3>Sunday Club</h3>")
+            self.assertContains(response, "MonkeyDo parties")
 
     def test_no_public_booking_write_endpoint(self):
         self.assertEqual(self.client.post("/book/", {}).status_code, 405)

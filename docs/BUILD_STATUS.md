@@ -187,3 +187,17 @@ three-month minimum and Unlimited exclusions. Pricing/eligibility rules unchange
 All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
 phone/desktop Chromium image/layout checks. Ruff, whitespace and deployment
 bundle checks passed. No deployment or database changes.
+
+## Design review V11: separate pages and scrolling homepage
+
+Memberships and Clubs & Parties now have separate routes/navigation. Homepage
+continues through full shared About, Memberships, Clubs & Parties and Contact Us
+content in that order. The existing combined URL remains unlinked for bookmarks.
+Clubs visibility works on dedicated/legacy pages and homepage, leaving parties
+visible. Earlier owner wording and business rules remain intact.
+
+All 247 tests passed on disposable PostgreSQL 17 after correcting a missing
+shared-section body caught by the new page test. All 17 review pages passed
+Chromium desktop/phone image/layout checks. Ruff, whitespace and deployment-bundle
+validation passed. PR #20 now targets main after the parent PRs merged. No
+migration, deployment or provider operation occurred.
