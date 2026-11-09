@@ -241,3 +241,13 @@ sessions”. Both target the booking schedule; button width/gap adapts to phones
 All 17 review pages and dedicated card checks passed on desktop/phone Chromium.
 Seven hosted-preview tests passed on PostgreSQL; Ruff, whitespace and deployment
 bundle checks passed. No deployment or business-rule changes.
+
+## Design review V16: hero age-line order and booking arrow
+
+Ages 1–10 now appears on the next line of the introductory paragraph, above the
+booking button, with inherited paragraph typography. The button keeps the original
+monkey and ends with an arrow. Dedicated Chromium checks passed at 1440px, 390px
+and 320px: correct order/font/line spacing, visible icon/arrow and no overflow.
+All 17 desktop/phone review pages and seven hosted-preview tests passed. Ruff,
+whitespace and deployment-bundle checks passed. Updated homepage JPGs captured;
+no deployment.
