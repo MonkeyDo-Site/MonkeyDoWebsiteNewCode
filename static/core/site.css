@@ -209,10 +209,6 @@ p {
 .cards h2 {
   font-size:30px
 }
-.number {
-  font-size:12px;
-  letter-spacing:.15em
-}
 .text-link {
   font-weight:bold
 }
@@ -428,4 +424,42 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 }
 .cards article:nth-child(2) .card-photo {
   object-position:50% 24%
+}
+
+/* Homepage motion is optional: all content remains visible without animation. */
+@media (prefers-reduced-motion:no-preference) {
+  .home-hero > div {
+    animation:home-welcome 650ms ease-out both
+  }
+  .home-hero > .ad-photo {
+    animation-delay:100ms
+  }
+  .home-cards article {
+    transition:transform 220ms ease,box-shadow 220ms ease
+  }
+  .home-cards article:focus-within {
+    transform:translateY(-6px);
+    box-shadow:0 14px 30px #293c3317
+  }
+  .home-hero .button,.home-intro .text-link {
+    display:inline-block;
+    transition:transform 180ms ease
+  }
+  .home-hero .button:hover,.home-hero .button:focus-visible,
+  .home-intro .text-link:hover,.home-intro .text-link:focus-visible {
+    transform:translateY(-2px)
+  }
+  @media (hover:hover) and (pointer:fine) {
+    .home-cards article:hover {
+      transform:translateY(-6px);
+      box-shadow:0 14px 30px #293c3317
+    }
+  }
+}
+@keyframes home-welcome {
+  from { opacity:.6; transform:translateY(14px) }
+  to { opacity:1; transform:translateY(0) }
+}
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto }
 }

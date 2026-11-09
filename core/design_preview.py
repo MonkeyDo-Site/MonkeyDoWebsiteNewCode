@@ -8,7 +8,7 @@ from django.views.decorators.http import require_safe
 
 @require_safe
 def frozen_page(request, filename):
-    root = settings.BASE_DIR / "docs/design-review/v3"
+    root = settings.BASE_DIR / "docs/design-review/v4"
     manifest = json.loads((root / "manifest.json").read_text())
     html_files = {"index.html"} | {item["file"] for item in manifest["pages"]}
     image_files = {

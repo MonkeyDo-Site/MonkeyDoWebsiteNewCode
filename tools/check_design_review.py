@@ -80,7 +80,7 @@ def main():
             browser = p.chromium.launch(
                 executable_path=args.chromium, headless=True, args=["--no-sandbox"]
             )
-            page = browser.new_page()
+            page = browser.new_page(reduced_motion="reduce")
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
             for width, label in [(1440, "desktop"), (390, "phone")]:

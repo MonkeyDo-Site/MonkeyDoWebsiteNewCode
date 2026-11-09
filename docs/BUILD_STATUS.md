@@ -120,3 +120,13 @@ V3 verification: all 246 tests passed on disposable PostgreSQL 17. All 16 pages
 passed Chromium checks at desktop/phone widths; Nunito loading and all three
 card-photo aspect ratios were explicitly checked. Static collection, Ruff
 lint/format, whitespace checks and deployment-bundle validation passed.
+
+## Design review V4: remove card numbers and add optional motion
+
+Removed decorative 01/02/03 labels from the homepage cards. Added a brief hero
+entrance, card lift/shadow for mouse hover and keyboard focus, and slight button/
+intro-link movement. Motion is scoped to homepage classes and enabled only when
+reduced motion is not requested; reduced motion also disables smooth scrolling.
+There is no looping animation, hidden content or JavaScript dependency. Frozen
+captures use reduced motion for stable screenshots; interactive CSS is retained.
+No deployment or operational behavior changed.
