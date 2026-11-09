@@ -204,3 +204,23 @@ Server-rendered mobile-first public/admin application in one maintainable codeba
 Conceptual entities: customers/contact history/comments; admin identities/permissions/sessions; recurring schedules/occurrences/overrides; pricing/tax/settings versions; bookings/price revisions/capacity reservations; provider methods/consents/payment operations/events/tenders/customer credit; membership cohorts/cycles/place allocations/benefit ledger/renewals; program participants/semesters/enrollments/occurrences/attendance; waiver versions/signatures/coverage/object metadata; message templates/deliveries; audit. These are design responsibilities, not selected ORM/schema implementation. Framework/auth/ORM/job tooling remain implementation choices to propose after development authorization.
 
 WCAG **2.2 AA** target. Test current Chrome/Edge/Firefox/Safari, iPhone/Android sizes, tablets/laptops/desktops; keyboard, labels/screen readers, contrast, focus, resizing and errors. Owner password-protected staging acceptance covers full booking/payment/waiver/customer/membership/program/email/admin/security/backup/mobile workflows. Validate actual functional requests and nonzero meaningful tests, not only formatting or a running process. Full acceptance cases and phased build order: [RECONSTRUCTION.md](RECONSTRUCTION.md).
+
+## Staff portal discovery (owner clarification, November 9, 2026)
+
+The staff/owner entry address is `/staff/` on the same website domain. Customer
+pages must not link to staff login, administrative pages, or staff actions,
+including when a staff member views a customer page. Staff bookmark the address.
+Staff login, account recovery, administrative responses and redirects carry
+`X-Robots-Tag: noindex, nofollow`; staff HTML also carries a robots noindex tag.
+Any future public sitemap must include only explicitly approved public pages,
+never staff/admin/account routes. There is currently no sitemap endpoint.
+Do not rely on robots.txt disallow rules to hide login pages: crawlers need to
+fetch the noindex instruction. The existing staging-wide noindex policy remains.
+
+This is search-result exclusion, not a private network or a secret URL. Anyone
+who knows the address can reach the login screen; active authorized staff
+credentials, existing permissions and owner verification control entry. No VPN or
+Cloudflare Access gate is selected by this clarification. The frozen hosted V1
+snapshot remains unchanged; apply this behavior to the functional application
+when it is deployed. Customer testing should eventually enter at the homepage;
+this does not replace the current frozen design-review index during review.

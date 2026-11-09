@@ -46,7 +46,10 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-ROOT_URLCONF = "config.urls"
+DESIGN_REVIEW_ONLY = os.environ.get("MONKEYDO_DESIGN_ONLY") == "1"
+if DESIGN_REVIEW_ONLY and APP_ENV not in {"test", "staging"}:
+    raise ImproperlyConfigured("Design-only hosting requires APP_ENV=staging (or isolated tests).")
+ROOT_URLCONF = "config.design_preview_urls" if DESIGN_REVIEW_ONLY else "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

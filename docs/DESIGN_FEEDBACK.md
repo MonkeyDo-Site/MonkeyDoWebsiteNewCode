@@ -21,3 +21,5 @@ Statuses: **Pending** (recorded); **In progress**; **Ready for owner review**; *
 ## Preview access
 
 The read-only GitHub gallery is ready. A hosted browser URL remains blocked on secure server access: the environment reports no DigitalOcean/SSH credential binding. Obtain the Droplet IP/SSH username and arrange a protected SSH credential through environment settings; never put passwords or private keys in chat, repository files or screenshots. No server or DNS changes have occurred.
+
+Owner-guided setup is now underway on replacement host 107.170.1.143. The owner runs server commands in their own SSH session; cloud-agent SSH remains unconfigured. See [HOSTED_DESIGN_PREVIEW.md](HOSTED_DESIGN_PREVIEW.md) for the installation checkpoint. V1 design files remain unchanged.
