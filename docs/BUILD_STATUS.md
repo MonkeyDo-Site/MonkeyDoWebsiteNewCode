@@ -224,3 +224,12 @@ All 15 public-page and seven hosted-preview tests passed on PostgreSQL. All 17
 review pages passed Chromium phone/desktop asset/overflow checks; dedicated browser
 checks verified colors, images, heading text, spacing, removed copy and jump link.
 Ruff, whitespace and deployment-bundle validation passed. No deployment.
+
+## Design review V14: selected play-card photo crops
+
+Open Play now shows the child tossing soft green foam blocks; Supervised Play
+shows the child on monkey bars, cropped from the original uploaded photograph.
+Use 4:3 proportions to retain the selected subjects. No generative edits or
+business-rule changes. All 17 phone/desktop review screens and dedicated card
+layout checks passed in Chromium; seven hosted-preview tests passed on PostgreSQL.
+Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
