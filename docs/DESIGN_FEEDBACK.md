@@ -81,3 +81,12 @@ Come play link: “See available play sessions”. Celebrate together descriptio
 “A private party filled with MonkeyDo fun, family and friends.” Earlier requested
 card-number removal, photos, typography and motion remain in place. This is a
 wording change only; party package inclusions and booking rules are unchanged.
+
+## V10: restore approved membership marketing bullets
+
+Restored the approved Subscription and Unlimited marketing copy from
+MEMBERSHIPS.md and AG P20875–P20882: per-child/month prices, benefit bullets,
+15% party discount wording, three-month minimum on each card, and the Unlimited
+exclusion footnote. Removed the shortened paragraph paraphrases. This corrects
+an implementation omission; no renewed owner approval of the copy is required.
+Pricing and benefit calculation rules are unchanged.
