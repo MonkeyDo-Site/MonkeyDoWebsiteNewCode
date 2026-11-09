@@ -262,3 +262,12 @@ All 22 public-page/hosted-preview tests passed on PostgreSQL. All 17 desktop/pho
 review screens passed Chromium checks. Dedicated normal/reduced-motion browser
 checks verified actual scroll progress, focus, scope and no overflow at both
 widths. Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
+
+## Design review V18: proposed darker pink and hero spacing
+
+Added 14px before the ages line, still above booking in paragraph typography.
+Proposed #AA405A rose replaces brown accent and colors the eight selected area,
+play and club headings. Contrast ratios: cream 5.47:1, sage 4.82:1, coral 4.58:1.
+This is a color preview for owner review. All 17 desktop/phone review screens,
+specific color/gap/order/font browser checks and seven hosted-preview tests passed.
+Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
