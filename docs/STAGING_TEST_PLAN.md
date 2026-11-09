@@ -150,7 +150,7 @@ Prepare the final walkthrough after the operational UI stabilizes: sign-in/Today
 
 ## Current increment: pending test reservations
 
-Use artificial customers and future sessions only. Confirm creating an ordinary/supervised reservation stores the displayed quote and Setup pending status. Test card versus cash quotes, extra adults, babies-only minimum admission, socks, blocked/ended sessions and supervised cutoff. Change attendees and check prior quotes remain visible; change timing and verify capacity moves without repricing. Release a test reservation and verify its space returns without recording a fee. Try a stale browser tab and repeated submission; neither may silently overwrite or duplicate. Staff cannot use owner pricing/capacity privileges. Owner future-price changes must not rewrite earlier quotes. Membership benefits, confirmed-booking cancellation, arrivals, split collection and provider operations cannot yet be accepted through these screens.
+Use artificial customers and future sessions only. Confirm creating an ordinary/supervised reservation stores the displayed quote and Setup pending status. Test card versus cash quotes, extra adults, babies-only minimum admission, socks, blocked/ended sessions and supervised cutoff. Change attendees and check prior quotes remain visible; change timing and verify capacity moves without repricing. Cancel a test booking and verify its space returns without recording a fee. Try a stale browser tab and repeated submission; neither may silently overwrite or duplicate. Staff cannot use owner pricing/capacity privileges. Owner future-price changes must not rewrite earlier quotes. Membership benefits, confirmed-booking cancellation, arrivals, split collection and provider operations cannot yet be accepted through these screens.
 
 ## Owner calendar acceptance
 
@@ -180,4 +180,4 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 
 ## Customer self-booking checkpoint
 
-Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) against the isolated functional environment with fictional data. Local automated/browser checks have passed for pending reservation creation, revision, staff visibility/release and receipt isolation. Real host HTTPS/proxy/permissions, Resend inbox delivery/recovery and real service rollback have not yet been run. This is not acceptance of payments, waiver completion or confirmed customer visits.
+Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) against the isolated functional environment with fictional data. Local automated/browser checks have passed for pending reservation creation, revision, staff visibility/cancellation and receipt isolation. Real host HTTPS/proxy/permissions, Resend inbox delivery/recovery and real service rollback have not yet been run. This is not acceptance of payments, waiver completion or confirmed customer visits.

@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}{% block title %}Pending test reservation · MonkeyDo{% endblock %}{% block content %}
 <section class="page-heading"><p class="eyebrow">Test reservation saved</p><h1>{{ booking.status_label }}</h1>
-{% if booking.attendance == 'cancelled' %}<p>This test reservation has been released. No visit is confirmed or payment taken.</p>{% else %}<p>This is not a confirmed visit. No card, payment, waiver or confirmation email has been recorded. Staff can find this test reservation in Bookings.</p>{% endif %}</section>
+{% if booking.attendance == 'cancelled' %}<p>This test booking has been cancelled. No visit is confirmed or payment taken.</p>{% else %}<p>This is not a confirmed visit. No card, payment, waiver or confirmation email has been recorded. Staff can find this test reservation in Bookings.</p>{% endif %}</section>
 <section class="panel"><h2>Family {{ booking.customer.last_name }}</h2>
 <p>Reference: {{ booking.reference }}</p><p>{{ booking.session.starts_at|date:'l, F j, Y' }} · {{ booking.session.starts_at|date:'g:i A' }}–{{ booking.session.ends_at|date:'g:i A' }}</p>
 <p>{% if booking.supervised %}Supervised Play{% else %}Open Play{% endif %} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
