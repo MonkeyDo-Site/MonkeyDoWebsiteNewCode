@@ -136,3 +136,11 @@ V4 checks: all 21 public-page/hosted-preview tests passed on PostgreSQL 17. All
 passed for animation, hover, keyboard focus and reduced-motion behavior. Existing
 deployment helper validates every preserved review bundle. Ruff and whitespace
 checks passed. Full 246-test suite passed at the preceding photo checkpoint.
+
+## Design review V5: About play choices
+
+Added “Choose open play or supervised play, when available.” above the two play
+options and renamed the first heading to Open play. Pricing/rules unchanged.
+All 14 public-page tests passed on PostgreSQL; all 16 review pages passed phone/
+desktop browser asset and overflow checks. Ruff, whitespace and deployment-bundle
+validation passed. Older snapshots preserved; no deployment.
