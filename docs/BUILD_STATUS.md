@@ -115,3 +115,8 @@ checksums, added photos to Come play / Play more / Celebrate together, and repla
 matching Imaginative Play, Climbing Area and Toddler Zone images. Game Room keeps
 its matching facility photo. V3 preserves the ad hero and Nunito from V2; V1/V2
 artifacts remain unchanged. No text/pricing or database changes; no deployment.
+
+V3 verification: all 246 tests passed on disposable PostgreSQL 17. All 16 pages
+passed Chromium checks at desktop/phone widths; Nunito loading and all three
+card-photo aspect ratios were explicitly checked. Static collection, Ruff
+lint/format, whitespace checks and deployment-bundle validation passed.
