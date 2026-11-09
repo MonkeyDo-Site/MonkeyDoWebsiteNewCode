@@ -9,6 +9,7 @@
   --ink:#293c33;
   --sage:#709785;
   --coral:#efa397;
+  --rose-ink:#aa405a;
   --cream:#faf7f1;
   --taupe:#d8cbb7;
   --line:#d8dfd6
@@ -124,7 +125,7 @@ h3 {
 }
 em {
   font-style:normal;
-  color:#916055
+  color:var(--rose-ink)
 }
 p {
   margin:16px 0
@@ -478,7 +479,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   object-fit:contain;
   flex-shrink:0
 }
-.home-hero .hero-ages { font:inherit }
+.home-hero .hero-ages { display:block; margin-top:14px; font:inherit }
 .hero-booking-button .button-arrow { flex-shrink:0 }
 
 .home-section {
@@ -539,3 +540,5 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   from { opacity:.6; transform:translateY(20px) }
   to { opacity:1; transform:translateY(0) }
 }
+
+.area-grid h2,.play-card h3,#clubs h3 { color:var(--rose-ink) }

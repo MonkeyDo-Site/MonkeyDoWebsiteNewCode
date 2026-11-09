@@ -149,3 +149,12 @@ homepage-scoped, require browser support and no reduced-motion preference, and
 stop on keyboard focus. Unsupported browsers and reduced-motion visitors retain
 fully visible static content. No scripts, automatic scrolling, flashing or loops
 are introduced; frozen preview script restrictions remain unchanged.
+
+## V18: age-line gap and darker pink preview
+
+Added 14px space before the homepage ages 1–10 line, keeping it above booking and
+in the paragraph font. Preview a deeper rose-pink #AA405A on jungle/accent em text
+and the eight requested area/play/club headings. This replaces the brown accent;
+original logo and photographs remain unchanged. Calculated text contrast is 5.47:1
+on cream, 4.82:1 on sage cards and 4.58:1 on coral cards. Color is proposed for
+owner review, not independently marked approved.
