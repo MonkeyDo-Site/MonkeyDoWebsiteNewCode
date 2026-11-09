@@ -1,11 +1,14 @@
 # Design feedback tracker
 
-Current review: **V1**, frozen application source `7a7b674`, November 8, 2026 (New York). [Open review gallery](design-review/v1/README.md).
+Previous review: **V1**, frozen application source `7a7b674`, November 8, 2026 (New York). [Open review gallery](design-review/v1/README.md).
 
-The owner authorized a stable design preview and separate continuing backend work. No page design is marked approved by that authorization. No design comments have been received for V1 yet.
+The owner authorized a stable design preview and separate continuing backend work. No page design is marked approved by that authorization. The owner has now requested the first design updates; V2 is prepared below.
 
 | ID | Review version | Page / screen | Device | Owner comment | Status | Change PR / review evidence |
 | --- | --- | --- | --- | --- | --- | --- |
+| D01 | V2 | All pages | Both | Rounded ad body/button font; similar font permitted for now | Ready for owner review | Locally hosted Nunito; original logo unchanged |
+| D02 | V2 | Home hero | Both | Use the photo in the ad; cropping with the original border is permitted | Ready for owner review | Original photo composition and sage frame isolated; promotional text omitted |
+| D03 | V2 | About and home cards | Both | Use five new child/activity photos to liven up the pages | Pending | Visible inline in chat, but actual files must be uploaded before placement |
 
 Statuses: **Pending** (recorded); **In progress**; **Ready for owner review**; **Approved** (explicit owner approval); **Deferred** (include reason).
 
@@ -23,3 +26,9 @@ Statuses: **Pending** (recorded); **In progress**; **Ready for owner review**; *
 The read-only GitHub gallery is ready. A hosted browser URL remains blocked on secure server access: the environment reports no DigitalOcean/SSH credential binding. Obtain the Droplet IP/SSH username and arrange a protected SSH credential through environment settings; never put passwords or private keys in chat, repository files or screenshots. No server or DNS changes have occurred.
 
 Owner-guided setup is now underway on replacement host 107.170.1.143. The owner runs server commands in their own SSH session; cloud-agent SSH remains unconfigured. See [HOSTED_DESIGN_PREVIEW.md](HOSTED_DESIGN_PREVIEW.md) for the installation checkpoint. V1 design files remain unchanged.
+
+## V2 review
+
+First typography/hero revision is in [V2](design-review/v2/index.html). V1
+files remain unchanged. The hosted source now selects V2 when this release is
+explicitly deployed; no server update has occurred during preparation.

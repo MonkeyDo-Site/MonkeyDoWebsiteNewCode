@@ -100,3 +100,10 @@ or retouched people. Original ad/logo remain unchanged. V2 is a new frozen revie
 folder; V1 remains preserved. Additional five inline child/activity photos still
 need file uploads before About/card placement; their bytes are unavailable in
 the workspace. This is not a completed photo-placement change or deployment.
+
+V2 browser validation: all 16 pages checked at desktop 1440px and phone 390px;
+all images loaded, no horizontal overflow or JavaScript errors. The existing
+deployment helper's bundle validation passes for both V1 and V2. Initial test
+run raced screenshot generation (one missing-artifact error); the affected hosted
+preview tests were rerun after artifact generation, with the result recorded in
+the PR. No migration is introduced.
