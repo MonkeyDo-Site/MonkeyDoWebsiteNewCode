@@ -144,3 +144,11 @@ options and renamed the first heading to Open play. Pricing/rules unchanged.
 All 14 public-page tests passed on PostgreSQL; all 16 review pages passed phone/
 desktop browser asset and overflow checks. Ruff, whitespace and deployment-bundle
 validation passed. Older snapshots preserved; no deployment.
+
+## Design review V6: line-by-line Open Play copy
+
+Applied the owner's exact Open Play heading and individual lines, with a separate
+paragraph for baby-only $15 admission. No price/operational rule changes.
+All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
+Chromium phone/desktop layout and asset checks. Ruff, whitespace and deployment
+bundle checks passed. No deployment.
