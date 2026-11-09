@@ -29,7 +29,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "docs/design-review/v1")
     parser.add_argument("--source-commit", required=True)
-    parser.add_argument("--version", choices=("V1", "V2"), default="V1")
+    parser.add_argument("--version", choices=("V1", "V2", "V3"), default="V1")
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9a-f]{40}", args.source_commit):
         parser.error("Supply the full reviewed source commit hash.")
@@ -214,6 +214,10 @@ class FrozenHTML(HTMLParser):
             value = attrs[key]
             if value.startswith("/static/brand/"):
                 attrs[key] = "../../brand-assets/originals/" + value.removeprefix("/static/brand/")
+            elif value.startswith("/static/children/"):
+                attrs[key] = "../../brand-assets/children-originals/" + value.removeprefix(
+                    "/static/children/"
+                )
             elif value.startswith("/static/"):
                 attrs[key] = "../../../static/" + value.removeprefix("/static/")
             elif value.startswith("/"):

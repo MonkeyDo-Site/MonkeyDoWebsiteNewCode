@@ -107,3 +107,11 @@ deployment helper's bundle validation passes for both V1 and V2. Initial test
 run raced screenshot generation (one missing-artifact error); the affected hosted
 preview tests were rerun after artifact generation, with the result recorded in
 the PR. No migration is introduced.
+
+## Design review V3: uploaded child/activity photographs
+
+Received all five photos in New ImagesMonkey.zip. Preserved originals with
+checksums, added photos to Come play / Play more / Celebrate together, and replaced
+matching Imaginative Play, Climbing Area and Toddler Zone images. Game Room keeps
+its matching facility photo. V3 preserves the ad hero and Nunito from V2; V1/V2
+artifacts remain unchanged. No text/pricing or database changes; no deployment.

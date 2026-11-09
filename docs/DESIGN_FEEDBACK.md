@@ -8,7 +8,7 @@ The owner authorized a stable design preview and separate continuing backend wor
 | --- | --- | --- | --- | --- | --- | --- |
 | D01 | V2 | All pages | Both | Rounded ad body/button font; similar font permitted for now | Ready for owner review | Locally hosted Nunito; original logo unchanged |
 | D02 | V2 | Home hero | Both | Use the photo in the ad; cropping with the original border is permitted | Ready for owner review | Original photo composition and sage frame isolated; promotional text omitted |
-| D03 | V2 | About and home cards | Both | Use five new child/activity photos to liven up the pages | Pending | Visible inline in chat, but actual files must be uploaded before placement |
+| D03 | V2 | About and home cards | Both | Use five new child/activity photos to liven up the pages | Ready for owner review | ZIP originals now preserved; photos added to all three homepage cards and matching About areas in V3 |
 
 Statuses: **Pending** (recorded); **In progress**; **Ready for owner review**; **Approved** (explicit owner approval); **Deferred** (include reason).
 
@@ -32,3 +32,6 @@ Owner-guided setup is now underway on replacement host 107.170.1.143. The owner 
 First typography/hero revision is in [V2](design-review/v2/index.html). V1
 files remain unchanged. The hosted source now selects V2 when this release is
 explicitly deployed; no server update has occurred during preparation.
+
+V3 adds the newly uploaded activity photos to V2 typography/hero changes. V1 and
+V2 remain preserved. Original source photos are used without retouching.

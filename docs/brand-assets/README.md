@@ -39,3 +39,12 @@ sha256sum --check SHA256SUMS
 ```
 
 The archive is not duplicated in Git. These originals were supplied again by the owner; this does not establish recovery of files or code from the stuck task. Written requirements take precedence over historical advertisement copy.
+
+## Additional child/activity photos
+
+`New ImagesMonkey.zip` supplied five JPEGs, preserved byte-for-byte in
+[children-originals](children-originals/), with SHA256SUMS. These show pretend
+fishing/camping, a climbing wall, foam/ball-pit play, the toddler area and the
+spiral slide. The owner authorized website placement. Photos illustrate play;
+they do not change approved pricing, areas or party inclusions. Original filenames
+are preserved separately to avoid collisions with the earlier facility photos.

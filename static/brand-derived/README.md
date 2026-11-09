@@ -12,8 +12,6 @@ identification of the ad's actual font. The variable font is served locally from
 `static/fonts`, with its upstream SIL Open Font License. Upstream source:
 https://github.com/google/fonts/tree/main/ofl/nunito
 
-The owner also supplied five inline chat images showing pretend fishing,
-climbing, foam-pit play, the toddler area and spiral-slide play. These image
-attachments were visible in chat but unavailable as downloadable files in this
-workspace. Original uploads are still required before adding those exact photos
-to About and the three homepage cards. Do not replace them with generated photos.
+The five child/activity photographs have now been supplied in New ImagesMonkey.zip.
+Their original bytes are preserved under docs/brand-assets/children-originals,
+with individual checksums. Homepage cards and matching About areas use them.
