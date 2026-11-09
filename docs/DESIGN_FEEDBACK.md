@@ -35,3 +35,11 @@ explicitly deployed; no server update has occurred during preparation.
 
 V3 adds the newly uploaded activity photos to V2 typography/hero changes. V1 and
 V2 remain preserved. Original source photos are used without retouching.
+
+## V4: homepage motion and card labels
+
+The owner asked to remove decorative card numbers and add animations. Labels
+01/02/03 are removed. Hero text/photo use one brief entrance; cards lift on mouse
+hover or keyboard focus; hero button and intro link have slight hover/focus
+movement. Motion is disabled for prefers-reduced-motion. V4 preserves previous
+review folders. These changes are ready for owner review, not owner-approved.

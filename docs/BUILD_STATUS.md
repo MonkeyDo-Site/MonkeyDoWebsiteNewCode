@@ -130,3 +130,9 @@ reduced motion is not requested; reduced motion also disables smooth scrolling.
 There is no looping animation, hidden content or JavaScript dependency. Frozen
 captures use reduced motion for stable screenshots; interactive CSS is retained.
 No deployment or operational behavior changed.
+
+V4 checks: all 21 public-page/hosted-preview tests passed on PostgreSQL 17. All
+16 pages passed desktop/phone Chromium validation; dedicated browser checks
+passed for animation, hover, keyboard focus and reduced-motion behavior. Existing
+deployment helper validates every preserved review bundle. Ruff and whitespace
+checks passed. Full 246-test suite passed at the preceding photo checkpoint.
