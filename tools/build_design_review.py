@@ -31,7 +31,7 @@ def main():
     parser.add_argument("--source-commit", required=True)
     parser.add_argument(
         "--version",
-        choices=("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10"),
+        choices=("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11"),
         default="V1",
     )
     args = parser.parse_args()
@@ -136,7 +136,8 @@ def main():
         pages = [
             ("01-home", "Home", "/"),
             ("02-about", "About", "/about/"),
-            ("03-programs", "Memberships, Clubs & Parties", "/memberships-clubs-parties/"),
+            ("03-programs", "Memberships", "/memberships/"),
+            ("17-clubs-parties", "Clubs & Parties", "/clubs-parties/"),
             ("04-book", "Book Now — schedule preview", "/book/"),
             ("05-contact", "Contact Us", "/contact/"),
             ("06-today", "Staff Today", "/staff/today/"),
@@ -155,7 +156,7 @@ def main():
         # Render public pages as a visitor, not as an authenticated owner.
         visitor = Client()
         for index, (name, title, url) in enumerate(pages):
-            response = (visitor if index < 5 else client).get(url)
+            response = (client if url.startswith("/staff/") else visitor).get(url)
             if response.status_code != 200:
                 raise RuntimeError(f"Cannot capture {url}: HTTP {response.status_code}")
             renderer = FrozenHTML(routes, args.source_commit, args.version)
@@ -225,7 +226,10 @@ class FrozenHTML(HTMLParser):
             elif value.startswith("/static/"):
                 attrs[key] = "../../../static/" + value.removeprefix("/static/")
             elif value.startswith("/"):
-                attrs[key] = self.routes.get(urlsplit(value).path, "#actions-disabled")
+                parts = urlsplit(value)
+                attrs[key] = self.routes.get(parts.path, "#actions-disabled")
+                if attrs[key] != "#actions-disabled" and parts.fragment:
+                    attrs[key] += "#" + parts.fragment
                 if attrs[key] == "#actions-disabled":
                     attrs["aria-disabled"] = "true"
                     attrs["title"] = "This action is not available in the frozen design preview."

@@ -90,3 +90,12 @@ MEMBERSHIPS.md and AG P20875–P20882: per-child/month prices, benefit bullets,
 exclusion footnote. Removed the shortened paragraph paraphrases. This corrects
 an implementation omission; no renewed owner approval of the copy is required.
 Pricing and benefit calculation rules are unchanged.
+
+## V11: separate program navigation and continuous homepage
+
+Owner requested Memberships as a separate page from Clubs & Parties, and a
+homepage continuing through About, Memberships, Clubs & Parties and Contact Us.
+Implemented both dedicated routes/navigation and full scrolling homepage sections
+from shared templates. Earlier combined route stays unlinked for old bookmarks.
+Clubs visibility applies to dedicated and homepage sections. Latest owner request
+supersedes the earlier combined-program page inventory; business rules unchanged.

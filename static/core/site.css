@@ -481,3 +481,9 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   font-weight:600;
   line-height:20.8px
 }
+
+.home-section {
+  border-top:1px solid var(--line);
+  padding-top:16px;
+  scroll-margin-top:24px
+}

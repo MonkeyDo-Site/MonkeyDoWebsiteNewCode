@@ -17,7 +17,15 @@ from core.models import Customer, Session, SiteSettings
 )
 class PageTests(TestCase):
     def test_all_public_pages_render_without_exact_address(self):
-        for path in ("/", "/about/", "/memberships-clubs-parties/", "/contact/", "/book/"):
+        for path in (
+            "/",
+            "/about/",
+            "/memberships-clubs-parties/",
+            "/memberships/",
+            "/clubs-parties/",
+            "/contact/",
+            "/book/",
+        ):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
@@ -35,7 +43,15 @@ class PageTests(TestCase):
             if signed_in:
                 user = get_user_model().objects.create_user(username="footer-staff", is_staff=True)
                 self.client.force_login(user)
-            for path in ("/", "/about/", "/memberships-clubs-parties/", "/contact/", "/book/"):
+            for path in (
+                "/",
+                "/about/",
+                "/memberships-clubs-parties/",
+                "/memberships/",
+                "/clubs-parties/",
+                "/contact/",
+                "/book/",
+            ):
                 response = self.client.get(path)
                 for target in ("/staff/", "/accounts/", "/admin/"):
                     self.assertNotContains(response, f'href="{target}')
@@ -72,11 +88,37 @@ class PageTests(TestCase):
         )
         self.assertRedirects(response, "/staff/today/")
 
+    def test_separate_membership_and_club_pages_and_home_section_order(self):
+        memberships = self.client.get("/memberships/")
+        self.assertContains(memberships, "Two free play sessions per month")
+        self.assertNotContains(memberships, "<h3>Sunday Club</h3>")
+        clubs = self.client.get("/clubs-parties/")
+        self.assertContains(clubs, "<h3>Sunday Club</h3>")
+        self.assertContains(clubs, "MonkeyDo parties")
+        self.assertNotContains(clubs, "Two free play sessions per month")
+        home = self.client.get("/").content.decode()
+        positions = [
+            home.index(marker)
+            for marker in (
+                'id="about"',
+                'id="memberships"',
+                'id="clubs-and-parties"',
+                'id="contact"',
+            )
+        ]
+        self.assertEqual(positions, sorted(positions))
+        self.assertEqual(home.count("<h1>"), 1)
+        self.assertIn('href="/memberships/"', home)
+        self.assertIn('href="/clubs-parties/"', home)
+        self.assertNotIn('href="/memberships-clubs-parties/"', home)
+
     def test_club_visibility_does_not_delete_data(self):
         SiteSettings.objects.create(clubs_visible=False)
         response = self.client.get("/memberships-clubs-parties/")
         self.assertNotContains(response, "<h3>Sunday Club</h3>")
         self.assertEqual(SiteSettings.objects.count(), 1)
+        for path in ("/", "/clubs-parties/"):
+            self.assertNotContains(self.client.get(path), "<h3>Sunday Club</h3>")
 
     def test_no_public_booking_write_endpoint(self):
         self.assertEqual(self.client.post("/book/", {}).status_code, 405)
