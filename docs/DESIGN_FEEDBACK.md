@@ -43,3 +43,10 @@ The owner asked to remove decorative card numbers and add animations. Labels
 hover or keyboard focus; hero button and intro link have slight hover/focus
 movement. Motion is disabled for prefers-reduced-motion. V4 preserves previous
 review folders. These changes are ready for owner review, not owner-approved.
+
+## V5: clarify the two play-session choices
+
+Added the owner's line “Choose open play or supervised play, when available.”
+immediately above the two About-page options. The first option is titled
+“Open play” to match that wording. Prices, ages and attendance rules are unchanged.
+Prepared for owner review; earlier review versions remain preserved.
