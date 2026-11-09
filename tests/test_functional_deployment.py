@@ -20,8 +20,8 @@ class FunctionalDeploymentTests(TestCase):
             "MONKEYDO_DESIGN_ONLY": "0",
             "MONKEYDO_CUSTOMER_TEST_BOOKING": "1",
             "DJANGO_SECRET_KEY": "x" * 60,
-            "DJANGO_ALLOWED_HOSTS": "testing.monkeydoplay.com",
-            "DJANGO_CSRF_TRUSTED_ORIGINS": "https://testing.monkeydoplay.com",
+            "DJANGO_ALLOWED_HOSTS": "staging.monkeydoplay.com",
+            "DJANGO_CSRF_TRUSTED_ORIGINS": "https://staging.monkeydoplay.com",
             "DJANGO_TRUST_PROXY": "1",
             "MONKEYDO_TRUST_LOCAL_CLIENT_IP": "1",
             "POSTGRES_DB": "monkeydo_functional",
@@ -50,7 +50,7 @@ class FunctionalDeploymentTests(TestCase):
         for field, value in (
             ("POSTGRES_DB", "monkeydo_staging"),
             ("POSTGRES_USER", "monkeydo"),
-            ("DJANGO_ALLOWED_HOSTS", "staging.monkeydoplay.com"),
+            ("DJANGO_ALLOWED_HOSTS", "testing.monkeydoplay.com"),
             ("MONKEYDO_DESIGN_ONLY", "1"),
             ("MONKEYDO_CUSTOMER_TEST_BOOKING", "0"),
         ):

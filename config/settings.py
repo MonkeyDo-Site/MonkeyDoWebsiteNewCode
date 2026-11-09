@@ -131,7 +131,7 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 PASSWORD_RESET_TIMEOUT = 60 * 60
 DEFAULT_FROM_EMAIL = "bookings@monkeydoplay.com"
 
-# Opt-in functional staging; the frozen design preview stays the default host.
+# Opt-in functional staging; design-only mode and booking mode are exclusive.
 CUSTOMER_TEST_BOOKING = os.environ.get("MONKEYDO_CUSTOMER_TEST_BOOKING") == "1"
 if CUSTOMER_TEST_BOOKING and DESIGN_REVIEW_ONLY:
     raise ImproperlyConfigured(

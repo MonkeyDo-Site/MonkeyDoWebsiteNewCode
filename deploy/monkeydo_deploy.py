@@ -70,7 +70,7 @@ def select_target(target):
     ENV_FILE = Path("/etc/monkeydo/functional.env" if functional else "/etc/monkeydo/staging.env")
     UNIT = "monkeydo-functional.service" if functional else "monkeydo-design-review.service"
     DROPIN = Path("/etc/systemd/system") / (UNIT + ".d/release.conf")
-    DOMAIN = "testing.monkeydoplay.com" if functional else "staging.monkeydoplay.com"
+    DOMAIN = "staging.monkeydoplay.com"
     SOCKET = (
         "/run/monkeydo-functional/gunicorn.sock"
         if functional
