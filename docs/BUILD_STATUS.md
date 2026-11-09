@@ -90,3 +90,13 @@ Verification: all 246 tests passed on disposable PostgreSQL 17; Django system
 checks, Ruff lint/format and whitespace checks passed. New checks cover removal
 of staff links from anonymous and signed-in customer pages, noindex login,
 customer credential rejection and the staging entry gate boundary.
+
+## Design review V2: first owner typography and homepage edits
+
+Use locally hosted Nunito as an explicitly temporary match for the rounded ad
+body/button lettering. Homepage hero uses the original ad's photo composition
+and sage border, isolated from surrounding promotional text, with no generated
+or retouched people. Original ad/logo remain unchanged. V2 is a new frozen review
+folder; V1 remains preserved. Additional five inline child/activity photos still
+need file uploads before About/card placement; their bytes are unavailable in
+the workspace. This is not a completed photo-placement change or deployment.

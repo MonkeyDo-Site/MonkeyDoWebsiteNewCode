@@ -40,7 +40,7 @@ class HostedDesignReviewTests(TestCase):
         self.assertRedirects(response, "/", fetch_redirect_response=False)
         self.assertTrue(response.cookies["monkeydo_staging_access"]["secure"])
         self.assertTrue(response.cookies["monkeydo_staging_access"]["httponly"])
-        self.assertContains(self.client.get("/", secure=True), "Design review V1")
+        self.assertContains(self.client.get("/", secure=True), "Design review V2")
 
     def test_pages_are_frozen_read_only_and_assets_are_root_relative(self):
         self.unlock()

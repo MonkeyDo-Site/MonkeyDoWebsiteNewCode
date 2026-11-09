@@ -29,6 +29,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "docs/design-review/v1")
     parser.add_argument("--source-commit", required=True)
+    parser.add_argument("--version", choices=("V1", "V2"), default="V1")
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9a-f]{40}", args.source_commit):
         parser.error("Supply the full reviewed source commit hash.")
@@ -153,7 +154,7 @@ def main():
             response = (visitor if index < 5 else client).get(url)
             if response.status_code != 200:
                 raise RuntimeError(f"Cannot capture {url}: HTTP {response.status_code}")
-            renderer = FrozenHTML(routes, args.source_commit)
+            renderer = FrozenHTML(routes, args.source_commit, args.version)
             renderer.feed(response.content.decode())
             rendered = chr(10).join(
                 line.rstrip() for line in "".join(renderer.parts).splitlines()
@@ -162,7 +163,7 @@ def main():
                 raise RuntimeError(f"Active form/script/CSRF token remained in {name}")
             (out / (name + ".html")).write_text(rendered)
         manifest = {
-            "review_version": "Design review V1",
+            "review_version": f"Design review {args.version}",
             "source_commit": args.source_commit,
             "fixture_date": "2026-11-08 America/New_York",
             "fixture_data": "Artificial Sample Family; reserved 555 phone and example.invalid emails.",
@@ -176,15 +177,16 @@ def main():
             f'<li><a href="{name}.html">{html.escape(title)}</a></li>' for name, title, _ in pages
         )
         (out / "index.html").write_text(
-            f"""<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MonkeyDo — Design review V1</title><style>body{{font:18px/1.6 system-ui;max-width:850px;margin:40px auto;padding:20px;background:#fbf8f2;color:#273c32}}a{{color:#325a49}}li{{margin:12px 0}}</style><h1>MonkeyDo — Design review V1</h1><p>Frozen design review of source <code>{args.source_commit[:7]}</code>. These are actual rendered layouts with artificial sample records. Buttons/forms are disabled. Backend development can continue separately.</p><p>Review the public pages first, then staff screens. Membership drafts and pending bookings remain unfinished workflows; this is not a functional staging site.</p><ol>{links}</ol><p>Send numbered comments in chat with the page, phone/computer, and requested change. Reference “V1”. This version stays fixed until you finish reviewing it.</p></html>"""
+            f"""<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MonkeyDo — Design review {args.version}</title><style>body{{font:18px/1.6 system-ui;max-width:850px;margin:40px auto;padding:20px;background:#fbf8f2;color:#273c32}}a{{color:#325a49}}li{{margin:12px 0}}</style><h1>MonkeyDo — Design review {args.version}</h1><p>Frozen design review of source <code>{args.source_commit[:7]}</code>. These are actual rendered layouts with artificial sample records. Buttons/forms are disabled. Backend development can continue separately.</p><p>Review the public pages first, then staff screens. Membership drafts and pending bookings remain unfinished workflows; this is not a functional staging site.</p><ol>{links}</ol><p>Send numbered comments in chat with the page, phone/computer, and requested change. Reference “{args.version}”. This version stays fixed until you finish reviewing it.</p></html>"""
         )
     print(f"Exported {len(pages)} read-only pages from {args.source_commit[:7]} to {out}")
 
 
 class FrozenHTML(HTMLParser):
-    def __init__(self, routes, source):
+    def __init__(self, routes, source, version="V1"):
         super().__init__(convert_charrefs=False)
         self.routes, self.source, self.parts = routes, source, []
+        self.version = version
         self.suppress_script = False
 
     def handle_decl(self, decl):
@@ -231,7 +233,7 @@ class FrozenHTML(HTMLParser):
         self.parts.append("<" + tag + text + ">")
         if tag == "body":
             self.parts.append(
-                f'<aside id="actions-disabled" style="padding:12px 20px;background:#273c32;color:white;font:14px/1.5 system-ui">Design review V1 · Source {self.source[:7]} · Read-only · <a href="index.html" style="color:white">Review page index</a></aside>'
+                f'<aside id="actions-disabled" style="padding:12px 20px;background:#273c32;color:white;font:14px/1.5 system-ui">Design review {self.version} · Source {self.source[:7]} · Read-only · <a href="index.html" style="color:white">Review page index</a></aside>'
             )
 
     def handle_startendtag(self, tag, attrs):

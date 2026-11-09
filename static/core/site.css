@@ -1,3 +1,10 @@
+@font-face {
+  font-family:"Nunito";
+  src:url("../fonts/Nunito-Variable.ttf") format("truetype");
+  font-style:normal;
+  font-weight:200 1000;
+  font-display:swap
+}
 :root {
   --ink:#293c33;
   --sage:#709785;
@@ -16,7 +23,7 @@ body {
   margin:0;
   background:var(--cream);
   color:var(--ink);
-  font:17px/1.65 ui-rounded,"Trebuchet MS",Arial,sans-serif
+  font:17px/1.65 "Nunito",ui-rounded,"Trebuchet MS",Arial,sans-serif
 }
 a {
   color:inherit;
@@ -398,3 +405,14 @@ summary { cursor: pointer; font-weight: bold; }
 input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right:8px; }
 .staff-layout .panel { min-width:0; overflow-wrap:anywhere; }
 .staff-layout code { overflow-wrap:anywhere; }
+
+/* Preserve the owner's ad photograph and its original organic sage frame. */
+.hero-photo.ad-photo img {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:680px;
+  object-fit:contain;
+  border:0;
+  border-radius:0
+}
