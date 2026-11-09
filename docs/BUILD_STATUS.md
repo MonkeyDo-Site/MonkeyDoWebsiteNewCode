@@ -170,3 +170,11 @@ line, intro and cards moved 0px; only the button moved 10px. No overlaps/overflo
 All 14 public-page tests passed on PostgreSQL; all 16 review screens passed
 Chromium phone/desktop asset and layout checks. Ruff, whitespace and deployment
 bundle validation passed. No deployment or database changes.
+
+## Design review V9: homepage card wording
+
+Updated Come play link to “See available play sessions” and Celebrate together
+copy to “A private party filled with MonkeyDo fun, family and friends.” Retains
+earlier number removal and all prior requested visual changes. All 16 review
+screens passed desktop/phone Chromium asset and overflow checks; Ruff, whitespace
+and deployment-bundle validation passed. No deployment or business-rule changes.
