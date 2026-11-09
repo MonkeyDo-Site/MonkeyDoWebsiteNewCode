@@ -6,9 +6,9 @@ Current development authorization and implementation evidence are in [DEVELOPMEN
 
 Private preview timing, estimated costs and deployment approval steps are in [STAGING_DEPLOYMENT_PROPOSAL.md](STAGING_DEPLOYMENT_PROPOSAL.md). The example configurations under `deploy/` are preparation only, not a deployment.
 
-The customer-management increment, staff group setup and login protection are described in [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md). Public booking and provider integration remain unfinished.
+The customer-management increment, staff group setup and login protection are described in [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md). Pending customer self-booking is now documented in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md); payment/waiver/confirmation integration remains unfinished.
 
-Owner MFA/recovery, staff accounts, session invalidation and shared staging access are documented in [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). Email delivery remains in-memory until integration.
+Owner MFA/recovery, staff accounts, session invalidation and shared staging access are documented in [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). Email defaults to in-memory; the new opt-in allowlisted Resend staging transport still needs private configuration and real delivery verification.
 
 Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
 

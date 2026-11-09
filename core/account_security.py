@@ -54,7 +54,7 @@ def trusted_browser(user, token):
 
 
 def owner_message(address, code):
-    # Deliberately in-memory until the separately reviewed email integration.
+    # Transport is selected by protected settings; functional staging is allowlisted.
     try:
         return (
             send_mail(
@@ -76,7 +76,7 @@ def record_delivery(challenge, address, code):
     challenge.save(update_fields=["delivered"])
     if not challenge.delivered:
         SecurityAlert.objects.create(
-            subject="Owner verification email could not be sent",
+            subject="Owner verification email delivery not confirmed",
             details={"account_id": challenge.user_id, "scope": "owner_email"},
         )
 

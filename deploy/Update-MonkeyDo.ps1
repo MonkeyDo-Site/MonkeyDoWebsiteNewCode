@@ -15,7 +15,9 @@ param(
     [Parameter(Mandatory = $true, ParameterSetName = 'Status')]
     [switch]$Status,
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9.-]*$')]
-    [string]$Server = '107.170.1.143'
+    [string]$Server = '107.170.1.143',
+    [ValidateSet('Design','Functional')]
+    [string]$Target = 'Design'
 )
 $ErrorActionPreference = 'Stop'
 
@@ -37,9 +39,16 @@ function Get-MonkeyDoDigest {
 }
 
 $sshOptions = @('-o', 'StrictHostKeyChecking=yes')
+$targetArguments = @()
+if ($Target -eq 'Functional') { $targetArguments = @('--target', 'functional') }
+$targetBase = if ($Target -eq 'Functional') { '/srv/monkeydo-functional' } else { '/srv/monkeydo' }
+$targetConfiguration = if ($Target -eq 'Functional') { '/etc/monkeydo/functional.env' } else { '/etc/monkeydo/staging.env' }
+$targetDomain = if ($Target -eq 'Functional') { 'testing.monkeydoplay.com' } else { 'staging.monkeydoplay.com' }
+$targetDesignFlag = if ($Target -eq 'Functional') { '0' } else { '1' }
+$targetState = if ($Target -eq 'Functional') { '/var/lib/monkeydo-functional-deploy' } else { '/var/lib/monkeydo-deploy' }
 if ($Rollback -or $Status) {
     $operation = if ($Rollback) { 'rollback' } else { 'status' }
-    Invoke-CheckedNative 'ssh' ($sshOptions + @("root@$Server", '/usr/local/sbin/monkeydo-deploy', $operation))
+    Invoke-CheckedNative 'ssh' ($sshOptions + (@("root@$Server", '/usr/local/sbin/monkeydo-deploy') + $targetArguments + @($operation)))
     return
 }
 $Commit = $Commit.ToLowerInvariant()
@@ -72,13 +81,13 @@ if source.is_symlink() or source.stat().st_uid != 0:
     raise SystemExit('Unexpected helper ownership/type.')
 if hashlib.sha256(source.read_bytes()).hexdigest() != '$helperHash':
     raise SystemExit('Helper checksum mismatch; nothing installed.')
-base = pathlib.Path('/srv/monkeydo')
-configuration = pathlib.Path('/etc/monkeydo/staging.env')
+base = pathlib.Path('$targetBase')
+configuration = pathlib.Path('$targetConfiguration')
 if configuration.is_symlink() or not configuration.is_file() or configuration.stat().st_uid != 0:
     raise SystemExit('Existing protected staging configuration is required.')
 settings = dict(line.split('=', 1) for line in configuration.read_text().splitlines() if line and not line.startswith('#'))
-if settings.get('APP_ENV') != 'staging' or settings.get('MONKEYDO_DESIGN_ONLY') != '1' or settings.get('DJANGO_ALLOWED_HOSTS') != 'staging.monkeydoplay.com':
-    raise SystemExit('This is not the approved private design-review target.')
+if settings.get('APP_ENV') != 'staging' or settings.get('MONKEYDO_DESIGN_ONLY') != '$targetDesignFlag' or settings.get('DJANGO_ALLOWED_HOSTS') != '$targetDomain':
+    raise SystemExit('This is not the approved private staging target.')
 if not (base / 'staging/current').is_symlink():
     raise SystemExit('Existing pinned staging release is required.')
 os.chmod(source, 0o755)
@@ -96,14 +105,17 @@ if incoming.is_symlink():
 incoming.mkdir(exist_ok=True)
 os.chown(incoming, 0, grp.getgrnam('monkeydo-deploy').gr_gid)
 os.chmod(incoming, 0o770)
-state = pathlib.Path('/var/lib/monkeydo-deploy')
+state = pathlib.Path('$targetState')
 if state.is_symlink():
     raise SystemExit('Unexpected state directory symlink.')
 state.mkdir(exist_ok=True)
 os.chown(state, 0, 0)
 os.chmod(state, 0o700)
 print('Helper installed. Website release, database and services were not changed.')
-subprocess.run(['/usr/local/sbin/monkeydo-deploy', 'status'], check=True)
+arguments = ['/usr/local/sbin/monkeydo-deploy']
+if '$Target' == 'Functional':
+    arguments += ['--target', 'functional']
+subprocess.run(arguments + ['status'], check=True)
 "@
         $bootstrap | & ssh @sshOptions "root@$Server" python3 -
         if ($LASTEXITCODE -ne 0) { throw 'Installation/status verification failed. No application deployment was requested.' }
@@ -114,6 +126,6 @@ subprocess.run(['/usr/local/sbin/monkeydo-deploy', 'status'], check=True)
     return
 }
 
-$remoteArchive = "/srv/monkeydo/incoming/$uploadId.zip"
+$remoteArchive = "$targetBase/incoming/$uploadId.zip"
 Invoke-CheckedNative 'scp' ($sshOptions + @($archivePath, "monkeydo-deploy@${Server}:$remoteArchive"))
-Invoke-CheckedNative 'ssh' ($sshOptions + @("root@$Server", '/usr/local/sbin/monkeydo-deploy', 'deploy', '--archive', $remoteArchive, '--sha256', $digest, '--commit', $Commit))
+Invoke-CheckedNative 'ssh' ($sshOptions + (@("root@$Server", '/usr/local/sbin/monkeydo-deploy') + $targetArguments + @('deploy', '--archive', $remoteArchive, '--sha256', $digest, '--commit', $Commit)))

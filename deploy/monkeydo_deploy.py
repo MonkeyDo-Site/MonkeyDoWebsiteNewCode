@@ -39,6 +39,57 @@ SOCKET = "/run/monkeydo-staging/gunicorn.sock"
 MAX_ARCHIVE = 200 * 1024 * 1024
 MAX_EXPANDED = 512 * 1024 * 1024
 
+TARGET = "design"
+RUNTIME_USER = "monkeydo"
+DB_NAME = "monkeydo_staging"
+HEALTH_PATHS = (("/staging/access/", 200), ("/", 302), ("/01-home.html", 302))
+
+
+def select_target(target):
+    """Closed target allowlist; paths/units/roles are never supplied by the caller."""
+    global \
+        TARGET, \
+        BASE, \
+        STATE, \
+        ENV_FILE, \
+        DROPIN, \
+        UNIT, \
+        DOMAIN, \
+        SOCKET, \
+        RUNTIME_USER, \
+        DB_NAME, \
+        HEALTH_PATHS
+    if target not in {"design", "functional"}:
+        raise ValueError("Unknown deployment target")
+    TARGET = target
+    functional = target == "functional"
+    BASE = Path("/srv/monkeydo-functional" if functional else "/srv/monkeydo")
+    STATE = Path(
+        "/var/lib/monkeydo-functional-deploy" if functional else "/var/lib/monkeydo-deploy"
+    )
+    ENV_FILE = Path("/etc/monkeydo/functional.env" if functional else "/etc/monkeydo/staging.env")
+    UNIT = "monkeydo-functional.service" if functional else "monkeydo-design-review.service"
+    DROPIN = Path("/etc/systemd/system") / (UNIT + ".d/release.conf")
+    DOMAIN = "testing.monkeydoplay.com" if functional else "staging.monkeydoplay.com"
+    SOCKET = (
+        "/run/monkeydo-functional/gunicorn.sock"
+        if functional
+        else "/run/monkeydo-staging/gunicorn.sock"
+    )
+    RUNTIME_USER = "monkeydo-functional" if functional else "monkeydo"
+    DB_NAME = "monkeydo_functional" if functional else "monkeydo_staging"
+    HEALTH_PATHS = (
+        (
+            ("/staging/access/", 200),
+            ("/", 302),
+            ("/book/", 302),
+            ("/book/details/", 302),
+            ("/staff/", 200),
+        )
+        if functional
+        else (("/staging/access/", 200), ("/", 302), ("/01-home.html", 302))
+    )
+
 
 class DeployError(Exception):
     pass
@@ -184,6 +235,16 @@ def read_environment(path, owner_uid=0):
         "POSTGRES_HOST",
         "POSTGRES_PORT",
     }
+    if TARGET == "functional":
+        allowed.update(
+            {
+                "MONKEYDO_CUSTOMER_TEST_BOOKING",
+                "MONKEYDO_EMAIL_TRANSPORT",
+                "MONKEYDO_TEST_EMAIL_RECIPIENTS",
+                "RESEND_API_KEY",
+                "MONKEYDO_TRUST_LOCAL_CLIENT_IP",
+            }
+        )
     result = {}
     for line in path.read_text().splitlines():
         if not line.strip() or line.lstrip().startswith("#"):
@@ -197,16 +258,28 @@ def read_environment(path, owner_uid=0):
         result[name] = value
     required = {
         "APP_ENV": "staging",
-        "MONKEYDO_DESIGN_ONLY": "1",
-        "POSTGRES_DB": "monkeydo_staging",
-        "POSTGRES_USER": "monkeydo",
+        "MONKEYDO_DESIGN_ONLY": "0" if TARGET == "functional" else "1",
+        "POSTGRES_DB": DB_NAME,
+        "POSTGRES_USER": RUNTIME_USER,
         "POSTGRES_HOST": "/var/run/postgresql",
         "DJANGO_ALLOWED_HOSTS": DOMAIN,
         "DJANGO_CSRF_TRUSTED_ORIGINS": "https://" + DOMAIN,
         "DJANGO_TRUST_PROXY": "1",
     }
+    if TARGET == "functional":
+        required.update(
+            {
+                "MONKEYDO_CUSTOMER_TEST_BOOKING": "1",
+                "MONKEYDO_EMAIL_TRANSPORT": "resend",
+                "MONKEYDO_TRUST_LOCAL_CLIENT_IP": "1",
+            }
+        )
+        if not result.get("RESEND_API_KEY") or not result.get("MONKEYDO_TEST_EMAIL_RECIPIENTS"):
+            raise DeployError(
+                "Functional staging needs protected email credentials and test recipients."
+            )
     if any(result.get(key) != value for key, value in required.items()):
-        raise DeployError("Configuration is not the approved isolated design-review target.")
+        raise DeployError("Configuration is not the approved isolated staging target.")
     if (
         len(result.get("DJANGO_SECRET_KEY", "")) < 50
         or result.get("POSTGRES_PORT", "5432") != "5432"
@@ -286,7 +359,7 @@ class Host:
         )
         redacted = (result.stdout or "") + (result.stderr or "")
         for name, value in self.environment.items():
-            if any(word in name for word in ("SECRET", "PASSWORD", "TOKEN", "PIN")):
+            if any(word in name for word in ("SECRET", "PASSWORD", "TOKEN", "PIN", "KEY")):
                 redacted = redacted.replace(value, "[REDACTED]")
         with self.log.open("a") as output:
             output.write(redacted)
@@ -305,7 +378,7 @@ class Host:
                 raise DeployError(
                     "Release/state directories need root ownership and no group/other write."
                 )
-        if self.command(["systemctl", "show", UNIT, "--property=User", "--value"]) != "monkeydo":
+        if self.command(["systemctl", "show", UNIT, "--property=User", "--value"]) != RUNTIME_USER:
             raise DeployError("Unexpected service user; no change made.")
         if self.command(["systemctl", "show", UNIT, "--property=Group", "--value"]) != "www-data":
             raise DeployError("Unexpected service group; no change made.")
@@ -385,16 +458,24 @@ class Host:
             runtime=True,
             cwd=candidate,
         )
-        self.command([python, "manage.py", "check"], user="monkeydo", runtime=True, cwd=candidate)
+        self.command([python, "manage.py", "check"], user=RUNTIME_USER, runtime=True, cwd=candidate)
         # This checks the migration plan only. It never runs a migration.
         self.command(
             [python, "manage.py", "migrate", "--check"],
-            user="monkeydo",
+            user=RUNTIME_USER,
             runtime=True,
             cwd=candidate,
         )
         probe = "import django;django.setup();from django.conf import settings;assert settings.ROOT_URLCONF=='config.design_preview_urls';assert settings.DESIGN_REVIEW_ONLY"
-        self.command([python, "-c", probe], user="monkeydo", runtime=True, cwd=candidate)
+        if TARGET == "functional":
+            self.command(
+                [python, "manage.py", "functional_staging_preflight"],
+                user=RUNTIME_USER,
+                runtime=True,
+                cwd=candidate,
+            )
+        else:
+            self.command([python, "-c", probe], user=RUNTIME_USER, runtime=True, cwd=candidate)
         metadata = {
             "commit": commit,
             "archive_sha256": digest,
@@ -422,21 +503,18 @@ class Host:
         self.command(["systemctl", "start", UNIT])
 
     def candidate_snapshot(self, path):
-        text = f"[Service]\nEnvironmentFile=\nEnvironmentFile=/etc/monkeydo/staging.env\nWorkingDirectory={path}\nExecStart=\nExecStart={path}/.venv/bin/gunicorn config.wsgi:application --workers 2 --umask 7 --bind unix:{SOCKET} --timeout 60\nEnvironment=APP_ENV=staging\nEnvironment=MONKEYDO_DESIGN_ONLY=1\n"
+        text = f"[Service]\nEnvironmentFile=\nEnvironmentFile={ENV_FILE}\nWorkingDirectory={path}\nExecStart=\nExecStart={path}/.venv/bin/gunicorn config.wsgi:application --workers {1 if TARGET == 'functional' else 2} --umask 7 --bind unix:{SOCKET} --timeout 60\nEnvironment=APP_ENV=staging\nEnvironment=MONKEYDO_DESIGN_ONLY={0 if TARGET == 'functional' else 1}\n"
+        if TARGET == "functional":
+            text += "Environment=MONKEYDO_CUSTOMER_TEST_BOOKING=1\n"
         return {"release": str(path), "dropin": base64.b64encode(text.encode()).decode()}
 
     def healthy(self):
         deadline = time.monotonic() + 30
         while True:
             try:
-                for path, status in [
-                    ("/staging/access/", 200),
-                    ("/", 302),
-                    ("/01-home.html", 302),
-                    ("/static/core/site.css", 200),
-                ]:
+                for path, status in (*HEALTH_PATHS, ("/static/core/site.css", 200)):
                     check_response(UnixConnection("localhost", timeout=5), path, status)
-                for path, status in [("/staging/access/", 200), ("/", 302), ("/01-home.html", 302)]:
+                for path, status in HEALTH_PATHS:
                     check_response(
                         http.client.HTTPSConnection(
                             DOMAIN, timeout=10, context=ssl.create_default_context()
@@ -546,6 +624,7 @@ def interrupted(signum, frame):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--target", choices=("design", "functional"), default="design")
     sub = parser.add_subparsers(dest="operation", required=True)
     deploy = sub.add_parser("deploy")
     deploy.add_argument("--archive", type=Path, required=True)
@@ -554,6 +633,7 @@ def main():
     sub.add_parser("rollback")
     sub.add_parser("status")
     args = parser.parse_args()
+    select_target(args.target)
     if os.geteuid() != 0:
         parser.error("Run through the authorized root SSH account.")
     if args.operation == "deploy" and (
@@ -582,7 +662,7 @@ def main():
             host.validate()
             controller = Controller(host, STATE / "state.json")
             if args.operation == "status":
-                print("Design-only target:", DOMAIN)
+                print("Staging target:", TARGET, DOMAIN)
                 print("Current release:", host.snapshot()["release"])
                 print("Interrupted recovery pending:", bool(controller.state.get("pending")))
                 host.healthy()

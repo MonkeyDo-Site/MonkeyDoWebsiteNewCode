@@ -1,6 +1,6 @@
 # Staging build status
 
-Current checkpoint: Django/PostgreSQL foundation, customer management, owner/staff security, saved pricing, staff test reservations and owner calendar/weekly schedule controls and membership draft calendars. This is a local development checkpoint, not a deployed or complete staging application.
+Historical foundation checkpoint (see latest increment below): Django/PostgreSQL foundation, customer management, owner/staff security, saved pricing, staff test reservations and owner calendar/weekly schedule controls and membership draft calendars. This is a local development checkpoint, not a deployed or complete staging application.
 
 | Area | Implemented in this increment | Remaining |
 | --- | --- | --- |
@@ -283,3 +283,13 @@ All 15 public-page and seven hosted-preview tests passed on PostgreSQL. All 17
 review screens and dedicated image-placement checks passed desktop/phone Chromium
 validation. Ruff, whitespace and deployment-bundle checks passed. Assets saved in
 the repository, not uploaded to R2; no deployment or database changes.
+
+## Pending customer self-booking and functional staging preparation
+
+Customers can now create pending test reservations from the session schedule, using approved returning-contact checks, server-calculated review/revision, atomic capacity enforcement and idempotent submission. Staff can inspect and release the same booking; the customer receipt reflects release. The opt-in flag defaults off, and frozen design-review files remain unchanged.
+
+Added a staging-only allowlisted Resend account-email transport, read-only functional preflight, hidden shared-password command and isolated Functional deployment target with separate configuration templates. No provider call, actual email, server setup, database migration on DigitalOcean, DNS/TLS change or functional deployment occurred. Initial migration 0021 and isolated runtime/bootstrap remain operator work. Current design deployment completion is not asserted here.
+
+Verification: 278 tests passed on PostgreSQL 17, including customer privacy/CSRF, last-space/duplicate races, stale quote/profile rollback and mocked transport/target guards. Portable PowerShell wrapper tests passed with SSH/SCP mocked. Chromium completed customer review/revise/save and actual staff login/search/release at desktop 1440px and phone 390px, with updated customer receipt and no overflow/JS errors. Native Windows CI and hosted/provider acceptance are separate evidence.
+
+Payments, waivers, active membership benefits, arrivals, booking-linked customer email corrections/resends and automatic test-reservation expiry remain unfinished. See [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) for setup and acceptance.

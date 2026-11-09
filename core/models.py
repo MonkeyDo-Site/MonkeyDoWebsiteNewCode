@@ -128,6 +128,14 @@ class Session(models.Model):
 
 
 class Booking(models.Model):
+    source = models.CharField(
+        max_length=20,
+        default="staff",
+        choices=[("staff", "Staff"), ("customer_test", "Customer test booking")],
+    )
+    referral_source = models.CharField(max_length=240, blank=True)
+    creation_fingerprint = models.CharField(max_length=64, blank=True, editable=False)
+
     class Attendance(models.TextChoices):
         ARRIVED = "arrived", "Arrived"
         NO_SHOW = "no_show", "No show"
@@ -368,7 +376,7 @@ class BookingQuote(ImmutablePriceRecord):
     policy = models.ForeignKey(PricingPolicy, on_delete=models.PROTECT)
     revision = models.PositiveIntegerField()
     snapshot = models.JSONField()
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

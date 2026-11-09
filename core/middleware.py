@@ -1,3 +1,5 @@
+import ipaddress
+
 from django.conf import settings
 
 
@@ -79,4 +81,25 @@ class AccountAccessMiddleware:
                     return redirect("login")
             else:
                 request.session["last_activity"] = now
+        return self.get_response(request)
+
+
+class LocalProxyClientIPMiddleware:
+    """Only the opt-in private local nginx connection may supply X-Real-IP."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if settings.TRUST_LOCAL_CLIENT_IP and request.META.get("REMOTE_ADDR", "") in {
+            "",
+            "127.0.0.1",
+            "::1",
+        }:
+            try:
+                address = ipaddress.ip_address(request.META.get("HTTP_X_REAL_IP", ""))
+            except ValueError:
+                pass
+            else:
+                request.META["REMOTE_ADDR"] = str(address)
         return self.get_response(request)

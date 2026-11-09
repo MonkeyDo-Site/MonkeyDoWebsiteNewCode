@@ -151,7 +151,7 @@ class StaffPasswordResetForm(PasswordResetForm):
             delivered = False
         if not delivered:
             SecurityAlert.objects.create(
-                subject="Password reset email could not be sent",
+                subject="Password reset email delivery not confirmed",
                 details={"scope": "reset_email", "account_id": context["user"].pk},
             )
 

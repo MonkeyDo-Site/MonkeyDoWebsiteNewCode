@@ -177,3 +177,7 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 - Try active template overlap, stale edits, invalid capacity/weekdays and ambiguous/nonexistent DST times. A failed generation must roll back its changes and audit.
 - Change the horizon to 10, verify date openings and Sunday Friday-midnight behavior, then use the default-one-day reset with/without confirmation. Existing bookings and quotes must remain unchanged. Generation is separate from horizon changes.
 - Confirm staff cannot access owner template/horizon actions even with model permissions; verify audit history, CSRF, concurrent generation and desktop/mobile screens.
+
+## Customer self-booking checkpoint
+
+Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) against the isolated functional environment with fictional data. Local automated/browser checks have passed for pending reservation creation, revision, staff visibility/release and receipt isolation. Real host HTTPS/proxy/permissions, Resend inbox delivery/recovery and real service rollback have not yet been run. This is not acceptance of payments, waiver completion or confirmed customer visits.

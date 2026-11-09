@@ -5,7 +5,7 @@
 <em>to play.</em>
 </h1>
 <p>For group bookings of 10 or more and discounted group rates, please call or text us at 848-238-5147.</p>
-<p class="notice">This is a schedule preview using test sessions. Booking checkout is not yet enabled; no reservation or payment will be created.</p>
+{% if customer_test_booking %}<p class="notice">Test booking: use fictional customer details. You can save a pending test reservation; no card is collected or charged and no visit is confirmed.</p>{% else %}<p class="notice">This is a schedule preview using test sessions. Booking checkout is not yet enabled; no reservation or payment will be created.</p>{% endif %}
 </section>
 <section aria-label="Play session availability">{% for day in dates %}
 <article class="day">
@@ -15,7 +15,7 @@
 <div class="slot {% if not slot.available %}unavailable{% endif %}">
 <strong>{{ slot.session.starts_at|date:'g:i A' }} – {{ slot.session.ends_at|date:'g:i A' }}</strong>
 <span>{{ slot.label }}</span>{% if slot.available %}
-<span class="caption">Checkout coming soon</span>{% endif %}
+{% if customer_test_booking %}<form method="post" action="{% url 'customer_booking_start' slot.session.pk %}">{% csrf_token %}<button class="button small">Choose this session</button></form>{% else %}<span class="caption">Checkout coming soon</span>{% endif %}{% endif %}
 </div>{% endfor %}
 </div>
 </article>{% empty %}

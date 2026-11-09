@@ -35,6 +35,15 @@ try {
     if ($global:Calls[1].arguments -notcontains $expectedDigest) { throw 'Checksum not passed.' }
     if ($global:Calls[1].arguments -notcontains 'StrictHostKeyChecking=yes') { throw 'Host verification missing.' }
     $global:Calls.Clear()
+    & $wrapper -Target Functional -Archive $archive -Commit $commit
+    if ($global:Calls[0].arguments[-1] -notmatch '/srv/monkeydo-functional/incoming/' -or $global:Calls[1].arguments -notcontains '--target' -or $global:Calls[1].arguments -notcontains 'functional') { throw 'Functional deployment target is not isolated.' }
+    $global:Calls.Clear()
+    & $wrapper -Target Functional -Install -Archive $archive -Commit $commit
+    if ($global:Calls[1].stdin -notmatch '/etc/monkeydo/functional.env' -or $global:Calls[1].stdin -notmatch '/var/lib/monkeydo-functional-deploy') { throw 'Functional installer used the design environment.' }
+    $global:Calls.Clear()
+    & $wrapper -Target Functional -Rollback
+    if ($global:Calls[0].arguments -notcontains 'functional' -or $global:Calls[0].arguments[-1] -ne 'rollback') { throw 'Functional rollback target missing.' }
+    $global:Calls.Clear()
     & $wrapper -Install -Archive $archive -Commit $commit
     if ($global:Calls.Count -ne 2 -or $global:Calls[1].stdin -notmatch 'hashlib.sha256') { throw 'Installation checksum/bootstrap missing.' }
     if ($global:Calls[1].stdin -match 'systemctl.*restart') { throw 'Installation must not deploy/restart.' }

@@ -7,6 +7,8 @@
 <h2>Visit details</h2>
 <p>{{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
 <p>{% if booking.supervised %}Supervised play{% else %}Accompanied play{% endif %} · {{ booking.socks }} pairs of grip socks</p>
+<p>Source: {{ booking.get_source_display }}</p>
+{% if booking.referral_source %}<p>Referral: {{ booking.referral_source }}</p>{% endif %}
 <p>Expected payment: {{ booking.get_expected_method_display }}</p>
 {% if perms.core.view_customer %}
 <a href="{% url 'customer_detail' booking.customer_id %}">Open customer</a>{% endif %}
@@ -39,7 +41,7 @@
 </details>
 <details>
 <summary>Change history</summary>{% for event in history %}
-<p>{{ event.created_at|date:'M j, Y g:i A' }} · {{ event.actor.username }} · {{ event.action }}</p>{% empty %}
+<p>{{ event.created_at|date:'M j, Y g:i A' }} · {{ event.actor.username|default:"Customer / system" }} · {{ event.action }}</p>{% empty %}
 <p>No recorded changes.</p>{% endfor %}
 </details>
 {% endblock %}
