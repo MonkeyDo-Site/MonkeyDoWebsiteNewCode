@@ -271,3 +271,15 @@ play and club headings. Contrast ratios: cream 5.47:1, sage 4.82:1, coral 4.58:1
 This is a color preview for owner review. All 17 desktop/phone review screens,
 specific color/gap/order/font browser checks and seven hosted-preview tests passed.
 Ruff, whitespace and deployment-bundle validation passed. Nothing deployed.
+
+## Design review V19: approved edited photos and preserved originals
+
+Saved approved full-scene and close-up PNG masters separately with checksums.
+Use WebP derivatives for the Home Celebrate together card, Climbing Area on
+Home/About, and Supervised Play on Home/About. The different-child Open Play
+crop stays unchanged. All 17 original-image checksums and two approved-master
+checksums passed. Originals and historical reviews remain untouched.
+All 15 public-page and seven hosted-preview tests passed on PostgreSQL. All 17
+review screens and dedicated image-placement checks passed desktop/phone Chromium
+validation. Ruff, whitespace and deployment-bundle checks passed. Assets saved in
+the repository, not uploaded to R2; no deployment or database changes.
