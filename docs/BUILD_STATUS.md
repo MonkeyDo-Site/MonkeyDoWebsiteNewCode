@@ -293,3 +293,9 @@ Added a staging-only allowlisted Resend account-email transport, read-only funct
 Verification: 278 tests passed on PostgreSQL 17, including customer privacy/CSRF, last-space/duplicate races, stale quote/profile rollback and mocked transport/target guards. Portable PowerShell wrapper tests passed with SSH/SCP mocked. Chromium completed customer review/revise/save and actual staff login/search/release at desktop 1440px and phone 390px, with updated customer receipt and no overflow/JS errors. Native Windows CI and hosted/provider acceptance are separate evidence.
 
 Payments, waivers, active membership benefits, arrivals, booking-linked customer email corrections/resends and automatic test-reservation expiry remain unfinished. See [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) for setup and acceptance.
+
+## Shared staging URL follow-up (supersedes two public URLs)
+
+The owner selected a single `staging.monkeydoplay.com` homepage for design review and booking tests, with separately authenticated `/staff`. Functional helper configuration, preflight, nginx/TLS example and environment template now use that existing hostname. Internal functional release/database isolation remains for recovery; no second DNS record or paid service is needed. Historical frozen HTML remains in Git but will not serve the root after cutover.
+
+The owner supplied a host memory snapshot showing 1.9 GiB total and 1.4 GiB available. This supports attempting the initial test setup, not a load-test or disk-space claim. The coding environment has no Droplet SSH identity. Functional host setup, real account-email delivery and nginx cutover remain unperformed. Deployment and recovery steps are in [SHARED_STAGING_CUTOVER.md](SHARED_STAGING_CUTOVER.md).

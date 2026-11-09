@@ -43,7 +43,7 @@ $targetArguments = @()
 if ($Target -eq 'Functional') { $targetArguments = @('--target', 'functional') }
 $targetBase = if ($Target -eq 'Functional') { '/srv/monkeydo-functional' } else { '/srv/monkeydo' }
 $targetConfiguration = if ($Target -eq 'Functional') { '/etc/monkeydo/functional.env' } else { '/etc/monkeydo/staging.env' }
-$targetDomain = if ($Target -eq 'Functional') { 'testing.monkeydoplay.com' } else { 'staging.monkeydoplay.com' }
+$targetDomain = 'staging.monkeydoplay.com'
 $targetDesignFlag = if ($Target -eq 'Functional') { '0' } else { '1' }
 $targetState = if ($Target -eq 'Functional') { '/var/lib/monkeydo-functional-deploy' } else { '/var/lib/monkeydo-deploy' }
 if ($Rollback -or $Status) {

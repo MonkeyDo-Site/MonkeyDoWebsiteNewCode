@@ -28,9 +28,9 @@ class Command(BaseCommand):
         ):
             failures.append("HTTPS and secure session/CSRF cookies are required.")
         if settings.ALLOWED_HOSTS != [
-            "testing.monkeydoplay.com"
-        ] or settings.CSRF_TRUSTED_ORIGINS != ["https://testing.monkeydoplay.com"]:
-            failures.append("Use the isolated testing hostname and origin.")
+            "staging.monkeydoplay.com"
+        ] or settings.CSRF_TRUSTED_ORIGINS != ["https://staging.monkeydoplay.com"]:
+            failures.append("Use the shared staging hostname and origin.")
         if not settings.TRUST_LOCAL_CLIENT_IP or not getattr(
             settings, "SECURE_PROXY_SSL_HEADER", None
         ):

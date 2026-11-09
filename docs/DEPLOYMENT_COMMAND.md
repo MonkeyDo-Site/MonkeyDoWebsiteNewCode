@@ -1,6 +1,6 @@
 # One-command private-preview updates and rollback
 
-The helper defaults to the existing **design-only** service at staging.monkeydoplay.com / 107.170.1.143. The explicit `-Target Functional` option selects the separately configured testing.monkeydoplay.com service. Neither target deploys production or enables payments. Preparing/installing this helper does not update the website; a separate explicit deployment command selects an approved release.
+The helper defaults to the existing **design-only** service at staging.monkeydoplay.com / 107.170.1.143. After the one-time cutover, `-Target Functional` selects the functional service at the same staging.monkeydoplay.com URL. Design and Functional are internal deployment modes, not two public sites. Neither target deploys production or enables payments. Preparing/installing this helper does not update the website; a separate explicit deployment command selects an approved release.
 
 ## What an update does
 
@@ -56,7 +56,7 @@ To check the active release/private gate/HTTPS without deploying:
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File "$HOME\MonkeyDoDeploy\Update-MonkeyDo.ps1" -Status
 ```
 
-Keep the approved frozen design release fixed during its current review. Use deployment only at an agreed design checkpoint; backend development continues in separate branches. This helper never automatically chooses or publishes a newer version.
+The owner now wants design and booking testing updated together on one staging site. After cutover, always use `-Target Functional`; the Design target is retained for pre-cutover/recovery operations only. This helper never automatically chooses or publishes a newer version.
 
 ## Failure and recovery limits
 
@@ -73,9 +73,9 @@ Python tests cover actual extraction/ZIP guards, config privacy/target rejection
 
 The PowerShell test uses mocked SSH/SCP to exercise installer/hash, paths with spaces, native failure propagation, strict known-host checking, rollback/status and argument validation. It runs locally in official portable PowerShell and in CI on **Windows PowerShell**. It never contacts the actual Droplet. Real service switching/host installation must be smoke-tested through the owner's SSH access before claiming hosted deployment evidence.
 
-## Functional target (after isolated setup)
+## Functional target (after shared-site cutover)
 
-See [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) for the unperformed host bootstrap and pending-reservation boundaries. The updated wrapper/engine must first be installed from the approved release. The older installed helper does not support this target. Add `-Target Functional` to the installation command only after the separate service, private environment and current release exist. Installation does not create the database, run migrations, configure email/DNS/TLS or start customer testing.
+See [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) for the unperformed shared-site cutover and pending-reservation boundaries. The updated wrapper/engine must first be installed from the approved release. The older installed helper does not support this target. Add `-Target Functional` to the installation command only after the separate service, private environment and current release exist. Installation does not create the database, run migrations, configure email/DNS/TLS or start customer testing.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File "$HOME\MonkeyDoDeploy\Update-MonkeyDo.ps1" -Target Functional -Archive "$HOME\Downloads\MonkeyDoWebsiteNewCode-APPROVED_COMMIT.zip" -Commit APPROVED_COMMIT
@@ -84,3 +84,5 @@ powershell -NoProfile -ExecutionPolicy RemoteSigned -File "$HOME\MonkeyDoDeploy\
 ```
 
 Functional releases live under `/srv/monkeydo-functional`, state under `/var/lib/monkeydo-functional-deploy`, and configuration in `/etc/monkeydo/functional.env`. Candidate preparation checks the functional runtime role and `functional_staging_preflight`. Existing default commands continue to select Design. Rollback cannot cross target directories. No host installation or service switch has been performed for this extension.
+
+Both modes name the same public hostname. Do not operate them as simultaneous public sites. See [SHARED_STAGING_CUTOVER.md](SHARED_STAGING_CUTOVER.md); routine code rollback does not switch nginx between modes.

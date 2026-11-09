@@ -269,3 +269,28 @@ class PublicBookingTests(TestCase):
         response = self.client.get("/book/receipt/")
         self.assertContains(response, "Released")
         self.assertContains(response, "This test reservation has been released")
+
+    @override_settings(APP_ENV="staging", DESIGN_REVIEW_ONLY=False)
+    def test_shared_staging_gate_lands_on_home_and_does_not_grant_staff_access(self):
+        from django.contrib.auth.hashers import make_password
+        from django.utils import timezone
+
+        from core.models import SiteSettings
+
+        SiteSettings.objects.create(
+            staging_password_hash=make_password("Fictional-preview-2026!"),
+            staging_password_changed_at=timezone.now(),
+        )
+        self.assertRedirects(
+            self.client.get("/"), "/staging/access/", fetch_redirect_response=False
+        )
+        response = self.client.post("/staging/access/", {"password": "Fictional-preview-2026!"})
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        home = self.client.get("/")
+        self.assertContains(home, "Every little monkey needs a")
+        self.assertContains(home, 'href="/book/"')
+        self.assertNotContains(home, 'href="/staff/')
+        self.assertEqual(home.headers["X-Robots-Tag"], "noindex, nofollow")
+        self.assertContains(self.client.get("/book/"), f"/book/start/{self.slot.pk}/")
+        self.assertEqual(self.client.get("/staff/bookings/").status_code, 302)
+        self.assertEqual(self.client.get("/01-home.html").status_code, 404)

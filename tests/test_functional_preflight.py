@@ -22,8 +22,8 @@ from tests.test_customers import staff_user
     SESSION_COOKIE_SECURE=True,
     CSRF_COOKIE_SECURE=True,
     SECURE_SSL_REDIRECT=True,
-    ALLOWED_HOSTS=["testing.monkeydoplay.com"],
-    CSRF_TRUSTED_ORIGINS=["https://testing.monkeydoplay.com"],
+    ALLOWED_HOSTS=["staging.monkeydoplay.com"],
+    CSRF_TRUSTED_ORIGINS=["https://staging.monkeydoplay.com"],
     TRUST_LOCAL_CLIENT_IP=True,
     SECURE_PROXY_SSL_HEADER=("HTTP_X_FORWARDED_PROTO", "https"),
     EMAIL_BACKEND="core.test_email.StagingEmailBackend",
@@ -74,6 +74,16 @@ class FunctionalPreflightTests(TestCase):
         with override_settings(STAGING_EMAIL_RECIPIENTS=()), self.assertRaises(CommandError):
             self.run_preflight()
         with override_settings(DESIGN_REVIEW_ONLY=True), self.assertRaises(CommandError):
+            self.run_preflight()
+
+    def test_separate_testing_hostname_is_rejected(self):
+        with (
+            override_settings(
+                ALLOWED_HOSTS=["testing.monkeydoplay.com"],
+                CSRF_TRUSTED_ORIGINS=["https://testing.monkeydoplay.com"],
+            ),
+            self.assertRaises(CommandError),
+        ):
             self.run_preflight()
 
     def test_expired_private_gate_blocks_readiness(self):
