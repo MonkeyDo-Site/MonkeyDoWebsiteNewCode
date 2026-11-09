@@ -468,7 +468,9 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   position:relative;
   top:10px;
   display:inline-flex;
-  gap:10px
+  gap:10px;
+  max-width:100%;
+  text-align:center
 }
 .hero-booking-button img {
   width:34px;
@@ -476,11 +478,8 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   object-fit:contain;
   flex-shrink:0
 }
-.home-hero .hero-ages {
-  font-size:clamp(15px,4.7vw,18px);
-  font-weight:600;
-  line-height:20.8px
-}
+.home-hero .hero-ages { font:inherit }
+.hero-booking-button .button-arrow { flex-shrink:0 }
 
 .home-section {
   border-top:1px solid var(--line);

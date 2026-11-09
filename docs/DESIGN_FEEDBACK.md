@@ -132,3 +132,11 @@ Open Play button: “Book your session now →” with a decorative arrow.
 Supervised Play now has a “See available sessions” button. Both point to the
 booking schedule. Tightened button icon gap and constrained width for phones;
 photo choices, copy and business rules remain unchanged.
+
+## V16: age line before homepage booking button and arrow
+
+Moved “Designed for little monkeys ages 1–10.” onto the next line of the hero
+paragraph, before the booking button, using the paragraph's font and line spacing.
+The button retains the original monkey and now ends with a decorative right arrow.
+This later owner request supersedes the prior age-line/buton placement; all other
+approved content, imagery and behavior remain unchanged.
