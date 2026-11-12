@@ -34,3 +34,8 @@ Change the party content card from blush to sage green on Home and the standalon
 The owner selected the sage green homepage without clubs. Its party band and party card now use the alternate sage green; the gift-card box uses the existing taupe (#e9e1d5). Party introductory copy sits below the section heading and above the image/card, followed by “75 minutes of play with the exclusive MonkeyDo take home goody bag and souvenir.” The baby bullet is shortened to “Babies under 1 are free” and the grip-socks bullet to “Free grip socks.” Shared party and membership benefit lists use check marks. Both standalone membership cards have an inactive “Subscribe now →” design-preview button; no checkout action or link is added. Shared copy/list changes also appear on the homepage and standalone pages. No deployment or PR creation is included.
 
 The blue membership balloon uses a left-aligned image crop so the balloon itself is centered in its frame; the right-side bunting can be cropped. The source image is unchanged.
+
+
+## Revision 7
+
+Both homepage membership cards now display the same inactive Subscribe now arrow buttons as the membership page. The blue card’s exclusions span the full card content width, clearing the balloon and using two lines at desktop review width. The standalone parties page (clubs hidden) now has a single MonkeyDo Parties h1 below More ways to go Bananas; the party intro is one continuous paragraph. Let us make your day special is above the price on the standalone page. Gift cards appear only on the homepage, including removal from the legacy combined programs page. No PR or deployment is included.

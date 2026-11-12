@@ -22,15 +22,20 @@
 </section>{% endif %}
 {% if section_part != 'clubs' %}
 <section id="parties" aria-labelledby="parties-heading">
-<p class="eyebrow scroll-reveal">Let us make your day special</p>
+{% if party_standalone and not clubs_visible %}
+<p class="eyebrow scroll-reveal">More ways to go Bananas</p>
+<h1 id="parties-heading" class="scroll-reveal">MonkeyDo Parties</h1>
+{% else %}
+{% if not party_standalone %}<p class="eyebrow scroll-reveal">Let us make your day special</p>{% endif %}
 <h2 id="parties-heading" class="scroll-reveal">MonkeyDo Parties</h2>
+{% endif %}
 <div class="party-intro scroll-reveal">
-<p class="lead">Book your upsherin or birthday party here and enjoy the full MonkeyDo experience, reserved just for you.</p>
-<p class="lead">75 minutes of play with the exclusive MonkeyDo take home goody bag and souvenir.</p>
+<p class="lead">Book your upsherin or birthday party here and enjoy the full MonkeyDo experience, reserved just for you. 75 minutes of play with the exclusive MonkeyDo take home goody bag and souvenir.</p>
 </div>
 <div class="panel party-section scroll-reveal">
 <div class="party-image"><img class="feature-photo" src="{% static 'brand-derived/party-concept.webp' %}" width="1200" height="900" alt="Party concept: a celebration table with sage and pink balloons, cake, and goody bags" loading="lazy"></div>
 <div class="party-copy">
+{% if party_standalone %}<p class="eyebrow">Let us make your day special</p>{% endif %}
 <p class="party-price">Just $289</p>
 <ul class="party-details benefit-checklist" role="list">
 <li>Includes 10 children and 10 adults</li>

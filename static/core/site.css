@@ -716,3 +716,14 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 
 /* Center the blue balloon itself, allowing the right-hand bunting to crop. */
 .unlimited-card .membership-balloon { object-position:left center }
+
+/* Seventh review: full-width membership note and standalone party heading. */
+.membership-card { --membership-image-reserve:150px }
+.membership-card .membership-exclusions { margin-right:calc(-1 * var(--membership-image-reserve)) }
+#parties > h1 { margin-bottom:28px }
+@media(max-width:1050px) {
+  .membership-card { --membership-image-reserve:115px }
+}
+@media(max-width:420px) {
+  .membership-card { --membership-image-reserve:0px }
+}
