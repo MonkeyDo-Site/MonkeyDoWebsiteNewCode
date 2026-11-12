@@ -1,0 +1,9 @@
+# PR 25 migration handoff
+
+`apply_functional_0022.py` is an operator-invoked, one-time schema preparation for the approved PR 25 release (9b3803453fc81e3d10241681bfd7c6a9b2683ec1). It is separate from the routine deployment helper, which continues to refuse pending migrations. This artifact branch does not change the approved application release.
+
+Run on the existing Droplet as root through the owner's authenticated SSH connection. The helper reads the validated private functional configuration without printing values, and invokes Django as the separate `monkeydo-functional-migrate` peer-auth identity. It checks the database/role, uses the exact reviewed 0022 migration with a SHA-256 check, and refuses any migration plan other than no work or this one forward migration. A temporary migration module combines the approved new file with the current release's migration history; existing release files are not edited.
+
+The temporary code directory contains no configuration values and is removed afterward. A failure is reported without printing private configuration or child process arguments; details go to a root-only log at `/root/monkeydo-migration-0022-error.log`. On success it verifies the archive column. It does not switch releases, restart the website, reset data, or send provider requests. Repeating it after success is safe.
+
+Verification: the exact migration module handoff was exercised against an isolated copy of the previous approved release, then repeated. Existing customer/session/booking/quote records were unchanged and the previous model code still ran with the added nullable column. PostgreSQL migration and application tests passed in PR 25 CI. Actual host peer-role/configuration checks and migration execution require the owner's SSH session; no hosted success is claimed by these local tests.
