@@ -700,3 +700,19 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 
 /* Fifth review: separate gifts and contact while retaining warm cream. */
 .home-page #contact { border-top:1px solid var(--line) }
+
+/* Owner's selected green homepage and final benefit-list review. */
+.home-page .party-section { background:#eef2e9 }
+.home-page .gift-section { background:#e9e1d5 }
+.party-intro { max-width:950px; margin-bottom:28px }
+.party-intro > .lead { margin:0 0 12px }
+.benefit-checklist { list-style:none; padding-left:0 }
+.membership-card .benefit-checklist,.party-details.benefit-checklist { padding-left:0 }
+.benefit-checklist > li { position:relative; padding-left:26px }
+.benefit-checklist > li::before { content:"✓"; position:absolute; left:0; top:0; color:var(--ink); font-weight:800 }
+.membership-card { display:flex; flex-direction:column }
+.membership-subscribe-preview { margin-top:auto; align-self:flex-start }
+.membership-subscribe-preview:disabled { opacity:1; cursor:default }
+
+/* Center the blue balloon itself, allowing the right-hand bunting to crop. */
+.unlimited-card .membership-balloon { object-position:left center }

@@ -27,3 +27,10 @@ Use warm cream for the home membership, gift-card and contact sections; add a th
 ## Fifth owner review
 
 Change the party content card from blush to sage green on Home and the standalone party page. Add a thin divider between the gift-card and contact homepage sections. Preserve the warm-cream outer backgrounds and both clubs visibility variants. No backend or schema changes.
+
+
+## Owner selection and benefit copy update
+
+The owner selected the sage green homepage without clubs. Its party band and party card now use the alternate sage green; the gift-card box uses the existing taupe (#e9e1d5). Party introductory copy sits below the section heading and above the image/card, followed by “75 minutes of play with the exclusive MonkeyDo take home goody bag and souvenir.” The baby bullet is shortened to “Babies under 1 are free” and the grip-socks bullet to “Free grip socks.” Shared party and membership benefit lists use check marks. Both standalone membership cards have an inactive “Subscribe now →” design-preview button; no checkout action or link is added. Shared copy/list changes also appear on the homepage and standalone pages. No deployment or PR creation is included.
+
+The blue membership balloon uses a left-aligned image crop so the balloon itself is centered in its frame; the right-side bunting can be cropped. The source image is unchanged.

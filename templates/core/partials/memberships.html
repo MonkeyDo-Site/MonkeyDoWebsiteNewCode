@@ -8,7 +8,7 @@
 <img class="membership-balloon" src="{% static 'brand-derived/membership-subscription-balloon.webp' %}" width="237" height="300" alt="Soft pink and cream hot-air balloon mural" loading="lazy">
 <p class="eyebrow">Subscription Membership</p>
 <h3>$17.99 <small>per child, per month</small></h3>
-<ul>
+<ul class="benefit-checklist" role="list">
 <li>Two free play sessions per month</li>
 <li>Just $5.99 for every additional play session that month</li>
 <li>Two free adults for every visit</li>
@@ -16,17 +16,21 @@
 <li>15% discount on parties. Call/text for details.</li>
 <li>Three-month minimum</li>
 </ul>
+
+{% if standalone %}<button class="button membership-subscribe-preview" type="button" disabled>Subscribe now <span aria-hidden="true">→</span></button>{% endif %}
 </article>
 <article class="panel membership-card unlimited-card scroll-reveal">
 <img class="membership-balloon" src="{% static 'brand-derived/membership-unlimited-balloon.webp' %}" width="205" height="217" alt="Soft blue and cream hot-air balloon mural" loading="lazy">
 <p class="eyebrow">Unlimited Membership</p>
 <h3>$39.99 <small>per child, per month</small></h3>
-<ul>
+<ul class="benefit-checklist" role="list">
 <li>One free visit per day with two free adults</li>
 <li>15% discount on parties. Call/text for details.</li>
 <li>Three-month minimum</li>
 </ul>
 <p>* Excludes Chol Hamoed and supervised play. Unlimited Members pay full price for Chol Hamoed and supervised-play visits.</p>
+
+{% if standalone %}<button class="button membership-subscribe-preview" type="button" disabled>Subscribe now <span aria-hidden="true">→</span></button>{% endif %}
 </article>
 </div>
 {% if standalone %}

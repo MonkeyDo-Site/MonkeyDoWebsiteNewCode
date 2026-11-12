@@ -47,7 +47,7 @@
 <div class="home-section home-band band-cream">{% include 'core/partials/about.html' with embedded=True about_part='play' %}</div>
 <div class="home-section home-band band-cream membership-band">{% include 'core/partials/memberships.html' %}</div>
 {% if clubs_visible %}<div id="clubs-and-parties" class="home-section home-band band-cream">{% include 'core/partials/clubs_parties.html' with section_part='clubs' %}</div>{% endif %}
-<div class="home-section home-band {% if clubs_visible %}band-tint{% else %}band-cream{% endif %}">{% include 'core/partials/clubs_parties.html' with section_part='parties' %}</div>
+<div class="home-section home-band band-tint">{% include 'core/partials/clubs_parties.html' with section_part='parties' %}</div>
 <div class="home-section home-band band-cream">{% include 'core/partials/gift_cards.html' %}</div>
 <div id="contact" class="home-section home-band band-cream">{% include 'core/partials/contact.html' with embedded=True %}</div>
 </div>

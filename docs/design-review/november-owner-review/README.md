@@ -1,5 +1,7 @@
 # MonkeyDo owner design review
 
+**[Latest screenshots — revision 6](revision-6/README.md)**: selected green homepage and the owner’s subsequent copy, button, check-mark and balloon updates. The JPGs below are the earlier color comparison.
+
 These desktop JPGs are local website previews for owner review. They do not represent a deployment. Both homepage options hide clubs. The sage green and soft blush homepage backgrounds are alternative previews; a final color choice has not been applied to the website.
 
 To download an image, open its link below in GitHub and click **Download raw file** (the download icon). Alternatively, use the **Raw** button and save the image.
