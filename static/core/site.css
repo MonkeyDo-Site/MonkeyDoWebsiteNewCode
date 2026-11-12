@@ -595,7 +595,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .club-card > p { margin:0 0 18px }
 .club-card > p:last-child { margin-top:auto; margin-bottom:0 }
 .club-facts { font-weight:650 }
-.party-section { display:grid; grid-template-columns:.9fr 1.1fr; gap:36px; align-items:center; background:#f4e5dd }
+.party-section { display:grid; grid-template-columns:.9fr 1.1fr; gap:36px; align-items:center; background:#e5ebe1 }
 .party-image { min-width:0 }
 .party-image .feature-photo { aspect-ratio:4/5 }
 .party-copy { min-width:0 }
@@ -697,3 +697,6 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 @media(max-width:850px) {
   .membership-gallery { margin-top:64px; padding-top:28px }
 }
+
+/* Fifth review: separate gifts and contact while retaining warm cream. */
+.home-page #contact { border-top:1px solid var(--line) }

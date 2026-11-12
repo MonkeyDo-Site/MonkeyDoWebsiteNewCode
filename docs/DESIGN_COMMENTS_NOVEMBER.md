@@ -23,3 +23,7 @@ Keep Room to explore and its cards on warm cream; start pale sage at About and a
 ## Fourth owner review
 
 Use warm cream for the home membership, gift-card and contact sections; add a thin separator above membership. Add substantially more vertical breathing room and a fine divider before the standalone membership photo row. Provide both clubs-off launch and clubs-on homepage screenshot versions from the same template. Add an owner-only Website settings control using the existing clubs_visible field; changes are audited and stale saves are rejected. Hiding clubs also changes public navigation/page titles to Parties, without removing party content or deleting data. Existing database preferences remain intact: after deployment, the owner must switch clubs off for launch using Website settings. No database migration is required. Both screenshot variants are preserved; only local synthetic preview data is toggled during capture.
+
+## Fifth owner review
+
+Change the party content card from blush to sage green on Home and the standalone party page. Add a thin divider between the gift-card and contact homepage sections. Preserve the warm-cream outer backgrounds and both clubs visibility variants. No backend or schema changes.
