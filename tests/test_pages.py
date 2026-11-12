@@ -89,6 +89,7 @@ class PageTests(TestCase):
         self.assertRedirects(response, "/staff/today/")
 
     def test_separate_membership_and_club_pages_and_home_section_order(self):
+        SiteSettings.objects.create(clubs_visible=True)
         memberships = self.client.get("/memberships/")
         self.assertContains(memberships, "Two free play sessions per month")
         self.assertNotContains(memberships, "<h3>Sunday Club</h3>")

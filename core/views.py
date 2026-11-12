@@ -13,12 +13,7 @@ from .models import Booking, Session, SiteSettings
 
 @require_safe
 def page(request, name="home"):
-    settings = SiteSettings.objects.filter(pk=1).first()
-    return render(
-        request,
-        f"core/{name}.html",
-        {"clubs_visible": settings.clubs_visible if settings else True},
-    )
+    return render(request, f"core/{name}.html")
 
 
 @require_safe

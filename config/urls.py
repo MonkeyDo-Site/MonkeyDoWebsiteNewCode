@@ -14,11 +14,13 @@ from core import (
     scheduling_views,
     staging_access,
     views,
+    website_settings,
 )
 from core.security import ProtectedLoginView
 
 urlpatterns = [
     path("staff/", ProtectedLoginView.as_view(), name="staff_login"),
+    path("staff/website-settings/", website_settings.website_settings, name="website_settings"),
     path("staff/scheduling/weekly/", recurring_views.recurring_settings, name="recurring_settings"),
     path("staff/scheduling/weekly/new/", recurring_views.slot_edit, name="weekly_create"),
     path("staff/scheduling/weekly/<int:pk>/", recurring_views.slot_edit, name="weekly_edit"),
