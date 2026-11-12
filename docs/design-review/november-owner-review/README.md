@@ -1,6 +1,6 @@
 # MonkeyDo owner design review
 
-**[Latest screenshots — revision 7](revision-7/README.md)**: homepage membership buttons, simplified parties page, homepage-only gift cards and widened membership exclusions. Earlier review JPGs are preserved below.
+**[Latest screenshots — revision 8](revision-8/README.md)**: updated membership and party button wording. Earlier review JPGs are preserved below.
 
 These desktop JPGs are local website previews for owner review. They do not represent a deployment. Both homepage options hide clubs. The sage green and soft blush homepage backgrounds are alternative previews; a final color choice has not been applied to the website.
 

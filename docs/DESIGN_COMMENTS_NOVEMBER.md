@@ -39,3 +39,8 @@ The blue membership balloon uses a left-aligned image crop so the balloon itself
 ## Revision 7
 
 Both homepage membership cards now display the same inactive Subscribe now arrow buttons as the membership page. The blue card’s exclusions span the full card content width, clearing the balloon and using two lines at desktop review width. The standalone parties page (clubs hidden) now has a single MonkeyDo Parties h1 below More ways to go Bananas; the party intro is one continuous paragraph. Let us make your day special is above the price on the standalone page. Gift cards appear only on the homepage, including removal from the legacy combined programs page. No PR or deployment is included.
+
+
+## Revision 8
+
+Membership design-preview buttons now read “I want to get started →” on the homepage and membership page. The shared party call button reads “Get my party rolling. Call/text 848-238-5147 →” and retains its telephone link. No PR or deployment is included.
