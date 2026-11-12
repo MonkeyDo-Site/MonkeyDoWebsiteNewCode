@@ -114,7 +114,7 @@ class PageTests(TestCase):
             "Two free play sessions per month",
             "Sunday Club",
             "MonkeyDo parties",
-            "Find your jungle",
+            "We look forward to seeing you!",
         ):
             self.assertIn(text, home)
         self.assertIn('href="/memberships/"', home)

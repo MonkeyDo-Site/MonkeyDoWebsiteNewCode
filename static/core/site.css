@@ -549,3 +549,106 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .customer-booking-form label { display:block; font-weight:600 }
 .customer-booking-form .errorlist { color:#8a243c }
 .customer-booking-form form + form { margin-top:24px }
+
+/* Owner's November design review: shared by homepage and standalone pages. */
+.booking-monkey-circle {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#fff;
+  flex-shrink:0
+}
+.hero-booking-button .booking-monkey-circle img { width:31px; height:23px }
+#memberships > .lead { margin-top:10px; max-width:800px }
+.membership-card { overflow:hidden; min-height:365px; padding-right:180px }
+.membership-card.subscription-card { background:#f2e7d2 }
+.membership-card.unlimited-card { background:#e3e9ee }
+.membership-card > .eyebrow { padding-right:0 }
+.membership-balloon {
+  position:absolute;
+  right:20px;
+  top:30px;
+  width:140px;
+  height:190px;
+  object-fit:cover;
+  border-radius:80px 80px 65px 65px;
+  mix-blend-mode:multiply
+}
+.membership-card h3 { font-size:30px }
+.membership-card h3 small { display:block }
+.membership-card ul { padding-left:20px }
+.club-card { display:flex; flex-direction:column; min-width:0 }
+.club-card.sunday-club { background:#e8e2d7 }
+.club-card.weekday-club { background:#e2ebe4 }
+.club-photo,.feature-photo {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  border-radius:22px
+}
+.club-card h3 { font-size:clamp(28px,3vw,36px); margin:24px 0 8px }
+.club-card > p { margin:0 0 18px }
+.club-card > p:last-child { margin-top:auto; margin-bottom:0 }
+.club-facts { font-weight:650 }
+.party-section { display:grid; grid-template-columns:.9fr 1.1fr; gap:36px; align-items:center; background:#f4e5dd }
+.party-image { min-width:0 }
+.party-image .feature-photo { aspect-ratio:4/5 }
+.party-copy { min-width:0 }
+.party-copy h2 { margin:12px 0 }
+.party-copy .lead { font-size:20px }
+.party-price { font-size:32px; font-weight:850; color:var(--rose-ink); margin:16px 0 }
+.party-details { padding-left:22px; margin-bottom:26px }
+.party-details li { margin:6px 0 }
+.party-copy .button { gap:12px; max-width:100%; text-align:center }
+.gift-section { display:grid; grid-template-columns:1.15fr .85fr; gap:30px; align-items:center; background:#e7ede3 }
+.gift-copy { min-width:0 }
+.gift-art { position:relative; min-width:0; height:340px; isolation:isolate }
+.gift-envelope { position:absolute; width:88%; height:220px; top:70px; left:7%; background:#8faa99; border-radius:15px; transform:rotate(7deg); box-shadow:0 16px 28px #293c3320 }
+.gift-envelope::before { content:""; position:absolute; inset:0; background:linear-gradient(155deg,transparent 49.5%,#b3c8b9 50%,#9ab6a5 51%); border-radius:15px }
+.gift-ribbon { position:absolute; width:44px; height:270px; background:#eaa296; left:68%; top:35px; transform:rotate(27deg); border-radius:12px; opacity:.8 }
+.gift-card-mockup { position:absolute; width:87%; background:#fff; left:0; top:45px; padding:22px 18px; border-radius:19px; transform:rotate(-8deg); box-shadow:0 14px 28px #293c3330; text-align:center; border:1px solid #e6dfd2 }
+.gift-card-mockup img { display:block; width:100%; height:110px; object-fit:cover }
+.gift-card-mockup span { display:block; font-size:14px; font-weight:850; letter-spacing:.22em; color:#709785; margin:10px 0 }
+.contact-card { overflow:hidden }
+.contact-photo-placeholder { height:185px; background:#fff; border:1px solid #e4e8e0; border-radius:22px; margin-bottom:22px; overflow:hidden }
+.contact-photo-placeholder img { display:block; width:100%; height:100%; object-fit:cover }
+/* Progressive photo motion also works on standalone About, not just Home. */
+@supports (animation-timeline:view()) {
+  @media (prefers-reduced-motion:no-preference) {
+    .play-photo,.club-photo,.feature-photo {
+      animation:photo-welcome linear both;
+      animation-timeline:view();
+      animation-range:entry 0% entry 90%
+    }
+  }
+}
+@keyframes photo-welcome {
+  from { opacity:.65; transform:translateY(12px) scale(.97) }
+  to { opacity:1; transform:translateY(0) scale(1) }
+}
+@media(max-width:1050px) {
+  .membership-card { padding-right:145px }
+  .membership-balloon { width:105px; height:150px; right:18px }
+  .party-section,.gift-section { gap:24px }
+}
+@media(max-width:850px) {
+  .party-section,.gift-section { grid-template-columns:1fr }
+  .party-image .feature-photo { aspect-ratio:4/3 }
+  .gift-art { max-width:430px; width:100%; margin:auto }
+  .membership-card { min-height:330px; padding-right:145px }
+}
+@media(max-width:420px) {
+  .membership-card { padding-right:30px; padding-top:160px }
+  .membership-balloon { width:105px; height:135px; top:14px; right:22px }
+  .gift-art { height:290px }
+  .gift-envelope { height:190px }
+  .gift-card-mockup { padding:15px 12px }
+  .gift-card-mockup img { height:90px }
+}
+
+.party-copy .phone-number { white-space:nowrap }

@@ -1,4 +1,3 @@
 {% extends 'core/base.html' %}{% block title %}Memberships · MonkeyDo{% endblock %}{% block content %}
-<section class="page-heading"><h1>Make play part of your plans.</h1></section>
-{% include 'core/partials/memberships.html' %}
+{% include 'core/partials/memberships.html' with standalone=True %}
 {% endblock %}
