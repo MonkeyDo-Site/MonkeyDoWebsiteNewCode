@@ -54,3 +54,8 @@ Removed Call/text for details from both membership party-discount benefits on th
 ## Revision 10 — approved contact layout
 
 The owner approved the photo-and-contact layout previously shown as a separate concept. It is now implemented in the shared homepage/Contact Us partial with a welcome heading, owner-supplied balloon play-space photo, call/text and email actions, opening information and location. The duplicate logo and lowered contact card are replaced. The homepage keeps its green selection; taupe remains a separate background comparison only. No PR or deployment is included.
+
+
+## Revision 11 — final membership button label
+
+The owner reconfirmed the green homepage and changed both membership buttons to Get started with an arrow on the homepage and membership page. Buttons remain inactive design previews. The approved contact layout is retained. No PR or deployment is included.

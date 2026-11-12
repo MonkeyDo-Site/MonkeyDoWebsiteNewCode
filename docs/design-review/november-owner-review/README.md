@@ -1,6 +1,6 @@
 # MonkeyDo owner design review
 
-**[Latest screenshots — revision 10](revision-10/README.md)**: approved contact layout now implemented on the homepage and Contact Us page. Earlier review JPGs are preserved.
+**[Latest screenshots — revision 11](revision-11/README.md)**: selected green homepage and Get started membership buttons. Approved contact design retained. Earlier review JPGs are preserved.
 
 These desktop JPGs are local website previews for owner review. They do not represent a deployment. Both homepage options hide clubs. The sage green and soft blush homepage backgrounds are alternative previews; a final color choice has not been applied to the website.
 
