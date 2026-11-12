@@ -1,4 +1,5 @@
 {% load static %}
+{% if about_part != 'play' %}
 
 <section class="page-heading scroll-reveal">
 <p class="eyebrow">Welcome to your jungle</p>
@@ -29,6 +30,8 @@
 <p>A welcoming space designed for little ones, with swings, a toddler-friendly ball pit, and tabletop toys.</p>
 </article>
 </section>
+{% endif %}
+{% if about_part != 'areas' %}
 <section id="play-sessions" class="play-options" aria-labelledby="play-heading">
 <p class="eyebrow scroll-reveal">Ready to play?</p>
 <h2 id="play-heading" class="scroll-reveal">Open play or supervised play</h2>
@@ -59,3 +62,4 @@ Subscription members enjoy 25% off supervised play</p>
 </article>
 </div>
 </section>
+{% endif %}

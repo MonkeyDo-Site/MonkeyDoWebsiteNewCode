@@ -1,5 +1,5 @@
 {% load static %}
-{% if clubs_visible %}
+{% if section_part != 'parties' and clubs_visible %}
 <section id="clubs">
 <p class="eyebrow scroll-reveal">MonkeyDo Clubs</p>
 <h2 class="scroll-reveal">Join a Sunday or weekday club</h2>
@@ -20,11 +20,13 @@
 </article>
 </div>
 </section>{% endif %}
-<section id="parties" class="panel party-section scroll-reveal">
+{% if section_part != 'clubs' %}
+<section id="parties" aria-labelledby="parties-heading">
+<p class="eyebrow scroll-reveal">Let us make your day special</p>
+<h2 id="parties-heading" class="scroll-reveal">MonkeyDo Parties</h2>
+<div class="panel party-section scroll-reveal">
 <div class="party-image"><img class="feature-photo" src="{% static 'brand-derived/party-concept.webp' %}" width="1200" height="900" alt="Party concept: a celebration table with sage and pink balloons, cake, and goody bags" loading="lazy"></div>
 <div class="party-copy">
-<p class="eyebrow">Let us make your day special</p>
-<h2>MonkeyDo parties</h2>
 <p class="lead">Book your upsherin or birthday party here and enjoy the full MonkeyDo experience, reserved just for you.</p>
 <p class="party-price">Just $289</p>
 <ul class="party-details">
@@ -38,4 +40,6 @@
 </ul>
 <a class="button" href="tel:8482385147"><span>Call or text <span class="phone-number">848-238-5147</span></span> <span aria-hidden="true">→</span></a>
 </div>
+</div>
 </section>
+{% endif %}

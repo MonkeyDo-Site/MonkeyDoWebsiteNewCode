@@ -94,7 +94,7 @@ class PageTests(TestCase):
         self.assertNotContains(memberships, "<h3>Sunday Club</h3>")
         clubs = self.client.get("/clubs-parties/")
         self.assertContains(clubs, "<h3>Sunday Club</h3>")
-        self.assertContains(clubs, "MonkeyDo parties")
+        self.assertContains(clubs, "MonkeyDo Parties")
         self.assertNotContains(clubs, "Two free play sessions per month")
         home = self.client.get("/").content.decode()
         positions = [
@@ -113,7 +113,7 @@ class PageTests(TestCase):
             "Imaginative Play",
             "Two free play sessions per month",
             "Sunday Club",
-            "MonkeyDo parties",
+            "MonkeyDo Parties",
             "We look forward to seeing you!",
         ):
             self.assertIn(text, home)
@@ -133,7 +133,7 @@ class PageTests(TestCase):
         for path in ("/", "/clubs-parties/"):
             response = self.client.get(path)
             self.assertNotContains(response, "<h3>Sunday Club</h3>")
-            self.assertContains(response, "MonkeyDo parties")
+            self.assertContains(response, "MonkeyDo Parties")
 
     def test_no_public_booking_write_endpoint(self):
         self.assertEqual(self.client.post("/book/", {}).status_code, 405)

@@ -607,13 +607,8 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .party-copy .button { gap:12px; max-width:100%; text-align:center }
 .gift-section { display:grid; grid-template-columns:1.15fr .85fr; gap:30px; align-items:center; background:#e7ede3 }
 .gift-copy { min-width:0 }
-.gift-art { position:relative; min-width:0; height:340px; isolation:isolate }
-.gift-envelope { position:absolute; width:88%; height:220px; top:70px; left:7%; background:#8faa99; border-radius:15px; transform:rotate(7deg); box-shadow:0 16px 28px #293c3320 }
-.gift-envelope::before { content:""; position:absolute; inset:0; background:linear-gradient(155deg,transparent 49.5%,#b3c8b9 50%,#9ab6a5 51%); border-radius:15px }
-.gift-ribbon { position:absolute; width:44px; height:270px; background:#eaa296; left:68%; top:35px; transform:rotate(27deg); border-radius:12px; opacity:.8 }
-.gift-card-mockup { position:absolute; width:87%; background:#fff; left:0; top:45px; padding:22px 18px; border-radius:19px; transform:rotate(-8deg); box-shadow:0 14px 28px #293c3330; text-align:center; border:1px solid #e6dfd2 }
-.gift-card-mockup img { display:block; width:100%; height:110px; object-fit:cover }
-.gift-card-mockup span { display:block; font-size:14px; font-weight:850; letter-spacing:.22em; color:#709785; margin:10px 0 }
+.gift-image { min-width:0 }
+.gift-image img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; border-radius:22px }
 .contact-card { overflow:hidden }
 .contact-photo-placeholder { height:185px; background:#fff; border:1px solid #e4e8e0; border-radius:22px; margin-bottom:22px; overflow:hidden }
 .contact-photo-placeholder img { display:block; width:100%; height:100%; object-fit:cover }
@@ -639,16 +634,31 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 @media(max-width:850px) {
   .party-section,.gift-section { grid-template-columns:1fr }
   .party-image .feature-photo { aspect-ratio:4/3 }
-  .gift-art { max-width:430px; width:100%; margin:auto }
   .membership-card { min-height:330px; padding-right:145px }
 }
 @media(max-width:420px) {
   .membership-card { padding-right:30px; padding-top:160px }
   .membership-balloon { width:105px; height:135px; top:14px; right:22px }
-  .gift-art { height:290px }
-  .gift-envelope { height:190px }
-  .gift-card-mockup { padding:15px 12px }
-  .gift-card-mockup img { height:90px }
 }
 
 .party-copy .phone-number { white-space:nowrap }
+
+/* Second owner review: headings outside cards and full-width section backgrounds. */
+.home-page .home-band {
+  --band-background:var(--cream);
+  padding-block:56px;
+  border-top:0;
+  background:var(--band-background);
+  box-shadow:0 0 0 100vmax var(--band-background);
+  clip-path:inset(0 -100vmax)
+}
+.home-page .home-band.band-tint { --band-background:#eef2e9 }
+.home-page .home-band > section { margin-block:0 }
+.home-page .home-band > section + section { margin-top:48px }
+#parties > h2 { margin-bottom:28px }
+.contact-layout { align-items:start }
+.contact-welcome .contact-photo-placeholder { max-width:400px; height:155px; margin:0 0 24px }
+@media(max-width:850px) {
+  .home-page .home-band { padding-block:40px }
+  .contact-welcome .contact-photo-placeholder { height:140px }
+}
