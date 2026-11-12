@@ -89,12 +89,14 @@ class PageTests(TestCase):
         self.assertRedirects(response, "/staff/today/")
 
     def test_separate_membership_and_club_pages_and_home_section_order(self):
+        SiteSettings.objects.create(clubs_visible=True)
         memberships = self.client.get("/memberships/")
         self.assertContains(memberships, "Two free play sessions per month")
         self.assertNotContains(memberships, "<h3>Sunday Club</h3>")
+        self.assertContains(memberships, 'class="membership-gallery"', count=1)
         clubs = self.client.get("/clubs-parties/")
         self.assertContains(clubs, "<h3>Sunday Club</h3>")
-        self.assertContains(clubs, "MonkeyDo parties")
+        self.assertContains(clubs, "MonkeyDo Parties")
         self.assertNotContains(clubs, "Two free play sessions per month")
         home = self.client.get("/").content.decode()
         positions = [
@@ -109,12 +111,13 @@ class PageTests(TestCase):
         ]
         self.assertEqual(positions, sorted(positions))
         self.assertEqual(home.count("<h1>"), 1)
+        self.assertNotIn('class="membership-gallery"', home)
         for text in (
             "Imaginative Play",
             "Two free play sessions per month",
             "Sunday Club",
-            "MonkeyDo parties",
-            "Find your jungle",
+            "MonkeyDo Parties",
+            "We look forward to seeing you!",
         ):
             self.assertIn(text, home)
         self.assertIn('href="/memberships/"', home)
@@ -133,7 +136,7 @@ class PageTests(TestCase):
         for path in ("/", "/clubs-parties/"):
             response = self.client.get(path)
             self.assertNotContains(response, "<h3>Sunday Club</h3>")
-            self.assertContains(response, "MonkeyDo parties")
+            self.assertContains(response, "MonkeyDo Parties")
 
     def test_no_public_booking_write_endpoint(self):
         self.assertEqual(self.client.post("/book/", {}).status_code, 405)

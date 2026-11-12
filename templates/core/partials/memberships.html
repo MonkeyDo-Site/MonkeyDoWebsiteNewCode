@@ -1,32 +1,45 @@
 {% load static %}
 <section id="memberships">
-<p class="eyebrow scroll-reveal">More ways to go bananas</p>
-<h2 class="scroll-reveal">Memberships</h2>
+<p class="eyebrow scroll-reveal">MonkeyDo Membership</p>
+{% if standalone %}<h1 class="scroll-reveal">Play More, Save More!</h1>{% else %}<h2 class="scroll-reveal">Play More, Save More!</h2>{% endif %}
+<p class="lead scroll-reveal">Choose from Subscription membership or Unlimited membership.</p>
 <div class="split">
-<article class="panel membership-card scroll-reveal">
-<img class="membership-mascot" src="{% static 'brand-derived/booking-monkey.webp' %}" width="56" height="40" alt="" aria-hidden="true" loading="lazy">
+<article class="panel membership-card subscription-card scroll-reveal">
+<img class="membership-balloon" src="{% static 'brand-derived/membership-subscription-balloon.webp' %}" width="237" height="300" alt="Soft pink and cream hot-air balloon mural" loading="lazy">
 <p class="eyebrow">Subscription Membership</p>
 <h3>$17.99 <small>per child, per month</small></h3>
-<ul>
+<ul class="benefit-checklist" role="list">
 <li>Two free play sessions per month</li>
 <li>Just $5.99 for every additional play session that month</li>
 <li>Two free adults for every visit</li>
 <li>25% off supervised play</li>
-<li>15% discount on parties. Call/text for details.</li>
+<li>15% discount on parties.</li>
 <li>Three-month minimum</li>
 </ul>
+
+<button class="button membership-subscribe-preview" type="button" disabled>Get started <span aria-hidden="true">→</span></button>
 </article>
-<article class="panel coral membership-card scroll-reveal">
-<img class="membership-mascot" src="{% static 'brand-derived/booking-monkey.webp' %}" width="56" height="40" alt="" aria-hidden="true" loading="lazy">
+<article class="panel membership-card unlimited-card scroll-reveal">
+<img class="membership-balloon" src="{% static 'brand-derived/membership-unlimited-balloon.webp' %}" width="205" height="217" alt="Soft blue and cream hot-air balloon mural" loading="lazy">
 <p class="eyebrow">Unlimited Membership</p>
 <h3>$39.99 <small>per child, per month</small></h3>
-<ul>
+<ul class="benefit-checklist" role="list">
 <li>One free visit per day with two free adults</li>
-<li>15% discount on parties. Call/text for details.</li>
+<li>15% discount on parties.</li>
 <li>Three-month minimum</li>
 </ul>
-<p>* Excludes Chol Hamoed and supervised play. Unlimited Members pay full price for Chol Hamoed and supervised-play visits.</p>
+<p class="membership-exclusions">* Excludes Chol Hamoed and supervised play. Unlimited Members pay full price for Chol Hamoed and supervised play visits.</p>
+
+<button class="button membership-subscribe-preview" type="button" disabled>Get started <span aria-hidden="true">→</span></button>
 </article>
 </div>
+{% if standalone %}
+<div class="membership-gallery" role="region" aria-label="MonkeyDo play-space photo gallery" tabindex="0">
+<figure><img src="{% static 'brand-derived/membership-gallery-1.webp' %}" width="352" height="359" alt="Children playing in the hot-air-balloon basket ball pit" loading="lazy"></figure>
+<figure><img src="{% static 'brand-derived/membership-gallery-2.webp' %}" width="203" height="171" alt="Two children enjoying green foam-block play" loading="lazy"></figure>
+<figure><img src="{% static 'brand-derived/membership-gallery-3.webp' %}" width="398" height="275" alt="Children playing together in the ball pit by the slide" loading="lazy"></figure>
+<figure><img src="{% static 'brand-derived/membership-gallery-4.webp' %}" width="418" height="408" alt="Children enjoying pretend boating and fishing" loading="lazy"></figure>
+</div>
+{% endif %}
 <p class="notice">Membership checkout is being built and is not available in this preview.</p>
 </section>

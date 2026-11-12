@@ -1,5 +1,4 @@
-{% extends 'core/base.html' %}{% block title %}Clubs &amp; Parties · MonkeyDo{% endblock %}{% block content %}
-<section class="page-heading"><p class="eyebrow">More ways to go bananas</p><h1>Clubs &amp; Parties</h1></section>
-{% include 'core/partials/clubs_parties.html' %}
-{% include 'core/partials/gift_cards.html' %}
+{% extends 'core/base.html' %}{% block title %}{% if clubs_visible %}Clubs &amp; Parties{% else %}Parties{% endif %} · MonkeyDo{% endblock %}{% block content %}
+{% if clubs_visible %}<section class="page-heading"><p class="eyebrow">More ways to go bananas</p><h1>{% if clubs_visible %}Clubs &amp; Parties{% else %}Parties{% endif %}</h1></section>{% endif %}
+{% include 'core/partials/clubs_parties.html' with party_standalone=True %}
 {% endblock %}

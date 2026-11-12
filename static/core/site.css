@@ -549,3 +549,205 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .customer-booking-form label { display:block; font-weight:600 }
 .customer-booking-form .errorlist { color:#8a243c }
 .customer-booking-form form + form { margin-top:24px }
+
+/* Owner's November design review: shared by homepage and standalone pages. */
+.booking-monkey-circle {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#fff;
+  flex-shrink:0
+}
+.hero-booking-button .booking-monkey-circle img { width:31px; height:23px }
+#memberships > .lead { margin-top:10px; max-width:800px }
+.membership-card { overflow:hidden; min-height:365px; padding-right:180px }
+.membership-card.subscription-card { background:#f2e7d2 }
+.membership-card.unlimited-card { background:#e3e9ee }
+.membership-card > .eyebrow { padding-right:0 }
+.membership-balloon {
+  position:absolute;
+  right:20px;
+  top:30px;
+  width:140px;
+  height:190px;
+  object-fit:cover;
+  border-radius:80px 80px 65px 65px;
+  mix-blend-mode:multiply
+}
+.membership-card h3 { font-size:30px }
+.membership-card h3 small { display:block }
+.membership-card ul { padding-left:20px }
+.club-card { display:flex; flex-direction:column; min-width:0 }
+.club-card.sunday-club { background:#e8e2d7 }
+.club-card.weekday-club { background:#e2ebe4 }
+.club-photo,.feature-photo {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  border-radius:22px
+}
+.club-card h3 { font-size:clamp(28px,3vw,36px); margin:24px 0 8px }
+.club-card > p { margin:0 0 18px }
+.club-card > p:last-child { margin-top:auto; margin-bottom:0 }
+.club-facts { font-weight:650 }
+.party-section { display:grid; grid-template-columns:.9fr 1.1fr; gap:36px; align-items:center; background:#e5ebe1 }
+.party-image { min-width:0 }
+.party-image .feature-photo { aspect-ratio:4/5 }
+.party-copy { min-width:0 }
+.party-copy h2 { margin:12px 0 }
+.party-copy .lead { font-size:20px }
+.party-price { font-size:32px; font-weight:850; color:var(--rose-ink); margin:16px 0 }
+.party-details { padding-left:22px; margin-bottom:26px }
+.party-details li { margin:6px 0 }
+.party-copy .button { gap:12px; max-width:100%; text-align:center }
+.gift-section { display:grid; grid-template-columns:1.15fr .85fr; gap:30px; align-items:center; background:#e7ede3 }
+.gift-copy { min-width:0 }
+.gift-image { min-width:0 }
+.gift-image img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; border-radius:22px }
+.contact-card { overflow:hidden }
+.contact-photo-placeholder { height:185px; background:#fff; border:1px solid #e4e8e0; border-radius:22px; margin-bottom:22px; overflow:hidden }
+.contact-photo-placeholder img { display:block; width:100%; height:100%; object-fit:cover }
+/* Progressive photo motion also works on standalone About, not just Home. */
+@supports (animation-timeline:view()) {
+  @media (prefers-reduced-motion:no-preference) {
+    .play-photo,.club-photo,.feature-photo {
+      animation:photo-welcome linear both;
+      animation-timeline:view();
+      animation-range:entry 0% entry 90%
+    }
+  }
+}
+@keyframes photo-welcome {
+  from { opacity:.65; transform:translateY(12px) scale(.97) }
+  to { opacity:1; transform:translateY(0) scale(1) }
+}
+@media(max-width:1050px) {
+  .membership-card { padding-right:145px }
+  .membership-balloon { width:105px; height:150px; right:18px }
+  .party-section,.gift-section { gap:24px }
+}
+@media(max-width:850px) {
+  .party-section,.gift-section { grid-template-columns:1fr }
+  .party-image .feature-photo { aspect-ratio:4/3 }
+  .membership-card { min-height:330px; padding-right:145px }
+}
+@media(max-width:420px) {
+  .membership-card { padding-right:30px; padding-top:160px }
+  .membership-balloon { width:105px; height:135px; top:14px; right:22px }
+}
+
+.party-copy .phone-number { white-space:nowrap }
+
+/* Second owner review: headings outside cards and full-width section backgrounds. */
+.home-page .home-band {
+  --band-background:var(--cream);
+  padding-block:56px;
+  border-top:0;
+  background:var(--band-background);
+  box-shadow:0 0 0 100vmax var(--band-background);
+  clip-path:inset(0 -100vmax)
+}
+.home-page .home-band.band-tint { --band-background:#eef2e9 }
+.home-page .home-band > section { margin-block:0 }
+.home-page .home-band > section + section { margin-top:48px }
+#parties > h2 { margin-bottom:28px }
+.contact-layout { align-items:start }
+.contact-welcome .contact-photo-placeholder { max-width:400px; height:155px; margin:0 0 24px }
+@media(max-width:850px) {
+  .home-page .home-band { padding-block:40px }
+  .contact-welcome .contact-photo-placeholder { height:140px }
+}
+
+/* Third review: aligned play actions, lowered contact card, membership photos. */
+.play-card { display:flex; flex-direction:column }
+.play-card > p { margin:0 0 20px }
+.play-card > .eyebrow { margin:0 0 8px }
+.play-card > h3 { margin:0 0 6px }
+.play-card > .play-subtitle { margin:0 0 24px }
+.play-card .supervised-availability { margin-top:12px }
+.play-card > .button { margin-top:auto; align-self:flex-start }
+.contact-layout { --contact-logo-height:155px; --contact-logo-gap:24px }
+.contact-welcome .contact-photo-placeholder { height:var(--contact-logo-height); margin-bottom:var(--contact-logo-gap) }
+.contact-card { margin-top:calc(var(--contact-logo-height) + var(--contact-logo-gap)) }
+.membership-gallery {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:20px;
+  margin-top:32px;
+  min-width:0
+}
+.membership-gallery figure { margin:0; min-width:0; scroll-snap-align:start }
+.membership-gallery img { display:block; width:100%; height:auto; aspect-ratio:5/4; object-fit:cover; border-radius:22px }
+.membership-gallery:focus-visible { outline:3px solid var(--rose-ink); outline-offset:6px }
+@media(max-width:850px) {
+  .contact-layout { --contact-logo-height:140px }
+  .contact-card { margin-top:0 }
+  .membership-gallery { grid-template-columns:repeat(4,minmax(220px,1fr)); overflow-x:auto; scroll-snap-type:x proximity; padding:0 0 12px; gap:16px }
+}
+.contact-welcome > h2 { margin-top:0 }
+
+/* Fourth review: calmer membership and contact sections, with a photo breathing space. */
+.home-page .membership-band { border-top:1px solid var(--line) }
+.membership-gallery { margin-top:96px; padding-top:36px; border-top:1px solid var(--line) }
+@media(max-width:850px) {
+  .membership-gallery { margin-top:64px; padding-top:28px }
+}
+
+/* Fifth review: separate gifts and contact while retaining warm cream. */
+.home-page #contact { border-top:1px solid var(--line) }
+
+/* Owner's selected green homepage and final benefit-list review. */
+.home-page .party-section { background:#eef2e9 }
+.home-page .gift-section { background:#e9e1d5 }
+.party-intro { max-width:950px; margin-bottom:28px }
+.party-intro > .lead { margin:0 0 12px }
+.benefit-checklist { list-style:none; padding-left:0 }
+.membership-card .benefit-checklist,.party-details.benefit-checklist { padding-left:0 }
+.benefit-checklist > li { position:relative; padding-left:26px }
+.benefit-checklist > li::before { content:"✓"; position:absolute; left:0; top:0; color:var(--ink); font-weight:800 }
+.membership-card { display:flex; flex-direction:column }
+.membership-subscribe-preview { margin-top:auto; align-self:flex-start }
+.membership-subscribe-preview:disabled { opacity:1; cursor:default }
+
+/* Center the blue balloon itself, allowing the right-hand bunting to crop. */
+.unlimited-card .membership-balloon { object-position:left center }
+
+/* Seventh review: full-width membership note and standalone party heading. */
+.membership-card { --membership-image-reserve:150px }
+.membership-card .membership-exclusions { margin-right:calc(-1 * var(--membership-image-reserve)) }
+#parties > h1 { margin-bottom:28px }
+@media(max-width:1050px) {
+  .membership-card { --membership-image-reserve:115px }
+}
+@media(max-width:420px) {
+  .membership-card { --membership-image-reserve:0px }
+}
+
+/* Approved contact layout, shared by Home and Contact Us. */
+.contact-section .contact-heading { margin:0 0 36px }
+.contact-section .contact-heading h2 { font-size:clamp(32px,3.3vw,46px); line-height:1.2; margin:12px 0 0; max-width:none }
+.contact-section .contact-heading h1 { margin:12px 0 0; max-width:none }
+.contact-section .contact-grid { display:grid; grid-template-columns:1.05fr 1fr; gap:56px; align-items:center }
+.contact-section .contact-play-photo { display:block; width:100%; height:440px; object-fit:cover; border-radius:28px }
+.contact-section .contact-info { min-width:0 }
+.contact-section .contact-info :is(h2,h3) { color:var(--rose-ink); font-size:28px; line-height:1.3; margin:0 0 20px }
+.contact-section .contact-actions { display:flex; gap:12px; flex-wrap:wrap; margin:22px 0 26px }
+.contact-section .contact-actions .button { gap:14px; padding:14px 22px }
+.contact-section .contact-actions .email-action { background:transparent; border:1px solid var(--ink); color:var(--ink) }
+.contact-section .contact-address { padding-top:22px; border-top:1px solid var(--line) }
+.contact-section .contact-address p { margin:0 0 12px }
+.contact-section .contact-info .contact-direct { margin:0 0 8px; overflow-wrap:anywhere }
+.contact-section .contact-info .contact-direct a { text-decoration:none }
+.contact-section .contact-info .contact-address-note { font-size:15px; margin-top:6px }
+.contact-page .contact-play-photo { height:500px }
+@media(max-width:850px) {
+  .contact-section .contact-grid { grid-template-columns:1fr; gap:28px }
+  .contact-section .contact-play-photo { height:280px }
+  .contact-section .contact-heading { margin-bottom:24px }
+  .contact-section .contact-info :is(h2,h3) { font-size:25px }
+}

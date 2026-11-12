@@ -1,4 +1,4 @@
-{% extends 'core/base.html' %}{% block title %}Memberships, Clubs &amp; Parties · MonkeyDo{% endblock %}{% block content %}
+{% extends 'core/base.html' %}{% block title %}{% if clubs_visible %}Memberships, Clubs &amp; Parties{% else %}Memberships &amp; Parties{% endif %} · MonkeyDo{% endblock %}{% block content %}
 <section class="page-heading">
 
 <h1>Make play<br>
@@ -7,5 +7,4 @@
 </section>
 {% include 'core/partials/memberships.html' %}
 {% include 'core/partials/clubs_parties.html' %}
-{% include 'core/partials/gift_cards.html' %}
 {% endblock %}

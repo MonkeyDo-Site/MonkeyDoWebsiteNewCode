@@ -1,0 +1,12 @@
+{% extends 'core/staff_base.html' %}
+{% block title %}Website settings · MonkeyDo{% endblock %}
+{% block staff_content %}
+<h1>Website settings</h1>
+<p>Choose whether the public website displays clubs. Keep clubs off for the initial launch, then enable them here when you’re ready.</p>
+<form method="post" class="record-form panel">{% csrf_token %}
+{{ form.as_p }}
+<button class="button">Save website settings</button>
+</form>
+<p>When clubs are off, the club sections are hidden and the public navigation says “Parties.” Turning clubs back on restores the saved club content. Party information remains available in both versions.</p>
+<p>Changing visibility does not delete records, cancel bookings, change scheduled sessions or send emails.</p>
+{% endblock %}

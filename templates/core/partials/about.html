@@ -1,4 +1,5 @@
 {% load static %}
+{% if about_part != 'play' %}
 
 <section class="page-heading scroll-reveal">
 <p class="eyebrow">Welcome to your jungle</p>
@@ -8,6 +9,11 @@
 <p class="lead">Have you been looking for a place where your children can spread their wings and engage in a combination of stimulating, energizing and relaxing play spaces, in a warm and welcoming setting? Monkey Do is that place. Designed by mothers and professionals who get kids.</p>
 </section>
 <section class="area-grid">
+<article class="scroll-reveal">
+<img class="area-photo" src="{% static 'brand-derived/play-space-approved-full.webp' %}" alt="Children playing on monkey bars and a slide above the foam and ball pits" width="1451" height="1084" loading="lazy">
+<h2>Climbing Area</h2>
+<p>Energetic fun with slides, a ball pit, foam pit, climbing wall, and monkey bars.</p>
+</article>
 <article class="scroll-reveal">
 <img class="area-photo" src="{% static 'children/Image 6.jpg' %}" alt="Children enjoying pretend fishing, boating, and campfire play" width="2400" height="1792" loading="lazy">
 <h2>Imaginative Play</h2>
@@ -19,16 +25,13 @@
 <p>Lights, action, and sound come together for fun, collaborative team play.</p>
 </article>
 <article class="scroll-reveal">
-<img class="area-photo" src="{% static 'brand-derived/play-space-approved-full.webp' %}" alt="Children playing on monkey bars and a slide above the foam and ball pits" width="1451" height="1084" loading="lazy">
-<h2>Climbing Area</h2>
-<p>Energetic fun with slides, a ball pit, foam pit, climbing wall, and monkey bars.</p>
-</article>
-<article class="scroll-reveal">
 <img class="area-photo" src="{% static 'children/Image 1.jpeg' %}" alt="Children playing in the balloon-themed toddler area with a low ball pit and basket swing" width="2400" height="1792" loading="lazy">
 <h2>Toddler Zone</h2>
 <p>A welcoming space designed for little ones, with swings, a toddler-friendly ball pit, and tabletop toys.</p>
 </article>
 </section>
+{% endif %}
+{% if about_part != 'areas' %}
 <section id="play-sessions" class="play-options" aria-labelledby="play-heading">
 <p class="eyebrow scroll-reveal">Ready to play?</p>
 <h2 id="play-heading" class="scroll-reveal">Open play or supervised play</h2>
@@ -38,23 +41,25 @@
 <p class="eyebrow">Together time</p>
 <h3>Open Play</h3>
 <p class="play-subtitle">Play accompanied by an adult</p>
-<p>Children ages 1-11: $15 each<br>
+<p>Children ages 1–11<br>
+$15 per child<br>
 1 free adult<br>
-additional adults ages 12 and up: $5 each<br>
-Babies under one are free</p>
-<p>if you are coming just with a baby, there is a $15 admission.</p>
+Additional adults ages 12 and up: $5 each<br>
+Babies under 1 are free</p>
+<p>If you are coming just with a baby, there is a $15 admission.</p>
 <a class="button" href="{% url 'schedule' %}">Book your session now <span aria-hidden="true">→</span></a>
 </article>
-<article class="panel coral play-card scroll-reveal">
+<article class="panel coral play-card supervised-play-card scroll-reveal">
 <img class="play-photo" src="{% static 'brand-derived/monkey-bars-approved.webp' %}" width="960" height="720" alt="A child climbing on monkey bars above the foam pit" loading="lazy">
 <p class="eyebrow">A little time for you</p>
 <h3>Supervised Play</h3>
 <p class="play-subtitle">Your child plays and our capable staff supervises</p>
 <p>For children ages 3-11<br>
-$18.99 per child<br>
-Subscription members enjoy 25% off supervised play</p>
-<p>Supervised play is available for select sessions. Check the booking page to see which sessions offer it.</p>
-<a class="button" href="{% url 'schedule' %}">See available sessions</a>
+$18.99 per child</p>
+<p class="supervised-benefit">Subscription members enjoy 25% off supervised play</p>
+<p class="supervised-availability">Supervised play is available for select sessions. Check the booking page to see which sessions offer it.</p>
+<a class="button" href="{% url 'schedule' %}">See available sessions <span aria-hidden="true">→</span></a>
 </article>
 </div>
 </section>
+{% endif %}

@@ -5,7 +5,7 @@
     {% if perms.core.view_booking %}<a href="{% url 'today' %}">Today</a><a href="{% url 'bookings' %}">Bookings</a><a href="{% url 'dashboard' %}">Dashboard</a>{% endif %}
     {% if perms.core.view_membershipdraft and perms.core.view_customer %}<a href="{% url 'membership_drafts' %}">Membership drafts</a>{% endif %}
     {% if perms.core.view_customer %}<a href="{% url 'customers' %}">Customers</a>{% endif %}
-    {% if user.is_superuser %}<a href="{% url 'membership_pricing' %}">Membership pricing</a><a href="{% url 'scheduling' %}">Owner scheduling</a><a href="{% url 'staff_accounts' %}">Staff accounts</a><a href="{% url 'owner_security' %}">Owner security</a><a href="{% url 'staging_settings' %}">Staging access</a><a href="{% url 'pricing_settings' %}">Staging pricing</a>{% endif %}
+    {% if user.is_superuser %}<a href="{% url 'website_settings' %}">Website settings</a><a href="{% url 'membership_pricing' %}">Membership pricing</a><a href="{% url 'scheduling' %}">Owner scheduling</a><a href="{% url 'staff_accounts' %}">Staff accounts</a><a href="{% url 'owner_security' %}">Owner security</a><a href="{% url 'staging_settings' %}">Staging access</a><a href="{% url 'pricing_settings' %}">Staging pricing</a>{% endif %}
     <a href="/admin/">Database inspector</a>
     <p class="caption">Test workspace · No real payments</p>
   </aside>

@@ -1,0 +1,9 @@
+# Owner club visibility
+
+The proposed owner **Website settings** page at `/staff/website-settings/` exposes the existing `SiteSettings.clubs_visible` field as **Show clubs on the website**. This is a public-content control, not a club enrollment or payment feature.
+
+For the initial launch, uncheck it and save. When clubs return, check it and save. The same homepage/template renders both states; no separate site or manual content recreation is required. Off hides club sections on Home and the program pages, changes public navigation/title to Parties, and preserves party content. Turning it on restores the saved Sunday/Weekday cards. Existing data/preferences are not silently reset by deployment; explicitly set the launch preference after installing this update.
+
+Only an active staff superuser with settings permission can read/save the page. Ordinary staff remain denied even with the model's settings permission. POST requires CSRF and the displayed previous value; a conflicting save is rejected. Only clubs_visible is saved, preserving booking horizon, preview-password/security fields and existing records. Changes and audit commit atomically. GET does not create settings; missing settings show clubs off. No migration is required because the stored field already exists.
+
+Verification: six dedicated tests cover on/off rendering and navigation, existing-record/settings preservation, staff/anonymous denial, CSRF, stale saves, audit rollback and read-only defaults. Full PostgreSQL suite: 286 tests passed. A local browser saved both states through the owner form and captured desktop/phone launch and clubs-enabled homepage previews. These browser screenshots use a fictional local owner session, not a hosted owner/MFA acceptance claim. No pull request or hosted deployment has been performed for this review branch.
