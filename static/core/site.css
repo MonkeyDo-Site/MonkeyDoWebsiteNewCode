@@ -751,3 +751,34 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   .contact-section .contact-heading { margin-bottom:24px }
   .contact-section .contact-info :is(h2,h3) { font-size:25px }
 }
+
+/* Owner scheduling and booking review: compact tables and persistent section context. */
+.staff-page #main { max-width:1680px; padding-inline:28px }
+.staff-page .staff-layout { grid-template-columns:180px minmax(0,1fr); gap:28px }
+.owner-scheduling-location { position:sticky; top:0; z-index:4; background:var(--cream); border-bottom:1px solid var(--line); padding:14px 0; display:flex; justify-content:space-between; gap:16px; font-size:15px }
+.owner-scheduling-location > a { font-weight:800 }
+.owner-scheduling-location > span { font-size:13px }
+.staff-table-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:16px; background:#fffdfa }
+.staff-table-scroll:focus-visible { outline:3px solid var(--ink); outline-offset:4px }
+.staff-table { width:100%; border-collapse:collapse; font-size:14px; text-align:left; line-height:1.5 }
+.staff-table caption { text-align:left; padding:16px; font-weight:800 }
+.staff-table th { background:#e5ebe1; font-size:12px; letter-spacing:.03em }
+.staff-table td,.staff-table th { padding:16px 12px; border-bottom:1px solid var(--line); vertical-align:top }
+.staff-table tbody tr:last-child td { border-bottom:0 }
+.staff-table tbody tr:nth-child(even) { background:#faf7f1 }
+.staff-table .caption { font-size:12px }
+.session-clock { white-space:nowrap }
+.schedule-table { min-width:980px }
+.booking-table { min-width:850px }
+.form-field { margin-bottom:22px }
+.checkbox-field > label { display:flex; gap:10px; align-items:flex-start; font-weight:600 }
+.checkbox-field input[type=checkbox] { margin:5px 0 0; width:18px; height:18px; flex:0 0 18px }
+.record-form input[type=checkbox] { width:18px }
+.field-help { font-size:14px; line-height:1.6; margin:8px 0 0; font-weight:400 }
+.record-form input:disabled { background:#eeeae3; color:var(--ink); opacity:1 }
+.possible-match { font-weight:800; color:var(--rose-ink) }
+@media(max-width:850px) {
+  .staff-page #main { padding-inline:24px }
+  .staff-page .staff-layout { grid-template-columns:minmax(0,1fr) }
+  .owner-scheduling-location > span { display:none }
+}

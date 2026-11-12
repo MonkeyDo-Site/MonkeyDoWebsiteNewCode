@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from django.db.models import Sum
 from django.utils import timezone
 
-from .calendar import date_closed
+from .calendar import date_closed, weekly_default_blocked
 from .models import Booking, Session
 
 NEW_YORK = ZoneInfo("America/New_York")
@@ -33,7 +33,7 @@ def availability(session, horizon=1, now=None):
     now = now or timezone.now()
     children, adults, supervised = occupancy(session)
     day = session.starts_at.astimezone(NEW_YORK).date()
-    if not session.public or day.weekday() == 5:
+    if not session.public or day.weekday() == 5 or weekly_default_blocked(session):
         return {"available": False, "label": "Unavailable", "hidden": True}
     if session.kind == Session.Kind.PARTY:
         label = "A party is booked for this slot."

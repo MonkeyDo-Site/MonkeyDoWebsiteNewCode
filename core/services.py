@@ -22,7 +22,10 @@ def reserve_booking(*, actor, customer, session_id, children, adults, babies=0, 
         raise ValidationError("Supervised bookings contain children only.")
     if not supervised and adults < 1:
         raise ValidationError("Accompanied play requires an adult.")
-    session = Session.objects.select_for_update().get(pk=session_id)
+    try:
+        session = Session.objects.select_for_update().get(pk=session_id)
+    except Session.DoesNotExist:
+        raise ValidationError("This session is no longer available. Choose another time.") from None
     if (supervised and session.play_mode == "accompanied") or (
         not supervised and session.play_mode == "supervised"
     ):

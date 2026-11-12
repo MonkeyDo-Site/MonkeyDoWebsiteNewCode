@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.utils import timezone
 
-from .calendar import date_closed, lock_calendar
+from .calendar import date_closed, lock_calendar, weekly_default_blocked
 from .models import AuditEvent, Booking, BookingQuote, PricingPolicy, Session
 from .permissions import require_actor
 from .pricing import booking_quote, validate_attendees
@@ -40,7 +40,12 @@ def assert_capacity(
     ):
         raise ValidationError("This play type is not enabled for the session.")
     now = timezone.now()
-    if session.closed or date_closed(session) or session.kind != Session.Kind.ORDINARY:
+    if (
+        session.closed
+        or date_closed(session)
+        or weekly_default_blocked(session)
+        or session.kind != Session.Kind.ORDINARY
+    ):
         raise ValidationError("This session is blocked for ordinary reservations.")
     if now >= session.ends_at or (supervised and now >= session.starts_at):
         raise ValidationError("This session is no longer open for the selected play type.")
@@ -139,7 +144,10 @@ def create_test_booking(
                 "This submission identifier was already used. Reload to start another reservation."
             )
         return existing
-    session = Session.objects.select_for_update().get(pk=session_id)
+    try:
+        session = Session.objects.select_for_update().get(pk=session_id)
+    except Session.DoesNotExist:
+        raise ValidationError("This session is no longer available. Choose another time.") from None
     assert_capacity(
         session,
         children=children,

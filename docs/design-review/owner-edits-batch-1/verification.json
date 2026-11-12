@@ -1,0 +1,134 @@
+{
+  "screens": [
+    {
+      "page": "01-owner-scheduling",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "02-edit-session",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "03-date-settings",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "04-weekly-schedule",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "05-edit-weekly-default",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "06-booking-horizon",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "07-delete-weekly-default",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "08-bookings",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "09-customers-spelling-search",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "10-bookings-spelling-search",
+      "width": 1440,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "01-owner-scheduling",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "02-edit-session",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "03-date-settings",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "04-weekly-schedule",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "05-edit-weekly-default",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "06-booking-horizon",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "07-delete-weekly-default",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "08-bookings",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "09-customers-spelling-search",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    },
+    {
+      "page": "10-bookings-spelling-search",
+      "width": 390,
+      "status": 200,
+      "page_overflow": false
+    }
+  ],
+  "public_similar_name_confirmation_checked": true,
+  "owner_login": "Synthetic fixture; not evidence of hosted MFA acceptance.",
+  "data": "Fictional local customers only.",
+  "automated_tests": {
+    "database": "PostgreSQL",
+    "passed": 308,
+    "result": "OK"
+  },
+  "lint": "Ruff lint and formatting passed",
+  "schema": "core.0022_weekly_default_archive: nullable archive timestamp; no schema change on hosted staging."
+}

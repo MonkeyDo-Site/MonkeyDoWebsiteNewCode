@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import BooleanField, Case, Q, Value, When
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
@@ -14,6 +14,7 @@ from .booking_management import (
     release_test_booking,
 )
 from .models import AuditEvent, Booking, Customer, PricingPolicy
+from .name_matching import match_rank, name_candidates
 from .permissions import staff_permission
 
 
@@ -28,10 +29,20 @@ def bookings(request):
     rows = Booking.objects.select_related("customer", "session").order_by(
         "-session__starts_at", "-pk"
     )
+    exact, possible = name_candidates(query) if query else ([], [])
     if query:
         rows = rows.filter(
-            Q(customer__last_name__icontains=query) | Q(customer__phone__icontains=query)
+            Q(customer__last_name__icontains=query)
+            | Q(customer__phone__icontains=query)
+            | Q(customer_id__in=exact + possible)
+        ).order_by(match_rank("customer_id", exact, possible), "-session__starts_at", "-pk")
+    rows = rows.annotate(
+        possible_name_match=Case(
+            When(customer_id__in=possible, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
         )
+    )
     return render(
         request,
         "core/bookings.html",

@@ -1,0 +1,11 @@
+{% extends 'core/staff_base.html' %}{% load scheduling_labels %}
+{% block staff_content %}
+<h1>Delete weekly default</h1>
+<h2>{{ slot.label|display_session_label }}</h2>
+<p>{{ slot.starts_at|time:'g:i A' }}–{{ slot.ends_at|time:'g:i A' }}</p>
+<p class="notice" role="alert">There are currently {{ booking_count }} bookings associated with this timing. Are you sure you want to delete it?</p>
+<p>This removes the weekly default and its future sessions from customer booking options immediately. Existing bookings keep their original times and remain in staff records. Unused future generated sessions are removed. Booked, past and individually edited records are retained. Nothing is cancelled or emailed.</p>
+{% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
+<form method="post" class="record-form panel">{% csrf_token %}{% include 'core/partials/form_fields.html' %}
+<button class="button" type="submit">Delete weekly default</button> <a href="{% url 'recurring_settings' %}">Keep this default</a></form>
+{% endblock %}

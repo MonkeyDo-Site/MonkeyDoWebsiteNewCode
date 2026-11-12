@@ -9,7 +9,7 @@
 </title>
 <link rel="stylesheet" href="{% static 'core/site.css' %}">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 <a class="skip" href="#main">Skip to content</a>
 <div class="test-banner">TEST MODE · Staging preview · No real bookings or payments</div>
 <header>

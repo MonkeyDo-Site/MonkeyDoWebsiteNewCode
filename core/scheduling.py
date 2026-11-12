@@ -3,7 +3,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .availability import NEW_YORK, occupancy
-from .calendar import lock_calendar
+from .calendar import lock_calendar, overlapping_sessions
 from .models import AuditEvent, CalendarDate, Session
 from .permissions import require_actor
 
@@ -61,6 +61,8 @@ def save_session(*, actor, data, pk=None, revision=None, preserve_management=Fal
         raise ValidationError("Use timezone-aware New York session times.")
     day = row.starts_at.astimezone(NEW_YORK).date()
     check_day(day)
+    if current and not preserve_management and before["starts_at"][:10] != day.isoformat():
+        raise ValidationError("You can’t switch the date of the session, only the timing.")
     if row.starts_at <= timezone.now():
         raise ValidationError("Only future sessions can be configured here.")
     if row.ends_at.astimezone(NEW_YORK).date() != day:
@@ -75,11 +77,7 @@ def save_session(*, actor, data, pk=None, revision=None, preserve_management=Fal
         raise ValidationError("Enable a supervised limit or choose accompanied only.")
     if not row.private_label.strip():
         raise ValidationError("An internal session label is required.")
-    if (
-        Session.objects.exclude(pk=pk)
-        .filter(starts_at__lt=row.ends_at, ends_at__gt=row.starts_at)
-        .exists()
-    ):
+    if overlapping_sessions(row.starts_at, row.ends_at, exclude_pk=pk).exists():
         raise ValidationError("This time overlaps another session. Edit that session instead.")
     if current:
         after = values(row, SESSION_FIELDS)

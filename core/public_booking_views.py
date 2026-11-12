@@ -14,6 +14,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from .account_security import allow_security_request
 from .forms import normalize_phone
 from .models import Booking, Customer
+from .name_matching import similar_name
 from .public_booking import (
     LIFETIME,
     assert_flow,
@@ -74,6 +75,12 @@ class PhoneForm(forms.Form):
 
 class NameForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last Name")
+
+
+class SimilarNameForm(forms.Form):
+    confirm_similar_name = forms.BooleanField(
+        label="I confirm that I entered my own family’s phone number and last name."
+    )
 
 
 class ContactForm(forms.Form):
@@ -192,6 +199,7 @@ def wizard(request):
         form_type = {
             "phone": PhoneForm,
             "name": NameForm,
+            "name_confirm": SimilarNameForm,
             "previous": PreviousPhoneForm,
             "contact": ContactForm,
             "details": DetailsForm,
@@ -224,22 +232,31 @@ def wizard(request):
                     flow["stage"] = "name" if customer.phone == data["phone"] else "previous"
                     if flow["stage"] == "previous":
                         flow["current_phone"] = customer.phone
-            elif stage in {"name", "previous"}:
+            elif stage in {"name", "name_confirm", "previous"}:
                 candidate = flow["candidate"]
                 customer = Customer.objects.get(pk=candidate["id"])
                 if customer.revision != candidate["revision"]:
                     raise ValidationError("Customer details changed. Please start again.")
-                matched = (
-                    canonical_name(data["last_name"]) == canonical_name(customer.last_name)
-                    if stage == "name"
-                    else data["confirm_phone"] == "yes"
-                )
+                if stage == "name":
+                    exact = canonical_name(data["last_name"]) == canonical_name(customer.last_name)
+                    if not exact and similar_name(data["last_name"], customer.last_name):
+                        flow["entered_name"] = data["last_name"]
+                        flow["stage"] = "name_confirm"
+                        save(request, flow)
+                        return redirect("customer_booking")
+                    matched = exact
+                elif stage == "name_confirm":
+                    matched = data["confirm_similar_name"] and similar_name(
+                        flow.get("entered_name", ""), customer.last_name
+                    )
+                else:
+                    matched = data["confirm_phone"] == "yes"
                 if not matched:
                     flow["stage"] = "blocked"
                     save(request, flow)
                     message = (
                         "The last name you entered doesn't match the name on record for this number. We would love to get your booking done for you as soon as possible. Please call or text 848-238-5147 and we'll help you with it."
-                        if stage == "name"
+                        if stage in {"name", "name_confirm"}
                         else "We would love to get your booking finalized as soon as possible. Please call/text 848-238-5147 for assistance with this booking."
                     )
                     return render(

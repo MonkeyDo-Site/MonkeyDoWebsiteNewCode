@@ -4,19 +4,10 @@
 <p class="notice">Test reservations only. Card setup, waiver coverage, confirmations and payments are not yet connected.</p>
 <form class="search-form" method="get">
 <label for="booking-search">Search Last Name or phone</label>
-<input id="booking-search" type="search" name="q" value="{{ query }}">
+<input id="booking-search" type="search" name="q" value="{{ query }}" maxlength="120">
 <button class="button small">Search</button>
 </form>
-{% if perms.core.add_booking and perms.core.view_customer %}
-<p>
-<a class="button" href="{% url 'booking_create' %}">Create test booking</a>
-</p>{% endif %}
-{% for booking in bookings %}
-<article class="panel">
-<h2>{{ booking.customer.last_name }}</h2>
-<p>{{ booking.session.starts_at|date:'D, M j, Y g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
-<p>{{ booking.status_label }}</p>
-<a href="{% url 'booking_detail' booking.pk %}">Open booking</a>
-</article>{% empty %}
-<p>No bookings to show.</p>{% endfor %}
+{% if query %}<p class="caption">Exact and direct matches appear first, followed by possible surname spelling matches.</p>{% endif %}
+{% if perms.core.add_booking and perms.core.view_customer %}<p><a class="button" href="{% url 'booking_create' %}">Create test booking</a></p>{% endif %}
+{% include 'core/partials/booking_table.html' %}
 {% include 'core/pagination.html' with page=bookings %}{% endblock %}
