@@ -1,6 +1,6 @@
 # MonkeyDo owner design review
 
-**[Latest screenshots — revision 9](revision-9/README.md)**: updated membership benefits, supervised play wording and gift-card heading. Earlier review JPGs and the separate contact concept are preserved.
+**[Latest screenshots — revision 10](revision-10/README.md)**: approved contact layout now implemented on the homepage and Contact Us page. Earlier review JPGs are preserved.
 
 These desktop JPGs are local website previews for owner review. They do not represent a deployment. Both homepage options hide clubs. The sage green and soft blush homepage backgrounds are alternative previews; a final color choice has not been applied to the website.
 

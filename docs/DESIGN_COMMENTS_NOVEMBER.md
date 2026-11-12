@@ -49,3 +49,8 @@ Membership design-preview buttons now read “I want to get started →” on th
 ## Revision 9
 
 Removed Call/text for details from both membership party-discount benefits on the homepage and membership page. Removed the hyphen in supervised play visits in the blue card’s exclusions. The homepage gift-card eyebrow now reads Give the gift that parents and kids will love. The separate contact layout remains a preview awaiting review.
+
+
+## Revision 10 — approved contact layout
+
+The owner approved the photo-and-contact layout previously shown as a separate concept. It is now implemented in the shared homepage/Contact Us partial with a welcome heading, owner-supplied balloon play-space photo, call/text and email actions, opening information and location. The duplicate logo and lowered contact card are replaced. The homepage keeps its green selection; taupe remains a separate background comparison only. No PR or deployment is included.

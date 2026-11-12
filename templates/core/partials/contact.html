@@ -1,26 +1,25 @@
 {% load static %}
-
-<section class="page-heading scroll-reveal">
-<p class="eyebrow">Let’s plan some play</p>
-{% if embedded %}<h2>We’d love to hear from you.</h2>{% else %}<h1>We’d love to<br>
-<em>hear from you.</em>
-</h1>{% endif %}
-</section>
-<section class="split contact-layout">
-<article class="panel contact-card scroll-reveal">
-<h2>Contact Us</h2>
-<p>Call or text <a href="tel:8482385147">848-238-5147</a>
-</p>
-<p>
-<a href="mailto:monkeydoplay@gmail.com">monkeydoplay@gmail.com</a>
-</p>
-</article>
-<article class="contact-welcome scroll-reveal">
-<div class="contact-photo-placeholder" role="img" aria-label="MonkeyDo brand placeholder for the future wall-logo photograph"><img src="{% static 'brand/Final MonkeyDo logo.jpg' %}" width="2071" height="1451" alt=""></div>
-<h2>We look forward to seeing you!</h2>
-<p>Open Sunday through Friday by reservation, with four daily time slots.</p>
-<p>Budleman Way, Lakewood, NJ</p>
-<p>Your confirmation will include the exact address.</p>
-<p>Gift cards are available for in-person purchase.</p>
-</article>
+<section class="contact-section{% if not embedded %} contact-page{% endif %}" aria-labelledby="contact-heading">
+<div class="contact-heading scroll-reveal">
+<p class="eyebrow">Contact us</p>
+{% if embedded %}<h2 id="contact-heading">We look forward to seeing you!</h2>{% else %}<h1 id="contact-heading">We look forward to seeing you!</h1>{% endif %}
+</div>
+<div class="contact-grid">
+<img class="contact-play-photo scroll-reveal" src="{% static 'children/Image 1.jpeg' %}" width="2400" height="1792" alt="Children enjoying the balloon-themed play space at MonkeyDo" loading="lazy">
+<div class="contact-info scroll-reveal">
+{% if embedded %}<h3>Let’s plan some play.</h3>{% else %}<h2>Let’s plan some play.</h2>{% endif %}
+<p>Questions about your visit? We’re happy to help.</p>
+<p class="contact-direct"><a href="tel:8482385147">848-238-5147</a></p>
+<p class="contact-direct"><a href="mailto:monkeydoplay@gmail.com">monkeydoplay@gmail.com</a></p>
+<div class="contact-actions">
+<a class="button" href="tel:8482385147">Call or text us <span aria-hidden="true">→</span></a>
+<a class="button email-action" href="mailto:monkeydoplay@gmail.com">Email us <span aria-hidden="true">→</span></a>
+</div>
+<div class="contact-address">
+<p><strong>Budleman Way, Lakewood, NJ</strong></p>
+<p>Open Sunday through Friday by reservation,<br>with four daily time slots.</p>
+<p class="contact-address-note">Your confirmation will include the exact address.</p>
+</div>
+</div>
+</div>
 </section>

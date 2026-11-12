@@ -1,0 +1,72 @@
+[
+  {
+    "path": "/",
+    "width": 1440,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/about/",
+    "width": 1440,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/memberships/",
+    "width": 1440,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/clubs-parties/",
+    "width": 1440,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/contact/",
+    "width": 1440,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/",
+    "width": 390,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/about/",
+    "width": 390,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/memberships/",
+    "width": 390,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/clubs-parties/",
+    "width": 390,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  },
+  {
+    "path": "/contact/",
+    "width": 390,
+    "status": 200,
+    "overflow": false,
+    "missing_images": false
+  }
+]

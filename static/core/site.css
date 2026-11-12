@@ -727,3 +727,27 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 @media(max-width:420px) {
   .membership-card { --membership-image-reserve:0px }
 }
+
+/* Approved contact layout, shared by Home and Contact Us. */
+.contact-section .contact-heading { margin:0 0 36px }
+.contact-section .contact-heading h2 { font-size:clamp(32px,3.3vw,46px); line-height:1.2; margin:12px 0 0; max-width:none }
+.contact-section .contact-heading h1 { margin:12px 0 0; max-width:none }
+.contact-section .contact-grid { display:grid; grid-template-columns:1.05fr 1fr; gap:56px; align-items:center }
+.contact-section .contact-play-photo { display:block; width:100%; height:440px; object-fit:cover; border-radius:28px }
+.contact-section .contact-info { min-width:0 }
+.contact-section .contact-info :is(h2,h3) { color:var(--rose-ink); font-size:28px; line-height:1.3; margin:0 0 20px }
+.contact-section .contact-actions { display:flex; gap:12px; flex-wrap:wrap; margin:22px 0 26px }
+.contact-section .contact-actions .button { gap:14px; padding:14px 22px }
+.contact-section .contact-actions .email-action { background:transparent; border:1px solid var(--ink); color:var(--ink) }
+.contact-section .contact-address { padding-top:22px; border-top:1px solid var(--line) }
+.contact-section .contact-address p { margin:0 0 12px }
+.contact-section .contact-info .contact-direct { margin:0 0 8px; overflow-wrap:anywhere }
+.contact-section .contact-info .contact-direct a { text-decoration:none }
+.contact-section .contact-info .contact-address-note { font-size:15px; margin-top:6px }
+.contact-page .contact-play-photo { height:500px }
+@media(max-width:850px) {
+  .contact-section .contact-grid { grid-template-columns:1fr; gap:28px }
+  .contact-section .contact-play-photo { height:280px }
+  .contact-section .contact-heading { margin-bottom:24px }
+  .contact-section .contact-info :is(h2,h3) { font-size:25px }
+}
