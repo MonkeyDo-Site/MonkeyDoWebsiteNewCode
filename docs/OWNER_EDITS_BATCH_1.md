@@ -22,7 +22,7 @@ Implements the twelve items in the owner's Word document and the four subsequent
 
 ## Booking tables and search
 
-Bookings use a table with linked Booking ID, Family name, Session date/time, Children, Adults, Babies, Play type and Status. Waiver and membership columns are deferred to their planned functional work.
+Today and Bookings share a table with linked Booking ID, Family name, Session date/time, Children, Adults, Babies, Play type and Status. Waiver and membership columns are deferred to their planned functional work.
 
 Authorized customer and booking searches retain exact/partial/phone matching and add conservative surname spelling suggestions, with exact names first, direct matches next and possible spelling matches clearly labeled. The comparison handles a small number of edits, including adjacent transpositions; very short surnames do not use fuzzy matching. The current implementation streams customer names for staff suggestions and requires no PostgreSQL extension. Larger customer volumes may justify a dedicated search index later.
 
@@ -45,3 +45,5 @@ This release therefore needs one schema-preparation step before the usual single
 A code rollback does not reverse this migration or data changes. In particular, the older release did not enforce the inactive/deleted weekly-default gate: after using those controls, rolling back to that older version requires checking those dated sessions' visibility/closure before reopening customer booking. The archive column can remain present during a code rollback; do not reverse the migration or erase retained scheduling history as part of a routine rollback.
 
 The owner chose to review the changes on staging after deployment rather than wait for another screenshot revision. The linked Booking ID replaces the separate Open booking column and also appears on each booking detail page. The earlier screenshot gallery predates that final label/layout adjustment. Migration and deployment evidence must be recorded separately.
+
+The owner subsequently included Today in the table change. Its current New York-date filter and session/creation ordering remain unchanged. The table retains permitted customer links and uses the same linked booking IDs, attendee counts, play type and status columns as Bookings. No extra migration is introduced.
