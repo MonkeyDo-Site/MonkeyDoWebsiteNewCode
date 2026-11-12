@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 
 from django import forms
+from django.db.models import Q
 from django.utils import timezone
 
 from .models import Booking, Customer, PricingPolicy, Session
@@ -41,7 +42,11 @@ class TestBookingForm(forms.Form):
             initial["version"] = booking.edit_version
         super().__init__(*args, initial=initial, **kwargs)
         self.fields["session"].queryset = Session.objects.filter(
-            ends_at__gt=timezone.now(), closed=False, kind=Session.Kind.ORDINARY
+            Q(source_slot__isnull=True)
+            | Q(source_slot__active=True, source_slot__archived_at__isnull=True),
+            ends_at__gt=timezone.now(),
+            closed=False,
+            kind=Session.Kind.ORDINARY,
         )
         if not owner:
             self.fields.pop("override_capacity")
@@ -65,7 +70,11 @@ class TimingForm(forms.Form):
             **kwargs,
         )
         self.fields["session"].queryset = Session.objects.filter(
-            ends_at__gt=timezone.now(), closed=False, kind=Session.Kind.ORDINARY
+            Q(source_slot__isnull=True)
+            | Q(source_slot__active=True, source_slot__archived_at__isnull=True),
+            ends_at__gt=timezone.now(),
+            closed=False,
+            kind=Session.Kind.ORDINARY,
         )
         if not owner:
             self.fields.pop("override_capacity")

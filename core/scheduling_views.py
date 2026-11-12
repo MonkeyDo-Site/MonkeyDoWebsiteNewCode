@@ -6,8 +6,10 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_safe
 
 from .availability import NEW_YORK, occupancy
+from .calendar import date_closed, weekly_default_blocked
 from .models import CalendarDate, Session
 from .permissions import staff_permission
+from .recurring import local_time
 from .scheduling import SESSION_FIELDS, save_date, save_session
 
 
@@ -44,13 +46,33 @@ class SessionForm(forms.ModelForm):
             if self.instance.play_mode == "both" and self.instance.supervised_capacity == 0:
                 self.initial["play_mode"] = "accompanied"
             self.fields["revision"].required = True
+            for name, label in (("starts_at", "Starts at"), ("ends_at", "Ends at")):
+                self.fields[name] = forms.TimeField(
+                    label=label,
+                    input_formats=["%I:%M %p", "%I %p", "%H:%M"],
+                    widget=forms.TimeInput(format="%I:%M %p", attrs={"placeholder": "2:30 PM"}),
+                    help_text="New York time, for example 2:30 PM.",
+                )
+                self.initial[name] = getattr(self.instance, name).astimezone(NEW_YORK).time()
         else:
             self.initial["play_mode"] = "accompanied"
+
+    def clean(self):
+        data = super().clean()
+        if self.instance.pk:
+            day = self.instance.starts_at.astimezone(NEW_YORK).date()
+            for name in ("starts_at", "ends_at"):
+                if name in data:
+                    try:
+                        data[name] = local_time(day, data[name])
+                    except ValidationError as exc:
+                        self.add_error(name, exc)
+        return data
 
 
 class DateForm(forms.Form):
     day = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
-    closed = forms.BooleanField(required=False, label="Close date to new reservations")
+    closed = forms.BooleanField(required=False, label="Close date to new reservations.")
     private_reason = forms.CharField(max_length=500, required=False, widget=forms.Textarea)
     chol_hamoed = forms.BooleanField(required=False, label="Chol Hamoed date")
     revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
@@ -72,13 +94,23 @@ def scheduling(request):
         )
     except ValidationError:
         day = timezone.localdate(timezone=NEW_YORK)
-    rows = Session.objects.filter(starts_at__date=day)
+    rows = Session.objects.filter(starts_at__date=day).select_related("source_slot")
     return render(
         request,
         "core/scheduling.html",
         {
             "day": day,
-            "sessions": [{"session": row, "counts": occupancy(row)} for row in rows],
+            "sessions": [
+                {
+                    "session": row,
+                    "counts": occupancy(row),
+                    "blocked": row.closed or date_closed(row) or weekly_default_blocked(row),
+                    "visible": row.public
+                    and not weekly_default_blocked(row)
+                    and day.weekday() != 5,
+                }
+                for row in rows
+            ],
             "date_rule": CalendarDate.objects.filter(day=day).first(),
         },
     )
@@ -110,7 +142,11 @@ def session_edit(request, pk=None):
     return render(
         request,
         "core/scheduling_form.html",
-        {"form": form, "heading": "Edit session" if pk else "Add one-time session"},
+        {
+            "form": form,
+            "heading": "Edit session" if pk else "Add one-time session",
+            "session_day": row.starts_at.astimezone(NEW_YORK).date() if row else None,
+        },
     )
 
 
@@ -130,6 +166,8 @@ def date_edit(request):
         "revision": row.revision if row else 0,
     }
     form = DateForm(request.POST if request.method == "POST" else None, initial=initial)
+    form.fields["day"].disabled = True
+    form.fields["day"].label = "Date"
     if request.method == "POST" and form.is_valid():
         # Day must match the loaded date; changing the date requires loading its
         # current revision rather than applying one date's revision to another.

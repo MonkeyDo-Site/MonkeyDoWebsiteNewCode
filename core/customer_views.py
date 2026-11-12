@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods, require_safe
 from .customers import correct_previous_phone, create_customer, save_comment, update_customer
 from .forms import CommentForm, CustomerForm, PreviousPhoneForm
 from .models import AuditEvent, Customer, CustomerComment
+from .name_matching import match_rank, name_candidates
 from .permissions import staff_permission
 
 
@@ -27,6 +28,7 @@ def customer_list(request):
     digits = re.sub(r"\D", "", query)
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
+    exact, possible = name_candidates(query) if query else ([], [])
     if query:
         criteria = (
             Q(last_name__icontains=query)
@@ -41,10 +43,16 @@ def customer_list(request):
             criteria |= Q(comments__body__icontains=query)
             if digits:
                 criteria |= Q(comments__search_digits__contains=digits)
-        customers = customers.filter(criteria).distinct()
+        customers = (
+            customers.filter(criteria | Q(pk__in=exact + possible))
+            .distinct()
+            .order_by(match_rank("pk", exact, possible), "last_name", "pk")
+        )
     page = Paginator(customers, 25).get_page(request.GET.get("page"))
     for customer in page:
         matched = []
+        if customer.pk in possible:
+            matched.append("Possible Last Name match")
         if query:
             for field, label in (
                 ("last_name", "Last Name"),

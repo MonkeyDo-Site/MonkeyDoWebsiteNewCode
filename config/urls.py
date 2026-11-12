@@ -24,6 +24,11 @@ urlpatterns = [
     path("staff/scheduling/weekly/", recurring_views.recurring_settings, name="recurring_settings"),
     path("staff/scheduling/weekly/new/", recurring_views.slot_edit, name="weekly_create"),
     path("staff/scheduling/weekly/<int:pk>/", recurring_views.slot_edit, name="weekly_edit"),
+    path(
+        "staff/scheduling/weekly/<int:pk>/delete/",
+        recurring_views.slot_delete,
+        name="weekly_delete",
+    ),
     path("staff/scheduling/horizon/", recurring_views.horizon_settings, name="horizon_settings"),
     path("staff/memberships/", membership_views.drafts, name="membership_drafts"),
     path("staff/memberships/new/", membership_views.draft_create, name="membership_create"),

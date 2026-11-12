@@ -493,6 +493,7 @@ class WeeklySlot(models.Model):
     starts_at = models.TimeField()
     ends_at = models.TimeField()
     active = models.BooleanField(default=True)
+    archived_at = models.DateTimeField(null=True, blank=True, editable=False)
     public = models.BooleanField(default=False)
     play_mode = models.CharField(
         max_length=12, choices=Session._meta.get_field("play_mode").choices, default="accompanied"

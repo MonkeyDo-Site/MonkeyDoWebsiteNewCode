@@ -3,5 +3,6 @@
 <h1>{{ heading }}</h1>
 <p class="notice">Owner settings · Private labels stay off the public schedule. Changes do not cancel bookings, reprice visits, send email or process payments.</p>
 {% if heading == 'Booking horizon' %}<p>Dates open at midnight based on this horizon. Sunday opens no later than Friday midnight. To show more dates, make sure dated sessions exist for those dates; changing the horizon does not create them.</p>{% endif %}
-<form class="record-form panel" method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Save schedule settings</button>{% if heading == 'Booking horizon' %} <button class="button small" name="reset_to_default" value="1">Revert to default: 1 day</button>{% endif %} <a href="{% url 'recurring_settings' %}">Back to weekly schedule</a></form>
+<form class="record-form panel" method="post">{% csrf_token %}{% include 'core/partials/form_fields.html' %}<button class="button">Save schedule settings</button>{% if heading == 'Booking horizon' %} <button class="button small" name="reset_to_default" value="1">Revert to default: 1 day</button>{% endif %} <a href="{% url 'recurring_settings' %}">Back to weekly schedule</a></form>
+{% if slot %}<p><a href="{% url 'weekly_delete' slot.pk %}">Delete this weekly default</a></p>{% endif %}
 {% endblock %}

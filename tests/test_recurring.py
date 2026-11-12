@@ -5,9 +5,9 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.test import Client, TestCase, override_settings
 
-from core.availability import availability, opening_time
-from core.models import Session, SiteSettings, WeeklySlot
-from core.recurring import FIELDS, generate_sessions, save_horizon, save_slot
+from core.availability import NEW_YORK, availability, opening_time
+from core.models import AuditEvent, Booking, Session, SiteSettings, WeeklySlot
+from core.recurring import FIELDS, delete_slot, generate_sessions, save_horizon, save_slot
 from core.scheduling import SESSION_FIELDS, save_session
 from tests import test_scheduling as scheduling_tests
 from tests.helpers import verified_owner_login
@@ -103,16 +103,174 @@ class RecurringTests(TestCase):
         self.assertTrue(session.closed)
         self.assertEqual(session.child_capacity, 35)
 
-    def test_disabling_template_closes_unbooked_generated_session_only_on_apply(self):
+    def test_inactive_default_immediately_blocks_booking_and_generation_then_reopens(self):
         slot = self.slot()
         self.generate(slot)
+        row = Session.objects.get()
         slot = self.change_slot(slot, active=False)
+        self.assertTrue(availability(row)["hidden"])
+        with self.assertRaises(ValidationError):
+            self.reserve(row, actor=self.owner, override_capacity=True)
+        with self.assertRaises(ValidationError):
+            self.generate(slot, update_existing=True)
         self.assertFalse(Session.objects.get().closed)
-        self.generate(slot, update_existing=True)
-        self.assertTrue(Session.objects.get().closed)
         slot = self.change_slot(slot, active=True)
-        self.generate(slot, update_existing=True)
-        self.assertFalse(Session.objects.get().closed)
+        self.assertTrue(availability(row)["available"])
+
+    def test_delete_preserves_bookings_quotes_and_session_times(self):
+        slot = self.slot()
+        self.generate(slot)
+        row = Session.objects.get()
+        booking = self.reserve(row)
+        original = (row.starts_at, row.ends_at, booking.session_id, booking.edit_version)
+        quote = booking.quotes.get().snapshot
+        delete_slot(actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=1)
+        slot.refresh_from_db()
+        row.refresh_from_db()
+        booking.refresh_from_db()
+        self.assertFalse(slot.active)
+        self.assertIsNotNone(slot.archived_at)
+        self.assertEqual(
+            (row.starts_at, row.ends_at, booking.session_id, booking.edit_version), original
+        )
+        self.assertEqual(booking.quotes.get().snapshot, quote)
+        self.assertFalse(booking.attendance)
+        self.assertTrue(availability(row)["hidden"])
+        with self.assertRaises(ValidationError):
+            self.generate(slot)
+        with self.assertRaises(ValidationError):
+            self.change_slot(slot, active=True)
+        self.assertTrue(AuditEvent.objects.filter(action="schedule.weekly_slot_deleted").exists())
+
+    def test_deactivation_blocks_manual_sessions_without_overwriting_manual_closures(self):
+        slot = self.slot()
+        self.generate(slot)
+        row = Session.objects.get()
+        save_session(
+            actor=self.owner,
+            pk=row.pk,
+            revision=row.revision,
+            data={field: getattr(row, field) for field in SESSION_FIELDS} | {"closed": True},
+        )
+        slot = self.change_slot(slot, active=False)
+        self.assertTrue(availability(row)["hidden"])
+        self.change_slot(slot, active=True)
+        row.refresh_from_db()
+        self.assertTrue(row.closed)
+        self.assertFalse(availability(row)["available"])
+
+    def test_archive_confirmation_and_audit_are_atomic(self):
+        slot = self.slot()
+        self.generate(slot)
+        self.reserve(Session.objects.get())
+        with self.assertRaises(ValidationError):
+            delete_slot(actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=0)
+        with self.assertRaises(ValidationError):
+            delete_slot(actor=self.owner, pk=slot.pk, revision=0, expected_bookings=1)
+        with patch("core.recurring.AuditEvent.objects.create", side_effect=RuntimeError("test")):
+            with self.assertRaises(RuntimeError):
+                delete_slot(
+                    actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=1
+                )
+        slot.refresh_from_db()
+        self.assertTrue(slot.active)
+        self.assertIsNone(slot.archived_at)
+        self.assertEqual(Booking.objects.count(), 1)
+
+    def test_deleted_empty_timing_can_be_recreated_and_removal_is_audited(self):
+        slot = self.slot()
+        self.generate(slot)
+        old = Session.objects.get()
+        old_id = old.pk
+        delete_slot(actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=0)
+        self.assertFalse(Session.objects.filter(pk=old_id).exists())
+        event = AuditEvent.objects.get(action="schedule.weekly_slot_deleted")
+        self.assertEqual(event.changes["removed_unused_generated_sessions"][0]["id"], old_id)
+        self.assertEqual(
+            event.changes["removed_unused_generated_sessions"][0]["starts_at"],
+            old.starts_at.astimezone(NEW_YORK).isoformat(),
+        )
+        replacement = self.slot()
+        result = self.generate(replacement)
+        self.assertEqual(result[0]["outcome"], "Created")
+        self.assertEqual(Session.objects.count(), 1)
+        self.assertTrue(availability(Session.objects.get())["available"])
+
+    def test_delete_retains_manually_edited_unbooked_sessions(self):
+        slot = self.slot()
+        self.generate(slot)
+        row = Session.objects.get()
+        save_session(
+            actor=self.owner,
+            pk=row.pk,
+            revision=row.revision,
+            data={f: getattr(row, f) for f in SESSION_FIELDS} | {"private_label": "Custom date"},
+        )
+        delete_slot(actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=0)
+        row.refresh_from_db()
+        self.assertEqual(row.private_label, "Custom date")
+        self.assertTrue(availability(row)["hidden"])
+
+    def test_failed_delete_audit_restores_unused_sessions(self):
+        slot = self.slot()
+        self.generate(slot)
+        row = Session.objects.get()
+        with patch("core.recurring.AuditEvent.objects.create", side_effect=RuntimeError("test")):
+            with self.assertRaises(RuntimeError):
+                delete_slot(
+                    actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=0
+                )
+        self.assertTrue(Session.objects.filter(pk=row.pk).exists())
+        slot.refresh_from_db()
+        self.assertIsNone(slot.archived_at)
+
+    def test_deleted_booked_timing_still_prevents_overlapping_generation(self):
+        slot = self.slot()
+        self.generate(slot)
+        self.reserve(Session.objects.get())
+        delete_slot(actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=1)
+        replacement = self.slot()
+        result = self.generate(replacement)
+        self.assertEqual(result[0]["outcome"], "Preserved")
+        self.assertEqual(Session.objects.count(), 1)
+
+    def test_delete_view_requires_owner_confirmation_and_csrf(self):
+        slot = self.slot()
+        path = f"/staff/scheduling/weekly/{slot.pk}/delete/"
+        self.staff.user_permissions.add(Permission.objects.get(codename="change_weeklyslot"))
+        self.client.force_login(self.staff)
+        self.assertEqual(self.client.get(path).status_code, 403)
+        verified_owner_login(self.client, self.owner)
+        self.assertContains(self.client.get(path), "currently 0 bookings")
+        self.assertEqual(
+            self.client.post(path, {"revision": slot.revision, "expected_bookings": 0}).status_code,
+            200,
+        )
+        slot.refresh_from_db()
+        self.assertIsNone(slot.archived_at)
+        client = Client(enforce_csrf_checks=True)
+        verified_owner_login(client, self.owner)
+        self.assertEqual(client.post(path, {}).status_code, 403)
+        self.assertEqual(
+            self.client.post(
+                path, {"revision": slot.revision, "expected_bookings": 0, "confirm": "on"}
+            ).status_code,
+            302,
+        )
+        self.assertNotContains(self.client.get("/staff/scheduling/weekly/"), slot.label)
+
+    def test_generation_choices_only_include_active_defaults(self):
+        from core.recurring_views import GenerationForm
+
+        self.assertIn("Standard play 1:00 PM", str(GenerationForm()))
+        self.assertNotIn("Standard play 13:00", str(GenerationForm()))
+        slot = self.slot()
+        self.change_slot(slot, active=False)
+        form = GenerationForm(
+            {"slots": [slot.pk], "from_day": NOW.date(), "through_day": NOW.date()}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertNotIn(slot.pk, form.fields["slots"].queryset.values_list("pk", flat=True))
 
     def test_independent_session_conflict_is_preserved_and_not_adopted(self):
         slot = self.slot()
@@ -289,3 +447,33 @@ class RecurringTests(TestCase):
         )
         row.refresh_from_db()
         self.assertFalse(row.public)
+
+    def test_delete_view_refreshes_warning_if_booking_arrives_after_preview(self):
+        slot = self.slot()
+        self.generate(slot)
+        verified_owner_login(self.client, self.owner)
+        path = f"/staff/scheduling/weekly/{slot.pk}/delete/"
+        self.assertContains(self.client.get(path), "currently 0 bookings")
+        self.reserve(Session.objects.get())
+        response = self.client.post(
+            path, {"revision": slot.revision, "expected_bookings": 0, "confirm": "on"}
+        )
+        self.assertContains(response, "booking count changed")
+        self.assertContains(response, "currently 1 bookings")
+        self.assertEqual(response.context["form"].initial["expected_bookings"], 1)
+        slot.refresh_from_db()
+        self.assertIsNone(slot.archived_at)
+
+    def test_deleted_unused_session_rejects_stale_reservation_without_server_error(self):
+        from core.services import reserve_booking
+
+        slot = self.slot()
+        self.generate(slot)
+        row = Session.objects.get()
+        delete_slot(actor=self.owner, pk=slot.pk, revision=slot.revision, expected_bookings=0)
+        with self.assertRaisesMessage(ValidationError, "no longer available"):
+            self.reserve(row)
+        with self.assertRaisesMessage(ValidationError, "no longer available"):
+            reserve_booking(
+                actor=self.staff, customer=self.customer, session_id=row.pk, children=1, adults=1
+            )

@@ -20,3 +20,24 @@ def date_closed(session):
     return CalendarDate.objects.filter(
         day=session.starts_at.astimezone(NEW_YORK).date(), closed=True
     ).exists()
+
+
+def weekly_default_blocked(session):
+    """Read current policy, even when the caller holds an older Session instance."""
+    from .models import WeeklySlot
+
+    return (
+        bool(session.source_slot_id)
+        and not WeeklySlot.objects.filter(
+            pk=session.source_slot_id, active=True, archived_at__isnull=True
+        ).exists()
+    )
+
+
+def overlapping_sessions(starts_at, ends_at, *, exclude_pk=None):
+    """Retain dated-session identity and overlap protections, including hidden history."""
+    from .models import Session
+
+    return Session.objects.exclude(pk=exclude_pk).filter(
+        starts_at__lt=ends_at, ends_at__gt=starts_at
+    )

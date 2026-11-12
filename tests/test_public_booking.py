@@ -294,3 +294,97 @@ class PublicBookingTests(TestCase):
         self.assertContains(self.client.get("/book/"), f"/book/start/{self.slot.pk}/")
         self.assertEqual(self.client.get("/staff/bookings/").status_code, 302)
         self.assertEqual(self.client.get("/01-home.html").status_code, 404)
+
+    def test_close_surname_requires_confirmation_without_disclosing_customer(self):
+        c = Customer.objects.create(
+            last_name="Greenfeld", phone="2025550100", email="private@example.invalid"
+        )
+        self.begin(c.phone, "yes")
+        self.client.post("/book/details/", {"last_name": "Greenfield"})
+        flow = self.client.session["customer_test_booking"]
+        self.assertEqual(flow["stage"], "name_confirm")
+        self.assertNotIn("proof", flow)
+        response = self.client.get("/book/details/")
+        self.assertContains(response, "close spelling match")
+        self.assertNotContains(response, c.email)
+        self.assertNotContains(response, c.last_name)
+        self.client.post("/book/details/", {})
+        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "name_confirm")
+        self.client.post("/book/details/", {"confirm_similar_name": "on"})
+        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "details")
+        response = self.client.get("/book/details/")
+        self.assertContains(response, c.last_name)
+        self.assertContains(response, "Your name confirmation was saved")
+        self.assertNotContains(response, "That name matches our records")
+        c.refresh_from_db()
+        self.assertEqual(c.last_name, "Greenfeld")
+
+    def test_public_suggestions_never_match_customer_with_another_phone(self):
+        c = Customer.objects.create(
+            last_name="Robinson", phone="2025550100", email="private@example.invalid"
+        )
+        other = Customer.objects.create(
+            last_name="Greenfeld", phone="2025550101", email="other@example.invalid"
+        )
+        self.begin(c.phone, "yes")
+        response = self.client.post(
+            "/book/details/", {"last_name": "Greenfield", "customer_id": other.pk}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertNotContains(response, other.email, status_code=400)
+        self.assertNotIn("proof", self.client.session["customer_test_booking"])
+
+    def test_similar_name_confirmation_rechecks_profile_revision(self):
+        c = Customer.objects.create(
+            last_name="Greenfeld", phone="2025550100", email="private@example.invalid"
+        )
+        self.begin(c.phone, "yes")
+        self.client.post("/book/details/", {"last_name": "Greenfield"})
+        c.revision += 1
+        c.save(update_fields=["revision"])
+        response = self.client.post("/book/details/", {"confirm_similar_name": "on"})
+        self.assertEqual(response.status_code, 400)
+        self.assertNotIn("proof", self.client.session["customer_test_booking"])
+
+    def test_deactivated_template_blocks_an_already_reviewed_public_booking(self):
+        from datetime import time
+
+        from core.models import WeeklySlot
+
+        self.new_review()
+        weekly = WeeklySlot.objects.create(
+            label="Evening", starts_at=time(10), ends_at=time(11), weekdays=[6]
+        )
+        self.slot.source_slot = weekly
+        self.slot.save(update_fields=["source_slot"])
+        weekly.active = False
+        weekly.save(update_fields=["active"])
+        self.assertEqual(self.confirm().status_code, 400)
+        self.assertFalse(Booking.objects.exists())
+        self.assertFalse(Customer.objects.exists())
+        self.assertNotContains(self.client.get("/book/"), f"/book/start/{self.slot.pk}/")
+
+    def test_confirmed_spelling_variant_books_original_customer_without_renaming(self):
+        c = Customer.objects.create(
+            last_name="Greenfeld", phone="2025550100", email="private@example.invalid"
+        )
+        self.begin(c.phone, "yes")
+        self.client.post("/book/details/", {"last_name": "Greenfield"})
+        self.client.post("/book/details/", {"confirm_similar_name": "on"})
+        self.client.post(
+            "/book/details/",
+            {
+                "play_type": "open",
+                "children": 1,
+                "adults": 1,
+                "babies": 0,
+                "socks": 0,
+                "expected_method": "cash",
+                "referral_source": "",
+            },
+        )
+        self.assertEqual(self.confirm().status_code, 302)
+        self.assertEqual(Booking.objects.get().customer_id, c.pk)
+        self.assertEqual(Customer.objects.count(), 1)
+        c.refresh_from_db()
+        self.assertEqual(c.last_name, "Greenfeld")

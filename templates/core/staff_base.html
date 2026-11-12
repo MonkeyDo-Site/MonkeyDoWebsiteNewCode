@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% block body_class %}staff-page{% endblock %}
 {% block content %}
 <div class="staff-layout">
   <aside aria-label="Staff navigation">
@@ -10,6 +11,7 @@
     <p class="caption">Test workspace · No real payments</p>
   </aside>
   <section>
+    {% if owner_scheduling_section %}<div class="owner-scheduling-location"><a href="{% url 'scheduling' %}">Owner scheduling</a><span>New York local time</span></div>{% endif %}
     {% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
     {% block staff_content %}{% endblock %}
   </section>

@@ -246,3 +246,61 @@ class SchedulingTests(TestCase):
         self.reserve(session, supervised=True, children=3, adults=0)
         self.assertEqual(availability(session)["label"], "Fully booked")
         self.assertFalse(availability(session, now=session.starts_at)["available"])
+
+    def test_edit_session_uses_time_only_inputs_and_fixed_date(self):
+        session = self.create()
+        verified_owner_login(self.client, self.owner)
+        response = self.client.get(f"/staff/scheduling/{session.pk}/")
+        self.assertContains(response, "Session date:")
+        self.assertNotContains(response, 'type="datetime-local"')
+        form = SessionForm(
+            {
+                **self.data,
+                "starts_at": "11:05 AM",
+                "ends_at": "12:20 PM",
+                "visibility": "public",
+                "revision": 1,
+            },
+            instance=session,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["starts_at"].astimezone(NY).date(), NOW.date())
+        response = self.client.post(
+            f"/staff/scheduling/{session.pk}/",
+            {
+                **self.data,
+                "starts_at": "11:05 AM",
+                "ends_at": "12:20 PM",
+                "visibility": "public",
+                "revision": 1,
+            },
+        )
+        self.assertEqual(response.status_code, 302, response.content)
+        session.refresh_from_db()
+        self.assertEqual(session.starts_at.astimezone(NY).minute, 5)
+        self.assertEqual(session.starts_at.astimezone(NY).date(), NOW.date())
+
+    def test_date_form_ignores_forged_day_and_session_service_rejects_date_move(self):
+        session = self.create()
+        with self.assertRaisesMessage(ValidationError, "only the timing"):
+            save_session(
+                actor=self.owner,
+                pk=session.pk,
+                revision=session.revision,
+                data=self.data
+                | {
+                    "starts_at": self.data["starts_at"] + timedelta(days=1),
+                    "ends_at": self.data["ends_at"] + timedelta(days=1),
+                },
+            )
+        verified_owner_login(self.client, self.owner)
+        response = self.client.post(
+            f"/staff/scheduling/date/?day={NOW.date().isoformat()}",
+            {
+                "day": (NOW.date() + timedelta(days=1)).isoformat(),
+                "revision": 0,
+                "chol_hamoed": "on",
+            },
+        )
+        self.assertEqual(response.status_code, 302, response.content)
+        self.assertEqual(CalendarDate.objects.get().day, NOW.date())

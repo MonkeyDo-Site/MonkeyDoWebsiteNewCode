@@ -6,15 +6,16 @@
 </section>
 {% if form %}<section class="panel customer-booking-form">
 {% if flow.stage == 'name' %}<p>Looks like you've been to Monkey Do in the past. We found a customer profile with this number. For verification, please enter your last name.</p>{% endif %}
+{% if flow.stage == 'name_confirm' %}<h2>Please confirm your details</h2><p>The name you entered is a close spelling match for the customer profile found with this phone number. Please confirm that the number and last name you entered belong to your family. We have not changed the name on record.</p>{% endif %}
 {% if flow.stage == 'previous' %}<p>Looks like you've been to Monkey Do in the past. We found a customer record with your number, along with an updated number of {{ flow.current_phone }}. Please confirm if this is your phone number.</p>{% endif %}
 {% if flow.stage == 'contact' %}<h2>Your details</h2><p>Phone: {{ flow.phone }}</p>{% endif %}
-{% if customer %}{% if flow.verification_mode == 'previous' %}<p>Please go ahead with your booking.</p>{% else %}<p>That name matches our records. Please go ahead with your booking.</p>{% endif %}<p>Family {{ customer.last_name }} · {{ customer.phone }} · {{ customer.email }}</p>{% elif flow.contact %}<p>Family {{ flow.contact.last_name }} · {{ flow.phone }} · {{ flow.contact.email }}</p>{% endif %}
+{% if customer %}{% if flow.verification_mode == 'previous' %}<p>Please go ahead with your booking.</p>{% elif flow.verification_mode == 'name_confirm' %}<p>Your name confirmation was saved. Please go ahead with your booking.</p>{% else %}<p>That name matches our records. Please go ahead with your booking.</p>{% endif %}<p>Family {{ customer.last_name }} · {{ customer.phone }} · {{ customer.email }}</p>{% elif flow.contact %}<p>Family {{ flow.contact.last_name }} · {{ flow.phone }} · {{ flow.contact.email }}</p>{% endif %}
 {% if flow.stage == 'details' %}<h2>Your group</h2><p>Grip socks are required for play at MonkeyDo. You can pay for them now or bring your own. Please select the amount you want to purchase.</p><p>For Supervised Play, enter only the children attending (ages 3–11), with zero adults and babies. Payment choices affect the estimate; no payment is taken in this test.</p>{% endif %}
 {% if flow.stage == 'review' %}<h2>Review your test reservation</h2>
 <p>{% if flow.details.supervised %}Supervised Play{% else %}Open Play{% endif %} · {{ flow.details.children }} children · {{ flow.details.adults }} adults · {{ flow.details.babies }} babies · {{ flow.details.socks }} pairs of socks</p>
 {% include 'core/quote_items.html' with data=quote %}
 <p>Amounts use the staging tax rate. This estimate does not mean money was received.</p>{% endif %}
-<form method="post">{% csrf_token %}{{ form.as_p }}<button class="button">{% if flow.stage == 'review' %}Save pending test reservation{% else %}Continue{% endif %}</button></form>
+<form method="post">{% csrf_token %}{% if flow.stage == 'name_confirm' %}{% include 'core/partials/form_fields.html' %}{% else %}{{ form.as_p }}{% endif %}<button class="button">{% if flow.stage == 'review' %}Save pending test reservation{% else %}Continue{% endif %}</button></form>
 {% if flow.stage == 'review' %}<form method="post" action="{% url 'customer_booking_revise' %}">{% csrf_token %}<input type="hidden" name="flow_key" value="{{ flow.key }}"><button class="text-button">Change your group or payment choice</button></form>{% endif %}
 {% if session %}<form method="post" action="{% url 'customer_booking_start' session.pk %}">{% csrf_token %}<button class="text-button">Start again / try another phone number</button></form>{% endif %}
 </section>{% endif %}

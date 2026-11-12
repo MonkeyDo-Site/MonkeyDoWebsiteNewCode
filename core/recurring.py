@@ -5,10 +5,10 @@ from django.db import transaction
 from django.utils import timezone
 
 from .availability import NEW_YORK
-from .calendar import lock_calendar
-from .models import AuditEvent, Session, SiteSettings, WeeklySlot
+from .calendar import lock_calendar, overlapping_sessions
+from .models import AuditEvent, Booking, Session, SiteSettings, WeeklySlot
 from .permissions import require_actor
-from .scheduling import check_day, save_session
+from .scheduling import SESSION_FIELDS, check_day, save_session, values
 
 FIELDS = (
     "label",
@@ -40,6 +40,8 @@ def save_slot(*, actor, data, pk=None, revision=None):
     slot = WeeklySlot.objects.select_for_update().get(pk=pk) if pk else WeeklySlot()
     if pk and slot.revision != revision:
         raise ValidationError("Weekly slot changed while you were editing. Reload and review it.")
+    if slot.archived_at is not None:
+        raise ValidationError("This weekly default was deleted. Add a new default if needed.")
     before = snapshot(slot) if pk else None
     days = data["weekdays"]
     if (
@@ -64,7 +66,10 @@ def save_slot(*, actor, data, pk=None, revision=None):
         )
     if slot.active:
         for other in WeeklySlot.objects.filter(
-            active=True, starts_at__lt=slot.ends_at, ends_at__gt=slot.starts_at
+            active=True,
+            archived_at__isnull=True,
+            starts_at__lt=slot.ends_at,
+            ends_at__gt=slot.starts_at,
         ).exclude(pk=pk):
             if set(other.weekdays) & set(slot.weekdays):
                 raise ValidationError("This weekly slot overlaps another active weekly slot.")
@@ -100,9 +105,13 @@ def generate_sessions(*, actor, slot_ids, from_day, through_day, update_existing
     if through_day < from_day:
         raise ValidationError("End date must be on or after start date.")
     lock_calendar(exclusive=True)
-    slots = list(WeeklySlot.objects.filter(pk__in=slot_ids).order_by("pk"))
+    slots = list(
+        WeeklySlot.objects.filter(pk__in=slot_ids, active=True, archived_at__isnull=True).order_by(
+            "pk"
+        )
+    )
     if not slots or {s.pk for s in slots} != set(slot_ids):
-        raise ValidationError("Choose existing weekly slots.")
+        raise ValidationError("Choose active weekly defaults that have not been deleted.")
     results = []
     day = from_day
     while day <= through_day:
@@ -163,11 +172,9 @@ def generate_sessions(*, actor, slot_ids, from_day, through_day, update_existing
                 )
             # Preserve independent sessions, including legacy seed rows. Never
             # adopt their identity or overwrite their visibility/program state.
-            if (
-                Session.objects.exclude(pk=existing.pk if existing else None)
-                .filter(starts_at__lt=data["ends_at"], ends_at__gt=data["starts_at"])
-                .exists()
-            ):
+            if overlapping_sessions(
+                data["starts_at"], data["ends_at"], exclude_pk=existing.pk if existing else None
+            ).exists():
                 results.append(
                     {
                         "day": day.isoformat(),
@@ -249,3 +256,57 @@ def save_horizon(*, actor, days, expected_days, reset_confirmed=False):
         changes={"before": expected_days, "after": days},
     )
     return settings
+
+
+@transaction.atomic
+def delete_slot(*, actor, pk, revision, expected_bookings):
+    require_actor(actor, "core.change_weeklyslot", owner=True)
+    lock_calendar(exclusive=True)
+    slot = WeeklySlot.objects.select_for_update().get(pk=pk)
+    if slot.archived_at is not None or slot.revision != revision:
+        raise ValidationError("This weekly default changed. Reload and review it before deleting.")
+    count = Booking.objects.filter(session__source_slot=slot).count()
+    if count != expected_bookings:
+        raise ValidationError(
+            "The booking count changed. Review the updated warning before deleting."
+        )
+    before = snapshot(slot)
+    # Only untouched, future generated sessions with no booking history can be
+    # removed. Booked/manual/past records retain their original identity/time.
+    unused = list(
+        Session.objects.filter(
+            source_slot=slot,
+            recurring_managed=True,
+            starts_at__gt=timezone.now(),
+            kind=Session.Kind.ORDINARY,
+            bookings__isnull=True,
+        )
+    )
+    removed = [
+        {
+            "id": row.pk,
+            **values(row, SESSION_FIELDS),
+            "source_day": row.source_day.isoformat() if row.source_day else None,
+            "source_revision": row.source_revision,
+        }
+        for row in unused
+    ]
+    Session.objects.filter(pk__in=[row.pk for row in unused]).delete()
+    slot.active = False
+    slot.archived_at = timezone.now()
+    slot.revision += 1
+    slot.save(update_fields=["active", "archived_at", "revision"])
+    AuditEvent.objects.create(
+        actor=actor,
+        action="schedule.weekly_slot_deleted",
+        record_type="weekly_slot",
+        record_id=str(slot.pk),
+        changes={
+            "before": before,
+            "archived_at": slot.archived_at.isoformat(),
+            "retained_bookings": count,
+            "removed_unused_generated_sessions": removed,
+            "revision": slot.revision,
+        },
+    )
+    return slot
