@@ -662,3 +662,31 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   .home-page .home-band { padding-block:40px }
   .contact-welcome .contact-photo-placeholder { height:140px }
 }
+
+/* Third review: aligned play actions, lowered contact card, membership photos. */
+.play-card { display:flex; flex-direction:column }
+.play-card > p { margin:0 0 20px }
+.play-card > .eyebrow { margin:0 0 8px }
+.play-card > h3 { margin:0 0 6px }
+.play-card > .play-subtitle { margin:0 0 24px }
+.play-card .supervised-availability { margin-top:12px }
+.play-card > .button { margin-top:auto; align-self:flex-start }
+.contact-layout { --contact-logo-height:155px; --contact-logo-gap:24px }
+.contact-welcome .contact-photo-placeholder { height:var(--contact-logo-height); margin-bottom:var(--contact-logo-gap) }
+.contact-card { margin-top:calc(var(--contact-logo-height) + var(--contact-logo-gap)) }
+.membership-gallery {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:20px;
+  margin-top:32px;
+  min-width:0
+}
+.membership-gallery figure { margin:0; min-width:0; scroll-snap-align:start }
+.membership-gallery img { display:block; width:100%; height:auto; aspect-ratio:5/4; object-fit:cover; border-radius:22px }
+.membership-gallery:focus-visible { outline:3px solid var(--rose-ink); outline-offset:6px }
+@media(max-width:850px) {
+  .contact-layout { --contact-logo-height:140px }
+  .contact-card { margin-top:0 }
+  .membership-gallery { grid-template-columns:repeat(4,minmax(220px,1fr)); overflow-x:auto; scroll-snap-type:x proximity; padding:0 0 12px; gap:16px }
+}
+.contact-welcome > h2 { margin-top:0 }

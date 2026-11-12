@@ -15,3 +15,7 @@ No pull request or deployment until the owner has seen all updated page screensh
 ## Second owner review
 
 Move the party eyebrow and MonkeyDo Parties title outside the colored content card. Replace the CSS gift-card drawing with the specific generated gift-card/envelope/ribbon image selected by the owner. Move the contact logo outside the contact-details card, above We look forward to seeing you. Add alternating cream and pale-sage full-width homepage backgrounds, with separate bands for About, play, membership, clubs, parties, gift cards and contact. Shared standalone sections receive the same heading/image positioning changes. No pull request or deployment yet; prepare a fresh screenshot pack.
+
+## Third owner review
+
+Keep Room to explore and its cards on warm cream; start pale sage at About and alternate the remaining bands. Align Open/Supervised Play actions along the bottom when side by side, with more breathing room between supervised text groups. Lower the contact-details box to align with the welcome heading on desktop; keep the phone layout compact. Add the four photos from MonkeyDo4 images.docx in document order beneath the membership cards only on the standalone Memberships page. Keep them in one horizontal row; use an internally scrollable row on narrow screens. Preserve the supplied PNGs under membership-gallery-originals with checksums. No new generated imagery, pricing changes or backend changes.

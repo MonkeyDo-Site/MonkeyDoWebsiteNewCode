@@ -92,6 +92,7 @@ class PageTests(TestCase):
         memberships = self.client.get("/memberships/")
         self.assertContains(memberships, "Two free play sessions per month")
         self.assertNotContains(memberships, "<h3>Sunday Club</h3>")
+        self.assertContains(memberships, 'class="membership-gallery"', count=1)
         clubs = self.client.get("/clubs-parties/")
         self.assertContains(clubs, "<h3>Sunday Club</h3>")
         self.assertContains(clubs, "MonkeyDo Parties")
@@ -109,6 +110,7 @@ class PageTests(TestCase):
         ]
         self.assertEqual(positions, sorted(positions))
         self.assertEqual(home.count("<h1>"), 1)
+        self.assertNotIn('class="membership-gallery"', home)
         for text in (
             "Imaginative Play",
             "Two free play sessions per month",
