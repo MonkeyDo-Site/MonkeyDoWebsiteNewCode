@@ -11,12 +11,13 @@
 {% if perms.core.add_booking and perms.core.view_customer %}<p><a class="button" href="{% url 'booking_create' %}">Create test booking</a></p>{% endif %}
 <div class="staff-table-scroll" role="region" aria-label="Bookings" tabindex="0">
 <table class="staff-table booking-table"><caption>Bookings{% if query %} matching your search{% endif %}</caption>
-<thead><tr><th scope="col">Family name</th><th scope="col">Session date/time</th><th scope="col">Children</th><th scope="col">Adults</th><th scope="col">Babies</th><th scope="col">Play type</th><th scope="col">Status</th><th scope="col">Open booking</th></tr></thead>
+<thead><tr><th scope="col">Booking ID</th><th scope="col">Family name</th><th scope="col">Session date/time</th><th scope="col">Children</th><th scope="col">Adults</th><th scope="col">Babies</th><th scope="col">Play type</th><th scope="col">Status</th></tr></thead>
 <tbody>{% for booking in bookings %}<tr>
+<td><a href="{% url 'booking_detail' booking.pk %}">#{{ booking.pk }}</a></td>
 <td>{{ booking.customer.last_name }}{% if booking.possible_name_match %}<br><span class="caption possible-match">Possible name match</span>{% endif %}</td>
 <td>{{ booking.session.starts_at|date:'D, M j, Y' }}<br><span class="session-clock">{{ booking.session.starts_at|date:'g:i A' }}–{{ booking.session.ends_at|date:'g:i A' }}</span></td>
 <td>{{ booking.children }}</td><td>{{ booking.adults }}</td><td>{{ booking.babies }}</td>
 <td>{% if booking.supervised %}Supervised Play{% else %}Open Play{% endif %}</td>
-<td>{{ booking.status_label }}</td><td><a href="{% url 'booking_detail' booking.pk %}">Open booking</a></td>
+<td>{{ booking.status_label }}</td>
 </tr>{% empty %}<tr><td colspan="8">No bookings to show.</td></tr>{% endfor %}</tbody></table></div>
 {% include 'core/pagination.html' with page=bookings %}{% endblock %}

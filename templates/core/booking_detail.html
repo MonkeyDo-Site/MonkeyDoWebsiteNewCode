@@ -1,7 +1,7 @@
 {% extends 'core/staff_base.html' %}
 {% block staff_content %}
 <h1>{{ booking.customer.last_name }}</h1>
-<p class="eyebrow">{{ booking.status_label }}</p>
+<p class="eyebrow">Booking #{{ booking.pk }} · {{ booking.status_label }}</p>
 <p>{{ booking.session.starts_at|date:'l, F j, Y' }} · {{ booking.session.starts_at|date:'g:i A' }} – {{ booking.session.ends_at|date:'g:i A' }}</p>
 <article class="panel">
 <h2>Visit details</h2>

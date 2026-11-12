@@ -26,3 +26,5 @@ Tables scroll within their own regions on small screens. The Owner scheduling pa
 The [implementation and deployment notes](../../OWNER_EDITS_BATCH_1.md) describe behavior, history preservation and migration 0022. One additive database migration is needed before the existing Functional deployment command. No PR or deployment has been performed; these screenshots are for review first.
 
 Validation: all **308 PostgreSQL-backed tests passed**. Ruff lint/format checks and desktop/phone browser checks passed.
+
+Subsequent owner-approved change: Bookings now has a linked Booking ID column instead of the Open booking column shown in these earlier screenshots. The owner chose to review that final change on staging.

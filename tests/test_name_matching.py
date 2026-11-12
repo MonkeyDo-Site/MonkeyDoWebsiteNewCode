@@ -47,6 +47,13 @@ class StaffNameSearchTests(TestCase):
         self.assertContains(response, "Possible name match")
         self.assertContains(response, '<table class="staff-table booking-table">')
         self.assertContains(response, "Open Play")
+        self.assertContains(response, '<th scope="col">Booking ID</th>')
+        self.assertNotContains(response, '<th scope="col">Open booking</th>')
+        booking = Booking.objects.get(customer=exact)
+        self.assertContains(response, f'href="/staff/bookings/{booking.pk}/">#{booking.pk}</a>')
+        self.assertContains(
+            self.client.get(f"/staff/bookings/{booking.pk}/"), f"Booking #{booking.pk}"
+        )
 
     def test_partial_email_phone_and_no_permission_behavior_are_preserved(self):
         self.client.force_login(self.staff)
