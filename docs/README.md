@@ -12,6 +12,8 @@ Owner MFA/recovery, staff accounts, session invalidation and shared staging acce
 
 Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
 
+The [membership current-view screenshots](design-review/membership-current-view/README.md) show the latest clarification: routine membership screens display only current details; version links belong inside Membership history.
+
 The [final second-batch review](OWNER_EDITS_BATCH_2_FINAL_REVIEW.md) records the newest Word-document revisions, approved answers and updated screenshot gallery.
 
 The [owner response-document follow-up](OWNER_EDITS_BATCH_2_RESPONSES.md) records today’s revisions and the limited new screenshot set; the initial preview is owner-approved.

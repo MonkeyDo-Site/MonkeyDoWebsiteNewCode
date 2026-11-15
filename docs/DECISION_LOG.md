@@ -388,3 +388,7 @@ The owner approved the initial preview and requested only today's response-docum
 ## 2026-11-15 — Final second-batch document answers
 
 The owner approved “This previously saved version is read only”, customer-owned one-time referral collection/editing while preserving booking history, and the customer completion headline “You're all set for your MonkeyDo adventure!” with “Book another play session”. The full nine-screenshot review also requests shared compact session dropdowns, M-prefixed existing membership IDs, staff play-type field order, calendar About guidance/Open-only wording, Payment Details copy and explicit returning/new-customer screenshots. Implement and test, then supply only the newly affected screenshots for review. No PR/deployment preparation until image review approval. See OWNER_EDITS_BATCH_2_FINAL_REVIEW.md; these decisions supersede earlier plain-number/referral-ownership instructions.
+
+## 2026-11-15 — Membership version labels belong in history
+
+Owner clarified that routine membership screens should show only the latest details, with earlier versions accessible in Membership history. Remove version text from the table status, current detail heading and edit form. Keep one row per membership, the M-prefixed existing IDs, current-data resolution and preserved read-only history. The two screenshot fixture rows M1/M2 are distinct memberships, not revisions of one membership. No schema/data changes are needed.

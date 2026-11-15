@@ -1,0 +1,52 @@
+{
+  "screens": [
+    {
+      "page": "01-membership-list",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "02-current-membership",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "03-edit-current-membership",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "04-membership-history",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "01-membership-list",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "02-current-membership",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "03-edit-current-membership",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "04-membership-history",
+      "viewport": 390,
+      "overflow": false
+    }
+  ],
+  "checks": [
+    "One latest row per membership",
+    "No version labels in list/current view/edit form",
+    "Current details/edit use latest saved values",
+    "Earlier read-only details accessible through expanded history",
+    "No browser errors or document overflow"
+  ],
+  "data": "Fictional local review only. No hosted changes."
+}
