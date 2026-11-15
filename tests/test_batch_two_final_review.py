@@ -77,8 +77,11 @@ class StaffFinalReviewTests(TestCase):
         response = self.client.get(f"/staff/customers/{self.customer.pk}/edit/")
         self.assertIn("referral_source", response.context["form"].fields)
         response = self.client.get(f"/staff/bookings/{booking.pk}/")
-        self.assertContains(response, "Preserved answer")
-        self.assertContains(response, "saved with this earlier booking")
+        self.assertNotContains(response, "Preserved answer")
+        visible_details = response.content.decode().split("<summary>Change history</summary>")[0]
+        self.assertNotIn("How did you hear about MonkeyDo?", visible_details)
+        booking.refresh_from_db()
+        self.assertEqual(booking.referral_source, "Preserved answer")
         # Forged booking fields cannot change the customer or its historical booking answer.
         form = TestBookingForm(
             {

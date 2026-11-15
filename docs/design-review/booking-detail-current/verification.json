@@ -1,0 +1,15 @@
+{
+  "screens": [
+    {
+      "viewport": 1440,
+      "referral_visible": false,
+      "overflow": false
+    },
+    {
+      "viewport": 390,
+      "referral_visible": false,
+      "overflow": false
+    }
+  ],
+  "data": "Fictional local data only; staging unchanged."
+}

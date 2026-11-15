@@ -243,7 +243,7 @@ Public supervised instructions/options appear only when supervised booking is av
 
 ## Final second-batch review clarifications
 
-“How did you hear about MonkeyDo?” is optional customer information collected once in new-customer Details after silent phone lookup, saved with the successful customer/booking transaction and editable by authorized staff on the customer profile. Returning customers are not asked again, even if that profile field is blank. Remove it from new/edit booking forms. Existing booking-level answers remain on their original records, visible as earlier-booking information; do not infer or overwrite a customer answer from historical bookings.
+“How did you hear about MonkeyDo?” is optional customer information collected once in new-customer Details after silent phone lookup, saved with the successful customer/booking transaction and editable by authorized staff on the customer profile. Returning customers are not asked again, even if that profile field is blank. Remove it from new/edit booking forms. Existing booking-level answers remain stored on their original records but are omitted from the booking details screen; do not infer or overwrite a customer answer from historical bookings.
 
 Today and Bookings share a compact, initially closed multi-session dropdown with All sessions and wrapping summaries such as “Sessions · 1 selected · 11:30 AM”. Selecting All sessions clears individual choices. Show choices on opening without increasing the filter row height in supported browsers; remove the old explanatory sentence. Keep keyboard operation and server-side all-session behavior. Staff Create/Edit booking place Supervised Play immediately after Session and before attendee counts.
 

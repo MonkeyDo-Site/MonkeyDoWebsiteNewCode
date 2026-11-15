@@ -392,3 +392,7 @@ The owner approved “This previously saved version is read only”, customer-ow
 ## 2026-11-15 — Membership version labels belong in history
 
 Owner clarified that routine membership screens should show only the latest details, with earlier versions accessible in Membership history. Remove version text from the table status, current detail heading and edit form. Keep one row per membership, the M-prefixed existing IDs, current-data resolution and preserved read-only history. The two screenshot fixture rows M1/M2 are distinct memberships, not revisions of one membership. No schema/data changes are needed.
+
+## 2026-11-15 — Keep referral information off booking details
+
+The owner requested removal of the “How did you hear about MonkeyDo?” line from the booking details screen as clutter. Customer-profile display/editing and new-customer collection remain unchanged. Earlier booking answers remain stored; this is a template-only visibility change with no migration or data cleanup. This supersedes the prior final-review screenshot that displayed the legacy answer.

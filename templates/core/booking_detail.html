@@ -8,7 +8,6 @@
 <p>{{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
 <p>{% if booking.supervised %}Supervised Play{% else %}Open Play{% endif %} · {{ booking.socks }} pairs of grip socks</p>
 <p>Source: {{ booking.get_source_display }}</p>
-{% if booking.referral_source %}<p>How did you hear about MonkeyDo? (saved with this earlier booking): {{ booking.referral_source }}</p>{% endif %}
 <p>Expected payment: {{ booking.get_expected_method_display }}</p>
 <p>Phone: {{ booking.customer.phone }}<br>Email: {{ booking.customer.email|default:"Not provided" }}</p>
 </article>
