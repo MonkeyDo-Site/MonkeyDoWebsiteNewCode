@@ -97,6 +97,9 @@ class RetryPhoneForm(forms.Form):
 class ContactForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last Name")
     email = forms.EmailField(label="Email address")
+    referral_source = forms.CharField(
+        max_length=240, required=False, label="How did you hear about MonkeyDo?"
+    )
 
     def clean_email(self):
         from .customers import check_email_available
@@ -158,9 +161,6 @@ class DetailsForm(forms.Form):
     socks = forms.IntegerField(min_value=0, max_value=35, initial=0, label="Pairs of grip socks")
     expected_method = forms.ChoiceField(
         choices=Booking._meta.get_field("expected_method").choices, label="Payment method"
-    )
-    referral_source = forms.CharField(
-        max_length=240, required=False, label="How did you hear about MonkeyDo?"
     )
 
     def __init__(self, *args, session, **kwargs):
@@ -368,7 +368,11 @@ def wizard(request):
                 flow["contact_email"] = data["email"]
                 flow["stage"] = "details"
             elif stage == "contact":
-                flow["contact"] = {"last_name": data["last_name"].strip(), "email": data["email"]}
+                flow["contact"] = {
+                    "last_name": data["last_name"].strip(),
+                    "email": data["email"],
+                    "referral_source": data["referral_source"],
+                }
                 flow["stage"] = "details"
             elif stage == "details":
                 flow["quote"] = review_quote(flow, data)

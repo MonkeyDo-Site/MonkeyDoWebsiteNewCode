@@ -8,7 +8,7 @@ from core.models import Session
 register = template.Library()
 LABELS = {
     "children": "Children",
-    "referral_source": "Referral source",
+    "referral_source": "How did you hear about MonkeyDo?",
     "adults": "Adults",
     "babies": "Babies",
     "socks": "Grip socks",

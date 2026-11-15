@@ -61,6 +61,8 @@ class BookingFilters(forms.Form):
 def booking_context(request, *, today_only=False):
     today = timezone.localdate(timezone=NEW_YORK)
     data = request.GET.copy()
+    if data.get("all_sessions") == "1":
+        data.setlist("session", [])
     data.setlist("session", [value for value in data.getlist("session") if value])
     data.setdefault("start", today.isoformat())
     data.setdefault("end", data["start"])
@@ -83,13 +85,17 @@ def booking_context(request, *, today_only=False):
         )
     )
     if today_only:
-        form.fields["session"].choices = [(str(s.pk), str(s)) for s in sessions]
+        form.fields["session"].choices = [
+            (str(s.pk), timezone.localtime(s.starts_at, NEW_YORK).strftime("%I:%M %p").lstrip("0"))
+            for s in sessions
+        ]
     else:
         clocks = sorted(
             {timezone.localtime(s.starts_at, NEW_YORK).strftime("%H:%M") for s in sessions}
         )
         form.fields["session"].choices = [
-            (clock, datetime.strptime(clock, "%H:%M").strftime("%I:%M %p")) for clock in clocks
+            (clock, datetime.strptime(clock, "%H:%M").strftime("%I:%M %p").lstrip("0"))
+            for clock in clocks
         ]
     for field in form.fields.values():
         field.widget.attrs["form"] = "booking-filter-form"
@@ -184,7 +190,16 @@ def booking_context(request, *, today_only=False):
         overview = [item for item in overview if str(item["session"].pk) in selected_session]
     params = request.GET.copy()
     params.pop("page", None)
+    selected_times = [
+        label for key, label in form.fields["session"].choices if key in data.getlist("session")
+    ]
+    session_filter_summary = (
+        f"Sessions · {len(selected_times)} selected · {', '.join(selected_times)}"
+        if selected_times
+        else "Sessions · All sessions"
+    )
     return {
+        "session_filter_summary": session_filter_summary,
         "selected_session": selected_session,
         "filter_form": form,
         "sort_links": sort_links,

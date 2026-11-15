@@ -53,7 +53,7 @@ def new_comment(actor, customer, body, system=False):
 
 
 @transaction.atomic
-def create_customer(*, actor, last_name, phone, email, customer_type="family"):
+def create_customer(*, actor, last_name, phone, email, customer_type="family", referral_source=""):
     require_actor(actor, "core.add_customer", owner=customer_type != "family")
     phone = normalize_phone(phone)
     contact_lock()
@@ -64,6 +64,7 @@ def create_customer(*, actor, last_name, phone, email, customer_type="family"):
         phone=phone,
         email=email.strip().lower(),
         customer_type=customer_type,
+        referral_source=referral_source.strip(),
     )
     customer.full_clean()
     customer.save()
@@ -71,7 +72,10 @@ def create_customer(*, actor, last_name, phone, email, customer_type="family"):
         actor,
         "customer.created",
         customer,
-        {f: getattr(customer, f) for f in ("last_name", "phone", "email", "customer_type")},
+        {
+            f: getattr(customer, f)
+            for f in ("last_name", "phone", "email", "customer_type", "referral_source")
+        },
     )
     return customer
 
@@ -87,6 +91,7 @@ def update_customer(
     email,
     move_previous_phone=None,
     customer_type=None,
+    referral_source=None,
 ):
     require_actor(actor, "core.change_customer")
     contact_lock()
@@ -105,6 +110,7 @@ def update_customer(
             "customer_type",
             "previous_phone",
             "previous_email",
+            "referral_source",
         )
     }
     if customer_type is not None and customer_type != customer.customer_type:
@@ -133,6 +139,8 @@ def update_customer(
         customer.previous_email = customer.email
         customer.email = email
     customer.last_name = last_name.strip()
+    if referral_source is not None:
+        customer.referral_source = referral_source.strip()
     customer.full_clean()
     changes = {
         f: {"before": old, "after": getattr(customer, f)}

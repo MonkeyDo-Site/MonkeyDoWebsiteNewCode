@@ -249,5 +249,5 @@ def draft_edit(request, pk):
     return render(
         request,
         "core/membership_form.html",
-        {"form": form, "draft": draft, "heading": f"Edit membership #{pk}"},
+        {"form": form, "draft": draft, "heading": f"Edit membership #{draft.membership_number}"},
     )

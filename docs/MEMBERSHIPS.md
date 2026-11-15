@@ -142,3 +142,7 @@ These monthly examples are first installments under the three-month commitment, 
 ## Draft editing and internal membership identifiers
 
 The owner approved a working test-draft editor for staff/owner, retaining the original internal ID as the table/detail link. Edits append versioned fields, cycle estimates and before/after audit without changing earlier saved evidence. This does not implement active membership sale, entitlement adjustments, provider collection or the future paid-cohort conversion/consolidation rules. Staff draft terms remain three months minimum except retaining an already-approved short term without changing its type/count/start/duration; only the owner may grant a new short-term exception. A customer may have multiple membership records, each with its own existing internal ID.
+
+## Membership display prefix clarification
+
+The owner superseded the earlier plain #1/#2 presentation: display #M1/#M2 using the same existing internal membership number. Apply this consistently on table/detail/edit/customer cards. Editing still retains the same membership record and links; versions remain history within that record. Earlier saved details are labelled “This previously saved version is read only”.

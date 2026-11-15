@@ -50,6 +50,43 @@ const bookingSearch = document.querySelector('#booking-filter-form') && document
 if (bookingSearch) bookingSearch.addEventListener('keydown', event => {
   if (event.key === 'Enter') { event.preventDefault(); document.querySelector('#booking-filter-form').requestSubmit(); }
 });
+for (const details of document.querySelectorAll('.session-filter')) {
+  const summary = details.querySelector('summary');
+  const text = details.querySelector('[data-session-summary]');
+  const panel = details.querySelector('.session-filter-options');
+  const all = panel.querySelector('[data-all-sessions]');
+  const options = [...panel.querySelectorAll('input[name="session"]')];
+  const update = () => {
+    const selected = options.filter(input => input.checked);
+    all.checked = selected.length === 0;
+    text.textContent = selected.length
+      ? 'Sessions · ' + selected.length + ' selected · ' + selected.map(input => input.closest('label').textContent.trim()).join(', ')
+      : 'Sessions · All sessions';
+  };
+  all.addEventListener('change', () => { options.forEach(input => { input.checked = false; }); update(); });
+  options.forEach(input => input.addEventListener('change', update));
+  update();
+  // Native popovers escape the table's scrolling region without expanding the filter row.
+  // Without Popover support, details/checkboxes still work as a normal inline control.
+  if (typeof panel.showPopover === 'function') {
+    panel.setAttribute('popover', 'auto');
+    const position = () => {
+      if (!panel.matches(':popover-open')) return;
+      const rect = summary.getBoundingClientRect();
+      panel.style.left = Math.max(8, Math.min(rect.left, innerWidth - panel.offsetWidth - 8)) + 'px';
+      panel.style.top = Math.max(8, Math.min(rect.bottom + 4, innerHeight - panel.offsetHeight - 8)) + 'px';
+    };
+    details.addEventListener('toggle', () => {
+      if (!details.open) { if (panel.matches(':popover-open')) panel.hidePopover(); return; }
+      panel.showPopover();
+      position();
+    });
+    panel.addEventListener('toggle', event => { if (event.newState === 'closed') details.open = false; });
+    const close = () => { details.open = false; };
+    window.addEventListener('resize', position);
+    details.closest('.staff-table-scroll')?.addEventListener('scroll', close);
+  }
+}
 for (const form of document.querySelectorAll('form[data-booking-estimate]')) {
   const content = form.querySelector('[data-estimate-content]');
   const status = form.querySelector('[data-estimate-status]');

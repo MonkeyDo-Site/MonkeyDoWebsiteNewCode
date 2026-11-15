@@ -180,6 +180,7 @@ def submit_booking(flow):
             phone=phone,
             email=values["email"].strip().lower(),
             customer_type="family",
+            referral_source=values.get("referral_source", "").strip(),
         )
         customer.full_clean()
         customer.save()
@@ -197,7 +198,12 @@ def submit_booking(flow):
             action="customer.public_test_created",
             record_type="customer",
             record_id=str(customer.pk),
-            changes={"last_name": customer.last_name, "phone": phone, "email": customer.email},
+            changes={
+                "last_name": customer.last_name,
+                "phone": phone,
+                "email": customer.email,
+                "referral_source": customer.referral_source,
+            },
         )
     session = public_session(flow["session_id"], lock=True)
     data = flow["details"]
@@ -210,7 +216,6 @@ def submit_booking(flow):
         source="customer_test",
         creation_key=key,
         creation_fingerprint=fingerprint,
-        referral_source=data["referral_source"],
         **{k: data[k] for k in DETAILS},
     )
     saved = BookingQuote.objects.create(

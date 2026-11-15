@@ -18,6 +18,7 @@ class Customer(models.Model):
         validators=[RegexValidator(r"^\d{10}$", "Use a ten-digit US phone number.")],
     )
     email = models.EmailField(blank=True)
+    referral_source = models.CharField(max_length=240, blank=True)
     previous_phone = models.CharField(max_length=10, blank=True)
     previous_email = models.EmailField(blank=True)
     customer_type = models.CharField(
@@ -424,6 +425,10 @@ class MembershipPricing(ImmutablePriceRecord):
 
 
 class MembershipDraft(ImmutablePriceRecord):
+    @property
+    def membership_number(self):
+        return f"M{self.pk}"
+
     customer = models.ForeignKey(
         Customer, related_name="membership_drafts", on_delete=models.PROTECT
     )

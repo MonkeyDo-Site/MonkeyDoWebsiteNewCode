@@ -31,6 +31,9 @@ class CustomerForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last Name")
     phone = forms.CharField(max_length=40, widget=forms.TextInput(attrs={"type": "tel"}))
     email = forms.EmailField(required=False)
+    referral_source = forms.CharField(
+        max_length=240, required=False, label="How did you hear about MonkeyDo?"
+    )
     move_previous_phone = forms.ChoiceField(
         required=False,
         choices=[("", "Choose if changing phone"), ("yes", "Yes"), ("no", "No")],
@@ -46,7 +49,14 @@ class CustomerForm(forms.Form):
         if customer:
             initial = {
                 field: getattr(customer, field)
-                for field in ("last_name", "phone", "email", "customer_type", "revision")
+                for field in (
+                    "last_name",
+                    "phone",
+                    "email",
+                    "referral_source",
+                    "customer_type",
+                    "revision",
+                )
             }
         super().__init__(*args, initial=initial, **kwargs)
         if not customer:

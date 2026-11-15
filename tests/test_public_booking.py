@@ -34,8 +34,14 @@ class PublicBookingTests(TestCase):
 
     def new_review(self, **updates):
         self.begin()
+        referral = updates.pop("referral_source", "Sample referral")
         self.client.post(
-            "/book/details/", {"last_name": "Sample Family", "email": "sample@example.invalid"}
+            "/book/details/",
+            {
+                "last_name": "Sample Family",
+                "email": "sample@example.invalid",
+                "referral_source": referral,
+            },
         )
         data = {
             "play_type": "open",
@@ -44,7 +50,6 @@ class PublicBookingTests(TestCase):
             "babies": 0,
             "socks": 0,
             "expected_method": "card",
-            "referral_source": "Sample referral",
         }
         data.update(updates)
         return self.client.post("/book/details/", data)
@@ -65,11 +70,14 @@ class PublicBookingTests(TestCase):
         self.assertEqual(booking.quotes.get().snapshot["total"], "32.94")
         self.assertIsNone(booking.quotes.get().actor)
         self.assertEqual(booking.customer.customer_type, "family")
-        self.assertEqual(booking.referral_source, "Sample referral")
+        self.assertEqual(booking.customer.referral_source, "Sample referral")
+        self.assertEqual(booking.referral_source, "")
         self.assertEqual(
             AuditEvent.objects.filter(action="booking.customer_test_created").count(), 1
         )
-        self.assertContains(self.client.get("/book/receipt/"), "Setup pending")
+        self.assertContains(
+            self.client.get("/book/receipt/"), "You're all set for your MonkeyDo adventure!"
+        )
         self.assertContains(self.client.get("/book/receipt/"), "no email has been sent")
         operator = Client()
         operator.force_login(staff_user())
@@ -252,7 +260,11 @@ class PublicBookingTests(TestCase):
         )
         form = self.client.get("/book/details/").context["form"]
         self.assertEqual(form.initial["socks"], 2)
-        self.assertEqual(form.initial["referral_source"], "Fictional friend")
+        self.assertNotIn("referral_source", form.fields)
+        self.assertEqual(
+            self.client.session["customer_test_booking"]["contact"]["referral_source"],
+            "Fictional friend",
+        )
         self.client.post(
             "/book/details/",
             {
@@ -267,7 +279,7 @@ class PublicBookingTests(TestCase):
         self.confirm()
         Booking.objects.update(attendance="cancelled")
         response = self.client.get("/book/receipt/")
-        self.assertContains(response, "Cancelled")
+        self.assertNotContains(response, "all set for your MonkeyDo adventure")
         self.assertContains(response, "This test booking has been cancelled")
 
     @override_settings(APP_ENV="staging", DESIGN_REVIEW_ONLY=False)

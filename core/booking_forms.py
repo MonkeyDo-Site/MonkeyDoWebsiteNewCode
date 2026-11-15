@@ -17,14 +17,13 @@ class TestBookingForm(forms.Form):
     estimate_token = forms.CharField(required=False, widget=forms.HiddenInput)
     customer = CustomerChoice(queryset=Customer.objects.order_by("last_name", "pk"))
     session = forms.ModelChoiceField(queryset=Session.objects.none())
+    supervised = forms.BooleanField(required=False, label="Supervised Play")
     children = forms.IntegerField(
         min_value=0, max_value=32767, initial=1, label="Children ages 1–11"
     )
     adults = forms.IntegerField(min_value=0, max_value=32767, initial=1, label="Adults ages 12+")
     babies = forms.IntegerField(min_value=0, max_value=32767, initial=0, label="Babies under one")
     socks = forms.IntegerField(min_value=0, max_value=2147483647, initial=0, label="Grip socks")
-    referral_source = forms.CharField(max_length=240, required=False, label="Referral source")
-    supervised = forms.BooleanField(required=False, label="Supervised Play")
     expected_method = forms.ChoiceField(
         choices=Booking._meta.get_field("expected_method").choices, label="Expected payment method"
     )
@@ -47,7 +46,6 @@ class TestBookingForm(forms.Form):
                     "socks",
                     "expected_method",
                     "supervised",
-                    "referral_source",
                     "session",
                 )
             }

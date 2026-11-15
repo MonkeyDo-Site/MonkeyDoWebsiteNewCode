@@ -1,0 +1,7 @@
+<details class="session-filter">
+  <summary aria-label="Filter by sessions"><span data-session-summary>{{ session_filter_summary }}</span></summary>
+  <div class="session-filter-options" aria-label="Choose sessions">
+    <label><input type="checkbox" name="all_sessions" value="1" form="booking-filter-form" data-all-sessions{% if not filter_form.session.value %} checked{% endif %}> <span>All sessions</span></label>
+    {{ filter_form.session }}
+  </div>
+</details>

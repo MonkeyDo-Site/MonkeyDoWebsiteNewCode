@@ -68,7 +68,7 @@ class MembershipRevisionTests(TestCase):
         self.client.force_login(self.staff)
         response = self.client.get(f"/staff/memberships/{root.pk}/?revision=1")
         self.assertEqual(response.context["draft"].places, 1)
-        self.assertContains(response, "Previously saved version")
+        self.assertContains(response, "This previously saved version is read only")
         self.assertNotContains(response, ">Edit membership</a>")
         self.assertEqual(current_draft(root).places, 4)
 
@@ -147,7 +147,7 @@ class MembershipRevisionTests(TestCase):
         self.client.force_login(self.staff)
         response = self.client.get("/staff/memberships/")
         self.assertContains(response, "<table")
-        self.assertContains(response, f'href="/staff/memberships/{root.pk}/">#{root.pk}</a>')
+        self.assertContains(response, f'href="/staff/memberships/{root.pk}/">#M{root.pk}</a>')
         self.assertContains(response, "Unlimited")
         response = self.client.get(f"/staff/customers/{self.customer.pk}/")
         self.assertContains(response, "Unlimited")
@@ -279,7 +279,7 @@ class PublicResponseTests(TestCase):
             "/book/details/", {"last_name": "Family", "email": "family@example.invalid"}
         )
         response = self.client.get("/book/details/")
-        self.assertContains(response, "Play type: Open Play")
+        self.assertContains(response, "This session is open play only")
         self.assertNotContains(response, "For supervised play")
         self.assertNotContains(response, 'type="radio"')
         self.assertContains(response, "Credit Card – a 3% processing fee applies.")
@@ -319,5 +319,5 @@ class PublicResponseTests(TestCase):
         self.begin()
         self.client.post("/book/details/", {"last_name": "New", "email": "new@example.invalid"})
         response = self.client.get("/book/details/")
-        self.assertContains(response, "Play type: Open Play")
+        self.assertContains(response, "This session is open play only")
         self.assertNotContains(response, "For supervised play")

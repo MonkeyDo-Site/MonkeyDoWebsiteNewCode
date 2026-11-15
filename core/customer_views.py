@@ -132,6 +132,7 @@ def customer_create(request):
                 phone=form.cleaned_data["phone"],
                 email=form.cleaned_data["email"],
                 customer_type=form.cleaned_data.get("customer_type", "family"),
+                referral_source=form.cleaned_data["referral_source"],
             )
         except ValidationError as exc:
             form_error(form, exc)
@@ -280,6 +281,7 @@ def customer_history(request, pk):
         "email": "Current email",
         "previous_email": "Previous email",
         "customer_type": "Customer type",
+        "referral_source": "How did you hear about MonkeyDo?",
     }
     for event in page:
         event.display_action = labels.get(event.action, "Customer history event")
