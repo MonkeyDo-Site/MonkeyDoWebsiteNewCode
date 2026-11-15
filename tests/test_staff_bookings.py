@@ -261,7 +261,9 @@ class StaffBookingPageTests(TestCase):
         self.assertContains(page, "Cancel booking")
         self.assertNotContains(page, "Release test reservation")
         response = self.client.post(
-            f"/staff/bookings/{booking.pk}/release/", {"version": booking.edit_version}, follow=True
+            f"/staff/bookings/{booking.pk}/release/",
+            {"version": booking.edit_version, "confirm_cancel": "1"},
+            follow=True,
         )
         self.assertContains(response, "Test booking cancelled.")
         self.assertContains(response, "Booking cancelled")

@@ -3,5 +3,5 @@
 <p>The shared staging password is separate from your staff account. Replace it at least every 90 days. Changing it invalidates previously issued preview access tickets.</p>{% if site.staging_password_changed_at %}
 <p>Last changed: {{ site.staging_password_changed_at|date:'M j, Y g:i A' }}</p>{% else %}
 <p>No staging password has been configured yet.</p>{% endif %}
-<form class="record-form panel" method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Set staging password</button>
+<form class="record-form panel" method="post">{% csrf_token %}{% include 'core/partials/form_fields.html' %}<button class="button">Set staging password</button>
 </form>{% endblock %}

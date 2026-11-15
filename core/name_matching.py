@@ -18,7 +18,7 @@ def similar_name(left, right):
     # Short surnames are too ambiguous for fuzzy association.
     if min(len(a), len(b)) < 4:
         return False
-    limit = 1 if min(len(a), len(b)) < 8 else 2
+    limit = 1 if min(len(a), len(b)) < 5 else 2
     if abs(len(a) - len(b)) > limit:
         return False
     previous = list(range(len(b) + 1))

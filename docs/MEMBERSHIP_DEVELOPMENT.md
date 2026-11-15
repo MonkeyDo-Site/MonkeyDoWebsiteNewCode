@@ -4,7 +4,7 @@ This increment adds **test membership drafts**, not purchased/active memberships
 
 ## Staff use
 
-Apply migrations, then rerun `python manage.py configure_staff_group` to add the reviewed draft creation/view capabilities. Open **Membership drafts**, create a draft for an existing artificial customer, and choose Subscription/Unlimited, anonymous place count, whole-month duration, monthly/prepaid billing, expected payment method and a test start date. New drafts require three months minimum; durations are not limited to a fixed selector. Calendar representability is validated before allocating cycles.
+Apply migrations, then rerun `python manage.py configure_staff_group` to add the reviewed draft creation/view capabilities. Open **Membership drafts**, create a draft for an existing artificial customer, and choose Subscription/Unlimited, anonymous place count, whole-month duration, monthly/prepaid billing, expected payment method and a test start date. New drafts require three months minimum for ordinary staff. The owner may explicitly select an audited one- or two-month exception for either product and billing method; durations are not limited to a fixed selector. Calendar representability is validated before allocating cycles.
 
 The selected test date represents a hypothetical new purchase/start date; a future planning date does not defer a real membership purchase charge. The final sale workflow still must collect membership payment at purchase independently of future visit payment.
 
@@ -30,3 +30,5 @@ The pure renewal-calendar helper covers early renewal, actual-date grace renewal
 Drafts, cycles and product-price versions reject application updates/deletes and PostgreSQL UPDATE/DELETE. SQLite guards UPDATE only, allowing its test cleanup; it does not establish PostgreSQL concurrency safety. PostgreSQL serializes repeated creation identifiers and persists the draft, all cycle estimates and audit as one transaction. Staff view/create and customer-view capabilities are enforced server-side; owner pricing is separately guarded.
 
 Deferred: actual purchases and accepted checkout terms, saved cards/payment outcomes, installments/jobs/overdue state, benefit allocation and booking integration, renewal/addition/consolidation workflows, complimentary memberships, cancellations/refunds, admission conversion/customer-credit ledger, reports and notifications. Draft package descriptions are previews, not active entitlements. No Banquest/R2/Resend operations, deployment, hosting changes or purchases occur.
+
+Customer selectors search by name/normalized phone. Staff labels are Type, Amount and Months. Customer details include a distinct draft-membership card and a truthful payment-history empty state. A readable membership creation history shows term/type/count/billing; active benefits and actual collection remain deferred.

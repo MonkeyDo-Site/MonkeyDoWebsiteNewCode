@@ -2,5 +2,8 @@
 <p class="eyebrow">Your day at MonkeyDo</p>
 <h1>Today</h1>
 <p class="notice">Test booking management is available. Arrival and charging are not enabled.</p>
+{% include 'core/partials/booking_filters.html' %}
+{% if perms.core.add_booking and perms.core.view_customer %}<p><a class="button small" href="{% url 'booking_create' %}">Add booking</a></p>{% endif %}
 {% include 'core/partials/booking_table.html' with table_caption="Today's bookings" empty_message="No test bookings for today." link_customers=True %}
+{% include 'core/partials/session_overview.html' %}
 {% endblock %}

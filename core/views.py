@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_safe
 
 from .availability import availability
-from .models import Booking, Session, SiteSettings
+from .models import Session, SiteSettings
 
 
 @require_safe
@@ -52,12 +52,11 @@ def schedule(request):
 def today(request):
     if not request.user.is_active or not request.user.is_staff:
         raise PermissionDenied
-    bookings = (
-        Booking.objects.filter(session__starts_at__date=timezone.localdate())
-        .select_related("customer", "session")
-        .order_by("session__starts_at", "created_at")
-    )
-    return render(request, "core/today.html", {"bookings": bookings})
+    from .booking_filters import booking_context
+
+    context = booking_context(request, today_only=True)
+    context["bookings"] = context.pop("rows")
+    return render(request, "core/today.html", context)
 
 
 @require_safe
@@ -68,3 +67,12 @@ def health(request):
         cursor.execute("SELECT 1")
         cursor.fetchone()
     return JsonResponse({"status": "ok", "mode": "test", "checkout_enabled": False})
+
+
+def csrf_failure(request, reason=""):
+    return render(
+        request,
+        "csrf_failure.html",
+        {"booking_form": request.path.startswith("/book/")},
+        status=403,
+    )

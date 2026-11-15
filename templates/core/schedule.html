@@ -14,7 +14,7 @@
 <div class="slots">{% for slot in day.slots %}
 <div class="slot {% if not slot.available %}unavailable{% endif %}">
 <strong>{{ slot.session.starts_at|date:'g:i A' }} – {{ slot.session.ends_at|date:'g:i A' }}</strong>
-<span>{{ slot.label }}</span>{% if slot.available %}
+<span>{{ slot.label }}</span>{% if slot.supervised_available %}<span class="caption">Supervised play is available for this session.</span>{% endif %}{% if slot.available %}
 {% if customer_test_booking %}<form method="post" action="{% url 'customer_booking_start' slot.session.pk %}">{% csrf_token %}<button class="button small">Choose this session</button></form>{% else %}<span class="caption">Checkout coming soon</span>{% endif %}{% endif %}
 </div>{% endfor %}
 </div>

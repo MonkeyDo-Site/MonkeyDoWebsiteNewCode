@@ -1,10 +1,7 @@
 {% extends 'core/staff_base.html' %}{% load scheduling_labels %}
 {% block staff_content %}
-<h1>Owner scheduling</h1>
-<p><a href="{% url 'recurring_settings' %}">Edit the default weekly schedule</a> · <a href="{% url 'horizon_settings' %}">Edit booking horizon</a></p>
-<p class="notice">Times are New York local time. Closures block new reservations without cancelling existing bookings. Customer notifications are not connected.</p>
-<form method="get" class="search-form"><label for="schedule-day">Choose a date:</label><input id="schedule-day" type="date" name="day" value="{{ day|date:'Y-m-d' }}"><button class="button">View date</button></form>
-<p><a class="button small" href="{% url 'session_create' %}">Add one-time session</a> <a class="button small" href="{% url 'date_edit' %}?day={{ day|date:'Y-m-d' }}">Edit date settings</a></p>
+<h1>Individual Date</h1><p class="caption">New York local time. Closures block new reservations and retain existing bookings.</p>
+<form method="get" class="schedule-toolbar"><label for="schedule-day">Date</label><input id="schedule-day" type="date" name="day" value="{{ day|date:'Y-m-d' }}"><button class="button small">View date</button><a class="button small secondary" href="{% url 'date_edit' %}?day={{ day|date:'Y-m-d' }}">Edit date settings</a><a class="button small secondary" href="{% url 'session_create' %}?day={{ day|date:'Y-m-d' }}">Add one-time session</a></form>
 <h2>{{ day|date:'l, F j, Y' }}</h2>
 {% if date_rule.closed %}<p class="notice">Date closed. Private reason: {{ date_rule.private_reason }}</p>{% endif %}
 {% if date_rule.chol_hamoed %}<p>Chol Hamoed marked for this date. Membership pricing integration remains pending.</p>{% endif %}
@@ -14,14 +11,14 @@
 <thead><tr><th scope="col">Session time</th><th scope="col">Session label</th><th scope="col">Play mode</th><th scope="col">Blocked off?</th><th scope="col">Child capacity</th><th scope="col">Total capacity</th><th scope="col">Supervised capacity</th><th scope="col">Visibility on site</th><th scope="col">Actions</th></tr></thead>
 <tbody>{% for item in sessions %}<tr>
 <td class="session-clock">{{ item.session.starts_at|date:'g:i A' }}–{{ item.session.ends_at|date:'g:i A' }}</td>
-<td>{{ item.session.private_label|display_session_label }}{% if item.session.kind != 'ordinary' %}<br><span class="caption">{{ item.session.get_kind_display }}</span>{% endif %}</td>
-<td>{{ item.session.get_play_mode_display }}</td>
-<td>{% if item.blocked %}Yes<br><span class="caption">Closed for Reservation</span>{% else %}No<br><span class="caption">Open for Reservation</span>{% endif %}</td>
+<td>{{ item.session.private_label|display_session_label:item.session.starts_at }}{% if item.session.kind != 'ordinary' %}<br><span class="caption">{{ item.session.get_kind_display }}</span>{% endif %}</td>
+<td>{{ item.session.play_mode|play_mode_label }}</td>
+<td>{% if item.blocked %}Yes<br><span class="caption">Closed for reservation</span>{% else %}No<br><span class="caption">Open for reservation</span>{% endif %}</td>
 <td>{{ item.counts.0 }} / {{ item.session.child_capacity }}<br><span class="caption">reserved / limit</span></td>
 <td>{{ item.counts.0|add:item.counts.1 }} / {{ item.session.total_capacity }}<br><span class="caption">reserved / limit</span></td>
 <td>{{ item.counts.2 }} / {{ item.session.supervised_capacity }}<br><span class="caption">reserved / limit</span></td>
 <td>{% if item.visible %}Session is visible to the public{% else %}Not visible to the public{% endif %}</td>
-<td>{% if item.session.kind == 'ordinary' %}<a href="{% url 'session_edit' item.session.pk %}">Edit session</a>{% else %}Program session{% endif %}</td>
+<td>{% if item.session.kind == 'ordinary' %}<a href="{% url 'session_edit' item.session.pk %}">Edit session</a>{% if not item.blocked and perms.core.add_booking and perms.core.view_customer %}<br><a href="{% url 'booking_create' %}?session={{ item.session.pk }}">Add booking</a>{% endif %}{% else %}Program session{% endif %}</td>
 </tr>{% empty %}<tr><td colspan="9">No sessions for this date.</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endblock %}

@@ -37,6 +37,11 @@ class SessionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["play_mode"].choices = [
+            ("accompanied", "Open Play only"),
+            ("supervised", "Supervised Play only"),
+            ("both", "Open Play and Supervised Play"),
+        ]
         self.fields["private_label"].required = True
         if self.instance.pk:
             self.initial.update(
@@ -139,12 +144,33 @@ def session_edit(request, pk=None):
             return redirect(
                 f"/staff/scheduling/?day={saved.starts_at.astimezone(NEW_YORK).date().isoformat()}"
             )
+    from .calendar import date_closed, weekly_default_blocked
+
+    blockers = []
+    if row:
+        if weekly_default_blocked(row):
+            blockers.append(
+                {
+                    "label": "Its weekly default is closed or deleted",
+                    "url": "/staff/scheduling/weekly/",
+                }
+            )
+        if date_closed(row):
+            blockers.append(
+                {
+                    "label": "This date is closed",
+                    "url": f"/staff/scheduling/date/?day={row.starts_at.astimezone(NEW_YORK).date().isoformat()}",
+                }
+            )
+        if row.starts_at.astimezone(NEW_YORK).weekday() == 5:
+            blockers.append({"label": "Saturday sessions are backend-only", "url": ""})
     return render(
         request,
         "core/scheduling_form.html",
         {
             "form": form,
             "heading": "Edit session" if pk else "Add one-time session",
+            "blockers": blockers,
             "session_day": row.starts_at.astimezone(NEW_YORK).date() if row else None,
         },
     )

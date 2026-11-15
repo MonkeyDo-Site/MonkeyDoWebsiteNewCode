@@ -1,0 +1,457 @@
+{
+  "screens": [
+    {
+      "page": "01-today",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "02-bookings",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "34-today-empty-session",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "03-bookings-filtered",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "04-booking-detail",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "05-edit-booking",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "06-add-booking",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "07-customers",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "08-customer-profile",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "09-customer-history",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "10-edit-customer",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "11-membership-draft",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "12-membership-history",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "13-weekly-schedule",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "14-edit-weekly-schedule-together",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "15-edit-weekly-default",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "16-owner-scheduling",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "17-session-blocking-explanation",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "18-date-settings",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "19-booking-horizon",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "20-owner-dashboard",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "21-public-schedule",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "22-membership-list",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "23-add-one-time-session",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "37-staff-accounts",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "38-owner-security",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "39-staging-access-settings",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "40-website-settings",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "41-staging-pricing",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "42-membership-pricing",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "43-create-customer",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "24-delete-weekly-default",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "25-amount-change-payment-review",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "26-cancel-booking-confirmation",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "27-generation-results",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "35-not-generated-conflicting-session",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "28-returning-customer-phone-retry",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "29-returning-customer-name",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "30-surname-spelling-confirmation",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "31-public-booking-details",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "32-public-duplicate-email",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "33-public-missing-email",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "36-csrf-recovery",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "44-staff-today",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "45-staff-membership-form",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "01-today",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "02-bookings",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "34-today-empty-session",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "03-bookings-filtered",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "04-booking-detail",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "05-edit-booking",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "06-add-booking",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "07-customers",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "08-customer-profile",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "09-customer-history",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "10-edit-customer",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "11-membership-draft",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "12-membership-history",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "13-weekly-schedule",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "14-edit-weekly-schedule-together",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "15-edit-weekly-default",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "16-owner-scheduling",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "17-session-blocking-explanation",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "18-date-settings",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "19-booking-horizon",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "20-owner-dashboard",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "21-public-schedule",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "22-membership-list",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "23-add-one-time-session",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "37-staff-accounts",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "38-owner-security",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "39-staging-access-settings",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "40-website-settings",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "41-staging-pricing",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "42-membership-pricing",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "43-create-customer",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "24-delete-weekly-default",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "25-amount-change-payment-review",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "26-cancel-booking-confirmation",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "27-generation-results",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "35-not-generated-conflicting-session",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "28-returning-customer-phone-retry",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "29-returning-customer-name",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "30-surname-spelling-confirmation",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "31-public-booking-details",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "32-public-duplicate-email",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "33-public-missing-email",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "36-csrf-recovery",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "44-staff-today",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "45-staff-membership-form",
+      "viewport": 390,
+      "overflow": false
+    }
+  ],
+  "data": "Fictional local database only. No staging deployment.",
+  "owner_login": "Local session fixture; not evidence of hosted MFA acceptance.",
+  "final_closed_session_shortcuts_checked": true
+}

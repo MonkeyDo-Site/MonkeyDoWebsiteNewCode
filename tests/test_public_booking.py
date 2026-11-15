@@ -295,7 +295,7 @@ class PublicBookingTests(TestCase):
         self.assertEqual(self.client.get("/staff/bookings/").status_code, 302)
         self.assertEqual(self.client.get("/01-home.html").status_code, 404)
 
-    def test_close_surname_requires_confirmation_without_disclosing_customer(self):
+    def test_close_surname_discloses_only_phone_selected_name_and_continue_confirms(self):
         c = Customer.objects.create(
             last_name="Greenfeld", phone="2025550100", email="private@example.invalid"
         )
@@ -305,12 +305,12 @@ class PublicBookingTests(TestCase):
         self.assertEqual(flow["stage"], "name_confirm")
         self.assertNotIn("proof", flow)
         response = self.client.get("/book/details/")
-        self.assertContains(response, "close spelling match")
+        self.assertContains(response, "Is this you?")
         self.assertNotContains(response, c.email)
-        self.assertNotContains(response, c.last_name)
+        self.assertContains(response, c.last_name)
+        self.assertContains(response, c.phone)
+        self.assertNotContains(response, "confirm_similar_name")
         self.client.post("/book/details/", {})
-        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "name_confirm")
-        self.client.post("/book/details/", {"confirm_similar_name": "on"})
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "details")
         response = self.client.get("/book/details/")
         self.assertContains(response, c.last_name)

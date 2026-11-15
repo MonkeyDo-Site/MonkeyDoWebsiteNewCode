@@ -181,3 +181,15 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 ## Customer self-booking checkpoint
 
 Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) against the isolated functional environment with fictional data. Local automated/browser checks have passed for pending reservation creation, revision, staff visibility/cancellation and receipt isolation. Real host HTTPS/proxy/permissions, Resend inbox delivery/recovery and real service rollback have not yet been run. This is not acceptance of payments, waiver completion or confirmed customer visits.
+
+## Second owner-feedback batch acceptance (owner review pending)
+
+- SCHED-B2-01: edit four weekly slots into a nonoverlapping final arrangement that overlaps intermediate original positions; save and generate together. Eligible dated identities persist; booked/manual sessions retain original timing; cascading conflicts are explained with links.
+- SCHED-B2-02: invalid final overlaps, stale submissions and concurrent bookings do not partially update the schedule or expose temporary values. Check the generated-through date and a deliberately missing expected date.
+- AVAIL-B2-01: close weekly default => hide linked public sessions; close individual public dated/one-time session => show Not Available; backend-only/Saturday stay hidden.
+- STAFF-B2-01: combine date range, recurring clock time, contact search, play/status filters and attendee sorting; clear restores today. Today ignores submitted date changes, includes empty sessions and shows capacity totals independent of search. Add booking preselects the session; ordinary staff cannot configure sessions.
+- BOOK-B2-01: one form changes timing/play/counts, enforces supervised/capacity/cutoff rules, prompts for expected-payment-method review when the estimate changes, retains original pricing policy and audit differences. Cancel requires confirmation with/without JavaScript.
+- CUST-B2-01: test +1 phones and customer/customir, Zorger/Zarger/Zharger/Zorge; no unrelated public surname disclosures. Returning unmatched phone permits alternative lookup before new contact entry.
+- EMAIL-B2-01: current duplicate addresses are rejected case-insensitively, including concurrent requests and staff corrections. Multiple empty staff emails are allowed; public known-customer flow collects missing email. Historical-only reuse warns staff, permits public booking and creates an owner-only reviewable notice. A CSRF rejection stays HTTP 403 with recovery guidance.
+- MEMBER-B2-01: both products and payment-plan types permit explicitly audited owner one/two-month exceptions; staff cannot forge the exception; normal public minimum stays three. Membership/payment customer cards accurately distinguish drafts/estimates from actual benefits/payments.
+- UI-B2-01: desktop/mobile screenshots, keyboard customer picker, row filters, narrow-screen table scroll, inline checkbox labels, compact breadcrumb navigation and readable history. Owner screenshot approval precedes deployment.

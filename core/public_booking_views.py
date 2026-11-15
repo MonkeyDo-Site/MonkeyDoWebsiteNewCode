@@ -65,7 +65,7 @@ class PhoneForm(forms.Form):
     )
     phone = forms.CharField(
         max_length=40,
-        label="Phone number (you may also try a previous number)",
+        label="Enter your phone number",
         widget=forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}),
     )
 
@@ -78,14 +78,48 @@ class NameForm(forms.Form):
 
 
 class SimilarNameForm(forms.Form):
-    confirm_similar_name = forms.BooleanField(
-        label="I confirm that I entered my own family’s phone number and last name."
+    pass  # The explicit Continue action confirms the phone-selected spelling match.
+
+
+class RetryPhoneForm(forms.Form):
+    phone = forms.CharField(
+        max_length=40,
+        required=False,
+        label="Try another phone number",
+        widget=forms.TextInput(attrs={"type": "tel"}),
     )
+
+    def clean_phone(self):
+        return normalize_phone(self.cleaned_data["phone"], optional=True)
 
 
 class ContactForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last Name")
     email = forms.EmailField(label="Email address")
+
+    def clean_email(self):
+        from .customers import check_email_available
+
+        email = self.cleaned_data["email"].strip().lower()
+        try:
+            check_email_available(email)
+        except ValidationError as exc:
+            raise ValidationError(exc.messages) from None
+        return email
+
+
+class RequiredEmailForm(forms.Form):
+    email = forms.EmailField(label="Email address")
+
+    def clean_email(self):
+        from .customers import check_email_available
+
+        email = self.cleaned_data["email"].strip().lower()
+        try:
+            check_email_available(email)
+        except ValidationError as exc:
+            raise ValidationError(exc.messages) from None
+        return email
 
 
 class PreviousPhoneForm(forms.Form):
@@ -198,10 +232,12 @@ def wizard(request):
         stage = flow["stage"]
         form_type = {
             "phone": PhoneForm,
+            "retry_phone": RetryPhoneForm,
             "name": NameForm,
             "name_confirm": SimilarNameForm,
             "previous": PreviousPhoneForm,
             "contact": ContactForm,
+            "email": RequiredEmailForm,
             "details": DetailsForm,
             "review": ConfirmForm,
         }.get(stage)
@@ -227,11 +263,39 @@ def wizard(request):
                 flow["phone"] = data["phone"]
                 flow["visited"] = data["visited"]
                 flow["stage"] = "contact"
+                if not customer and data["visited"] == "yes":
+                    flow["stage"] = "retry_phone"
                 if customer:
                     flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
                     flow["stage"] = "name" if customer.phone == data["phone"] else "previous"
                     if flow["stage"] == "previous":
                         flow["current_phone"] = customer.phone
+            elif stage == "retry_phone":
+                phone = data.get("phone")
+                if request.POST.get("continue_new") == "1":
+                    flow["stage"] = "contact"
+                elif not phone:
+                    form.add_error(
+                        "phone", "Enter another phone number, or choose Continue as a new customer."
+                    )
+                    return display(request, flow, form=form)
+                else:
+                    if not allow_security_request("public-booking-phone:" + phone, 8):
+                        raise ValidationError(
+                            "Please call/text 848-238-5147 for help with this booking."
+                        )
+                    customer = lookup_phone(phone)
+                    flow["phone"] = phone
+                    if customer:
+                        flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
+                        flow["stage"] = "name" if customer.phone == phone else "previous"
+                        if flow["stage"] == "previous":
+                            flow["current_phone"] = customer.phone
+                    else:
+                        flow["stage"] = "contact"
+                        flow["lookup_note"] = (
+                            "No customer was found with that phone number. You can continue as a new customer, or start again to try another number."
+                        )
             elif stage in {"name", "name_confirm", "previous"}:
                 candidate = flow["candidate"]
                 customer = Customer.objects.get(pk=candidate["id"])
@@ -241,21 +305,20 @@ def wizard(request):
                     exact = canonical_name(data["last_name"]) == canonical_name(customer.last_name)
                     if not exact and similar_name(data["last_name"], customer.last_name):
                         flow["entered_name"] = data["last_name"]
+                        flow["candidate_name"] = customer.last_name
                         flow["stage"] = "name_confirm"
                         save(request, flow)
                         return redirect("customer_booking")
                     matched = exact
                 elif stage == "name_confirm":
-                    matched = data["confirm_similar_name"] and similar_name(
-                        flow.get("entered_name", ""), customer.last_name
-                    )
+                    matched = similar_name(flow.get("entered_name", ""), customer.last_name)
                 else:
                     matched = data["confirm_phone"] == "yes"
                 if not matched:
                     flow["stage"] = "blocked"
                     save(request, flow)
                     message = (
-                        "The last name you entered doesn't match the name on record for this number. We would love to get your booking done for you as soon as possible. Please call or text 848-238-5147 and we'll help you with it."
+                        f"The last name you entered doesn't match the name on record for number {flow['phone']}. We would love to get your booking completed as soon as possible. Please call or text 848-238-5147 and we'll be happy to help you with it."
                         if stage in {"name", "name_confirm"}
                         else "We would love to get your booking finalized as soon as possible. Please call/text 848-238-5147 for assistance with this booking."
                     )
@@ -264,6 +327,9 @@ def wizard(request):
                     )
                 flow["proof"] = profile_proof(customer, flow["key"])
                 flow["verification_mode"] = stage
+                flow["stage"] = "details" if customer.email else "email"
+            elif stage == "email":
+                flow["contact_email"] = data["email"]
                 flow["stage"] = "details"
             elif stage == "contact":
                 flow["contact"] = {"last_name": data["last_name"].strip(), "email": data["email"]}
@@ -279,7 +345,19 @@ def wizard(request):
                     )
                 try:
                     booking = submit_booking(flow)
-                except ValidationError:
+                except ValidationError as exc:
+                    if hasattr(exc, "message_dict") and "email" in exc.message_dict:
+                        flow["stage"] = "email" if flow.get("proof") else "contact"
+                        save(request, flow)
+                        retry = (
+                            RequiredEmailForm({"email": flow.get("contact_email", "")})
+                            if flow.get("proof")
+                            else ContactForm(flow.get("contact"))
+                        )
+                        retry.is_valid()
+                        if "email" not in retry.errors:
+                            retry.add_error("email", exc.message_dict["email"])
+                        return display(request, flow, form=retry)
                     # A policy/capacity/contact change never silently finalizes an old estimate.
                     flow["stage"] = "details"
                     flow.pop("quote", None)

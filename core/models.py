@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import F, Q
+from django.db.models.functions import Lower
 
 
 class Customer(models.Model):
@@ -16,7 +17,7 @@ class Customer(models.Model):
         unique=True,
         validators=[RegexValidator(r"^\d{10}$", "Use a ten-digit US phone number.")],
     )
-    email = models.EmailField()
+    email = models.EmailField(blank=True)
     previous_phone = models.CharField(max_length=10, blank=True)
     previous_email = models.EmailField(blank=True)
     customer_type = models.CharField(
@@ -27,6 +28,9 @@ class Customer(models.Model):
     class Meta:
         permissions = [("view_customer_history", "View customer correction history")]
         constraints = [
+            models.UniqueConstraint(
+                Lower("email"), condition=~Q(email=""), name="customer_current_email_unique"
+            ),
             models.CheckConstraint(
                 condition=Q(phone__regex=r"^[0-9]{10}$"), name="customer_phone_normalized"
             ),
@@ -456,7 +460,7 @@ class MembershipDraft(ImmutablePriceRecord):
         constraints = [
             models.CheckConstraint(
                 condition=Q(
-                    places__gte=1, months__gte=3, ends_on__gte=F("starts_on"), unit_price__gte=0
+                    places__gte=1, months__gte=1, ends_on__gte=F("starts_on"), unit_price__gte=0
                 ),
                 name="membership_draft_valid_term",
             )
@@ -515,3 +519,17 @@ class WeeklySlot(models.Model):
                 name="weekly_slot_valid_bounds",
             )
         ]
+
+
+class OwnerNotice(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    subject = models.CharField(max_length=150)
+    details = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT
+    )
+
+    class Meta:
+        ordering = ["-created_at"]

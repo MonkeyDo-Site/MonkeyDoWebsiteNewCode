@@ -3,7 +3,7 @@
 {% block staff_content %}
 <h1 class="form-heading">{{ heading }}</h1>
 <form method="post" class="record-form panel">
-  {% csrf_token %}{{ form.as_p }}
+  {% csrf_token %}{% include 'core/partials/form_fields.html' %}
   <button type="submit" class="button">Save</button>
   {% if customer %}<a href="{% url 'customer_detail' customer.pk %}">Cancel</a>{% else %}<a href="{% url 'customers' %}">Cancel</a>{% endif %}
 </form>

@@ -14,18 +14,23 @@ from .pricing import booking_quote, validate_attendees
 
 def snapshot(booking):
     return {
-        key: getattr(booking, key)
-        for key in (
-            "session_id",
-            "children",
-            "adults",
-            "babies",
-            "socks",
-            "supervised",
-            "expected_method",
-            "attendance",
-            "edit_version",
-        )
+        "session_starts_at": booking.session.starts_at.isoformat(),
+        "session_ends_at": booking.session.ends_at.isoformat(),
+        **{
+            key: getattr(booking, key)
+            for key in (
+                "session_id",
+                "children",
+                "adults",
+                "babies",
+                "socks",
+                "supervised",
+                "referral_source",
+                "expected_method",
+                "attendance",
+                "edit_version",
+            )
+        },
     }
 
 
@@ -107,6 +112,7 @@ def create_test_booking(
     expected_method="card",
     creation_key,
     override_capacity=False,
+    referral_source="",
 ):
     lock_calendar()
     require_actor(actor, "core.add_booking")
@@ -123,12 +129,16 @@ def create_test_booking(
                 "SELECT pg_advisory_xact_lock(%s, %s)",
                 [73215, int.from_bytes(key.bytes[:4], signed=True)],
             )
+    if not isinstance(referral_source, str) or len(referral_source) > 240:
+        raise ValidationError("Referral source must be 240 characters or fewer.")
+    referral_source = referral_source.strip()
     existing = Booking.objects.filter(creation_key=key).first()
     if existing:
         same = (
             existing.creation_actor_id == actor.pk
             and existing.customer_id == customer.pk
             and existing.session_id == session_id
+            and existing.referral_source == referral_source
             and (
                 existing.children,
                 existing.adults,
@@ -170,6 +180,7 @@ def create_test_booking(
         expected_method=expected_method,
         creation_key=key,
         creation_actor=actor,
+        referral_source=referral_source,
     )
     quote = write_quote(booking, policy, actor)
     AuditEvent.objects.create(
@@ -198,20 +209,34 @@ def edit_test_booking(
     socks,
     expected_method,
     override_capacity=False,
+    session=None,
+    supervised=None,
+    payment_reviewed=None,
+    referral_source=None,
 ):
     lock_calendar()
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
     check_editable(booking, version)
-    validate_attendees(children, adults, babies, booking.supervised, socks)
-    session = Session.objects.select_for_update().get(pk=booking.session_id)
+    target_id = session.pk if session is not None else booking.session_id
+    supervised = booking.supervised if supervised is None else supervised
+    sessions = {
+        row.pk: row
+        for row in Session.objects.select_for_update()
+        .filter(pk__in={booking.session_id, target_id})
+        .order_by("pk")
+    }
+    if target_id not in sessions:
+        raise ValidationError("The selected session no longer exists.")
+    session = sessions[target_id]
+    validate_attendees(children, adults, babies, supervised, socks)
     assert_capacity(
         session,
         booking_id=booking.pk,
         children=children,
         adults=adults,
-        supervised=booking.supervised,
+        supervised=supervised,
         override=override_capacity,
         actor=actor,
     )
@@ -227,13 +252,23 @@ def edit_test_booking(
         babies,
         socks,
     )
+    booking.session = session
+    booking.supervised = supervised
     booking.expected_method = expected_method
+    if referral_source is not None:
+        if not isinstance(referral_source, str) or len(referral_source) > 240:
+            raise ValidationError("Referral source must be 240 characters or fewer.")
+        booking.referral_source = referral_source.strip()
     booking.edit_version += 1
     booking.save()
-    quote = write_quote(booking, current.policy, actor)
+    price_changed = any(
+        before[field] != getattr(booking, field)
+        for field in ("children", "adults", "babies", "socks", "supervised", "expected_method")
+    )
+    quote = write_quote(booking, current.policy, actor) if price_changed else current
     AuditEvent.objects.create(
         actor=actor,
-        action="booking.attendees_changed",
+        action="booking.updated",
         record_type="booking",
         record_id=str(booking.reference),
         changes={

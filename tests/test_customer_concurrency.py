@@ -72,6 +72,19 @@ class CustomerConcurrencyTests(TransactionTestCase):
         customer.refresh_from_db()
         self.assertEqual(customer.revision, 2)
 
+    def test_distinct_phones_cannot_race_to_claim_same_current_email(self):
+        results = self.parallel(
+            lambda actor, i: create_customer(
+                actor=actor,
+                last_name=f"Family {i}",
+                phone=f"202555010{i}",
+                email="SHARED@example.invalid" if i else "shared@example.invalid",
+            )
+        )
+        self.assertCountEqual(results, ["saved", "rejected"])
+        self.assertEqual(Customer.objects.count(), 1)
+        self.assertEqual(AuditEvent.objects.filter(action="customer.created").count(), 1)
+
 
 @skipUnless(connection.vendor == "postgresql", "Login serialization requires PostgreSQL.")
 class LoginConcurrencyTests(TransactionTestCase):

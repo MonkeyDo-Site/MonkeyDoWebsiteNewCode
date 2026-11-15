@@ -32,3 +32,7 @@ The public availability logic continues to use New York calendar-day openings. S
 ## Remaining work
 
 Unattended generation/expiry jobs, returning a manual override to automatic management, hosted operational validation, affected-booking notifications, final program lifecycle, membership benefit integration, payments and public checkout remain unfinished. These changes deploy nothing, resize no Droplet and activate no paid service or provider operation.
+
+## Second owner-feedback batch
+
+The owner clarified a weekly-default closure hides its linked dated sessions, whereas individually closed public dated sessions stay visible as Not Available. Weekly defaults can be edited together; validation considers the complete final schedule. Generation plans eligible dated moves together, retaining source identities and booked/manual/program/past records. Conflicts are resolved against final proposed positions and all retained records before writes. An exclusive calendar lock and one transaction protect intermediate unique-start swaps; temporary parking values never commit or enter audit history. Every preserved/skipped/unchanged dated result has a specific explanation and relevant review link. Coverage displays the latest generated date plus any missing expected dates. Source labels use actual local clock context rather than inventing AM for ambiguous owner labels. Sunday appears first.

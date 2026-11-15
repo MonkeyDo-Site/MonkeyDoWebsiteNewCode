@@ -22,6 +22,9 @@ urlpatterns = [
     path("staff/", ProtectedLoginView.as_view(), name="staff_login"),
     path("staff/website-settings/", website_settings.website_settings, name="website_settings"),
     path("staff/scheduling/weekly/", recurring_views.recurring_settings, name="recurring_settings"),
+    path(
+        "staff/scheduling/weekly/edit-all/", recurring_views.schedule_edit, name="weekly_batch_edit"
+    ),
     path("staff/scheduling/weekly/new/", recurring_views.slot_edit, name="weekly_create"),
     path("staff/scheduling/weekly/<int:pk>/", recurring_views.slot_edit, name="weekly_edit"),
     path(
@@ -99,6 +102,7 @@ urlpatterns = [
     path("admin/login/", RedirectView.as_view(pattern_name="login", query_string=True)),
     path("admin/", admin.site.urls),
     path("staff/customers/", customer_views.customer_list, name="customers"),
+    path("staff/customers/search/", customer_views.customer_choices, name="customer_choices"),
     path("staff/customers/new/", customer_views.customer_create, name="customer_create"),
     path("staff/customers/<int:pk>/", customer_views.customer_detail, name="customer_detail"),
     path("staff/customers/<int:pk>/edit/", customer_views.customer_edit, name="customer_edit"),
@@ -118,6 +122,7 @@ urlpatterns = [
         customer_views.customer_history,
         name="customer_history",
     ),
+    path("staff/notices/<int:pk>/review/", dashboard.review_notice, name="review_notice"),
     path("staff/dashboard/", dashboard.dashboard, name="dashboard"),
     path("staff/security-alerts/<int:pk>/resolve/", dashboard.resolve_alert, name="resolve_alert"),
     path("health/", views.health, name="health"),

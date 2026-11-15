@@ -1,4 +1,4 @@
-{% extends 'core/staff_base.html' %}
+{% extends 'core/staff_base.html' %}{% load audit_labels %}
 {% block staff_content %}
 <p class="eyebrow">Test membership draft · Benefits inactive</p>
 <h1>{{ draft.customer.last_name }}</h1>
@@ -15,4 +15,4 @@
 {% for cycle in cycles %}<article class="panel"><h3>Membership month {{ cycle.number }}</h3><p>Benefit window if activated: {{ cycle.starts_on|date:'M j, Y' }} – {{ cycle.ends_on|date:'M j, Y' }}</p>
 {% if cycle.charge_on %}<p>Planned payment date: {{ cycle.charge_on|date:'M j, Y' }}. Nothing is scheduled for collection.</p><dl><dt>Membership subtotal</dt><dd>${{ cycle.quote.subtotal }}</dd><dt>Card processing fee</dt><dd>${{ cycle.quote.processing_fee }}</dd><dt>Sales tax</dt><dd>${{ cycle.quote.sales_tax }}</dd><dt>Planned payment total</dt><dd>${{ cycle.quote.total }}</dd></dl>{% else %}<p>No separate installment planned: included in the initial prepaid amount.</p>{% endif %}</article>{% endfor %}
 {% include 'core/pagination.html' with page=cycles %}
-{% endblock %}
+<details><summary>Membership history</summary>{% for event in history %}{% audit_event event %}{% empty %}<p>No recorded changes.</p>{% endfor %}</details>{% endblock %}

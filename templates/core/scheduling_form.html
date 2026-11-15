@@ -1,6 +1,6 @@
 {% extends 'core/staff_base.html' %}
 {% block staff_content %}
-<h1>{{ heading }}</h1>
+{% if blockers %}<aside class="notice"><strong>Other settings also control this session:</strong>{% for blocker in blockers %}<p>{{ blocker.label }}. {% if blocker.url %}<a href="{{ blocker.url }}">Review setting →</a>{% endif %}</p>{% endfor %}<p>The fields below describe this individual session; changing them does not override those settings.</p></aside>{% endif %}<h1>{{ heading }}</h1>
 <p class="notice">Times are New York local time. Private labels and closure reasons stay off public pages. Saturday stays hidden publicly. Changes do not cancel bookings, reprice visits, send messages or process payments.</p>
 {% if session_day %}<p><strong>Session date: {{ session_day|date:'l, F j, Y' }}</strong> · The date is fixed here; edit the timing below.</p>{% endif %}
 <form method="post" class="record-form panel">{% csrf_token %}{% include 'core/partials/form_fields.html' %}<button class="button">Save calendar settings</button> <a href="{% url 'scheduling' %}">Back to calendar</a></form>

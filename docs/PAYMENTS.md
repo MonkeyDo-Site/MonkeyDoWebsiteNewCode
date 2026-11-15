@@ -168,3 +168,7 @@ Owner has test-card PDF; card numbers are deliberately not committed. Provider s
 Fiserv allows any AVS/CVV test values; TSYS needs supplied specific test CVVs and often declines below$1. Do not reduce instructions to “all below100approve” or “all above100error.” Changing amount to explore sandbox responses is test activity only, never a production billing workaround.
 
 Sandbox transactions **cannot move to live**. Separate credentials/data/endpoints; verify production settings before eventual separately approved launch. Functional staging must test duplicate submission, network timeout/outcome unknown, webhook replay, insufficient/declined/invalid card, card replacement/removal, tax/split allocation, membership due dates/no retries, and refund/void behavior. Public specification review alone does not pass these checks.
+
+## Owner-approved test booking edits (November 2026)
+
+One Edit booking form changes eligible session, attendee counts, play type and expected tender. If the estimate changes, ask whether to keep or change the expected payment method; this is not a collection action. Reprice with the original immutable policy and append a quote revision. Customer payment-history cards remain truthful empty transaction states until a payment ledger is implemented; quotes and planned membership installments are estimates. Actual payment/card replacement/arrival workflows remain as specified above and are not enabled by these UI changes.

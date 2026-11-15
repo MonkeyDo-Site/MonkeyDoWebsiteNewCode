@@ -50,7 +50,7 @@ Operational interpretation: renewals may be purchased ahead of expiration and be
 
 ## 2. Terms, cohorts, and billing
 
-- Any whole-number duration, minimum three for new membership/additional places; no maximum. Common choices 3/4/5/6/12 plus Enter another number/whole-number selector. Extensions can be one or two months. Not limited to old 3/6/9/12 choices.
+- Any whole-number duration, minimum three for public/staff new membership/additional places; the owner may explicitly override to one or two months for either Subscription or Unlimited, monthly or prepaid, with the exception audited. Public minimum remains three; there is no maximum term. Common choices 3/4/5/6/12 plus Enter another number/whole-number selector. Extensions can be one or two months. Not limited to old 3/6/9/12 choices.
 - Monthly or full-term upfront payment, no prepayment discount. New membership charge at purchase, independent of a future visit's arrival charge. With combined purchase/booking send one combined email showing accurate paid/due portions.
 - Each later purchase/addition creates a separate cohort with place count, type, accepted price, start/end, original billing anchor, cycles and initial commitment. Types may coexist. Preserve accepted price through that term; renewal shows/accepts then-current price unless owner exception.
 - Future price changes must not silently rewrite accepted cohort prices or historical benefits.

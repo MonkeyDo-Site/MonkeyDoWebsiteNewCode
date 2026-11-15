@@ -58,8 +58,12 @@ def create_customer(*, actor, last_name, phone, email, customer_type="family"):
     phone = normalize_phone(phone)
     contact_lock()
     check_phone_available(phone)
+    check_email_available(email)
     customer = Customer(
-        last_name=last_name.strip(), phone=phone, email=email.strip(), customer_type=customer_type
+        last_name=last_name.strip(),
+        phone=phone,
+        email=email.strip().lower(),
+        customer_type=customer_type,
     )
     customer.full_clean()
     customer.save()
@@ -113,7 +117,8 @@ def update_customer(
         if move_previous_phone == "yes":
             customer.previous_phone = customer.phone
         customer.phone = phone
-    email = email.strip()
+    email = email.strip().lower()
+    check_email_available(email, customer.pk)
     if email != customer.email:
         if customer.previous_email:
             archived = new_comment(
@@ -191,3 +196,27 @@ def save_comment(*, actor, customer_id, body, comment_id=None, revision=None):
         changes,
     )
     return comment
+
+
+def check_email_available(email, customer_id=None):
+    email = email.strip()
+    if email and Customer.objects.exclude(pk=customer_id).filter(email__iexact=email).exists():
+        raise ValidationError(
+            {
+                "email": f"The email address you entered, {email}, already exists for another customer. Please enter another email address, or go back and try the phone number and name used for a previous booking. For help correcting the other profile, call/text 848-238-5147."
+            }
+        )
+
+
+def historical_email_customers(email, customer_id=None):
+    """Only structured email history is examined; arbitrary comment text is not identity evidence."""
+    if not email:
+        return Customer.objects.none()
+    events = AuditEvent.objects.filter(record_type="customer").filter(
+        Q(action="customer.updated", changes__email__before__iexact=email)
+        | Q(action="customer.email_history_archived", changes__email__iexact=email)
+    )
+    ids = [int(pk) for pk in events.values_list("record_id", flat=True) if pk.isdigit()]
+    return Customer.objects.filter(Q(previous_email__iexact=email) | Q(pk__in=ids)).exclude(
+        pk=customer_id
+    )

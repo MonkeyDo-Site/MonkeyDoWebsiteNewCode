@@ -23,14 +23,26 @@ RULE_VERSION = "membership-calendar-2026-11-06-v1"
 
 @transaction.atomic
 def create_draft(
-    *, actor, customer, kind, places, months, billing, starts_on, expected_method, creation_key
+    *,
+    actor,
+    customer,
+    kind,
+    places,
+    months,
+    billing,
+    starts_on,
+    expected_method,
+    creation_key,
+    minimum_override=False,
 ):
     require_actor(actor, "core.add_membershipdraft")
     require_actor(actor, "core.view_membershipdraft")
     require_actor(actor, "core.view_customer")
     if type(places) is not int or not 1 <= places <= 2147483647:
         raise ValidationError("Choose a positive whole number of anonymous membership places.")
-    if type(months) is not int or months < 3:
+    if minimum_override:
+        require_actor(actor, "core.add_membershipdraft", owner=True)
+    if type(months) is not int or months < (1 if minimum_override else 3):
         raise ValidationError("New memberships require at least three whole months.")
     if kind not in {"subscription", "unlimited"} or billing not in {"monthly", "prepaid"}:
         raise ValidationError("Choose a supported membership and billing type.")
@@ -93,6 +105,7 @@ def create_draft(
             "test_mode": True,
             "status": "draft",
             "benefits_active": False,
+            "owner_minimum_override": bool(minimum_override and months < 3),
             "terms_accepted": False,
             "monthly_subtotal": str(monthly),
             "term_subtotal": str(monthly * months),
@@ -144,6 +157,7 @@ def create_draft(
             "membership_price_version": pricing.pk,
             "fee_policy": policy.pk,
             "status": "draft",
+            "owner_minimum_override": bool(minimum_override and months < 3),
         },
     )
     return draft

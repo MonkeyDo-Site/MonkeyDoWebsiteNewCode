@@ -18,7 +18,7 @@
   </article>
   <article class="panel">
     <h2>Bookings</h2>
-{% if perms.core.view_membershipdraft %}<p><a href="{% url 'membership_drafts' %}?customer={{ customer.pk }}">Membership drafts for this customer</a></p>{% endif %}
+
 {% if perms.core.add_booking and perms.core.view_booking %}<p><a href="{% url 'booking_create' %}?customer={{ customer.pk }}">Create test booking</a></p>{% endif %}
     {% if can_view_bookings %}
     {% if first_today %}<h3>Today · {{ first_today.session.starts_at|date:'g:i A' }}</h3>
@@ -36,10 +36,12 @@
     <h2>Comments</h2>
     {% if perms.core.add_customercomment %}<p><a href="{% url 'comment_add' customer.pk %}">Add comment</a></p>{% endif %}
     {% if perms.core.view_customercomment %}
-    {% for comment in comments %}<div class="comment"><p>{{ comment.body|linebreaksbr }}</p><p class="caption">{{ comment.author.username }} · {{ comment.created_at|date:'M j, Y g:i A' }}{% if comment.revision > 1 %} · Edited {{ comment.updated_at|date:'M j, Y g:i A' }}{% endif %}</p>
+    {% for comment in comments %}{% if forloop.counter == 2 %}<details><summary>View all comments ({{ comments|length }})</summary>{% endif %}<div class="comment"><p>{{ comment.body|linebreaksbr }}</p><p class="caption">{{ comment.author.username }} · {{ comment.created_at|date:'M j, Y g:i A' }}{% if comment.revision > 1 %} · Edited {{ comment.updated_at|date:'M j, Y g:i A' }}{% endif %}</p>
     {% if perms.core.change_customercomment and not comment.system_generated %}<a href="{% url 'comment_edit' customer.pk comment.pk %}">Edit comment</a>{% endif %}</div>
-    {% empty %}<p>No comments yet.</p>{% endfor %}
+    {% if forloop.last and comments|length > 1 %}</details>{% endif %}{% empty %}<p>No comments yet.</p>{% endfor %}
     {% else %}<p>Comment access is not enabled for this account.</p>{% endif %}
   </article>
+{% if perms.core.view_membershipdraft %}<article class="panel"><h2>Memberships</h2><p class="caption">Test drafts only; benefits are not active.</p>{% for draft in membership_drafts|slice:':3' %}<p><a href="{% url 'membership_detail' draft.pk %}">{{ draft.get_kind_display }} · {{ draft.places }} place{{ draft.places|pluralize }} · {{ draft.months }} month{{ draft.months|pluralize }}</a><br>{{ draft.starts_on }}–{{ draft.ends_on }}</p>{% empty %}<p>No membership drafts recorded.</p>{% endfor %}<a href="{% url 'membership_drafts' %}?customer={{ customer.pk }}">View membership draft history</a></article>{% endif %}
+<article class="panel"><h2>Payment history</h2><p>No payment transactions are recorded by this test workspace. Saved booking and membership estimates are not payments.</p></article>
 </div>
 {% endblock %}

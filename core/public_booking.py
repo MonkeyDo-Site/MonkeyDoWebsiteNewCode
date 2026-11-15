@@ -15,13 +15,19 @@ from django.utils.crypto import salted_hmac
 from .availability import availability
 from .booking_management import assert_capacity, snapshot
 from .calendar import lock_calendar
-from .customers import check_phone_available, contact_lock
+from .customers import (
+    check_email_available,
+    check_phone_available,
+    contact_lock,
+    historical_email_customers,
+)
 from .forms import normalize_phone
 from .models import (
     AuditEvent,
     Booking,
     BookingQuote,
     Customer,
+    OwnerNotice,
     PricingPolicy,
     Session,
     SiteSettings,
@@ -135,20 +141,57 @@ def submit_booking(flow):
     contact_lock()
     if flow.get("proof"):
         customer = customer_from_flow(flow, lock=True)
+        if not customer.email:
+            email = flow.get("contact_email", "").strip().lower()
+            if not email:
+                raise ValidationError(
+                    {"email": "An email address is required for public bookings."}
+                )
+            check_email_available(email, customer.pk)
+            customer.email = email
+            customer.revision += 1
+            customer.full_clean()
+            customer.save(update_fields=["email", "revision"])
+            AuditEvent.objects.create(
+                actor=None,
+                action="customer.public_email_added",
+                record_type="customer",
+                record_id=str(customer.pk),
+                changes={"email": {"before": "", "after": email}},
+            )
+            previous_ids = list(
+                historical_email_customers(email, customer.pk).values_list("pk", flat=True)
+            )
+            if previous_ids:
+                OwnerNotice.objects.create(
+                    customer=customer,
+                    subject="Email address reused from customer history",
+                    details={"previous_customer_ids": previous_ids, "email": email},
+                )
     else:
         values = flow.get("contact")
         if not values:
             raise ValidationError("Enter your contact details first.")
         phone = normalize_phone(flow["phone"])
         check_phone_available(phone)
+        check_email_available(values["email"])
         customer = Customer(
             last_name=values["last_name"],
             phone=phone,
-            email=values["email"],
+            email=values["email"].strip().lower(),
             customer_type="family",
         )
         customer.full_clean()
         customer.save()
+        previous_ids = list(
+            historical_email_customers(customer.email, customer.pk).values_list("pk", flat=True)
+        )
+        if previous_ids:
+            OwnerNotice.objects.create(
+                customer=customer,
+                subject="Email address reused from customer history",
+                details={"previous_customer_ids": previous_ids, "email": customer.email},
+            )
         AuditEvent.objects.create(
             actor=None,
             action="customer.public_test_created",

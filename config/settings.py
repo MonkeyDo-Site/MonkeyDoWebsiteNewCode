@@ -160,3 +160,6 @@ if (
 TRUST_LOCAL_CLIENT_IP = os.environ.get("MONKEYDO_TRUST_LOCAL_CLIENT_IP") == "1"
 if TRUST_LOCAL_CLIENT_IP and os.environ.get("DJANGO_TRUST_PROXY") != "1":
     raise ImproperlyConfigured("Client-IP trust requires the reviewed local reverse proxy.")
+
+# Friendly recovery keeps the standard CSRF validation and HTTP 403 status.
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"

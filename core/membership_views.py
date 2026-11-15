@@ -8,7 +8,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_safe
 
-from .booking_forms import CustomerChoice
+from .booking_forms import CustomerChoice, customer_picker
 from .memberships import create_draft
 from .models import AuditEvent, Customer, MembershipDraft, MembershipPricing
 from .permissions import staff_permission
@@ -16,13 +16,9 @@ from .permissions import staff_permission
 
 class DraftForm(forms.Form):
     customer = CustomerChoice(queryset=Customer.objects.order_by("last_name", "pk"))
-    kind = forms.ChoiceField(choices=MembershipDraft._meta.get_field("kind").choices)
-    places = forms.IntegerField(
-        min_value=1, max_value=2147483647, label="Anonymous membership places", initial=1
-    )
-    months = forms.IntegerField(
-        min_value=3, label="Whole months (new membership minimum: 3)", initial=3
-    )
+    kind = forms.ChoiceField(label="Type", choices=MembershipDraft._meta.get_field("kind").choices)
+    places = forms.IntegerField(min_value=1, max_value=2147483647, label="Amount", initial=1)
+    months = forms.IntegerField(min_value=3, label="Months", initial=3)
     billing = forms.ChoiceField(choices=MembershipDraft._meta.get_field("billing").choices)
     starts_on = forms.DateField(
         widget=forms.DateInput(attrs={"type": "date"}), label="Test start date (New York)"
@@ -31,6 +27,26 @@ class DraftForm(forms.Form):
         choices=MembershipDraft._meta.get_field("expected_method").choices
     )
     creation_key = forms.UUIDField(initial=uuid.uuid4, widget=forms.HiddenInput)
+
+    minimum_override = forms.BooleanField(
+        required=False, label="Owner: allow a one- or two-month exception"
+    )
+
+    def __init__(self, *args, owner=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if owner:
+            self.fields["months"].min_value = 1
+            self.fields["months"].validators = [forms.IntegerField(min_value=1).validators[0]]
+            self.fields["months"].widget.attrs["min"] = 1
+        else:
+            self.fields.pop("minimum_override")
+        customer_picker(self)
+
+    def clean(self):
+        data = super().clean()
+        if data.get("months", 3) < 3 and not data.get("minimum_override"):
+            self.add_error("minimum_override", "Confirm the owner exception for this shorter term.")
+        return data
 
 
 class MembershipPricingForm(forms.ModelForm):
@@ -63,7 +79,9 @@ def drafts(request):
 @staff_permission("core.view_customer")
 @require_http_methods(["GET", "POST"])
 def draft_create(request):
-    form = DraftForm(request.POST if request.method == "POST" else None)
+    form = DraftForm(
+        request.POST if request.method == "POST" else None, owner=request.user.is_superuser
+    )
     if request.method == "POST" and form.is_valid():
         try:
             draft = create_draft(actor=request.user, **form.cleaned_data)
@@ -92,6 +110,9 @@ def draft_detail(request, pk):
         "core/membership_detail.html",
         {
             "draft": draft,
+            "history": AuditEvent.objects.filter(
+                record_type="membership_draft", record_id=str(draft.pk)
+            ).select_related("actor"),
             "cycles": Paginator(draft.cycles.all(), 24).get_page(request.GET.get("page")),
         },
     )

@@ -38,13 +38,13 @@ def availability(session, horizon=1, now=None):
     if session.kind == Session.Kind.PARTY:
         label = "A party is booked for this slot."
     elif session.closed or date_closed(session) or session.kind == Session.Kind.EXCLUSIVE:
-        label = "Unavailable"
+        label = "Not Available"
     elif now < opening_time(day, horizon):
         label = "Not yet open"
     elif now >= session.ends_at:
         label = "Session ended"
     elif session.play_mode == "supervised" and now >= session.starts_at:
-        label = "Unavailable"
+        label = "Not Available"
     elif (
         children >= session.child_capacity
         or children + adults >= session.total_capacity
@@ -54,7 +54,7 @@ def availability(session, horizon=1, now=None):
     else:
         return {
             "available": True,
-            "label": "Available",
+            "label": "Open",
             "hidden": False,
             "accompanied_available": session.play_mode != "supervised",
             "supervised_available": session.play_mode != "accompanied"

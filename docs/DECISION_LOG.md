@@ -376,3 +376,7 @@ Decision: Every signed-waiver retrieval requires server-side authentication and 
 Decision: Cloudflare R2 credentials are server-side DigitalOcean deployment secrets only. They must never appear in browser code, GitHub, documentation, logs, or public links.
 
 Scope clarification: These decisions apply only to completed, signed customer waivers. They do not place unsigned templates or source waiver documents in R2; doing so requires separate owner approval.
+
+## November 2026 — Second owner-feedback batch approved for development
+
+Sources: only green-highlighted additions in First Batch of edits (1).docx, all twenty items/screenshots in Second Batch of edits.docx, and subsequent explicit owner clarifications. The owner approved development and requested desktop/mobile screenshots of all affected pages and states before deployment. Scope and item-level traceability: OWNER_EDITS_BATCH_2.md. Weekly-default closure hides its dated sessions; individual public dated closure displays Not Available. Today gets Add booking for staff/owner, never Add/Edit session. Current email is unique; historical reuse is allowed with staff warnings/public owner Dashboard notices. Multiple weekly defaults and eligible generated dates can change together; every generation outcome explains why. A separate owner-only one/two-month membership exception leaves public minimums intact. Actual payments, active membership benefits and waiver integration remain deferred. Deployment is not authorized by this development approval.
