@@ -17,7 +17,9 @@ class BookingFilters(forms.Form):
     start = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}), label="From date")
     end = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}), label="Through date")
     q = forms.CharField(max_length=120, required=False, label="Family name, phone or email")
-    session = forms.ChoiceField(required=False, label="Session", choices=[])
+    session = forms.MultipleChoiceField(
+        required=False, label="Sessions", choices=[], widget=forms.CheckboxSelectMultiple
+    )
     play = forms.MultipleChoiceField(
         required=False,
         choices=[("open", "Open Play"), ("supervised", "Supervised Play")],
@@ -59,6 +61,7 @@ class BookingFilters(forms.Form):
 def booking_context(request, *, today_only=False):
     today = timezone.localdate(timezone=NEW_YORK)
     data = request.GET.copy()
+    data.setlist("session", [value for value in data.getlist("session") if value])
     data.setdefault("start", today.isoformat())
     data.setdefault("end", data["start"])
     if today_only:
@@ -80,14 +83,12 @@ def booking_context(request, *, today_only=False):
         )
     )
     if today_only:
-        form.fields["session"].choices = [("", "All sessions")] + [
-            (str(s.pk), str(s)) for s in sessions
-        ]
+        form.fields["session"].choices = [(str(s.pk), str(s)) for s in sessions]
     else:
         clocks = sorted(
             {timezone.localtime(s.starts_at, NEW_YORK).strftime("%H:%M") for s in sessions}
         )
-        form.fields["session"].choices = [("", "All session times")] + [
+        form.fields["session"].choices = [
             (clock, datetime.strptime(clock, "%H:%M").strftime("%I:%M %p")) for clock in clocks
         ]
     for field in form.fields.values():
@@ -133,7 +134,7 @@ def booking_context(request, *, today_only=False):
                     if today_only
                     else timezone.localtime(s.starts_at, NEW_YORK).strftime("%H:%M")
                 )
-                == filters["session"]
+                in filters["session"]
             ]
             rows = rows.filter(session_id__in=ids)
         if len(filters["play"]) == 1:
@@ -180,7 +181,7 @@ def booking_context(request, *, today_only=False):
         )
     selected_session = form.cleaned_data.get("session") if valid and today_only else None
     if selected_session:
-        overview = [item for item in overview if str(item["session"].pk) == selected_session]
+        overview = [item for item in overview if str(item["session"].pk) in selected_session]
     params = request.GET.copy()
     params.pop("page", None)
     return {

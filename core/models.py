@@ -533,3 +533,23 @@ class OwnerNotice(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class MembershipDraftRevision(ImmutablePriceRecord):
+    """Append-only edits; the original membership ID and original cycles remain intact."""
+
+    draft = models.ForeignKey(MembershipDraft, related_name="revisions", on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    data = models.JSONField()
+    cycles = models.JSONField()
+    submission_key = models.UUIDField(unique=True, editable=False)
+    submission = models.JSONField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-number"]
+        constraints = [
+            models.UniqueConstraint(fields=["draft", "number"], name="membership_revision_number"),
+            models.CheckConstraint(condition=Q(number__gte=2), name="membership_revision_minimum"),
+        ]

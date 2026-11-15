@@ -12,8 +12,9 @@ from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .account_security import allow_security_request
-from .forms import normalize_phone
-from .models import Booking, Customer
+from .booking_progress import progress
+from .forms import normalize_phone, payment_method_choices
+from .models import Booking, Customer, PricingPolicy, SiteSettings
 from .name_matching import similar_name
 from .public_booking import (
     LIFETIME,
@@ -103,8 +104,10 @@ class ContactForm(forms.Form):
         email = self.cleaned_data["email"].strip().lower()
         try:
             check_email_available(email)
-        except ValidationError as exc:
-            raise ValidationError(exc.messages) from None
+        except ValidationError:
+            from .customers import public_duplicate_email_message
+
+            raise ValidationError(public_duplicate_email_message(email)) from None
         return email
 
 
@@ -117,8 +120,10 @@ class RequiredEmailForm(forms.Form):
         email = self.cleaned_data["email"].strip().lower()
         try:
             check_email_available(email)
-        except ValidationError as exc:
-            raise ValidationError(exc.messages) from None
+        except ValidationError:
+            from .customers import public_duplicate_email_message
+
+            raise ValidationError(public_duplicate_email_message(email)) from None
         return email
 
 
@@ -128,6 +133,16 @@ class PreviousPhoneForm(forms.Form):
         widget=forms.RadioSelect,
         label="Is this your current phone number?",
     )
+
+
+class FixedPlayChoice(forms.HiddenInput):
+    def __init__(self, choice):
+        self.choice = choice
+        super().__init__()
+
+    def format_value(self, value):
+        # Keep POST validation strict, but offer the currently available value on retry.
+        return self.choice
 
 
 class DetailsForm(forms.Form):
@@ -150,17 +165,35 @@ class DetailsForm(forms.Form):
 
     def __init__(self, *args, session, **kwargs):
         super().__init__(*args, **kwargs)
+        from .availability import availability
+
+        horizon = (
+            SiteSettings.objects.filter(pk=1).values_list("booking_horizon_days", flat=True).first()
+            or 1
+        )
+        state = availability(session, horizon)
         choices = []
-        if session.play_mode != "supervised":
+        if state.get("accompanied_available"):
             choices.append(("open", "Open Play"))
-        if (
-            session.play_mode != "accompanied"
-            and timezone.now() < session.starts_at
-            and session.supervised_capacity
-        ):
+        if state.get("supervised_available"):
             choices.append(("supervised", "Supervised Play"))
         self.fields["play_type"].choices = choices
         self.fields["play_type"].initial = choices[0][0] if choices else None
+        self.supervised_available = state.get("supervised_available", False)
+        self.fixed_play_type = choices[0][1] if len(choices) == 1 else None
+        if self.fixed_play_type:
+            self.fields["play_type"].widget = FixedPlayChoice(choices[0][0])
+        if choices == [("open", "Open Play")]:
+            self.fields["children"].label = "Children ages 1–11"
+        elif choices == [("supervised", "Supervised Play")]:
+            self.fields["children"].label = "Children ages 3–11"
+            self.fields["adults"].initial = self.fields["babies"].initial = 0
+        self.fields[
+            "socks"
+        ].label = "Grip socks are required for play at MonkeyDo. You can pay for them now or bring your own. Please select the amount you want to purchase:"
+        self.fields["expected_method"].choices = payment_method_choices(
+            PricingPolicy.objects.first()
+        )
 
     def clean(self):
         from .pricing import validate_attendees
@@ -189,6 +222,9 @@ def display(request, flow, *, form=None, error=None):
         request,
         "core/customer_booking.html",
         {
+            "progress_steps": progress(
+                3 if flow["stage"] == "details" else 4 if flow["stage"] == "review" else 2
+            ),
             "flow": flow,
             "session": session,
             "form": form,
@@ -398,7 +434,12 @@ def receipt(request):
     return render(
         request,
         "core/customer_booking_receipt.html",
-        {"booking": booking, "quote": booking.quotes.first()},
+        {
+            "booking": booking,
+            "quote": booking.quotes.first(),
+            "progress_steps": progress(4, done=True),
+            "progress_done": True,
+        },
     )
 
 

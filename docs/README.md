@@ -12,6 +12,8 @@ Owner MFA/recovery, staff accounts, session invalidation and shared staging acce
 
 Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
 
+The [owner response-document follow-up](OWNER_EDITS_BATCH_2_RESPONSES.md) records today’s revisions and the limited new screenshot set; the initial preview is owner-approved.
+
 The [second owner-feedback batch](OWNER_EDITS_BATCH_2.md) records the approved changes and screenshot/deployment review boundary.
 
 The inactive membership draft foundation is documented in [MEMBERSHIP_DEVELOPMENT.md](MEMBERSHIP_DEVELOPMENT.md).

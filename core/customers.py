@@ -203,7 +203,7 @@ def check_email_available(email, customer_id=None):
     if email and Customer.objects.exclude(pk=customer_id).filter(email__iexact=email).exists():
         raise ValidationError(
             {
-                "email": f"The email address you entered, {email}, already exists for another customer. Please enter another email address, or go back and try the phone number and name used for a previous booking. For help correcting the other profile, call/text 848-238-5147."
+                "email": f"The email address {email} is already assigned to another customer. Use a different address or review that customer’s record."
             }
         )
 
@@ -220,3 +220,7 @@ def historical_email_customers(email, customer_id=None):
     return Customer.objects.filter(Q(previous_email__iexact=email) | Q(pk__in=ids)).exclude(
         pk=customer_id
     )
+
+
+def public_duplicate_email_message(email):
+    return f"The email address you entered {email} already exists for another customer. Please enter another email address or if {email} is your email address, perhaps you entered a different phone number now than the one associated with a previous booking using this email address. Please go back to the booking page and enter a phone number and name you may have entered in the past for this email address. If you need further help, we’re happy to help. We can remove this email address from the other customer profile. Please contact us at 848-238-5147."

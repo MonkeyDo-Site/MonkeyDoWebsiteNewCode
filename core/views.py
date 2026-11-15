@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_safe
 
 from .availability import availability
+from .booking_progress import progress
 from .models import Session, SiteSettings
 
 
@@ -43,7 +44,7 @@ def schedule(request):
         }
         for day, slots in days.items()
     ]
-    return render(request, "core/schedule.html", {"dates": dates})
+    return render(request, "core/schedule.html", {"dates": dates, "progress_steps": progress(1)})
 
 
 @login_required

@@ -138,3 +138,7 @@ Recalculate eligible children/adult allowances, start benefits for appointment d
 | 2 children +2 adults, prepay 3 months for 2 Subscription places | **$107.94** |
 
 These monthly examples are first installments under the three-month commitment, not one-month initial purchases. Fees/tax and online payment timing: [PAYMENTS.md](PAYMENTS.md). Never use the old unapproved $5.98 “credit for uncharged admission” example.
+
+## Draft editing and internal membership identifiers
+
+The owner approved a working test-draft editor for staff/owner, retaining the original internal ID as the table/detail link. Edits append versioned fields, cycle estimates and before/after audit without changing earlier saved evidence. This does not implement active membership sale, entitlement adjustments, provider collection or the future paid-cohort conversion/consolidation rules. Staff draft terms remain three months minimum except retaining an already-approved short term without changing its type/count/start/duration; only the owner may grant a new short-term exception. A customer may have multiple membership records, each with its own existing internal ID.

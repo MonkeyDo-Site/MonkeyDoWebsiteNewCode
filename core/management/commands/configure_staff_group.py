@@ -11,6 +11,7 @@ class Command(BaseCommand):
         names = {
             "view_membershipdraft",
             "add_membershipdraft",
+            "change_membershipdraft",
             "view_booking",
             "add_booking",
             "change_booking",

@@ -99,21 +99,75 @@ def booking_edit(request, pk):
         owner=request.user.is_superuser,
         booking=booking,
     )
+    from .booking_estimates import amount_reviewed, edit_estimate
+
+    estimate = None
+    show_reminder = False
     if request.method == "POST" and form.is_valid():
         try:
-            edit_test_booking(actor=request.user, booking_id=pk, **form.cleaned_data)
+            estimate = edit_estimate(booking, form.cleaned_data)
+            if estimate["amount_changed"] and not amount_reviewed(
+                form.cleaned_data.get("estimate_token", ""), estimate
+            ):
+                show_reminder = True
+                posted = request.POST.copy()
+                posted["estimate_token"] = estimate["token"]
+                form = TestBookingForm(posted, owner=request.user.is_superuser, booking=booking)
+            else:
+                data = dict(form.cleaned_data)
+                data.pop("estimate_token", None)
+                edit_test_booking(actor=request.user, booking_id=pk, **data)
+                messages.success(
+                    request,
+                    "Booking updated using the saved pricing policy. No money was collected.",
+                )
+                return redirect("booking_detail", pk=pk)
         except ValidationError as exc:
             form_error(form, exc)
-        else:
-            messages.success(
-                request,
-                "Booking updated using the saved pricing policy. No money was collected.",
-            )
-            return redirect("booking_detail", pk=pk)
+    if estimate is None and booking.quotes.first():
+        saved = booking.quotes.first()
+        estimate = {"quote": saved.snapshot, "original_total": saved.snapshot["total"]}
     return render(
         request,
         "core/booking_form.html",
-        {"form": form, "heading": "Edit test booking", "booking": booking},
+        {
+            "form": form,
+            "heading": "Edit test booking",
+            "booking": booking,
+            "estimate": estimate,
+            "show_payment_reminder": show_reminder,
+        },
+    )
+
+
+@staff_permission("core.view_booking")
+@staff_permission("core.change_booking")
+@require_POST
+def booking_estimate(request, pk):
+    from django.http import JsonResponse
+    from django.template.loader import render_to_string
+
+    from .booking_estimates import edit_estimate
+
+    booking = get_object_or_404(Booking, pk=pk)
+    form = TestBookingForm(request.POST, owner=request.user.is_superuser, booking=booking)
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    try:
+        estimate = edit_estimate(booking, form.cleaned_data)
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+    return JsonResponse(
+        {
+            "html": render_to_string(
+                "core/quote_items.html", {"data": estimate["quote"]}, request=request
+            ),
+            "total": estimate["quote"]["total"],
+            "original_total": estimate["original_total"],
+            "amount_changed": estimate["amount_changed"],
+            "token": estimate["token"],
+        },
+        headers={"Cache-Control": "private, no-store"},
     )
 
 

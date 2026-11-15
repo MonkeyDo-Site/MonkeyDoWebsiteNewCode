@@ -29,3 +29,9 @@ Card/waiver setup, confirmation emails, arrivals/charges, membership benefits/co
 No hosted deployment, Droplet resize, provider call, outbound email or payment is performed by these tools. Production activation remains separate approved work.
 
 The second owner-feedback batch adds combined date-bounded filters and contact columns on Bookings/Today; Today includes empty sessions and unfiltered capacity totals. Add booking is available to authorized staff on Today and beside owner-calendar sessions. Amount-changing edits require payment-method review, maintain the original policy and append a quote. Cancellation has explicit confirmation with a non-JavaScript fallback. Friendly audit differences describe changes instead of raw event codes. See OWNER_EDITS_BATCH_2.md for the approved scope and review boundary.
+
+## Approved review follow-up
+
+Staff edit forms show server-calculated itemized estimates before save. The estimate endpoint is read-only, permission/CSRF protected and uses the original quote policy. Amount-changing saves display a payment-method reminder, replacing the extra dropdown. A signed, expiring proof binds the reviewed amount to booking ID/version, target session and pricing inputs; final saving rechecks the booking version/capacity and price. Without JavaScript, the first submission shows the revised estimate/reminder and preserves fields for an explicit save. No real payment or card action occurs.
+
+Today/Bookings place Add booking beside the title, filters above headings, and Apply/Clear below contact search; Enter submits search. Session filters accept zero, one or multiple selections; Bookings applies clock-time selections across its selected date range. Only Today describes the independent selected-session totals below the table. Credit-card labels show the applicable rate, including saved-policy rates when editing.

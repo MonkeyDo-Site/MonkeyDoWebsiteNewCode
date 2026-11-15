@@ -14,15 +14,7 @@ class CustomerChoice(forms.ModelChoiceField):
 
 
 class TestBookingForm(forms.Form):
-    payment_reviewed = forms.ChoiceField(
-        required=False,
-        label="If the amount changes, would you like to change the expected payment method?",
-        choices=[
-            ("", "Choose when the amount changes"),
-            ("keep", "No — keep the current method"),
-            ("change", "Yes — use the method selected below"),
-        ],
-    )
+    estimate_token = forms.CharField(required=False, widget=forms.HiddenInput)
     customer = CustomerChoice(queryset=Customer.objects.order_by("last_name", "pk"))
     session = forms.ModelChoiceField(queryset=Session.objects.none())
     children = forms.IntegerField(
@@ -76,38 +68,14 @@ class TestBookingForm(forms.Form):
             self.fields["version"].required = True
         else:
             self.fields.pop("version")
-            self.fields.pop("payment_reviewed")
+            self.fields.pop("estimate_token")
+        from .forms import payment_method_choices
+
+        old_quote = booking.quotes.first() if booking else None
+        self.fields["expected_method"].choices = payment_method_choices(
+            old_quote.policy if old_quote else PricingPolicy.objects.first()
+        )
         customer_picker(self)
-
-    def clean(self):
-        from .pricing import booking_quote
-
-        data = super().clean()
-        if self.booking and not self.errors:
-            old = self.booking.quotes.first()
-            if data.get("payment_reviewed") == "keep":
-                data["expected_method"] = self.booking.expected_method
-            if old:
-                quote = booking_quote(
-                    old.policy,
-                    **{
-                        k: data[k]
-                        for k in (
-                            "children",
-                            "adults",
-                            "babies",
-                            "socks",
-                            "supervised",
-                            "expected_method",
-                        )
-                    },
-                )
-                if quote["total"] != old.snapshot["total"] and not data.get("payment_reviewed"):
-                    self.add_error(
-                        "payment_reviewed",
-                        f"The revised estimate is ${quote['total']} (previously ${old.snapshot['total']}). Choose whether to keep or change the expected payment method. No payment will be processed.",
-                    )
-        return data
 
 
 class TimingForm(forms.Form):
@@ -180,7 +148,7 @@ def customer_picker(form):
         if str(selected).isdigit() and len(str(selected)) < 19
         else None
     )
-    field.widget.choices = [("", "Search and select a customer")] + (
+    field.widget.choices = [("", "Select a customer from the search results")] + (
         [(row.pk, field.label_from_instance(row))] if row else []
     )
     field.widget.attrs["data-customer-picker"] = "true"

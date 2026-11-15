@@ -384,7 +384,7 @@ class StaffBatchTests(TestCase):
         self.assertContains(response, "11:00 AM")
         self.assertNotContains(response, "11:15 AM")
 
-    def test_amount_change_requires_explicit_method_review_in_form(self):
+    def test_amount_change_uses_estimate_and_reminder_without_extra_dropdown(self):
         booking = self.reserve(self.create())
         args = dict(
             session=booking.session_id,
@@ -396,10 +396,19 @@ class StaffBatchTests(TestCase):
             version=1,
         )
         form = TestBookingForm(args, booking=booking)
-        self.assertFalse(form.is_valid())
-        self.assertIn("payment_reviewed", form.errors)
-        form = TestBookingForm(args | {"payment_reviewed": "keep"}, booking=booking)
         self.assertTrue(form.is_valid(), form.errors)
+        self.assertNotIn("payment_reviewed", form.fields)
+        self.client.force_login(self.staff)
+        response = self.client.post(f"/staff/bookings/{booking.pk}/edit/", args)
+        self.assertTrue(response.context["show_payment_reminder"])
+        booking.refresh_from_db()
+        self.assertEqual(booking.children, 1)
+        estimate = self.client.post(f"/staff/bookings/{booking.pk}/estimate/", args).json()
+        self.client.post(
+            f"/staff/bookings/{booking.pk}/edit/", args | {"estimate_token": estimate["token"]}
+        )
+        booking.refresh_from_db()
+        self.assertEqual(booking.children, 2)
 
     def test_searchable_customer_picker_normalizes_phone_and_requires_permission(self):
         self.client.force_login(self.staff)

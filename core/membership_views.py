@@ -9,8 +9,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_safe
 
 from .booking_forms import CustomerChoice, customer_picker
-from .memberships import create_draft
-from .models import AuditEvent, Customer, MembershipDraft, MembershipPricing
+from .forms import payment_method_choices
+from .memberships import EDIT_FIELDS, create_draft, current_draft, edit_draft
+from .models import AuditEvent, Customer, MembershipDraft, MembershipPricing, PricingPolicy
 from .permissions import staff_permission
 
 
@@ -40,6 +41,9 @@ class DraftForm(forms.Form):
             self.fields["months"].widget.attrs["min"] = 1
         else:
             self.fields.pop("minimum_override")
+        self.fields["expected_method"].choices = payment_method_choices(
+            PricingPolicy.objects.first()
+        )
         customer_picker(self)
 
     def clean(self):
@@ -64,14 +68,14 @@ class MembershipPricingForm(forms.ModelForm):
 @require_safe
 def drafts(request):
     customer = request.GET.get("customer", "")
-    records = MembershipDraft.objects.select_related("customer", "actor")
+    records = MembershipDraft.objects.select_related(
+        "customer", "actor", "pricing", "fee_policy"
+    ).prefetch_related("revisions")
     if customer.isascii() and customer.isdigit() and len(customer) <= 18:
         records = records.filter(customer_id=int(customer))
-    return render(
-        request,
-        "core/membership_drafts.html",
-        {"drafts": Paginator(records, 25).get_page(request.GET.get("page"))},
-    )
+    page = Paginator(records, 25).get_page(request.GET.get("page"))
+    page.object_list = [current_draft(record) for record in page.object_list]
+    return render(request, "core/membership_drafts.html", {"drafts": page})
 
 
 @staff_permission("core.view_membershipdraft")
@@ -104,16 +108,39 @@ def draft_create(request):
 @staff_permission("core.view_customer")
 @require_safe
 def draft_detail(request, pk):
-    draft = get_object_or_404(MembershipDraft.objects.select_related("customer", "actor"), pk=pk)
+    draft = get_object_or_404(
+        MembershipDraft.objects.select_related(
+            "customer", "actor", "pricing", "fee_policy"
+        ).prefetch_related("revisions"),
+        pk=pk,
+    )
+    root = draft
+    draft = current_draft(root)
+    latest_number = draft.version_number
+    selected = request.GET.get("revision", "")
+    if selected:
+        from django.http import Http404
+
+        if not selected.isascii() or not selected.isdigit() or len(selected) > 9:
+            raise Http404
+        number = int(selected)
+        if number == 1:
+            draft = current_draft(root, original=True)
+        else:
+            revision = get_object_or_404(root.revisions, number=number)
+            draft = current_draft(root, revision)
     return render(
         request,
         "core/membership_detail.html",
         {
             "draft": draft,
+            "historical_version": draft.version_number != latest_number,
+            "version_numbers": [1]
+            + list(root.revisions.order_by("number").values_list("number", flat=True)),
             "history": AuditEvent.objects.filter(
                 record_type="membership_draft", record_id=str(draft.pk)
             ).select_related("actor"),
-            "cycles": Paginator(draft.cycles.all(), 24).get_page(request.GET.get("page")),
+            "cycles": Paginator(draft.version_cycles, 24).get_page(request.GET.get("page")),
         },
     )
 
@@ -153,4 +180,74 @@ def membership_pricing(request):
         return redirect("membership_pricing")
     return render(
         request, "core/membership_form.html", {"form": form, "heading": "Membership draft pricing"}
+    )
+
+
+class DraftEditForm(DraftForm):
+    version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    submission_key = forms.UUIDField(initial=uuid.uuid4, widget=forms.HiddenInput)
+
+    def __init__(self, *args, draft, owner=False, **kwargs):
+        self.draft = draft
+        initial = {key: getattr(draft, key) for key in EDIT_FIELDS}
+        initial.update(version=draft.version_number, minimum_override=draft.months < 3)
+        super().__init__(*args, owner=owner, initial=initial, **kwargs)
+        self.fields.pop("customer")
+        self.fields.pop("creation_key")
+        self.fields["expected_method"].choices = payment_method_choices(draft.fee_policy)
+        if draft.months < 3:
+            from django.core.validators import MinValueValidator
+
+            self.fields["months"].min_value = 1
+            self.fields["months"].validators = [MinValueValidator(1)]
+            self.fields["months"].widget.attrs["min"] = 1
+            self.fields[
+                "months"
+            ].help_text = "The existing owner-approved short term may be retained. A different short term requires the owner."
+
+    def clean(self):
+        data = forms.Form.clean(self)
+        inherited = (
+            all(
+                data.get(key) == getattr(self.draft, key)
+                for key in ("kind", "places", "months", "starts_on")
+            )
+            and self.draft.months < 3
+        )
+        if data.get("months", 3) < 3 and not inherited and not data.get("minimum_override"):
+            self.add_error(
+                "months", "A different one- or two-month term requires an owner exception."
+            )
+        return data
+
+
+@staff_permission("core.view_membershipdraft")
+@staff_permission("core.change_membershipdraft")
+@staff_permission("core.view_customer")
+@require_http_methods(["GET", "POST"])
+def draft_edit(request, pk):
+    root = get_object_or_404(
+        MembershipDraft.objects.select_related("customer", "pricing", "fee_policy"), pk=pk
+    )
+    draft = current_draft(root)
+    form = DraftEditForm(
+        request.POST if request.method == "POST" else None,
+        draft=draft,
+        owner=request.user.is_superuser,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            edit_draft(actor=request.user, draft_id=pk, **form.cleaned_data)
+        except ValidationError as exc:
+            form.add_error(None, " ".join(exc.messages))
+        else:
+            messages.success(
+                request,
+                "Membership draft updated. The ID is unchanged and the earlier version is retained. No payment or benefits were activated.",
+            )
+            return redirect("membership_detail", pk=pk)
+    return render(
+        request,
+        "core/membership_form.html",
+        {"form": form, "draft": draft, "heading": f"Edit membership #{pk}"},
     )

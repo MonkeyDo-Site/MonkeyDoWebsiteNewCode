@@ -102,3 +102,15 @@ class StaffAuthenticationForm(AuthenticationForm):
         super().confirm_login_allowed(user)
         if not user.is_staff:
             raise self.get_invalid_login_error()
+
+
+def payment_method_choices(policy):
+    from .models import Booking
+
+    choices = []
+    for key, label in Booking._meta.get_field("expected_method").choices:
+        if key == "card":
+            rate = format((policy.card_fee_rate * 100).normalize(), "f") if policy else None
+            label = f"Credit Card – a {rate}% processing fee applies." if rate else "Credit Card"
+        choices.append((key, label))
+    return choices

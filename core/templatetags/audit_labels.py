@@ -22,6 +22,7 @@ LABELS = {
     "billing": "Billing",
     "starts_on": "Start date",
     "ends_on": "End date",
+    "term_subtotal": "Term estimate",
 }
 
 
@@ -69,9 +70,11 @@ def audit_event(event):
         "booking.test_created": "Booking created",
         "booking.customer_test_created": "Customer test booking created",
         "membership.draft_created": "Membership draft created",
+        "membership.draft_edited": "Membership draft edited",
     }
     return {
         "event": event,
+        "has_before": isinstance(data.get("before"), dict),
         "action_label": actions.get(
             event.action, " ".join(event.action.split(".")[-1].split("_")).capitalize()
         ),

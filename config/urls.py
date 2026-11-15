@@ -38,6 +38,7 @@ urlpatterns = [
     path(
         "staff/memberships/pricing/", membership_views.membership_pricing, name="membership_pricing"
     ),
+    path("staff/memberships/<int:pk>/edit/", membership_views.draft_edit, name="membership_edit"),
     path("staff/memberships/<int:pk>/", membership_views.draft_detail, name="membership_detail"),
     path("staff/scheduling/", scheduling_views.scheduling, name="scheduling"),
     path("staff/scheduling/new/", scheduling_views.session_edit, name="session_create"),
@@ -58,6 +59,9 @@ urlpatterns = [
     path("staff/bookings/", booking_views.bookings, name="bookings"),
     path("staff/bookings/new/", booking_views.booking_create, name="booking_create"),
     path("staff/bookings/<int:pk>/", booking_views.booking_detail, name="booking_detail"),
+    path(
+        "staff/bookings/<int:pk>/estimate/", booking_views.booking_estimate, name="booking_estimate"
+    ),
     path("staff/bookings/<int:pk>/edit/", booking_views.booking_edit, name="booking_edit"),
     path("staff/bookings/<int:pk>/timing/", booking_views.booking_move, name="booking_move"),
     path("staff/bookings/<int:pk>/release/", booking_views.booking_release, name="booking_release"),

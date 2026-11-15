@@ -1,8 +1,8 @@
 {% extends 'core/staff_base.html' %}
 {% block staff_content %}
-<h1>Bookings</h1>
+<div class="page-title-actions"><h1>Bookings</h1>{% if perms.core.add_booking and perms.core.view_customer %}<a class="button small" href="{% url 'booking_create' %}">Add booking</a>{% endif %}</div>
 <p class="notice">Test reservations only. Card setup, waiver coverage, confirmations and payments are not yet connected.</p>
 {% include 'core/partials/booking_filters.html' %}
-{% if perms.core.add_booking and perms.core.view_customer %}<p><a class="button small" href="{% url 'booking_create' %}">Add booking</a></p>{% endif %}
+
 {% include 'core/partials/booking_table.html' %}
 {% include 'core/pagination.html' with page=bookings %}{% endblock %}
