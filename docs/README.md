@@ -12,6 +12,8 @@ Owner MFA/recovery, staff accounts, session invalidation and shared staging acce
 
 Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
 
+The [aligned session-card screenshots](design-review/aligned-session-cards/README.md) show Open above each available card's description, with booking buttons aligned across the row.
+
 The [updated booking details](design-review/booking-detail-current/README.md) omit the referral line, keeping customer information on the customer profile.
 
 The [membership current-view screenshots](design-review/membership-current-view/README.md) show the latest clarification: routine membership screens display only current details; version links belong inside Membership history.

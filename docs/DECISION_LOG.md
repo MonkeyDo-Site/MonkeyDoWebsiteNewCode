@@ -396,3 +396,7 @@ Owner clarified that routine membership screens should show only the latest deta
 ## 2026-11-15 — Keep referral information off booking details
 
 The owner requested removal of the “How did you hear about MonkeyDo?” line from the booking details screen as clutter. Customer-profile display/editing and new-customer collection remain unchanged. Earlier booking answers remain stored; this is a template-only visibility change with no migration or data cleanup. This supersedes the prior final-review screenshot that displayed the legacy answer.
+
+## 2026-11-15 — Align Open-only session cards
+
+Owner requested that the Open-only calendar card retain Open above its description and align its information/button with neighboring available cards. Keep a separate status/description/action layout and reserve common description space; bottom-align booking actions across a row. No booking-availability or data changes.

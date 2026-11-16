@@ -252,3 +252,5 @@ Progress is public-only. The pending-test completion heading is “You're all se
 The final Word review and its approved answers supersede earlier plain-number membership displays and booking-level referral collection. See OWNER_EDITS_BATCH_2_FINAL_REVIEW.md for coverage, images and the release boundary.
 
 Membership lists show one row per membership with its latest details. Do not display version numbers in the list, current detail heading or edit form. Keep earlier saved details and version links inside Membership history; an explicitly opened earlier view remains read-only. The current detail and Edit membership always resolve to the latest saved details.
+
+Available public session cards retain Open as their status, followed by the Open-only or Supervised Play availability description in the same reserved text area. Align Choose this session buttons at the bottom across cards in each row. Preserve unavailable labels and their absence of booking buttons.

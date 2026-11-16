@@ -244,6 +244,12 @@ p {
   border-radius:22px;
   font-size:14px
 }
+.slot-description {
+  min-height:3.2em
+}
+.slot .slot-action {
+  margin-top:auto
+}
 .unavailable {
   background:#e8e8e5;
   color:#555
