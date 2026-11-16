@@ -1,7 +1,9 @@
 #!/usr/bin/python3 -I
-"""Root-owned deployment controller for the private design review only.
+"""Root-owned deployment controller for the private staging site.
 
-No database migrations, password changes, DNS changes or destructive cleanup.
+Routine deployment never migrates. The explicit Functional batch-two option
+permits only checksum-pinned migrations 0023–0025 after a private checkpoint.
+No password changes, DNS changes or destructive cleanup.
 Run `status`, `deploy --archive ... --sha256 ... --commit ...`, or `rollback`.
 """
 
@@ -38,6 +40,11 @@ DOMAIN = "staging.monkeydoplay.com"
 SOCKET = "/run/monkeydo-staging/gunicorn.sock"
 MAX_ARCHIVE = 200 * 1024 * 1024
 MAX_EXPANDED = 512 * 1024 * 1024
+BATCH_TWO_MIGRATIONS = {
+    "0023_owner_feedback_batch_two.py": "00fbd5dcb3f8465f3df7a61769dbd7936e1fee1e595007e60e85a8697469df4f",
+    "0024_membership_draft_revisions.py": "e38b36db654356b714d8d90e1959a3a5369b2d214f6736d1143d94d3493a0a51",
+    "0025_customer_referral_source.py": "8cb23953f2f5de290afd433b90f34371481f029e584d8bc1614c5c3a04efe70f",
+}
 
 TARGET = "design"
 RUNTIME_USER = "monkeydo"
@@ -404,7 +411,100 @@ class Host:
             "dropin": base64.b64encode(DROPIN.read_bytes()).decode() if DROPIN.exists() else None,
         }
 
-    def prepare(self, archive, digest, commit):
+    def schema_checkpoint(self, commit):
+        folder = STATE / "schema-checkpoints"
+        folder.mkdir(mode=0o700, exist_ok=True)
+        info = folder.lstat()
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            raise DeployError("Schema-checkpoint directory must be root-owned and private.")
+        backup = folder / (commit + "-" + uuid.uuid4().hex + ".dump")
+        fd = os.open(backup, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, "wb") as output:
+            result = subprocess.run(
+                [
+                    "/usr/sbin/runuser",
+                    "-u",
+                    "postgres",
+                    "--",
+                    "/usr/bin/pg_dump",
+                    "--format=custom",
+                    "--dbname=monkeydo_functional",
+                ],
+                stdout=output,
+                stderr=subprocess.PIPE,
+                timeout=180,
+                env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
+                check=False,
+            )
+            output.flush()
+            os.fsync(output.fileno())
+        if result.returncode or backup.stat().st_size == 0:
+            raise DeployError("Private database checkpoint failed; schema was not changed.")
+        # Validate the custom archive's catalogue before authorizing any schema changes.
+        self.command(["/usr/bin/pg_restore", "--list", str(backup)])
+        with backup.open("rb") as source:
+            digest = hashlib.file_digest(source, "sha256").hexdigest()
+        atomic_write(
+            backup.with_suffix(".json"),
+            json.dumps(
+                {
+                    "database": DB_NAME,
+                    "release_commit": commit,
+                    "sha256": digest,
+                    "size": backup.stat().st_size,
+                    "archive_catalogue_verified": True,
+                }
+            ).encode(),
+        )
+        return backup
+
+    def reviewed_batch_two(self, candidate, commit):
+        if TARGET != "functional":
+            raise DeployError("Reviewed batch-two schema preparation is Functional-only.")
+        for name, expected in BATCH_TWO_MIGRATIONS.items():
+            path = candidate / "core/migrations" / name
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                raise DeployError("Reviewed migration checksum mismatch; no schema update started.")
+        migration_host = Host(
+            self.environment | {"POSTGRES_USER": "monkeydo-functional-migrate"}, self.log
+        )
+        arguments = [str(candidate / ".venv/bin/python"), "manage.py", "reviewed_batch_two_schema"]
+        migration_host.command(
+            arguments, user="monkeydo-functional-migrate", runtime=True, cwd=candidate
+        )
+        print(
+            "Reviewed database preflight passed. Saving a private checkpoint and applying approved updates...",
+            flush=True,
+        )
+        backup = None
+        failure = None
+        try:
+            self.command(["systemctl", "stop", UNIT])
+            backup = self.schema_checkpoint(commit)
+            report = json.loads(
+                migration_host.command(
+                    arguments + ["--apply"],
+                    user="monkeydo-functional-migrate",
+                    runtime=True,
+                    cwd=candidate,
+                    timeout=600,
+                )
+            )
+        except Exception as error:
+            failure = error
+        finally:
+            # The current code pointer has not changed. Restore its service even if
+            # backup/migration fails; completed additive changes are never reversed.
+            self.command(["systemctl", "start", UNIT])
+            self.healthy()
+        if failure:
+            raise DeployError(
+                "Reviewed database step stopped. The existing release was restarted and verified. Completed schema steps were retained; inspect the protected log before retrying."
+            ) from failure
+        print("Reviewed database updates verified. Private checkpoint:", backup, flush=True)
+        return {"applied": report["applied"], "checkpoint": str(backup)}
+
+    def prepare(self, archive, digest, commit, reviewed_batch_two=False):
         import pwd
 
         incoming = BASE / "incoming"
@@ -459,6 +559,7 @@ class Host:
             cwd=candidate,
         )
         self.command([python, "manage.py", "check"], user=RUNTIME_USER, runtime=True, cwd=candidate)
+        schema_update = self.reviewed_batch_two(candidate, commit) if reviewed_batch_two else None
         # This checks the migration plan only. It never runs a migration.
         self.command(
             [python, "manage.py", "migrate", "--check"],
@@ -480,7 +581,8 @@ class Host:
             "commit": commit,
             "archive_sha256": digest,
             "prepared_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "migrations_applied": False,
+            "migrations_applied": bool(schema_update and schema_update["applied"]),
+            "reviewed_schema_update": schema_update,
         }
         atomic_write(
             candidate / ".monkeydo-release.json", json.dumps(metadata, indent=2).encode(), 0o644
@@ -590,11 +692,30 @@ class Controller:
                 "Update failed. The previous release was restored and verified."
             ) from failure
 
-    def deploy(self, archive, digest, commit):
+    def deploy(self, archive, digest, commit, reviewed_batch_two=False):
         self.recover()
         self.host.healthy()
         print("Preparing a separate release; the existing site stays running...", flush=True)
-        candidate = self.host.prepare(archive, digest, commit)
+        if reviewed_batch_two:
+            # Persist recovery before the optional schema step can stop the service.
+            # A killed process is then handled by the existing recover-on-next-run path.
+            self.state["pending"] = self.host.snapshot()
+            self.save()
+            try:
+                candidate = self.host.prepare(archive, digest, commit, reviewed_batch_two=True)
+            except BaseException:
+                try:
+                    self.host.healthy()
+                except BaseException:
+                    self.host.switch(self.state["pending"])
+                    self.host.healthy()
+                self.state["pending"] = None
+                self.save()
+                raise
+            self.state["pending"] = None
+            self.save()
+        else:
+            candidate = self.host.prepare(archive, digest, commit)
         print("Checks passed. Switching the release and verifying HTTPS...", flush=True)
         self.activate(self.host.candidate_snapshot(candidate))
         print("Deployment verified. Previous code and Python environment are retained.")
@@ -630,10 +751,13 @@ def main():
     deploy.add_argument("--archive", type=Path, required=True)
     deploy.add_argument("--sha256", required=True)
     deploy.add_argument("--commit", required=True)
+    deploy.add_argument("--apply-reviewed-batch-two", action="store_true")
     sub.add_parser("rollback")
     sub.add_parser("status")
     args = parser.parse_args()
     select_target(args.target)
+    if getattr(args, "apply_reviewed_batch_two", False) and args.target != "functional":
+        parser.error("Reviewed batch-two schema updates require the Functional target.")
     if os.geteuid() != 0:
         parser.error("Run through the authorized root SSH account.")
     if args.operation == "deploy" and (
@@ -670,7 +794,9 @@ def main():
             elif args.operation == "rollback":
                 controller.rollback()
             else:
-                controller.deploy(args.archive, args.sha256, args.commit)
+                controller.deploy(
+                    args.archive, args.sha256, args.commit, args.apply_reviewed_batch_two
+                )
     except Exception as error:
         print("Deployment stopped:", str(error), file=sys.stderr)
         print("Protected log:", log, file=sys.stderr)
