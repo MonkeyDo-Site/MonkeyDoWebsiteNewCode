@@ -400,3 +400,7 @@ The owner requested removal of the “How did you hear about MonkeyDo?” line f
 ## 2026-11-15 — Align Open-only session cards
 
 Owner requested that the Open-only calendar card retain Open above its description and align its information/button with neighboring available cards. Keep a separate status/description/action layout and reserve common description space; bottom-align booking actions across a row. No booking-availability or data changes.
+
+## 2026-11-15 — Align progress-bar completion text
+
+Owner requested that “You’re all set” in the progress bar line up with the other progress text. Remove its top margin, match step-label font sizes and allow responsive wrapping while retaining the four-step customer-only workflow and existing completion wording. This is a CSS-only presentation change.
