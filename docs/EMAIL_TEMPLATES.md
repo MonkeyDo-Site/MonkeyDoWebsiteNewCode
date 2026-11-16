@@ -450,3 +450,11 @@ Payment instructions: card successfully charged **Your payment has been received
 > The Monkey Do team
 
 Compute discount before tax/processing fee. Show one combined tax total (base-item and fee tax), one fee row, actual party inclusions/guest quantities and owner override. Fee row is conditional on card portion; changes at arrival create a revised financial record, not a false claim that booking charged it already. Owner can waive cancellation fee operationally.
+
+## Owner-approved short-term exceptions and missing staff email
+
+Public new-membership minimums and normal terms remain three months. When the owner explicitly grants a one- or two-month backend exception, future sale/confirmation integration must render that accepted exception accurately rather than telling that customer their minimum is three months. Current draft screens do not send membership confirmations. Staff-created customers may lack email; do not fabricate a destination or mark an email delivered. Public booking must collect a valid unique current address before completion. Historical email reuse creates an owner Dashboard notice only, with no new outbound email template or automatic customer notification.
+
+## Weekday wording
+
+Where an appointment or other date includes a weekday, use **Motzei Shabbos** for weekday index 5 through the shared business-date formatting helper. Keep actual appointment dates, New York times and numeric/ISO values unchanged. Apply the same wording when the planned booking-email integration is implemented; this change does not send or enable customer emails.

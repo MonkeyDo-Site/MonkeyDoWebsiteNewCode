@@ -34,8 +34,14 @@ class PublicBookingTests(TestCase):
 
     def new_review(self, **updates):
         self.begin()
+        referral = updates.pop("referral_source", "Sample referral")
         self.client.post(
-            "/book/details/", {"last_name": "Sample Family", "email": "sample@example.invalid"}
+            "/book/details/",
+            {
+                "last_name": "Sample Family",
+                "email": "sample@example.invalid",
+                "referral_source": referral,
+            },
         )
         data = {
             "play_type": "open",
@@ -44,7 +50,6 @@ class PublicBookingTests(TestCase):
             "babies": 0,
             "socks": 0,
             "expected_method": "card",
-            "referral_source": "Sample referral",
         }
         data.update(updates)
         return self.client.post("/book/details/", data)
@@ -65,11 +70,14 @@ class PublicBookingTests(TestCase):
         self.assertEqual(booking.quotes.get().snapshot["total"], "32.94")
         self.assertIsNone(booking.quotes.get().actor)
         self.assertEqual(booking.customer.customer_type, "family")
-        self.assertEqual(booking.referral_source, "Sample referral")
+        self.assertEqual(booking.customer.referral_source, "Sample referral")
+        self.assertEqual(booking.referral_source, "")
         self.assertEqual(
             AuditEvent.objects.filter(action="booking.customer_test_created").count(), 1
         )
-        self.assertContains(self.client.get("/book/receipt/"), "Setup pending")
+        self.assertContains(
+            self.client.get("/book/receipt/"), "You're all set for your MonkeyDo adventure!"
+        )
         self.assertContains(self.client.get("/book/receipt/"), "no email has been sent")
         operator = Client()
         operator.force_login(staff_user())
@@ -158,7 +166,7 @@ class PublicBookingTests(TestCase):
         with self.assertRaises(ValidationError):
             submit_booking(changed)
 
-    def test_hidden_future_or_saturday_session_and_expired_flow_blocked(self):
+    def test_hidden_session_and_expired_flow_blocked(self):
         self.slot.public = False
         self.slot.save()
         self.assertEqual(self.client.post(f"/book/start/{self.slot.pk}/").status_code, 400)
@@ -252,7 +260,11 @@ class PublicBookingTests(TestCase):
         )
         form = self.client.get("/book/details/").context["form"]
         self.assertEqual(form.initial["socks"], 2)
-        self.assertEqual(form.initial["referral_source"], "Fictional friend")
+        self.assertNotIn("referral_source", form.fields)
+        self.assertEqual(
+            self.client.session["customer_test_booking"]["contact"]["referral_source"],
+            "Fictional friend",
+        )
         self.client.post(
             "/book/details/",
             {
@@ -267,7 +279,7 @@ class PublicBookingTests(TestCase):
         self.confirm()
         Booking.objects.update(attendance="cancelled")
         response = self.client.get("/book/receipt/")
-        self.assertContains(response, "Cancelled")
+        self.assertNotContains(response, "all set for your MonkeyDo adventure")
         self.assertContains(response, "This test booking has been cancelled")
 
     @override_settings(APP_ENV="staging", DESIGN_REVIEW_ONLY=False)
@@ -295,7 +307,7 @@ class PublicBookingTests(TestCase):
         self.assertEqual(self.client.get("/staff/bookings/").status_code, 302)
         self.assertEqual(self.client.get("/01-home.html").status_code, 404)
 
-    def test_close_surname_requires_confirmation_without_disclosing_customer(self):
+    def test_close_surname_discloses_only_phone_selected_name_and_continue_confirms(self):
         c = Customer.objects.create(
             last_name="Greenfeld", phone="2025550100", email="private@example.invalid"
         )
@@ -305,12 +317,12 @@ class PublicBookingTests(TestCase):
         self.assertEqual(flow["stage"], "name_confirm")
         self.assertNotIn("proof", flow)
         response = self.client.get("/book/details/")
-        self.assertContains(response, "close spelling match")
+        self.assertContains(response, "Is this you?")
         self.assertNotContains(response, c.email)
-        self.assertNotContains(response, c.last_name)
+        self.assertContains(response, c.last_name)
+        self.assertContains(response, c.phone)
+        self.assertNotContains(response, "confirm_similar_name")
         self.client.post("/book/details/", {})
-        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "name_confirm")
-        self.client.post("/book/details/", {"confirm_similar_name": "on"})
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "details")
         response = self.client.get("/book/details/")
         self.assertContains(response, c.last_name)

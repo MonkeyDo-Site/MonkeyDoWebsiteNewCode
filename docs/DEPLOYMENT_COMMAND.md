@@ -7,7 +7,7 @@ The helper defaults to the existing **design-only** service at staging.monkeydop
 1. The Windows wrapper calculates the downloaded ZIP's SHA-256, uploads it with your existing SSH key, and invokes the root-owned server helper. SSH host-key verification stays strict. No personal key, passphrase, GitHub token or preview password is copied into the script.
 2. The server checks the staging target/private configuration, service identity, existing gate/HTTPS and exclusive deployment lock. It copies the upload into private root-owned storage, checks its digest and expected commit folder, and rejects unsafe ZIP entries/links, oversized archives and low disk space.
 3. It extracts into a separate release, creates that release's own Python virtualenv and installs pinned requirements as the unprivileged deploy user. It collects static files, runs Django checks, verifies design-only routing and checks the migration plan. The old site continues serving during preparation.
-4. **Pending migrations stop the update before switching. No migrations are applied by this script.** Schema updates need a separately reviewed compatible migration/backup procedure; reversing code cannot undo a destructive database change.
+4. **Routine updates stop on pending migrations.** The explicit Functional-only `-ApplyReviewedBatchTwo` option is the single reviewed exception: checksum-pinned migrations 0023–0025, duplicate-email/identity/plan preflight and a root-only local database checkpoint. Unknown migrations still stop the update. See [this release handoff](OWNER_FEEDBACK_BATCH_TWO_RELEASE.md). Code rollback does not undo schema changes.
 5. It records a durable recovery checkpoint, briefly stops the preview service, atomically changes the current symlink/systemd override, and starts the selected code with its own virtualenv. It checks local socket responses, password-gate redirects, private headers, static CSS and public HTTPS with certificate verification.
 6. If activation or verification fails, it restores the preceding code link and exact service override/Python environment, restarts and verifies it. Existing owner accounts, preview passwords, cookies/secrets and database records are not reset. If restoration cannot be verified it reports failure and retains recovery information; it does not claim success.
 
@@ -42,7 +42,7 @@ Each release handoff must supply the full approved commit and ZIP link. Then run
 powershell -NoProfile -ExecutionPolicy RemoteSigned -File "$HOME\MonkeyDoDeploy\Update-MonkeyDo.ps1" -Archive "$HOME\Downloads\MonkeyDoWebsiteNewCode-APPROVED_COMMIT.zip" -Commit APPROVED_COMMIT
 ```
 
-The wrapper handles SCP, checksum, preparation, switching, checks and automatic code rollback on failure. The SSH-key passphrase may still be requested; it is not stored. Downloading the private GitHub ZIP remains a browser action until separate repository-download credentials or CI deployment access are deliberately configured.
+The wrapper handles SCP, checksum, preparation, switching, checks and automatic code rollback on failure. The SSH-key passphrase may still be requested; it is not stored. Private repositories require an authenticated browser download unless download access is deliberately configured. The current public repository also permits the pinned HTTPS download used by the batch-two handoff; no GitHub token is stored on the Droplet.
 
 To restore the preceding managed release:
 
@@ -60,12 +60,12 @@ The owner now wants design and booking testing updated together on one staging s
 
 ## Failure and recovery limits
 
-- Code/Python rollback is not a database backup or a database rollback. No plaintext database dump or reverse migration is created. Approved encrypted backup/restore work remains separate.
+- Code/Python rollback is not a database backup or a database rollback. Routine deployment creates no database dump or reverse migration. The explicit batch-two option creates a root-only local PostgreSQL checkpoint before its reviewed schema update; this is separate from the planned encrypted offsite backup system. No automatic database restoration is performed.
 - A killed process or power loss can leave a durable pending checkpoint. The next deploy/rollback command restores and verifies that preceding release first, then asks you to rerun the requested operation. It is not an automatic disaster-recovery/boot service. `-Status` reports pending recovery without changing it.
 - A broken certificate, DNS, systemd, disk or host can prevent health verification or restoration. The script reports that condition; manual host repair may still be necessary. It does not change these services or undo out-of-band OS/schema changes.
 - Root-owned state and redacted command logs live under `/var/lib/monkeydo-deploy` (private). Release provenance includes commit, upload digest and preparation time. No credentials are printed. Incoming ZIPs/failed candidates/old releases are retained for explicit operator cleanup; no data is deleted to make room.
 - Candidate code and dependencies must be approved. Checking a supplied ZIP's hash and commit folder verifies transfer/identity consistency, not that arbitrary code is trustworthy.
-- Each target has fixed peer-auth database, hostname, runtime role, environment, service and release/state directories. Functional staging requires the one-time setup below. Schema changes always remain separate.
+- Each target has fixed peer-auth database, hostname, runtime role, environment, service and release/state directories. Functional staging requires the one-time setup below. Unreviewed schema changes remain separate. Only the explicit Functional batch-two option permits the three pinned updates described in the release handoff.
 
 ## Testing
 
@@ -86,3 +86,16 @@ powershell -NoProfile -ExecutionPolicy RemoteSigned -File "$HOME\MonkeyDoDeploy\
 Functional releases live under `/srv/monkeydo-functional`, state under `/var/lib/monkeydo-functional-deploy`, and configuration in `/etc/monkeydo/functional.env`. Candidate preparation checks the functional runtime role and `functional_staging_preflight`. Existing default commands continue to select Design. Rollback cannot cross target directories. No host installation or service switch has been performed for this extension.
 
 Both modes name the same public hostname. Do not operate them as simultaneous public sites. See [SHARED_STAGING_CUTOVER.md](SHARED_STAGING_CUTOVER.md); routine code rollback does not switch nginx between modes.
+
+
+## Reviewed second-batch schema update
+
+After installing this exact reviewed helper, `-Target Functional -ApplyReviewedBatchTwo` permits only migrations 0023–0025 with embedded SHA-256 checks. It checks the separate migration identity/database, runtime privilege limits, full migration plan and current-email uniqueness before stopping the app. Unknown migrations, changed migration files or duplicate current emails stop the update.
+
+Before this opt-in preparation can stop the service, the controller persists its existing-code recovery checkpoint. With writes paused, it creates a consistent custom-format PostgreSQL dump in `/var/lib/monkeydo-functional-deploy/schema-checkpoints/` (directory 0700, files 0600), validates its catalogue and records its SHA-256/size. It then runs the three reviewed migrations using `monkeydo-functional-migrate`, grants only the new tables' required runtime row/sequence permissions, and restarts/verifies the existing release. The normal prepared-code switch and HTTPS checks follow. A normal failure restarts/verifies the existing release; a killed process leaves the durable checkpoint for recovery on the next command.
+
+Completed schema steps are retained, never automatically reversed. Retrying accepts an already-completed plan or the remaining reviewed suffix. Code rollback preserves the database. After membership draft edits have been used, an old code release can show the original draft fields rather than the newer appended revisions; schema/data recovery is a separate operator action. Never restore a checkpoint automatically over newer bookings.
+
+The local checkpoint is a private same-server recovery aid, not an encrypted offsite/disaster-recovery backup. It is not uploaded, exposed to the app or sent to a paid service. The full planned encrypted backup system remains separate. No cleanup deletes old releases, checkpoints or business data.
+
+The release handoff supplies a single Windows PowerShell invocation to download a pinned public archive, refresh the installed wrapper/helper and invoke this explicit option. Routine future releases can continue to omit the option; their pending-migration guard is unchanged.

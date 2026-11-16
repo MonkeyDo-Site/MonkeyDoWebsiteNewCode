@@ -5,7 +5,7 @@ from django import forms
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Booking, Customer, PricingPolicy, Session
+from .models import Booking, CalendarDate, Customer, PricingPolicy, Session
 
 
 class CustomerChoice(forms.ModelChoiceField):
@@ -14,15 +14,16 @@ class CustomerChoice(forms.ModelChoiceField):
 
 
 class TestBookingForm(forms.Form):
+    estimate_token = forms.CharField(required=False, widget=forms.HiddenInput)
     customer = CustomerChoice(queryset=Customer.objects.order_by("last_name", "pk"))
     session = forms.ModelChoiceField(queryset=Session.objects.none())
+    supervised = forms.BooleanField(required=False, label="Supervised Play")
     children = forms.IntegerField(
         min_value=0, max_value=32767, initial=1, label="Children ages 1–11"
     )
     adults = forms.IntegerField(min_value=0, max_value=32767, initial=1, label="Adults ages 12+")
     babies = forms.IntegerField(min_value=0, max_value=32767, initial=0, label="Babies under one")
     socks = forms.IntegerField(min_value=0, max_value=2147483647, initial=0, label="Grip socks")
-    supervised = forms.BooleanField(required=False, label="Supervised drop-off play")
     expected_method = forms.ChoiceField(
         choices=Booking._meta.get_field("expected_method").choices, label="Expected payment method"
     )
@@ -31,13 +32,22 @@ class TestBookingForm(forms.Form):
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput, required=False)
 
     def __init__(self, *args, owner=False, booking=None, customer=None, **kwargs):
+        self.booking = booking
         initial = {}
         if customer:
             initial["customer"] = customer
         if booking:
             initial = {
                 field: getattr(booking, field)
-                for field in ("children", "adults", "babies", "socks", "expected_method")
+                for field in (
+                    "children",
+                    "adults",
+                    "babies",
+                    "socks",
+                    "expected_method",
+                    "supervised",
+                    "session",
+                )
             }
             initial["version"] = booking.edit_version
         super().__init__(*args, initial=initial, **kwargs)
@@ -47,15 +57,23 @@ class TestBookingForm(forms.Form):
             ends_at__gt=timezone.now(),
             closed=False,
             kind=Session.Kind.ORDINARY,
-        )
+        ).exclude(starts_at__date__in=CalendarDate.objects.filter(closed=True).values("day"))
         if not owner:
             self.fields.pop("override_capacity")
         if booking:
-            for field in ("customer", "session", "supervised", "creation_key"):
+            for field in ("customer", "creation_key"):
                 self.fields.pop(field)
             self.fields["version"].required = True
         else:
             self.fields.pop("version")
+            self.fields.pop("estimate_token")
+        from .forms import payment_method_choices
+
+        old_quote = booking.quotes.first() if booking else None
+        self.fields["expected_method"].choices = payment_method_choices(
+            old_quote.policy if old_quote else PricingPolicy.objects.first()
+        )
+        customer_picker(self)
 
 
 class TimingForm(forms.Form):
@@ -75,7 +93,7 @@ class TimingForm(forms.Form):
             ends_at__gt=timezone.now(),
             closed=False,
             kind=Session.Kind.ORDINARY,
-        )
+        ).exclude(starts_at__date__in=CalendarDate.objects.filter(closed=True).values("day"))
         if not owner:
             self.fields.pop("override_capacity")
 
@@ -113,3 +131,22 @@ class PricingPolicyForm(forms.ModelForm):
             self.instance.tax_rate = result["tax_percent"] / Decimal(100)
             self.instance.card_fee_rate = result["fee_percent"] / Decimal(100)
         return result
+
+
+def customer_picker(form):
+    """Render only the selected record; authorized async search supplies choices."""
+    field = form.fields.get("customer")
+    if field is None:
+        return
+    selected = form.data.get("customer") if form.is_bound else form.initial.get("customer")
+    if isinstance(selected, Customer):
+        selected = selected.pk
+    row = (
+        Customer.objects.filter(pk=selected).first()
+        if str(selected).isdigit() and len(str(selected)) < 19
+        else None
+    )
+    field.widget.choices = [("", "Select a customer from the search results")] + (
+        [(row.pk, field.label_from_instance(row))] if row else []
+    )
+    field.widget.attrs["data-customer-picker"] = "true"

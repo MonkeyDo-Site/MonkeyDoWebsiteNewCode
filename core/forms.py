@@ -20,10 +20,20 @@ def normalize_phone(value, *, optional=False):
     return digits
 
 
+def phone_search_digits(value):
+    if not value or not re.fullmatch(r"[0-9+().\s-]+", value):
+        return ""
+    digits = re.sub(r"\D", "", value)
+    return digits[1:] if len(digits) == 11 and digits.startswith("1") else digits
+
+
 class CustomerForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last Name")
     phone = forms.CharField(max_length=40, widget=forms.TextInput(attrs={"type": "tel"}))
-    email = forms.EmailField()
+    email = forms.EmailField(required=False)
+    referral_source = forms.CharField(
+        max_length=240, required=False, label="How did you hear about MonkeyDo?"
+    )
     move_previous_phone = forms.ChoiceField(
         required=False,
         choices=[("", "Choose if changing phone"), ("yes", "Yes"), ("no", "No")],
@@ -39,7 +49,14 @@ class CustomerForm(forms.Form):
         if customer:
             initial = {
                 field: getattr(customer, field)
-                for field in ("last_name", "phone", "email", "customer_type", "revision")
+                for field in (
+                    "last_name",
+                    "phone",
+                    "email",
+                    "referral_source",
+                    "customer_type",
+                    "revision",
+                )
             }
         super().__init__(*args, initial=initial, **kwargs)
         if not customer:
@@ -49,6 +66,16 @@ class CustomerForm(forms.Form):
             self.fields["revision"].required = True
         if not owner:
             self.fields.pop("customer_type")
+
+    def clean_email(self):
+        from .customers import check_email_available
+
+        email = self.cleaned_data["email"].strip().lower()
+        try:
+            check_email_available(email, self.customer.pk if self.customer else None)
+        except forms.ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from None
+        return email
 
     def clean_phone(self):
         return normalize_phone(self.cleaned_data["phone"])
@@ -85,3 +112,15 @@ class StaffAuthenticationForm(AuthenticationForm):
         super().confirm_login_allowed(user)
         if not user.is_staff:
             raise self.get_invalid_login_error()
+
+
+def payment_method_choices(policy):
+    from .models import Booking
+
+    choices = []
+    for key, label in Booking._meta.get_field("expected_method").choices:
+        if key == "card":
+            rate = format((policy.card_fee_rate * 100).normalize(), "f") if policy else None
+            label = f"Credit Card – a {rate}% processing fee applies." if rate else "Credit Card"
+        choices.append((key, label))
+    return choices

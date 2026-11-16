@@ -5,7 +5,7 @@
 <h2>{% if editing %}Edit {{ editing.username }}{% else %}Create staff account{% endif %}
 </h2>
 <p>Usernames are permanent. Disable an account when it is no longer needed. Passwords are never displayed.</p>
-<form method="post" class="record-form panel">{% csrf_token %}{{ form.as_p }}<button class="button">Save staff account</button>
+<form method="post" class="record-form panel">{% csrf_token %}{% include 'core/partials/form_fields.html' %}<button class="button">Save staff account</button>
 </form>
 </section>
 <section>

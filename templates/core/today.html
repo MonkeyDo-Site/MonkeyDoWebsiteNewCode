@@ -1,6 +1,9 @@
 {% extends 'core/staff_base.html' %}{% block title %}Today · MonkeyDo Staff{% endblock %}{% block staff_content %}
 <p class="eyebrow">Your day at MonkeyDo</p>
-<h1>Today</h1>
+<div class="page-title-actions"><h1>Today</h1>{% if perms.core.add_booking and perms.core.view_customer %}<a class="button small" href="{% url 'booking_create' %}">Add booking</a>{% endif %}</div>
 <p class="notice">Test booking management is available. Arrival and charging are not enabled.</p>
+{% include 'core/partials/booking_filters.html' %}
+
 {% include 'core/partials/booking_table.html' with table_caption="Today's bookings" empty_message="No test bookings for today." link_customers=True %}
+{% include 'core/partials/session_overview.html' %}
 {% endblock %}

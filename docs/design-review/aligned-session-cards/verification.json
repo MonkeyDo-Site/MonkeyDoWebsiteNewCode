@@ -1,0 +1,98 @@
+{
+  "screens": [
+    {
+      "viewport": 1440,
+      "cards": [
+        {
+          "top": 882.21875,
+          "status": "Open",
+          "statusY": 933.3125,
+          "description": "Supervised play is available for this session.",
+          "descriptionY": 964.40625,
+          "buttonY": 1014
+        },
+        {
+          "top": 882.21875,
+          "status": "Open",
+          "statusY": 933.3125,
+          "description": "Supervised play is available for this session.",
+          "descriptionY": 964.40625,
+          "buttonY": 1014
+        },
+        {
+          "top": 882.21875,
+          "status": "Open",
+          "statusY": 933.3125,
+          "description": "This session is open play only",
+          "descriptionY": 964.40625,
+          "buttonY": 1014
+        }
+      ],
+      "aligned": true,
+      "overflow": false
+    },
+    {
+      "viewport": 900,
+      "cards": [
+        {
+          "top": 793.15625,
+          "status": "Open",
+          "statusY": 844.25,
+          "description": "Supervised play is available for this session.",
+          "descriptionY": 875.34375,
+          "buttonY": 924.9375
+        },
+        {
+          "top": 793.15625,
+          "status": "Open",
+          "statusY": 844.25,
+          "description": "Supervised play is available for this session.",
+          "descriptionY": 875.34375,
+          "buttonY": 924.9375
+        },
+        {
+          "top": 793.15625,
+          "status": "Open",
+          "statusY": 844.25,
+          "description": "This session is open play only",
+          "descriptionY": 875.34375,
+          "buttonY": 924.9375
+        }
+      ],
+      "aligned": true,
+      "overflow": false
+    },
+    {
+      "viewport": 390,
+      "cards": [
+        {
+          "top": 1047.28125,
+          "status": "Open",
+          "statusY": 1098.375,
+          "description": "Supervised play is available for this session.",
+          "descriptionY": 1129.46875,
+          "buttonY": 1179.0625
+        },
+        {
+          "top": 1259.15625,
+          "status": "Open",
+          "statusY": 1310.25,
+          "description": "Supervised play is available for this session.",
+          "descriptionY": 1341.34375,
+          "buttonY": 1390.9375
+        },
+        {
+          "top": 1471.03125,
+          "status": "Open",
+          "statusY": 1522.125,
+          "description": "This session is open play only",
+          "descriptionY": 1553.21875,
+          "buttonY": 1602.8125
+        }
+      ],
+      "aligned": true,
+      "overflow": false
+    }
+  ],
+  "data": "Fictional local schedule, frozen to match earlier previews. No hosted changes."
+}

@@ -8,7 +8,7 @@ Apply migrations, then rerun `python manage.py configure_staff_group` to grant t
 
 Saving holds capacity and stores a price snapshot with status **Setup pending**. It does not assert verified card setup, waiver coverage, arrival, payment or confirmation delivery. Membership benefits are explicitly absent. Use artificial customers only.
 
-Open a reservation to edit counts/payment choice, change timing, or use **Cancel booking**. Cancellation marks the test booking **Cancelled** and makes its spaces available. This pending-test action does not implement the final cancellation/no-show fee workflow and does not waive or charge a customer fee. Only pending records with blank attendance support these tools. Legacy records without a price snapshot retain that absence; attendee repricing is blocked rather than inventing historical amounts.
+Open a reservation to use the unified Edit booking form for eligible timing, counts, Open/Supervised Play and expected payment method, or use **Cancel booking**. Cancellation marks the test booking **Cancelled** and makes its spaces available. This pending-test action does not implement the final cancellation/no-show fee workflow and does not waive or charge a customer fee. Only pending records with blank attendance support these tools. Legacy records without a price snapshot retain that absence; attendee repricing is blocked rather than inventing historical amounts.
 
 Owner capacity overrides are explicit and audited. They cannot override closures, party/exclusive sessions, ended sessions or supervised-play cutoff. Staff permissions are checked in both views and service functions. Competing capacity requests serialize on PostgreSQL session locks; stale edits are rejected. Repeated identical creation identifiers return the original record; changed payloads using that identifier are rejected.
 
@@ -27,3 +27,15 @@ For example: two ordinary child admissions with one accompanying adult produce $
 Card/waiver setup, confirmation emails, arrivals/charges, membership benefits/conversion credit, split tenders, real cancellation/no-show fees, owner special pricing/complimentary visits, refunds and Banquest/R2/Resend integrations remain unfinished. The original internal reservation primitive is retained for existing tests; it does not provide a public confirmed-booking API.
 
 No hosted deployment, Droplet resize, provider call, outbound email or payment is performed by these tools. Production activation remains separate approved work.
+
+The second owner-feedback batch adds combined date-bounded filters and contact columns on Bookings/Today; Today includes empty sessions and unfiltered capacity totals. Add booking is available to authorized staff on Today and beside owner-calendar sessions. Amount-changing edits require payment-method review, maintain the original policy and append a quote. Cancellation has explicit confirmation with a non-JavaScript fallback. Friendly audit differences describe changes instead of raw event codes. See OWNER_EDITS_BATCH_2.md for the approved scope and review boundary.
+
+## Approved review follow-up
+
+Staff edit forms show server-calculated itemized estimates before save. The estimate endpoint is read-only, permission/CSRF protected and uses the original quote policy. Amount-changing saves display a payment-method reminder, replacing the extra dropdown. A signed, expiring proof binds the reviewed amount to booking ID/version, target session and pricing inputs; final saving rechecks the booking version/capacity and price. Without JavaScript, the first submission shows the revised estimate/reminder and preserves fields for an explicit save. No real payment or card action occurs.
+
+Today/Bookings place Add booking beside the title, filters above headings, and Apply/Clear below contact search; Enter submits search. Session filters accept zero, one or multiple selections; Bookings applies clock-time selections across its selected date range. Only Today describes the independent selected-session totals below the table. Credit-card labels show the applicable rate, including saved-policy rates when editing.
+
+## Final review refinements
+
+Create/Edit booking order is Session, Supervised Play, attendee counts, socks and expected method. Referral collection moved to the customer profile; legacy booking answers remain stored and are omitted from booking detail. Today/Bookings use a compact wrapping multi-select with explicit All sessions. Native popovers keep choices above the scrolling table without increasing the filter row; a details/checkbox fallback remains usable without popovers. All-session requests are validated server-side, and choices remain associated with the filter form. See OWNER_EDITS_BATCH_2_FINAL_REVIEW.md for current screenshots.

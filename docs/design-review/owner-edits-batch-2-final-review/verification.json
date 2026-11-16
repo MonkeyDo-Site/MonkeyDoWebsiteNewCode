@@ -1,0 +1,220 @@
+{
+  "screens": [
+    {
+      "page": "01-membership-earlier-version",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "02-membership-table",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "03-membership-current-details",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "04-today-sessions-collapsed",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "05-today-sessions-expanded",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "06-bookings-sessions-collapsed",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "07-bookings-sessions-expanded",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "08-create-booking-field-order",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "09-edit-booking-field-order",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "10-customer-profile-referral",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "11-edit-customer-referral",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "12-customer-referral-history",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "13-earlier-booking-referral-retained",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "14-edit-membership-identifier",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "15-calendar-open-play-and-about-link",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "16-returning-customer-name-verification",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "17-returning-customer-email-on-file",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "19-payment-details-wording",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "18-new-customer-details-and-referral",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "01-membership-earlier-version",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "02-membership-table",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "03-membership-current-details",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "04-today-sessions-collapsed",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "05-today-sessions-expanded",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "06-bookings-sessions-collapsed",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "07-bookings-sessions-expanded",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "08-create-booking-field-order",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "09-edit-booking-field-order",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "10-customer-profile-referral",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "11-edit-customer-referral",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "12-customer-referral-history",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "13-earlier-booking-referral-retained",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "14-edit-membership-identifier",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "15-calendar-open-play-and-about-link",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "16-returning-customer-name-verification",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "17-returning-customer-email-on-file",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "19-payment-details-wording",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "18-new-customer-details-and-referral",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "20-customer-completion",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "20-customer-completion",
+      "viewport": 390,
+      "overflow": false
+    }
+  ],
+  "checks": [
+    "Public-only four-step progress",
+    "Earlier membership version and stable M-prefixed identifiers",
+    "Collapsed and expanded checkbox popovers do not expand filter rows",
+    "All sessions, multiple selection, live summary and Escape dismissal",
+    "Create/edit booking field order and customer-only referral forms",
+    "Historical referral retained and customer edits audited",
+    "Email hidden until surname verification; saved email shown afterward",
+    "New-customer email and referral fields after silent no-match lookup",
+    "Open-only wording, unavailable statuses and About link",
+    "Payment Details omits repeated verification message and uses approved edit link",
+    "Customer completion headline, return button and accurate test status",
+    "No page JavaScript errors or document overflow"
+  ],
+  "data": "Fictional local review data only. No hosted changes.",
+  "scope": "Responses to Changes for Proposals for second batch of edits.docx, all nine screenshots, and approved follow-up answers."
+}

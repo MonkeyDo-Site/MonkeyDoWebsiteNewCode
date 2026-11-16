@@ -46,3 +46,43 @@ class MembershipConcurrencyTests(TransactionTestCase):
         self.assertEqual(MembershipDraft.objects.count(), 1)
         self.assertEqual(MembershipDraftCycle.objects.count(), 3)
         self.assertEqual(AuditEvent.objects.filter(action="membership.draft_created").count(), 1)
+
+    def test_concurrent_edits_append_one_revision_and_reject_the_stale_edit(self):
+        import uuid
+
+        from django.core.exceptions import ValidationError
+
+        from core.memberships import edit_draft
+
+        root = create_draft(**self.args)
+        ready = Barrier(2)
+
+        def attempt(index):
+            close_old_connections()
+            try:
+                actor = get_user_model().objects.get(pk=self.staff.pk)
+                ready.wait(timeout=10)
+                try:
+                    edit_draft(
+                        actor=actor,
+                        draft_id=root.pk,
+                        version=1,
+                        submission_key=uuid.uuid4(),
+                        kind=root.kind,
+                        places=2 + index,
+                        months=root.months,
+                        billing=root.billing,
+                        starts_on=root.starts_on,
+                        expected_method=root.expected_method,
+                    )
+                    return "saved"
+                except ValidationError:
+                    return "stale"
+            finally:
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(attempt, range(2)))
+        self.assertCountEqual(results, ["saved", "stale"])
+        self.assertEqual(root.revisions.count(), 1)
+        self.assertEqual(AuditEvent.objects.filter(action="membership.draft_edited").count(), 1)

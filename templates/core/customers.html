@@ -9,15 +9,6 @@
   <button class="button small" type="submit">Search</button>
 </form>
 {% if perms.core.add_customer %}<p><a class="button small" href="{% url 'customer_create' %}">Create customer</a></p>{% endif %}
-<div class="customer-list">
-{% for customer in customers %}
-  <article class="panel">
-    <h2><a href="{% url 'customer_detail' customer.pk %}">{{ customer.last_name }}</a></h2>
-    <p>{{ customer.customer_number }} · {{ customer.get_customer_type_display }}</p>
-    <p>{{ customer.phone }} · {{ customer.email }}</p>
-    {% if customer.search_matches %}<p class="caption">Matched: {{ customer.search_matches }}</p>{% endif %}
-  </article>
-{% empty %}<p>No customers match your search.</p>{% endfor %}
-</div>
+<div class="staff-table-scroll" tabindex="0" role="region" aria-label="Customers"><table class="staff-table"><thead><tr><th>Customer ID</th><th>Family name</th><th>Phone</th><th>Email</th><th>Type</th><th>Search match</th></tr></thead><tbody>{% for customer in customers %}<tr><td>{{ customer.customer_number }}</td><td><a href="{% url 'customer_detail' customer.pk %}">{{ customer.last_name }}</a></td><td>{{ customer.phone }}</td><td>{{ customer.email|default:'—' }}</td><td>{{ customer.get_customer_type_display }}</td><td>{% if customer.search_matches %}Matched: {{ customer.search_matches }}{% else %}—{% endif %}</td></tr>{% empty %}<tr><td colspan="6">No customers match your search.</td></tr>{% endfor %}</tbody></table></div>
 {% include 'core/pagination.html' with page=customers %}
 {% endblock %}

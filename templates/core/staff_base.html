@@ -2,16 +2,16 @@
 {% block body_class %}staff-page{% endblock %}
 {% block content %}
 <div class="staff-layout">
-  <aside aria-label="Staff navigation">
+  <aside aria-label="Staff navigation"><details class="staff-nav" open><summary>Staff menu</summary><div class="staff-nav-links">
     {% if perms.core.view_booking %}<a href="{% url 'today' %}">Today</a><a href="{% url 'bookings' %}">Bookings</a><a href="{% url 'dashboard' %}">Dashboard</a>{% endif %}
     {% if perms.core.view_membershipdraft and perms.core.view_customer %}<a href="{% url 'membership_drafts' %}">Membership drafts</a>{% endif %}
     {% if perms.core.view_customer %}<a href="{% url 'customers' %}">Customers</a>{% endif %}
     {% if user.is_superuser %}<a href="{% url 'website_settings' %}">Website settings</a><a href="{% url 'membership_pricing' %}">Membership pricing</a><a href="{% url 'scheduling' %}">Owner scheduling</a><a href="{% url 'staff_accounts' %}">Staff accounts</a><a href="{% url 'owner_security' %}">Owner security</a><a href="{% url 'staging_settings' %}">Staging access</a><a href="{% url 'pricing_settings' %}">Staging pricing</a>{% endif %}
     <a href="/admin/">Database inspector</a>
     <p class="caption">Test workspace · No real payments</p>
-  </aside>
+  </div></details></aside>
   <section>
-    {% if owner_scheduling_section %}<div class="owner-scheduling-location"><a href="{% url 'scheduling' %}">Owner scheduling</a><span>New York local time</span></div>{% endif %}
+    {% if owner_scheduling_section %}<nav class="owner-scheduling-location" aria-label="Scheduling navigation"><a href="{% url 'scheduling' %}">Owner Scheduling</a><span>› {% if request.resolver_match.url_name == 'scheduling' %}Individual Date{% elif request.resolver_match.url_name == 'horizon_settings' %}Booking horizon{% else %}Weekly schedule / Session settings{% endif %}</span></nav><nav class="scheduling-tabs" aria-label="Scheduling sections"><a href="{% url 'scheduling' %}">Individual Date</a><a href="{% url 'recurring_settings' %}">Edit the default weekly schedule</a><a href="{% url 'horizon_settings' %}">Edit booking horizon</a></nav>{% elif staff_parent %}<nav class="staff-breadcrumb" aria-label="Breadcrumb"><a href="{{ staff_parent.1 }}">{{ staff_parent.0 }}</a><span>› Details</span></nav>{% endif %}
     {% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
     {% block staff_content %}{% endblock %}
   </section>

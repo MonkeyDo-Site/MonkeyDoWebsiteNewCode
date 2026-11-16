@@ -10,6 +10,7 @@ from .models import (
     Customer,
     MembershipDraft,
     MembershipDraftCycle,
+    MembershipDraftRevision,
     MembershipPricing,
     PricingPolicy,
     Session,
@@ -71,7 +72,7 @@ admin.site.register(BookingQuote, ReadOnlyAdmin)
 
 admin.site.register(CalendarDate, ReadOnlyAdmin)
 
-for model in (MembershipPricing, MembershipDraft, MembershipDraftCycle):
+for model in (MembershipPricing, MembershipDraft, MembershipDraftCycle, MembershipDraftRevision):
     admin.site.register(model, ReadOnlyAdmin)
 
 admin.site.register(WeeklySlot, ReadOnlyAdmin)

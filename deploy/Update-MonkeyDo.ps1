@@ -14,12 +14,15 @@ param(
     [switch]$Rollback,
     [Parameter(Mandatory = $true, ParameterSetName = 'Status')]
     [switch]$Status,
+    [Parameter(ParameterSetName = 'Deploy')]
+    [switch]$ApplyReviewedBatchTwo,
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9.-]*$')]
     [string]$Server = '107.170.1.143',
     [ValidateSet('Design','Functional')]
     [string]$Target = 'Design'
 )
 $ErrorActionPreference = 'Stop'
+if ($ApplyReviewedBatchTwo -and $Target -ne 'Functional') { throw 'Reviewed batch-two updates require -Target Functional.' }
 
 function Invoke-CheckedNative {
     param([string]$Program, [string[]]$Arguments)
@@ -128,4 +131,6 @@ subprocess.run(arguments + ['status'], check=True)
 
 $remoteArchive = "$targetBase/incoming/$uploadId.zip"
 Invoke-CheckedNative 'scp' ($sshOptions + @($archivePath, "monkeydo-deploy@${Server}:$remoteArchive"))
-Invoke-CheckedNative 'ssh' ($sshOptions + (@("root@$Server", '/usr/local/sbin/monkeydo-deploy') + $targetArguments + @('deploy', '--archive', $remoteArchive, '--sha256', $digest, '--commit', $Commit)))
+$deployArguments = @('deploy', '--archive', $remoteArchive, '--sha256', $digest, '--commit', $Commit)
+if ($ApplyReviewedBatchTwo) { $deployArguments += '--apply-reviewed-batch-two' }
+Invoke-CheckedNative 'ssh' ($sshOptions + (@("root@$Server", '/usr/local/sbin/monkeydo-deploy') + $targetArguments + $deployArguments))

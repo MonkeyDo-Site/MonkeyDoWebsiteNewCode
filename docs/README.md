@@ -12,6 +12,22 @@ Owner MFA/recovery, staff accounts, session invalidation and shared staging acce
 
 Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
 
+The [second-batch PR/deployment handoff](OWNER_FEEDBACK_BATCH_TWO_RELEASE.md) covers all owner-feedback changes since PR 25 and the explicit single-command schema preparation.
+
+The [aligned completion-progress screenshots](design-review/aligned-completion-progress/README.md) show the completion message level with the other progress text, with responsive wrapping on smaller screens.
+
+The [aligned session-card screenshots](design-review/aligned-session-cards/README.md) show Open above each available card's description, with booking buttons aligned across the row.
+
+The [updated booking details](design-review/booking-detail-current/README.md) omit the referral line, keeping customer information on the customer profile.
+
+The [membership current-view screenshots](design-review/membership-current-view/README.md) show the latest clarification: routine membership screens display only current details; version links belong inside Membership history.
+
+The [final second-batch review](OWNER_EDITS_BATCH_2_FINAL_REVIEW.md) records the newest Word-document revisions, approved answers and updated screenshot gallery.
+
+The [owner response-document follow-up](OWNER_EDITS_BATCH_2_RESPONSES.md) records today’s revisions and the limited new screenshot set; the initial preview is owner-approved.
+
+The [second owner-feedback batch](OWNER_EDITS_BATCH_2.md) records the approved changes and screenshot/deployment review boundary.
+
 The inactive membership draft foundation is documented in [MEMBERSHIP_DEVELOPMENT.md](MEMBERSHIP_DEVELOPMENT.md).
 
 Weekly templates, dated generation and horizon controls are documented in [RECURRING_SCHEDULE_DEVELOPMENT.md](RECURRING_SCHEDULE_DEVELOPMENT.md).
@@ -59,3 +75,7 @@ The owner subsequently authorized staging application/database development and e
 Confirmed waiver wording and signature interaction are owner-approved; counsel review is not an owner-required gate. This does not mean the existing HTML prototype implements electronic-signature persistence.
 
 Local source coverage and original-asset provenance are described in [RECONSTRUCTION.md](RECONSTRUCTION.md). Do not describe code or attachments as recovered without verifying their actual contents.
+
+## Current weekday naming
+
+**Motzei Shabbos** is the business label for civil weekday index 5. Owner-designated public sessions follow the usual booking rules; backend-only sessions remain private. This supersedes the earlier public-day exclusion. See [requirements](MONKEYDO_REQUIREMENTS.md) and [scheduling development](SCHEDULING_DEVELOPMENT.md). The owner requested no screenshots for this update; historical screenshot galleries remain review records.

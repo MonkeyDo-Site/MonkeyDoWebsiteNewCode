@@ -50,3 +50,13 @@ When nginx/Cloudflare are introduced, real-client-IP trust must be explicitly re
 - All 76 tests pass on disposable local PostgreSQL 17, including concurrent contact creation, stale-edit rejection, six concurrent failed logins, audit rollback, permission/CSRF checks, contact history and database constraints.
 - Local Chromium: actual staff sign-in, create customer, correct email, add comment, inspect history and normalized-phone comment search passed. List/detail/edit/history/Dashboard rendered at 1440px and 390px without horizontal overflow or browser errors. Artificial data only.
 - Schema migrations are additive. Original logo/photos, approved source PDF and standalone waiver HTML are unchanged. No provider credentials, card details or real customer records are committed.
+
+## Second owner-feedback batch
+
+Customer lists use tables; compact detail cards include expandable comments, memberships (test drafts only) and payment history (no transactions until payment integration). Phone/email/name search is shared with staff booking/membership selectors; +1 phone normalization applies consistently. Staff may create a profile without email. Nonblank current emails are case-insensitively unique across creation/correction/public booking; historical-only matches show a warning and staff may proceed. Audit history retains previous addresses and readable before/after changes. Public historical reuse creates a separate informational owner Dashboard notice, not a security incident or customer email. Ordinary staff cannot review owner notices or configure sessions.
+
+The second-batch response follow-up shows added comments/customer creation values without Before/After labels; edited entries retain both sides. The shared customer-selector prompt is Select a customer from the search results. Duplicate current-email errors on staff creation/correction are concise and link the conflicting customer only when the viewer has customer access. Public booking retains the separately approved full recovery message.
+
+## Customer-owned referral information
+
+Migration 0025 adds optional Customer.referral_source (240 characters), displayed and edited as “How did you hear about MonkeyDo?”. Staff create/edit use existing customer permissions, validation, revision and audit handling. Public collection occurs once for a new customer and is saved only on successful booking submission; returning customers are not prompted. Existing booking-level answers remain stored but are not displayed on booking details, with no automatic backfill or overwrite of the customer profile. New booking forms no longer collect or edit that legacy field.

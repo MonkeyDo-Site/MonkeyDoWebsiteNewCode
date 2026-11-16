@@ -1,0 +1,207 @@
+{
+  "screens": [
+    {
+      "page": "01-membership-summary",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "02-membership-edit",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "03-membership-table",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "04-membership-create-picker-and-fee",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "05-customer-history",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "08-bookings-filters",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "09-today-filters",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "10-booking-create-picker-and-fee",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "19-membership-earlier-version",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "06-booking-live-estimate",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "07-payment-method-reminder",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "11-staff-duplicate-email",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "12-choose-session-progress",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "13-missing-email-copy",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "14-public-duplicate-email-copy",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "15-open-only-session-details",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "16-mixed-session-details",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "17-payment-details-breakdown",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "01-membership-summary",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "02-membership-edit",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "03-membership-table",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "04-membership-create-picker-and-fee",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "05-customer-history",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "08-bookings-filters",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "09-today-filters",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "10-booking-create-picker-and-fee",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "19-membership-earlier-version",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "06-booking-live-estimate",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "07-payment-method-reminder",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "11-staff-duplicate-email",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "12-choose-session-progress",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "13-missing-email-copy",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "14-public-duplicate-email-copy",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "15-open-only-session-details",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "16-mixed-session-details",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "17-payment-details-breakdown",
+      "viewport": 390,
+      "overflow": false
+    },
+    {
+      "page": "18-completion-progress",
+      "viewport": 1440,
+      "overflow": false
+    },
+    {
+      "page": "18-completion-progress",
+      "viewport": 390,
+      "overflow": false
+    }
+  ],
+  "data": "Fictional local review database only. No hosted deployment.",
+  "scope": "Only the new Responses to Proposals document and the subsequent approved clarifications.",
+  "checks": [
+    "membership internal IDs and immutable revision history",
+    "shared customer-picker wording and fee labels",
+    "multi-session checkbox filters and header placement",
+    "Enter submits contact search",
+    "read-only live estimate and payment reminder with method focus",
+    "context-specific duplicate email messages",
+    "four progress steps",
+    "Open-only fixed play type and conditional supervised instructions",
+    "price breakdown and pending-test completion"
+  ]
+}

@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import BooleanField, Case, Q, Value, When
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
@@ -14,7 +13,6 @@ from .booking_management import (
     release_test_booking,
 )
 from .models import AuditEvent, Booking, Customer, PricingPolicy
-from .name_matching import match_rank, name_candidates
 from .permissions import staff_permission
 
 
@@ -25,29 +23,11 @@ def form_error(form, error):
 @staff_permission("core.view_booking")
 @require_safe
 def bookings(request):
-    query = request.GET.get("q", "").strip()[:120]
-    rows = Booking.objects.select_related("customer", "session").order_by(
-        "-session__starts_at", "-pk"
-    )
-    exact, possible = name_candidates(query) if query else ([], [])
-    if query:
-        rows = rows.filter(
-            Q(customer__last_name__icontains=query)
-            | Q(customer__phone__icontains=query)
-            | Q(customer_id__in=exact + possible)
-        ).order_by(match_rank("customer_id", exact, possible), "-session__starts_at", "-pk")
-    rows = rows.annotate(
-        possible_name_match=Case(
-            When(customer_id__in=possible, then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        )
-    )
-    return render(
-        request,
-        "core/bookings.html",
-        {"bookings": Paginator(rows, 25).get_page(request.GET.get("page")), "query": query},
-    )
+    from .booking_filters import booking_context
+
+    context = booking_context(request)
+    context["bookings"] = Paginator(context.pop("rows"), 25).get_page(request.GET.get("page"))
+    return render(request, "core/bookings.html", context)
 
 
 @staff_permission("core.view_booking")
@@ -85,6 +65,12 @@ def booking_create(request):
         owner=request.user.is_superuser,
         customer=customer,
     )
+    if (
+        request.method == "GET"
+        and request.GET.get("session", "").isdigit()
+        and len(request.GET["session"]) < 19
+    ):
+        form.initial["session"] = request.GET["session"]
     if request.method == "POST" and form.is_valid():
         data = dict(form.cleaned_data)
         data["session_id"] = data.pop("session").pk
@@ -113,21 +99,75 @@ def booking_edit(request, pk):
         owner=request.user.is_superuser,
         booking=booking,
     )
+    from .booking_estimates import amount_reviewed, edit_estimate
+
+    estimate = None
+    show_reminder = False
     if request.method == "POST" and form.is_valid():
         try:
-            edit_test_booking(actor=request.user, booking_id=pk, **form.cleaned_data)
+            estimate = edit_estimate(booking, form.cleaned_data)
+            if estimate["amount_changed"] and not amount_reviewed(
+                form.cleaned_data.get("estimate_token", ""), estimate
+            ):
+                show_reminder = True
+                posted = request.POST.copy()
+                posted["estimate_token"] = estimate["token"]
+                form = TestBookingForm(posted, owner=request.user.is_superuser, booking=booking)
+            else:
+                data = dict(form.cleaned_data)
+                data.pop("estimate_token", None)
+                edit_test_booking(actor=request.user, booking_id=pk, **data)
+                messages.success(
+                    request,
+                    "Booking updated using the saved pricing policy. No money was collected.",
+                )
+                return redirect("booking_detail", pk=pk)
         except ValidationError as exc:
             form_error(form, exc)
-        else:
-            messages.success(
-                request,
-                "Attendees and expected payment method updated using the saved pricing policy. No money was collected.",
-            )
-            return redirect("booking_detail", pk=pk)
+    if estimate is None and booking.quotes.first():
+        saved = booking.quotes.first()
+        estimate = {"quote": saved.snapshot, "original_total": saved.snapshot["total"]}
     return render(
         request,
         "core/booking_form.html",
-        {"form": form, "heading": "Edit test booking", "booking": booking},
+        {
+            "form": form,
+            "heading": "Edit test booking",
+            "booking": booking,
+            "estimate": estimate,
+            "show_payment_reminder": show_reminder,
+        },
+    )
+
+
+@staff_permission("core.view_booking")
+@staff_permission("core.change_booking")
+@require_POST
+def booking_estimate(request, pk):
+    from django.http import JsonResponse
+    from django.template.loader import render_to_string
+
+    from .booking_estimates import edit_estimate
+
+    booking = get_object_or_404(Booking, pk=pk)
+    form = TestBookingForm(request.POST, owner=request.user.is_superuser, booking=booking)
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    try:
+        estimate = edit_estimate(booking, form.cleaned_data)
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+    return JsonResponse(
+        {
+            "html": render_to_string(
+                "core/quote_items.html", {"data": estimate["quote"]}, request=request
+            ),
+            "total": estimate["quote"]["total"],
+            "original_total": estimate["original_total"],
+            "amount_changed": estimate["amount_changed"],
+            "token": estimate["token"],
+        },
+        headers={"Cache-Control": "private, no-store"},
     )
 
 
@@ -162,7 +202,9 @@ def booking_move(request, pk):
 @staff_permission("core.change_booking")
 @require_POST
 def booking_release(request, pk):
-    get_object_or_404(Booking, pk=pk)
+    booking = get_object_or_404(Booking.objects.select_related("customer", "session"), pk=pk)
+    if request.POST.get("confirm_cancel") != "1":
+        return render(request, "core/booking_cancel_confirm.html", {"booking": booking})
     try:
         version = int(request.POST.get("version", ""))
         release_test_booking(actor=request.user, booking_id=pk, version=version)

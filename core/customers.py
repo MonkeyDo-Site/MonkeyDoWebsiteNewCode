@@ -53,13 +53,18 @@ def new_comment(actor, customer, body, system=False):
 
 
 @transaction.atomic
-def create_customer(*, actor, last_name, phone, email, customer_type="family"):
+def create_customer(*, actor, last_name, phone, email, customer_type="family", referral_source=""):
     require_actor(actor, "core.add_customer", owner=customer_type != "family")
     phone = normalize_phone(phone)
     contact_lock()
     check_phone_available(phone)
+    check_email_available(email)
     customer = Customer(
-        last_name=last_name.strip(), phone=phone, email=email.strip(), customer_type=customer_type
+        last_name=last_name.strip(),
+        phone=phone,
+        email=email.strip().lower(),
+        customer_type=customer_type,
+        referral_source=referral_source.strip(),
     )
     customer.full_clean()
     customer.save()
@@ -67,7 +72,10 @@ def create_customer(*, actor, last_name, phone, email, customer_type="family"):
         actor,
         "customer.created",
         customer,
-        {f: getattr(customer, f) for f in ("last_name", "phone", "email", "customer_type")},
+        {
+            f: getattr(customer, f)
+            for f in ("last_name", "phone", "email", "customer_type", "referral_source")
+        },
     )
     return customer
 
@@ -83,6 +91,7 @@ def update_customer(
     email,
     move_previous_phone=None,
     customer_type=None,
+    referral_source=None,
 ):
     require_actor(actor, "core.change_customer")
     contact_lock()
@@ -101,6 +110,7 @@ def update_customer(
             "customer_type",
             "previous_phone",
             "previous_email",
+            "referral_source",
         )
     }
     if customer_type is not None and customer_type != customer.customer_type:
@@ -113,7 +123,8 @@ def update_customer(
         if move_previous_phone == "yes":
             customer.previous_phone = customer.phone
         customer.phone = phone
-    email = email.strip()
+    email = email.strip().lower()
+    check_email_available(email, customer.pk)
     if email != customer.email:
         if customer.previous_email:
             archived = new_comment(
@@ -128,6 +139,8 @@ def update_customer(
         customer.previous_email = customer.email
         customer.email = email
     customer.last_name = last_name.strip()
+    if referral_source is not None:
+        customer.referral_source = referral_source.strip()
     customer.full_clean()
     changes = {
         f: {"before": old, "after": getattr(customer, f)}
@@ -191,3 +204,31 @@ def save_comment(*, actor, customer_id, body, comment_id=None, revision=None):
         changes,
     )
     return comment
+
+
+def check_email_available(email, customer_id=None):
+    email = email.strip()
+    if email and Customer.objects.exclude(pk=customer_id).filter(email__iexact=email).exists():
+        raise ValidationError(
+            {
+                "email": f"The email address {email} is already assigned to another customer. Use a different address or review that customer’s record."
+            }
+        )
+
+
+def historical_email_customers(email, customer_id=None):
+    """Only structured email history is examined; arbitrary comment text is not identity evidence."""
+    if not email:
+        return Customer.objects.none()
+    events = AuditEvent.objects.filter(record_type="customer").filter(
+        Q(action="customer.updated", changes__email__before__iexact=email)
+        | Q(action="customer.email_history_archived", changes__email__iexact=email)
+    )
+    ids = [int(pk) for pk in events.values_list("record_id", flat=True) if pk.isdigit()]
+    return Customer.objects.filter(Q(previous_email__iexact=email) | Q(pk__in=ids)).exclude(
+        pk=customer_id
+    )
+
+
+def public_duplicate_email_message(email):
+    return f"The email address you entered {email} already exists for another customer. Please enter another email address or if {email} is your email address, perhaps you entered a different phone number now than the one associated with a previous booking using this email address. Please go back to the booking page and enter a phone number and name you may have entered in the past for this email address. If you need further help, we’re happy to help. We can remove this email address from the other customer profile. Please contact us at 848-238-5147."

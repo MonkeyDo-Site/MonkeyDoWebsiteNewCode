@@ -50,7 +50,7 @@ Operational interpretation: renewals may be purchased ahead of expiration and be
 
 ## 2. Terms, cohorts, and billing
 
-- Any whole-number duration, minimum three for new membership/additional places; no maximum. Common choices 3/4/5/6/12 plus Enter another number/whole-number selector. Extensions can be one or two months. Not limited to old 3/6/9/12 choices.
+- Any whole-number duration, minimum three for public/staff new membership/additional places; the owner may explicitly override to one or two months for either Subscription or Unlimited, monthly or prepaid, with the exception audited. Public minimum remains three; there is no maximum term. Common choices 3/4/5/6/12 plus Enter another number/whole-number selector. Extensions can be one or two months. Not limited to old 3/6/9/12 choices.
 - Monthly or full-term upfront payment, no prepayment discount. New membership charge at purchase, independent of a future visit's arrival charge. With combined purchase/booking send one combined email showing accurate paid/due portions.
 - Each later purchase/addition creates a separate cohort with place count, type, accepted price, start/end, original billing anchor, cycles and initial commitment. Types may coexist. Preserve accepted price through that term; renewal shows/accepts then-current price unless owner exception.
 - Future price changes must not silently rewrite accepted cohort prices or historical benefits.
@@ -138,3 +138,11 @@ Recalculate eligible children/adult allowances, start benefits for appointment d
 | 2 children +2 adults, prepay 3 months for 2 Subscription places | **$107.94** |
 
 These monthly examples are first installments under the three-month commitment, not one-month initial purchases. Fees/tax and online payment timing: [PAYMENTS.md](PAYMENTS.md). Never use the old unapproved $5.98 “credit for uncharged admission” example.
+
+## Draft editing and internal membership identifiers
+
+The owner approved a working test-draft editor for staff/owner, retaining the original internal ID as the table/detail link. Edits append versioned fields, cycle estimates and before/after audit without changing earlier saved evidence. This does not implement active membership sale, entitlement adjustments, provider collection or the future paid-cohort conversion/consolidation rules. Staff draft terms remain three months minimum except retaining an already-approved short term without changing its type/count/start/duration; only the owner may grant a new short-term exception. A customer may have multiple membership records, each with its own existing internal ID.
+
+## Membership display prefix clarification
+
+The owner superseded the earlier plain #1/#2 presentation: display #M1/#M2 using the same existing internal membership number. Apply this consistently on table/detail/edit/customer cards. Editing still retains the same membership record and links; versions remain history within that record. Earlier saved details are labelled “This previously saved version is read only”.

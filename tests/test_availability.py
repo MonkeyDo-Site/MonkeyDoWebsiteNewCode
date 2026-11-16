@@ -76,13 +76,16 @@ class AvailabilityTests(TestCase):
         self.assertEqual(state["label"], "A party is booked for this slot.")
         self.assertNotIn("Private", str(state))
 
-    def test_saturday_and_backend_only_are_hidden(self):
+    def test_backend_only_is_hidden_and_public_motzei_shabbos_follows_horizon(self):
         self.session.public = False
         self.assertTrue(availability(self.session, now=self.start)["hidden"])
         self.session.public = True
         self.session.starts_at = datetime(2027, 3, 13, 11, 30, tzinfo=NY)
         self.session.ends_at = self.session.starts_at + timedelta(minutes=75)
-        self.assertTrue(availability(self.session, now=self.start)["hidden"])
+        state = availability(self.session, now=self.start)
+        self.assertFalse(state["hidden"])
+        self.assertEqual(state["label"], "Not yet open")
+        self.assertTrue(availability(self.session, now=self.session.starts_at)["available"])
 
     def test_supervised_subset_does_not_add_capacity(self):
         self.book(children=5, adults=0, supervised=True)

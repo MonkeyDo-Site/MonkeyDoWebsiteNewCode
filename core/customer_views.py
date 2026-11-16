@@ -1,5 +1,3 @@
-import re
-
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
@@ -9,7 +7,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_safe
 
 from .customers import correct_previous_phone, create_customer, save_comment, update_customer
-from .forms import CommentForm, CustomerForm, PreviousPhoneForm
+from .forms import CommentForm, CustomerForm, PreviousPhoneForm, phone_search_digits
+from .memberships import current_draft
 from .models import AuditEvent, Customer, CustomerComment
 from .name_matching import match_rank, name_candidates
 from .permissions import staff_permission
@@ -25,9 +24,7 @@ def customer_list(request):
     query = request.GET.get("q", "").strip()[:120]
     customers = Customer.objects.order_by("last_name", "pk")
     can_comments = request.user.has_perm("core.view_customercomment")
-    digits = re.sub(r"\D", "", query)
-    if len(digits) == 11 and digits.startswith("1"):
-        digits = digits[1:]
+    digits = phone_search_digits(query)
     exact, possible = name_candidates(query) if query else ([], [])
     if query:
         criteria = (
@@ -102,6 +99,14 @@ def customer_detail(request, pk):
         {
             "customer": customer,
             "comments": comments,
+            "membership_drafts": [
+                current_draft(root)
+                for root in customer.membership_drafts.select_related(
+                    "pricing", "fee_policy"
+                ).prefetch_related("revisions")
+            ]
+            if request.user.has_perm("core.view_membershipdraft")
+            else [],
             "can_view_bookings": can_view_bookings,
             "first_today": todays[0] if todays else None,
             "more_today": todays[1:],
@@ -127,13 +132,25 @@ def customer_create(request):
                 phone=form.cleaned_data["phone"],
                 email=form.cleaned_data["email"],
                 customer_type=form.cleaned_data.get("customer_type", "family"),
+                referral_source=form.cleaned_data["referral_source"],
             )
         except ValidationError as exc:
             form_error(form, exc)
         else:
+            warn_historical_email(request, customer)
             messages.success(request, "Customer created.")
             return redirect("customer_detail", pk=customer.pk)
-    return render(request, "core/customer_form.html", {"form": form, "heading": "Create customer"})
+    return render(
+        request,
+        "core/customer_form.html",
+        {
+            "form": form,
+            "heading": "Create customer",
+            "email_conflict": email_conflict(form)
+            if request.user.has_perm("core.view_customer")
+            else None,
+        },
+    )
 
 
 @staff_permission("core.view_customer")
@@ -148,10 +165,11 @@ def customer_edit(request, pk):
     )
     if request.method == "POST" and form.is_valid():
         try:
-            update_customer(actor=request.user, customer_id=pk, **form.cleaned_data)
+            customer = update_customer(actor=request.user, customer_id=pk, **form.cleaned_data)
         except ValidationError as exc:
             form_error(form, exc)
         else:
+            warn_historical_email(request, customer)
             messages.success(
                 request,
                 "Customer updated. No confirmation email has been sent; booking email integration is not yet enabled.",
@@ -160,7 +178,12 @@ def customer_edit(request, pk):
     return render(
         request,
         "core/customer_form.html",
-        {"form": form, "heading": "Edit customer", "customer": customer},
+        {
+            "form": form,
+            "heading": "Edit customer",
+            "customer": customer,
+            "email_conflict": email_conflict(form, pk),
+        },
     )
 
 
@@ -243,6 +266,9 @@ def customer_history(request, pk):
     labels = {
         "customer.created": "Customer created",
         "customer.updated": "Customer details updated",
+        "customer.public_email_added": "Email added during booking",
+        "customer.public_test_created": "Customer created during booking",
+        "customer.email_notice_reviewed": "Historical email notice reviewed",
         "customer.comment_added": "Comment added",
         "customer.comment_updated": "Comment edited",
         "customer.email_history_archived": "Previous email archived",
@@ -255,14 +281,15 @@ def customer_history(request, pk):
         "email": "Current email",
         "previous_email": "Previous email",
         "customer_type": "Customer type",
+        "referral_source": "How did you hear about MonkeyDo?",
     }
     for event in page:
         event.display_action = labels.get(event.action, "Customer history event")
         data = event.changes
         rows = []
-        if event.action == "customer.updated":
+        if event.action in {"customer.updated", "customer.public_email_added"}:
             rows = [{"label": fields.get(key, key), **value} for key, value in data.items()]
-        elif event.action == "customer.created":
+        elif event.action in {"customer.created", "customer.public_test_created"}:
             rows = [
                 {"label": fields.get(key, key), "before": "", "after": value}
                 for key, value in data.items()
@@ -299,5 +326,60 @@ def customer_history(request, pk):
                 row["after"] = dict(Customer._meta.get_field("customer_type").choices).get(
                     row["after"], row["after"]
                 )
+        event.is_creation = event.action in {
+            "customer.created",
+            "customer.public_test_created",
+            "customer.comment_added",
+        }
         event.change_rows = rows
     return render(request, "core/customer_history.html", {"customer": customer, "events": page})
+
+
+@staff_permission("core.view_customer")
+@require_safe
+def customer_choices(request):
+    from django.http import JsonResponse
+
+    query = request.GET.get("q", "").strip()[:120]
+    if len(query) < 2:
+        return JsonResponse({"results": []})
+    digits = phone_search_digits(query)
+    exact, possible = name_candidates(query)
+    criteria = Q(last_name__icontains=query) | Q(pk__in=exact + possible)
+    if digits:
+        criteria |= Q(phone__contains=digits) | Q(previous_phone__contains=digits)
+    rows = Customer.objects.filter(criteria).order_by(
+        match_rank("pk", exact, possible), "last_name", "pk"
+    )[:30]
+    return JsonResponse(
+        {
+            "results": [
+                {
+                    "id": c.pk,
+                    "text": f"{c.last_name} · {c.phone} · {c.customer_number}"
+                    + (" · Possible name match" if c.pk in possible else ""),
+                }
+                for c in rows
+            ]
+        },
+        headers={"Cache-Control": "private, no-store"},
+    )
+
+
+def warn_historical_email(request, customer):
+    from .customers import historical_email_customers
+
+    if historical_email_customers(customer.email, customer.pk).exists():
+        messages.warning(
+            request,
+            "This email address appears in another customer's previous contact history. It is not currently assigned to that customer, so your change was allowed. The profiles have not been merged.",
+        )
+
+
+def email_conflict(form, exclude=None):
+    if not form.is_bound or not form.errors.get("email"):
+        return None
+    email = form.data.get("email", "").strip()[:254]
+    return (
+        Customer.objects.filter(email__iexact=email).exclude(pk=exclude).first() if email else None
+    )

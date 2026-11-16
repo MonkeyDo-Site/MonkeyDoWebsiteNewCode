@@ -296,12 +296,10 @@ class RecurringTests(TestCase):
         self.generate(slot, update_existing=True)
         self.assertFalse(availability(Session.objects.get())["available"])
 
-    def test_backend_only_and_saturday_rules_survive_generation(self):
+    def test_backend_only_motzei_shabbos_stays_private_after_generation(self):
         slot = self.slot(weekdays=[5], public=False)
-        saturday = NOW.date() + timedelta(days=4)
-        generate_sessions(
-            actor=self.owner, slot_ids=[slot.pk], from_day=saturday, through_day=saturday
-        )
+        motzei = NOW.date() + timedelta(days=4)
+        generate_sessions(actor=self.owner, slot_ids=[slot.pk], from_day=motzei, through_day=motzei)
         self.assertTrue(availability(Session.objects.get())["hidden"])
 
     def test_invalid_weekdays_overlap_stale_revision_and_range(self):

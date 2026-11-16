@@ -83,7 +83,7 @@ class SchedulingTests(TestCase):
     def test_closure_blocks_both_reservation_paths_and_never_leaks_reason(self):
         session = self.create()
         self.close_day()
-        self.assertEqual(availability(session)["label"], "Unavailable")
+        self.assertEqual(availability(session)["label"], "Not Available")
         with self.assertRaises(ValidationError):
             self.reserve(session)
         with self.assertRaises(ValidationError):
@@ -95,7 +95,7 @@ class SchedulingTests(TestCase):
                 adults=1,
             )
         response = self.client.get("/book/")
-        self.assertContains(response, "Unavailable")
+        self.assertContains(response, "Not Available")
         self.assertNotContains(response, "PRIVATE CLOSURE REASON")
         self.assertNotContains(response, "PRIVATE INTERNAL LABEL")
         self.assertFalse(Booking.objects.exists())

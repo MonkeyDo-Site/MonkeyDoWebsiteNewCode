@@ -1,0 +1,114 @@
+{
+  "screens": [
+    {
+      "viewport": 1440,
+      "geometry": {
+        "labels": [
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          },
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          },
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          },
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          }
+        ],
+        "message": {
+          "top": 216.90625,
+          "height": 23.765625,
+          "font": "14.4px",
+          "margin": "0px"
+        }
+      },
+      "overflow": false
+    },
+    {
+      "viewport": 900,
+      "geometry": {
+        "labels": [
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          },
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          },
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          },
+          {
+            "top": 216.90625,
+            "height": 23.765625,
+            "font": "14.4px"
+          }
+        ],
+        "message": {
+          "top": 268.796875,
+          "height": 23.765625,
+          "font": "14.4px",
+          "margin": "0px"
+        }
+      },
+      "overflow": false
+    },
+    {
+      "viewport": 390,
+      "geometry": {
+        "labels": [
+          {
+            "top": 328.328125,
+            "height": 21.109375,
+            "font": "12.8px"
+          },
+          {
+            "top": 317.78125,
+            "height": 42.21875,
+            "font": "12.8px"
+          },
+          {
+            "top": 386.546875,
+            "height": 21.109375,
+            "font": "12.8px"
+          },
+          {
+            "top": 376,
+            "height": 42.21875,
+            "font": "12.8px"
+          }
+        ],
+        "message": {
+          "top": 433.21875,
+          "height": 42.21875,
+          "font": "12.8px",
+          "margin": "0px"
+        }
+      },
+      "overflow": false
+    }
+  ],
+  "data": "Fictional local test reservation only. No hosted changes.",
+  "checks": [
+    "Four numbered steps retained",
+    "Matching completion/step font sizes",
+    "Completion and step-label vertical centers match at desktop width",
+    "Completion wraps below steps on phone",
+    "No page overflow or browser errors"
+  ]
+}

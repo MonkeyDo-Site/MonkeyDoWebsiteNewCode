@@ -118,7 +118,7 @@ Subsequent authorization: the owner has now approved staging development and Dja
 
 These are future meaningful tests, **not tests executed by this documentation PR**:
 
-- Horizon1–10/reset, Friday opening of Sunday, DST, Saturday visibility, ordinary-after-start versus supervised cutoff, private closure reason, gray full/party labels.
+- Horizon1–10/reset, Friday opening of Sunday, DST, Motzei Shabbos naming/public visibility, ordinary-after-start versus supervised cutoff, private closure reason, gray full/party labels.
 - Concurrent ordinary last-space bookings, owner exclusive group/public block, staff arrival-only override versus forbidden advance override, atomic reschedule with audit.
 - Customer silent new lookup/current+previous phone branches, unique IDs, Last Name-only and camp type, displaced contact history, no unrelated history leakage; shared-minor waiver link privacy/expiry/reschedule and version/year/leap validity.
 - Waiver persisted/hash verified/private retrieval authorized, two-year deletion and post-restore retention, paper fallback versus electronic evidence, universal arrival gate preserving form state.

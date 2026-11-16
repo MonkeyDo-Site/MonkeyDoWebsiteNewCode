@@ -27,7 +27,7 @@ Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The foundation's automa
 | AVAIL-02 | Developer | Check Sunday before/at Friday midnight and with longer horizon | Sunday opens no later than Friday 12 AM, or earlier under longer horizon |
 | AVAIL-03 | Developer | Run spring/fall DST boundary and server UTC scenarios | Calendar openings/session times remain correct in America/New_York |
 | AVAIL-04 | Owner + developer | Fill child limit, combined limit, party slot and entire date | 35 children/50 combined defaults; babies excluded; correct gray/nonclickable full/party/date wording |
-| AVAIL-05 | Owner | Close dates, change time/capacity, create public/backend-only one-off session | Private reasons hidden; changes audited; Saturday hidden normally; explicit modes/capacities respected |
+| AVAIL-05 | Owner | Close dates, change time/capacity, create public/backend-only one-off session | Private reasons hidden; changes audited; Motzei Shabbos public/backend-only selection honored; explicit modes/capacities respected |
 | AVAIL-06 | Developer | Book ordinary play after start/before end and supervised at/after start | Ordinary remains available until end; supervised closes at start; subset stays within overall capacity |
 
 ## Customer records, bookings and arrival
@@ -154,7 +154,7 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 
 ## Owner calendar acceptance
 
-- Create a backend-only one-time session; verify it stays off the public schedule. Select public and check normal horizon/Saturday rules remain in force.
+- Create a backend-only one-time session; verify it stays off the public schedule. Select public and check normal horizon/closure/capacity rules remain in force.
 - Exercise accompanied-only, supervised-only and mixed sessions; unsupported play types must fail reservation server checks. Test invalid limits, overlap and ambiguous/nonexistent DST times.
 - Close a date with a private reason; verify existing bookings/quotes persist and new test reservations and moves are blocked, including owner capacity overrides. Create another session on that closed date and confirm it remains blocked. Reopen the date; individually closed sessions must stay closed.
 - Verify private labels/reasons never appear on the public schedule. Mark Chol Hamoed once for the whole date; membership pricing is deferred, not claimed active.
@@ -171,7 +171,7 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 
 ## Weekly templates and horizon acceptance
 
-- Review the four initialized Sunday–Friday templates; create an evening/backend-only or Saturday template. Saving a template must not expose or change dated sessions by itself.
+- Review the four initialized Sunday–Friday templates; create an evening/backend-only or Motzei Shabbos template. Saving a template must not expose or change dated sessions by itself.
 - Generate a selected inclusive date range. Repeat it and verify no duplicate sessions. Update a template, apply with updates off/on, and inspect the results. Unbooked untouched generated sessions may change; manual, booked, program and independent sessions must be preserved.
 - Disable a template or remove a weekday and apply updates: obsolete eligible sessions close without cancelling bookings. Reactivate and apply: only eligible generated sessions reopen; date-wide/manual closures stay effective.
 - Try active template overlap, stale edits, invalid capacity/weekdays and ambiguous/nonexistent DST times. A failed generation must roll back its changes and audit.
@@ -181,3 +181,36 @@ Use artificial customers and future sessions only. Confirm creating an ordinary/
 ## Customer self-booking checkpoint
 
 Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md) against the isolated functional environment with fictional data. Local automated/browser checks have passed for pending reservation creation, revision, staff visibility/cancellation and receipt isolation. Real host HTTPS/proxy/permissions, Resend inbox delivery/recovery and real service rollback have not yet been run. This is not acceptance of payments, waiver completion or confirmed customer visits.
+
+## Second owner-feedback batch acceptance (owner review pending)
+
+- SCHED-B2-01: edit four weekly slots into a nonoverlapping final arrangement that overlaps intermediate original positions; save and generate together. Eligible dated identities persist; booked/manual sessions retain original timing; cascading conflicts are explained with links.
+- SCHED-B2-02: invalid final overlaps, stale submissions and concurrent bookings do not partially update the schedule or expose temporary values. Check the generated-through date and a deliberately missing expected date.
+- AVAIL-B2-01: close weekly default => hide linked public sessions; close individual public dated/one-time session => show Not Available; backend-only stays hidden; owner-designated public Motzei Shabbos sessions follow the normal availability rules.
+- STAFF-B2-01: combine date range, recurring clock time, contact search, play/status filters and attendee sorting; clear restores today. Today ignores submitted date changes, includes empty sessions and shows capacity totals independent of search. Add booking preselects the session; ordinary staff cannot configure sessions.
+- BOOK-B2-01: one form changes timing/play/counts, enforces supervised/capacity/cutoff rules, prompts for expected-payment-method review when the estimate changes, retains original pricing policy and audit differences. Cancel requires confirmation with/without JavaScript.
+- CUST-B2-01: test +1 phones and customer/customir, Zorger/Zarger/Zharger/Zorge; no unrelated public surname disclosures. Returning unmatched phone permits alternative lookup before new contact entry.
+- EMAIL-B2-01: current duplicate addresses are rejected case-insensitively, including concurrent requests and staff corrections. Multiple empty staff emails are allowed; public known-customer flow collects missing email. Historical-only reuse warns staff, permits public booking and creates an owner-only reviewable notice. A CSRF rejection stays HTTP 403 with recovery guidance.
+- MEMBER-B2-01: both products and payment-plan types permit explicitly audited owner one/two-month exceptions; staff cannot forge the exception; normal public minimum stays three. Membership/payment customer cards accurately distinguish drafts/estimates from actual benefits/payments.
+- UI-B2-01: desktop/mobile screenshots, keyboard customer picker, row filters, narrow-screen table scroll, inline checkbox labels, compact breadcrumb navigation and readable history. Owner screenshot approval precedes deployment.
+
+## Second-batch follow-up acceptance (new image review pending)
+
+- FILTER-B2R-01: on Today and Bookings, select several sessions and then none; none means all. Combine with contact search and submit using Enter. Check that table headings sit below filters, Add booking is beside the title and Apply/Clear sit below contact search. Bookings must not promise totals below the table.
+- BOOK-B2R-01: change counts or expected payment method and see the itemized estimate before saving. The estimate request must not mutate the booking. An amount-changing Save opens the reminder; Review payment method focuses the existing selector, Save changes saves once, and stale/tampered proofs cannot skip review. Verify the no-JavaScript reminder too.
+- MEMBER-B2R-01: follow an existing numeric membership ID from the table, edit a draft as owner/staff and retain that ID. Reopen earlier versions and compare original cycles/pricing. Ordinary staff cannot introduce a one/two-month exception; an already approved exception may retain its terms. Test stale edits, repeated submissions and concurrent edits.
+- COPY-B2R-01: verify shared picker wording, no blank Before for creation/comment additions, before/after for real edits, policy-specific card-fee labels, full public duplicate-email recovery text and shorter authorized staff profile links.
+- PUBLIC-B2R-01: follow the four visible steps through pending-test completion. Open-only sessions have fixed play text and no supervised instructions; mixed sessions show eligible choices. Sock instructions belong to the field. Method selection stays in Session Details; the price breakdown/save screen is Payment Details.
+
+## Final second-batch review acceptance (new image review pending)
+
+- REFERRAL-B2F-01: new-customer Details collects optional referral after silent phone lookup; Session Details and staff booking forms omit it. Review alone saves nothing; final successful submission saves one profile answer, retry remains idempotent, and failure rolls it back. Returning customers keep their original answer even with forged booking input. Staff edit the profile with readable before/after audit; earlier booking answers remain unchanged.
+- FILTER-B2F-01: Today/Bookings initial compact summaries wrap within the column. Open options without increasing row height, select multiple times, choose All sessions, apply filters, and dismiss by Escape/outside click. Verify phone table scrolling, no document overflow, and no-JavaScript explicit All sessions handling.
+- UI-B2F-01: #M membership labels link to existing records across list/detail/edit/customer cards; historical versions are read-only with the approved sentence. Supervised Play precedes counts in Create/Edit booking. Public progress never appears in staff screens.
+- PUBLIC-B2F-01: show saved email only after the existing verification, and new-customer name/email/referral after no-match lookup. Payment Details removes repeated name-match wording and uses the approved edit action. Open-only slots/details and About link use approved wording without relabelling closed/full/not-yet-open sessions. Completion headline/button match approval with truthful test notices; cancelled receipts retain cancellation wording.
+
+## Motzei Shabbos acceptance
+
+- MOTZEI-01: weekly checkbox/list and dated scheduling use Motzei Shabbos; numeric date inputs retain their actual dates. Verify late UTC timestamps use the correct New York weekday without shifting the saved appointment.
+- MOTZEI-02: owner-created public one-time and generated weekly sessions appear and accept pending-test bookings under the usual horizon, closure, mode/cutoff and capacity rules. Backend-only sessions stay hidden and public start is refused. Staff still cannot configure sessions.
+- MOTZEI-03: customer calendar/details/receipt and staff booking table/detail/edit/cancellation/customer records use the same wording. Other weekday names and ISO/numeric values are unchanged. No automatic evening start or new default schedule is added. The owner waived screenshots for this change.

@@ -376,3 +376,39 @@ Decision: Every signed-waiver retrieval requires server-side authentication and 
 Decision: Cloudflare R2 credentials are server-side DigitalOcean deployment secrets only. They must never appear in browser code, GitHub, documentation, logs, or public links.
 
 Scope clarification: These decisions apply only to completed, signed customer waivers. They do not place unsigned templates or source waiver documents in R2; doing so requires separate owner approval.
+
+## November 2026 — Second owner-feedback batch approved for development
+
+Sources: only green-highlighted additions in First Batch of edits (1).docx, all twenty items/screenshots in Second Batch of edits.docx, and subsequent explicit owner clarifications. The owner approved development and requested desktop/mobile screenshots of all affected pages and states before deployment. Scope and item-level traceability: OWNER_EDITS_BATCH_2.md. Weekly-default closure hides its dated sessions; individual public dated closure displays Not Available. Today gets Add booking for staff/owner, never Add/Edit session. Current email is unique; historical reuse is allowed with staff warnings/public owner Dashboard notices. Multiple weekly defaults and eligible generated dates can change together; every generation outcome explains why. A separate owner-only one/two-month membership exception leaves public minimums intact. Actual payments, active membership benefits and waiver integration remain deferred. Deployment is not authorized by this development approval.
+
+## Second batch — owner response-document clarifications
+
+The owner approved the initial preview and requested only today's response-document changes in the new screenshot set. They authorized continuing implementation and all four related-page extensions. Keep internal membership IDs (no CustomerID+M scheme), add draft editing with preserved versions, show estimates before booking saves and a popup reminder in place of the extra dropdown. Use four visible booking steps, leaving method selection in Session Details and the breakdown/final action in Payment Details. No separate Review label or premature waiver/provider implementation. Screenshot approval precedes PR/deployment-command preparation and hosted deployment. Detailed scope/evidence: OWNER_EDITS_BATCH_2_RESPONSES.md.
+
+## 2026-11-15 — Final second-batch document answers
+
+The owner approved “This previously saved version is read only”, customer-owned one-time referral collection/editing while preserving booking history, and the customer completion headline “You're all set for your MonkeyDo adventure!” with “Book another play session”. The full nine-screenshot review also requests shared compact session dropdowns, M-prefixed existing membership IDs, staff play-type field order, calendar About guidance/Open-only wording, Payment Details copy and explicit returning/new-customer screenshots. Implement and test, then supply only the newly affected screenshots for review. No PR/deployment preparation until image review approval. See OWNER_EDITS_BATCH_2_FINAL_REVIEW.md; these decisions supersede earlier plain-number/referral-ownership instructions.
+
+## 2026-11-15 — Membership version labels belong in history
+
+Owner clarified that routine membership screens should show only the latest details, with earlier versions accessible in Membership history. Remove version text from the table status, current detail heading and edit form. Keep one row per membership, the M-prefixed existing IDs, current-data resolution and preserved read-only history. The two screenshot fixture rows M1/M2 are distinct memberships, not revisions of one membership. No schema/data changes are needed.
+
+## 2026-11-15 — Keep referral information off booking details
+
+The owner requested removal of the “How did you hear about MonkeyDo?” line from the booking details screen as clutter. Customer-profile display/editing and new-customer collection remain unchanged. Earlier booking answers remain stored; this is a template-only visibility change with no migration or data cleanup. This supersedes the prior final-review screenshot that displayed the legacy answer.
+
+## 2026-11-15 — Align Open-only session cards
+
+Owner requested that the Open-only calendar card retain Open above its description and align its information/button with neighboring available cards. Keep a separate status/description/action layout and reserve common description space; bottom-align booking actions across a row. No booking-availability or data changes.
+
+## 2026-11-15 — Align progress-bar completion text
+
+Owner requested that “You’re all set” in the progress bar line up with the other progress text. Remove its top margin, match step-label font sizes and allow responsive wrapping while retaining the four-step customer-only workflow and existing completion wording. This is a CSS-only presentation change.
+
+## 2026-11-15 — Motzei Shabbos labels and owner-controlled public sessions
+
+Owner requested that the civil weekday previously labelled Saturday appear as Motzei Shabbos on staff/customer screens and current documentation. In answer to the explicit availability question, the owner approved allowing owner-opened public sessions under the usual booking rules. This supersedes the historical 2026-08-05 blanket Saturday hiding decision and the corresponding earlier review notes. Backend-only remains private. Keep actual dates/times/weekday indices, normal closures/capacity/cutoffs, staff permissions and the existing Sunday–Friday defaults; no automatic sunset or evening opening is introduced. Owner explicitly waived new screenshots for this change. Historical screenshots/source evidence remain unchanged. No hosted deployment is authorized by this wording change alone.
+
+## 2026-11-15 — Authorize PR and single-command deployment preparation
+
+Owner requested a PR containing all reviewed work since the last deployment, followed by deployment using one command. This supersedes the earlier image-review-only boundary. Add an explicit Functional-only deployment option restricted to checksum-pinned migrations 0023–0025, preflight/duplicate-email checks, a private local staging checkpoint, separate migration identity, runtime grants and service recovery. The default deployment guard still rejects migrations. No payments, new paid services, public production launch or automatic database restoration is authorized. The owner’s existing SSH access is required for actual Droplet execution; local tests do not establish hosted success. See OWNER_FEEDBACK_BATCH_TWO_RELEASE.md.

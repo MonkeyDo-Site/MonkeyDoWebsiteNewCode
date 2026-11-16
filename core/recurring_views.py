@@ -4,20 +4,13 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
+from .date_display import weekday_name
 from .models import Booking, SiteSettings, WeeklySlot
 from .permissions import staff_permission
 from .recurring import FIELDS, delete_slot, generate_sessions, save_horizon, save_slot
 from .templatetags.scheduling_labels import display_session_label
 
-WEEKDAYS = [
-    (0, "Monday"),
-    (1, "Tuesday"),
-    (2, "Wednesday"),
-    (3, "Thursday"),
-    (4, "Friday"),
-    (5, "Saturday"),
-    (6, "Sunday"),
-]
+WEEKDAYS = [(day, weekday_name(day)) for day in (6, 0, 1, 2, 3, 4, 5)]
 
 
 class SlotForm(forms.ModelForm):
@@ -36,14 +29,19 @@ class SlotForm(forms.ModelForm):
             "starts_at": forms.TimeInput(format="%I:%M %p", attrs={"placeholder": "2:30 PM"}),
             "ends_at": forms.TimeInput(format="%I:%M %p", attrs={"placeholder": "3:45 PM"}),
         }
-        labels = {"label": "Internal label", "active": "Active weekly default"}
+        labels = {"label": "Internal label", "active": "Open for reservation"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["play_mode"].choices = [
+            ("accompanied", "Open Play only"),
+            ("supervised", "Supervised Play only"),
+            ("both", "Open Play and Supervised Play"),
+        ]
         for name in ("starts_at", "ends_at"):
             self.fields[name].input_formats = ["%I:%M %p", "%I %p", "%H:%M"]
         self.fields["active"].help_text = (
-            "Inactive defaults cannot generate sessions. Their existing sessions are immediately "
+            "Closed defaults cannot generate sessions. Their existing sessions are immediately "
             "hidden from customer booking and closed to new reservations. Existing bookings keep their times."
         )
         if self.instance.pk:
@@ -56,14 +54,14 @@ class SlotForm(forms.ModelForm):
 
 class WeeklyDefaultChoice(forms.ModelMultipleChoiceField):
     def label_from_instance(self, slot):
-        return display_session_label(slot.label)
+        return display_session_label(slot.label, slot.starts_at)
 
 
 class GenerationForm(forms.Form):
     slots = WeeklyDefaultChoice(
         queryset=WeeklySlot.objects.filter(active=True, archived_at__isnull=True),
         widget=forms.CheckboxSelectMultiple,
-        label="Active weekly defaults",
+        label="Open weekly defaults",
     )
     from_day = forms.DateField(
         widget=forms.DateInput(attrs={"type": "date"}), label="From date (inclusive)"
@@ -137,15 +135,20 @@ def recurring_settings(request):
         except ValidationError as exc:
             form.add_error(None, " ".join(exc.messages))
         else:
-            messages.success(
+            counts = {
+                key: sum(result["outcome"] == key for result in results)
+                for key in ("Created", "Updated", "Unchanged", "Preserved")
+            }
+            notify = messages.warning if counts["Preserved"] else messages.success
+            notify(
                 request,
-                "Generation complete. Existing bookings and manual edits were preserved; no messages or payments were processed.",
+                f"Created: {counts['Created']} · Updated: {counts['Updated']} · Unchanged: {counts['Unchanged']} · Not generated: {counts['Preserved']}. Review the dated results and reasons below. Existing bookings keep their times.",
             )
     return render(
         request,
         "core/recurring_settings.html",
         {
-            "slots": WeeklySlot.objects.filter(archived_at__isnull=True),
+            "slots": weekly_coverage(),
             "form": form,
             "results": results,
         },
@@ -226,3 +229,83 @@ def slot_delete(request, pk):
         "core/weekly_delete.html",
         {"slot": row, "booking_count": count, "form": form, "error": error},
     )
+
+
+@staff_permission("core.change_weeklyslot")
+@require_http_methods(["GET", "POST"])
+def schedule_edit(request):
+    from django.forms import formset_factory
+
+    from .recurring import save_slots
+
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    slots = list(WeeklySlot.objects.filter(archived_at__isnull=True).order_by("pk"))
+
+    class BatchSlotForm(SlotForm):
+        slot_id = forms.IntegerField(widget=forms.HiddenInput)
+
+    forms_type = formset_factory(BatchSlotForm, extra=0, max_num=500, validate_max=True)
+    initial = []
+    for slot in slots:
+        initial.append(
+            {
+                **{f: getattr(slot, f) for f in FIELDS if f != "public"},
+                "slot_id": slot.pk,
+                "revision": slot.revision,
+                "visibility": "public" if slot.public else "private",
+            }
+        )
+    formset = forms_type(request.POST if request.method == "POST" else None, initial=initial)
+    error = None
+    if request.method == "POST" and formset.is_valid():
+        try:
+            ids = [form.cleaned_data["slot_id"] for form in formset]
+            if len(ids) != len(set(ids)) or set(ids) != {slot.pk for slot in slots}:
+                raise ValidationError("Weekly schedule changed. Reload and review all defaults.")
+            edits = []
+            for form in formset:
+                data = {k: form.cleaned_data[k] for k in FIELDS if k != "public"}
+                data["public"] = form.cleaned_data["visibility"] == "public"
+                edits.append(
+                    {
+                        "pk": form.cleaned_data["slot_id"],
+                        "revision": form.cleaned_data["revision"],
+                        "data": data,
+                    }
+                )
+            save_slots(actor=request.user, edits=edits)
+        except ValidationError as exc:
+            error = " ".join(exc.messages)
+        else:
+            messages.success(
+                request,
+                "Weekly schedule saved together. Generate dated sessions with updates selected to apply the revised schedule to eligible dates.",
+            )
+            return redirect("recurring_settings")
+    return render(request, "core/weekly_batch.html", {"formset": formset, "error": error})
+
+
+def weekly_coverage():
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from .models import Session
+
+    slots = list(WeeklySlot.objects.filter(archived_at__isnull=True))
+    for slot in slots:
+        slot.display_weekdays = sorted(slot.weekdays, key=lambda d: (d + 1) % 7)
+        days = set(
+            Session.objects.filter(
+                source_slot=slot, source_day__gte=timezone.localdate()
+            ).values_list("source_day", flat=True)
+        )
+        slot.generated_until = max(days) if days else None
+        slot.gaps = []
+        day = timezone.localdate()
+        while slot.generated_until and day <= slot.generated_until:
+            if day.weekday() in slot.weekdays and day not in days:
+                slot.gaps.append(day)
+            day += timedelta(days=1)
+    return slots

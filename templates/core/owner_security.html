@@ -4,7 +4,7 @@
 <article class="panel">
 <h2>Recovery email</h2>
 <p>This secondary email can receive owner verification codes and password-reset links.</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button class="button">Save recovery email</button>
+<form method="post">{% csrf_token %}{% include 'core/partials/form_fields.html' %}<button class="button">Save recovery email</button>
 </form>
 </article>
 <article class="panel">
