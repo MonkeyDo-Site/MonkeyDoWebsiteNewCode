@@ -73,3 +73,7 @@ The owner subsequently authorized staging application/database development and e
 Confirmed waiver wording and signature interaction are owner-approved; counsel review is not an owner-required gate. This does not mean the existing HTML prototype implements electronic-signature persistence.
 
 Local source coverage and original-asset provenance are described in [RECONSTRUCTION.md](RECONSTRUCTION.md). Do not describe code or attachments as recovered without verifying their actual contents.
+
+## Current weekday naming
+
+**Motzei Shabbos** is the business label for civil weekday index 5. Owner-designated public sessions follow the usual booking rules; backend-only sessions remain private. This supersedes the earlier public-day exclusion. See [requirements](MONKEYDO_REQUIREMENTS.md) and [scheduling development](SCHEDULING_DEVELOPMENT.md). The owner requested no screenshots for this update; historical screenshot galleries remain review records.

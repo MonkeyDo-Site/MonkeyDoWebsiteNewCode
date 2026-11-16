@@ -4,20 +4,13 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
+from .date_display import weekday_name
 from .models import Booking, SiteSettings, WeeklySlot
 from .permissions import staff_permission
 from .recurring import FIELDS, delete_slot, generate_sessions, save_horizon, save_slot
 from .templatetags.scheduling_labels import display_session_label
 
-WEEKDAYS = [
-    (6, "Sunday"),
-    (0, "Monday"),
-    (1, "Tuesday"),
-    (2, "Wednesday"),
-    (3, "Thursday"),
-    (4, "Friday"),
-    (5, "Saturday"),
-]
+WEEKDAYS = [(day, weekday_name(day)) for day in (6, 0, 1, 2, 3, 4, 5)]
 
 
 class SlotForm(forms.ModelForm):

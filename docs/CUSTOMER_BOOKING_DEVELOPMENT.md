@@ -69,3 +69,7 @@ The four-step progress indicator is absent from staff templates. Payment Details
 Available public session cards retain Open as their status, followed by the Open-only or Supervised Play availability description in the same reserved text area. Align Choose this session buttons at the bottom across cards in each row. Preserve unavailable labels and their absence of booking buttons.
 
 Align the progress-bar completion message vertically with the step labels, using the same text size and no extra top margin. Keep the four numbered steps; let the completion message wrap onto its own line on smaller screens without crowding the steps.
+
+## Motzei Shabbos public booking
+
+Owner-designated public sessions on Motzei Shabbos now use the normal availability and pending-test booking path; private sessions remain hidden and blocked from public start. The public calendar, Details, Payment Details and saved-test receipt render the business weekday wording through the app-wide date filter. Actual dates/times remain unchanged. No default weekly session, evening threshold, automatic visibility, payment or waiver functionality is added.

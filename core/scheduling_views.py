@@ -110,9 +110,7 @@ def scheduling(request):
                     "session": row,
                     "counts": occupancy(row),
                     "blocked": row.closed or date_closed(row) or weekly_default_blocked(row),
-                    "visible": row.public
-                    and not weekly_default_blocked(row)
-                    and day.weekday() != 5,
+                    "visible": row.public and not weekly_default_blocked(row),
                 }
                 for row in rows
             ],
@@ -162,8 +160,6 @@ def session_edit(request, pk=None):
                     "url": f"/staff/scheduling/date/?day={row.starts_at.astimezone(NEW_YORK).date().isoformat()}",
                 }
             )
-        if row.starts_at.astimezone(NEW_YORK).weekday() == 5:
-            blockers.append({"label": "Saturday sessions are backend-only", "url": ""})
     return render(
         request,
         "core/scheduling_form.html",

@@ -127,9 +127,9 @@ class Session(models.Model):
         ]
 
     def __str__(self):
-        from django.utils import timezone
+        from .date_display import display_strftime
 
-        return timezone.localtime(self.starts_at).strftime("%a %b %d, %Y %I:%M %p")
+        return display_strftime(self.starts_at, "%a %b %d, %Y %I:%M %p")
 
 
 class Booking(models.Model):

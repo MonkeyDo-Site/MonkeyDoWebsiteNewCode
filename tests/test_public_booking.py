@@ -166,7 +166,7 @@ class PublicBookingTests(TestCase):
         with self.assertRaises(ValidationError):
             submit_booking(changed)
 
-    def test_hidden_future_or_saturday_session_and_expired_flow_blocked(self):
+    def test_hidden_session_and_expired_flow_blocked(self):
         self.slot.public = False
         self.slot.save()
         self.assertEqual(self.client.post(f"/book/start/{self.slot.pk}/").status_code, 400)

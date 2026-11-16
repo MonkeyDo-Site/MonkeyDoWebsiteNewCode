@@ -24,7 +24,7 @@ Source: the complete **Responses to Proposals for second batch of edits.docx**, 
 | Public play-type and group instructions | Open-only sessions show fixed “Play type: Open Play”; supervised instructions/choice appear only when available. Grip-sock instructions accompany that field; card choice includes its fee rate. | 15–16 |
 | Payment Details step | Existing breakdown/save screen carries the fourth progress step. The payment-method selector stays within Session Details. | 17–18 |
 
-The document's “Other settings” screenshot was an explanation request: the notice describes effective date-wide, weekly-default or Saturday restrictions separately from the individual session fields. No additional change was requested after that explanation; its previously approved screenshot is not duplicated here.
+The document's “Other settings” screenshot was an explanation request: the notice describes effective date-wide, weekly-default restrictions separately from the individual session fields. No additional change was requested after that explanation; its previously approved screenshot is not duplicated here.
 
 ## Validation
 

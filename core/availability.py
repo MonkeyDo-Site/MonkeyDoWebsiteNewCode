@@ -33,7 +33,7 @@ def availability(session, horizon=1, now=None):
     now = now or timezone.now()
     children, adults, supervised = occupancy(session)
     day = session.starts_at.astimezone(NEW_YORK).date()
-    if not session.public or day.weekday() == 5 or weekly_default_blocked(session):
+    if not session.public or weekly_default_blocked(session):
         return {"available": False, "label": "Unavailable", "hidden": True}
     if session.kind == Session.Kind.PARTY:
         label = "A party is booked for this slot."

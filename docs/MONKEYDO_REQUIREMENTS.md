@@ -72,7 +72,7 @@ Public club wording is in [PROGRAMS.md](PROGRAMS.md). Final navigation arrangeme
 - Default public horizon: one calendar day. A date opens at midnight on the previous calendar day. Owner may set any whole number 1–10; provide **Revert to default: 1 day** with confirmation. Changes do not change/cancel existing bookings.
 - Sunday opens no later than Friday 12:00 AM (midnight after Thursday night). If the general horizon opens it earlier, use the earlier date.
 - Ordinary same-day bookings remain available after start until the session ends. Supervised bookings close at start; see [PROGRAMS.md](PROGRAMS.md).
-- Hide Saturday entirely in the normal public calendar, rather than marking it closed. Support admin-only Saturday/seasonal Saturday-night bookings.
+- Display the civil day at weekday index 5 as **Motzei Shabbos** on staff/customer screens and current documentation. The owner can create one-time or weekly sessions and mark them public or backend-only. Public sessions follow the normal booking horizon, closures, play-type/cutoff and capacity rules; backend-only sessions stay private. No default session or automatic evening/sunset opening is added. Actual dates, times and weekday numbers remain unchanged.
 - Derive availability from real bookings, capacities, closures, visibility, and owner overrides. No automatic holiday rules: owner manually blocks dates up to two years ahead, entering a private reason. Customers see generic unavailability, not the reason.
 - Show all relevant public session times. Closing a weekly default hides its linked dated sessions; a closed individual dated session from an open default, or a closed public one-time session, remains gray/nonclickable with **Not Available**. Backend-only sessions remain hidden. Do not invent public placeholders for closed weekly defaults. Ordinary full sessions say **Fully booked**; party sessions say **A party is booked for this slot.**
 - When the date is fully booked: **We're all booked for the date you want. We would love to see you another time.**
@@ -256,3 +256,9 @@ Membership lists show one row per membership with its latest details. Do not dis
 Available public session cards retain Open as their status, followed by the Open-only or Supervised Play availability description in the same reserved text area. Align Choose this session buttons at the bottom across cards in each row. Preserve unavailable labels and their absence of booking buttons.
 
 Align the progress-bar completion message vertically with the step labels, using the same text size and no extra top margin. Keep the four numbered steps; let the completion message wrap onto its own line on smaller screens without crowding the steps.
+
+## Motzei Shabbos naming and owner-opened sessions
+
+The latest owner decision supersedes the former blanket public-day exclusion. Use Motzei Shabbos for both full and abbreviated app weekday labels, including weekly selectors, dated scheduling, booking form choices, Today/Bookings, customer records and the public calendar/details/completion. Use the shared business-date formatter for future emails, printed records and exports that show weekday names. Numeric dates, ISO input/API values, stored timestamps, weekday index 5 and New York timezone semantics remain unchanged; do not shift a session to another date or infer an evening start time. The default Sunday–Friday schedule stays as configured.
+
+Public visibility is an explicit owner choice, including existing sessions already marked public. Horizon, closures, closed/deleted weekly defaults, session end, supervised cutoff, capacity and existing staff permissions remain in force. No screenshots are required for this specific change, as the owner explicitly requested.

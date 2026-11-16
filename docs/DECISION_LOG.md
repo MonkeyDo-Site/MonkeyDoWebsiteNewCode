@@ -404,3 +404,7 @@ Owner requested that the Open-only calendar card retain Open above its descripti
 ## 2026-11-15 — Align progress-bar completion text
 
 Owner requested that “You’re all set” in the progress bar line up with the other progress text. Remove its top margin, match step-label font sizes and allow responsive wrapping while retaining the four-step customer-only workflow and existing completion wording. This is a CSS-only presentation change.
+
+## 2026-11-15 — Motzei Shabbos labels and owner-controlled public sessions
+
+Owner requested that the civil weekday previously labelled Saturday appear as Motzei Shabbos on staff/customer screens and current documentation. In answer to the explicit availability question, the owner approved allowing owner-opened public sessions under the usual booking rules. This supersedes the historical 2026-08-05 blanket Saturday hiding decision and the corresponding earlier review notes. Backend-only remains private. Keep actual dates/times/weekday indices, normal closures/capacity/cutoffs, staff permissions and the existing Sunday–Friday defaults; no automatic sunset or evening opening is introduced. Owner explicitly waived new screenshots for this change. Historical screenshots/source evidence remain unchanged. No hosted deployment is authorized by this wording change alone.

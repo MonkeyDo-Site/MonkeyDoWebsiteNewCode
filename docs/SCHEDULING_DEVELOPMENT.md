@@ -4,7 +4,7 @@ This checkpoint adds the owner calendar at `/staff/scheduling/`. Apply migration
 
 ## Available workflow
 
-Choose a New York date and review its sessions and reserved child/adult/supervised counts. Add a one-time ordinary session with an internal label, public/backend-only visibility, accompanied/supervised/both play type, times, and child/combined/supervised limits. Public Saturday sessions remain hidden under the approved normal public-calendar rule. Choosing public does not bypass the normal advance-booking horizon.
+Choose a New York date and review its sessions and reserved child/adult/supervised counts. Add a one-time ordinary session with an internal label, public/backend-only visibility, accompanied/supervised/both play type, times, and child/combined/supervised limits. Motzei Shabbos is the displayed weekday name. Owner-created public sessions may appear and accept bookings, while backend-only sessions remain private. Choosing public does not bypass the normal advance-booking horizon.
 
 Edit future sessions to adjust visibility, closure and limits. New sessions cannot overlap existing sessions. Capacity cannot be reduced below existing reservations, including pending test reservations. Times and play type cannot change when booking history exists: move individual pending bookings through the existing booking tools instead. Customer notifications and confirmed-booking rescheduling/repricing remain future work. Weekly template editing/generation is now available separately; see [RECURRING_SCHEDULE_DEVELOPMENT.md](RECURRING_SCHEDULE_DEVELOPMENT.md). Earlier both/zero-supervised seed rows can be made explicitly accompanied-only without altering eligibility.
 

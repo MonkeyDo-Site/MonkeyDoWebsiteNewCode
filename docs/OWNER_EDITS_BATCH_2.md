@@ -29,7 +29,7 @@ The owner approved development and requested desktop/mobile screenshots before d
 | 6 | Customer contact details and linked customer name; compact cancel section; confirmation works with JavaScript or server fallback | StaffBatchTests; gallery 04/26 |
 | 7 | Booking customer picker searches name/normalized phone, returns bounded options and labels possible matches | StaffBatchTests; gallery 06 |
 | 8 | Leading country-code 1 matches ten-digit phone; email digits do not accidentally become phone searches | StaffBatchTests and customer tests |
-| 9 | Session edit screen explains effective weekly/date/Saturday restrictions separately from the individual fields and links governing settings | Gallery 17–18 |
+| 9 | Session edit screen explains effective weekly/date restrictions separately from the individual fields and links governing settings | Gallery 17–18 |
 | 10 | Owner daily-session rows link Add booking with session preselected; closed rows do not offer the action | Gallery 06/16 |
 | 11 | Today has one filterable table, empty sessions in selector, session overview/selected-session totals independent of matching rows, contact search, linked names and Add booking for staff/owner | StaffBatchTests; gallery 01/34/44 |
 | 12 | Searchable membership customer picker; Type/Amount/Months labels; explicitly audited owner 1/2-month exceptions for both products/billing choices, ordinary staff minimum 3 | StaffBatchTests; gallery 11/45 |
@@ -44,7 +44,7 @@ The owner approved development and requested desktop/mobile screenshots before d
 
 ## Subsequent owner clarifications
 
-- Closing a **weekly default** hides its linked sessions. Closing an **individual dated public session** or **public one-time session** leaves it visible as **Not Available**. Backend-only sessions and public Saturdays stay hidden. No calendar placeholders for ungenerated closed defaults.
+- Closing a **weekly default** hides its linked sessions. Closing an **individual dated public session** or **public one-time session** leaves it visible as **Not Available**. Backend-only sessions stay hidden. The later Motzei Shabbos clarification permits owner-designated public sessions on that weekday under normal rules. No calendar placeholders for ungenerated closed defaults.
 - Two booking play-type filters: Open Play and Supervised Play. Date ranges work with or without recurring time selection.
 - Today has Add booking for owner/staff, not Add/Edit session. Session configuration remains only in owner scheduling; ordinary staff cannot access those endpoints.
 - Current emails are unique ignoring case. Historical-only reuse is permitted: staff see a warning and may proceed; public reuse creates an owner-only Dashboard notice. Previous profiles/history are not revealed publicly or merged.

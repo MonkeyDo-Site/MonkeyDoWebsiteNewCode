@@ -19,7 +19,7 @@ Always preserved:
 
 Results list created/updated sessions and preserved conflicts for review. Already matching, unchanged generated sessions need no update. To change a preserved session, review it in the dated calendar and handle affected bookings individually. No notification or confirmed-booking repricing is implied.
 
-Each generated session retains its template ID, template revision and source date. Calendar and template mutations share the existing PostgreSQL exclusive advisory lock; reservations use its shared lock. Concurrent generation cannot duplicate dated sessions. Generation and audits commit together. A validation error rolls back the batch. Ambiguous/nonexistent New York DST times fail explicitly; use another time or split the date range. Private labels remain off public pages. Saturday stays hidden under normal public-calendar rules, including explicitly public Saturday templates.
+Each generated session retains its template ID, template revision and source date. Calendar and template mutations share the existing PostgreSQL exclusive advisory lock; reservations use its shared lock. Concurrent generation cannot duplicate dated sessions. Generation and audits commit together. A validation error rolls back the batch. Ambiguous/nonexistent New York DST times fail explicitly; use another time or split the date range. Private labels remain off public pages. Motzei Shabbos defaults use the same saved weekday index 5; owner-designated public generated sessions follow the ordinary visibility/booking rules, and backend-only sessions stay private. No additional weekly default is seeded.
 
 The old development-only `seed_staging` command remains idempotent, uses the same calendar lock and skips overlapping owner sessions. It is not the operational recurring generator or a reset procedure.
 
@@ -27,7 +27,7 @@ The old development-only `seed_staging` command remains idempotent, uses the sam
 
 Owner **Booking horizon** accepts whole numbers 1–10. **Revert to default: 1 day** requires the explicit confirmation checkbox. Saving checks the previously displayed value, audits before/after and updates only the horizon field, preserving independent staging-security configuration. Existing bookings, quotes and dated sessions are unchanged.
 
-The public availability logic continues to use New York calendar-day openings. Sunday opens by Friday midnight, or earlier when the selected general horizon allows it. Horizon changes do not materialize dates and do not bypass visibility, closures, capacity, supervised cutoff or Saturday hiding.
+The public availability logic continues to use New York calendar-day openings. Sunday opens by Friday midnight, or earlier when the selected general horizon allows it. Horizon changes do not materialize dates and do not bypass visibility, closures, capacity, supervised cutoff or backend-only visibility. Motzei Shabbos sessions have no separate forced-public-hiding rule.
 
 ## Remaining work
 
