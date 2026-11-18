@@ -11,12 +11,12 @@ def normalize_phone(value, *, optional=False):
     if optional and not value:
         return ""
     if not re.fullmatch(r"[0-9+().\s-]+", value):
-        raise forms.ValidationError("Enter a ten-digit US phone number.")
+        raise forms.ValidationError("Enter a ten-digit phone number.")
     digits = re.sub(r"\D", "", value)
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
     if len(digits) != 10:
-        raise forms.ValidationError("Enter a ten-digit US phone number.")
+        raise forms.ValidationError("Enter a ten-digit phone number.")
     return digits
 
 

@@ -881,3 +881,43 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .booking-progress .complete svg { fill:#6c927f; }
 .progress-complete { font-weight:800; margin:0; font-size:.9rem; }
 @media(max-width:650px){.booking-progress ol{grid-template-columns:repeat(2,minmax(0,1fr))}.booking-progress li,.progress-complete{font-size:.8rem}.booking-progress li{gap:.4rem}}
+
+/* Third owner-feedback batch: compact controls and reviewable booking details. */
+.visually-hidden { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important }
+.clear-dates { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; border:0; border-radius:50%; background:transparent; color:var(--rose-ink); cursor:pointer; font-size:22px; vertical-align:middle }
+.clear-dates:focus-visible { outline:2px solid currentColor; outline-offset:2px }
+.booking-progress .progress-complete { color:var(--rose-ink) }
+.schedule-coverage { margin:12px 0 18px }
+.schedule-coverage summary { cursor:pointer; font-weight:600; margin:8px 0 }
+.customer-booking-layout.with-play-info { display:grid; grid-template-columns:minmax(0,1fr) 290px; gap:24px; align-items:start }
+.with-play-info .customer-booking-form { max-width:none; min-width:0 }
+.public-details-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,.85fr); gap:24px; align-items:start }
+.public-details-layout>.button { grid-column:1 / -1; justify-self:start }
+.live-booking-estimate { padding:18px; border-radius:20px; background:#faf7ef; align-self:end; position:static; min-width:0 }
+.live-booking-estimate h3 { margin:0 0 14px; font-size:23px }
+.live-booking-estimate .quote-items div { gap:12px }
+.live-booking-estimate dd { white-space:nowrap }
+.live-booking-estimate .quote-total { border-top:1px solid #b9c4b8; padding-top:14px; font-weight:700 }
+.booking-play-info { display:grid; gap:16px }
+.booking-play-info .panel { padding:22px; margin:0 }
+.booking-play-info h2 { color:var(--rose-ink); font-size:28px; margin:8px 0 12px }
+.booking-play-info p { font-size:14px; line-height:1.6; margin:10px 0 }
+.booking-play-info .eyebrow { font-size:11px }
+@media(max-width:1100px) {
+ .customer-booking-layout.with-play-info { grid-template-columns:minmax(0,1fr) 240px; gap:16px }
+ .public-details-layout { grid-template-columns:minmax(0,1fr) }
+ .live-booking-estimate { position:static }
+}
+@media(max-width:760px) {
+ .customer-booking-layout.with-play-info { display:block }
+ .public-details-layout { display:block }
+ .live-booking-estimate { margin:20px 0 }
+ .booking-play-info { margin-top:22px }
+}
+.live-booking-estimate .quote-items>div { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:12px; margin-bottom:14px }
+.live-booking-estimate dd { margin:0; font-size:16px }
+.public-details-layout input,.public-details-layout select { min-width:0 }
+
+.customer-booking-layout>.customer-booking-form { margin:0 }
+.table-filters td:has(.clear-dates) { position:relative }
+.table-filters .clear-dates { position:absolute; right:6px; top:4px }

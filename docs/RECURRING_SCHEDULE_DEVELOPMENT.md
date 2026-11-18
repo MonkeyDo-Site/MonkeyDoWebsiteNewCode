@@ -36,3 +36,10 @@ Unattended generation/expiry jobs, returning a manual override to automatic mana
 ## Second owner-feedback batch
 
 The owner clarified a weekly-default closure hides its linked dated sessions, whereas individually closed public dated sessions stay visible as Not Available. Weekly defaults can be edited together; validation considers the complete final schedule. Generation plans eligible dated moves together, retaining source identities and booked/manual/program/past records. Conflicts are resolved against final proposed positions and all retained records before writes. An exclusive calendar lock and one transaction protect intermediate unique-start swaps; temporary parking values never commit or enter audit history. Every preserved/skipped/unchanged dated result has a specific explanation and relevant review link. Coverage displays the latest generated date plus any missing expected dates. Source labels use actual local clock context rather than inventing AM for ambiguous owner labels. Sunday appears first.
+
+
+## Approved third owner-feedback batch
+
+Weekly single/bulk forms use checked Closed for reservation with inverse mapping to the stored active flag. Coverage compares actual dated times/settings: Current schedule applied through stops at the first expected gap/mismatch, Sessions exist through records the furthest date, and expandable date ranges distinguish older timing, preserved exceptions, custom/booking blocks and missing dates. Generation respects reservation blocks and reports why; no automatic generation is introduced.
+
+Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).

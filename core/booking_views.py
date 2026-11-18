@@ -5,7 +5,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
-from .booking_forms import PricingPolicyForm, TestBookingForm, TimingForm
+from .booking_forms import PricingPolicyForm, TestBookingForm, TimingForm, session_date_picker
 from .booking_management import (
     create_test_booking,
     edit_test_booking,
@@ -14,6 +14,7 @@ from .booking_management import (
 )
 from .models import AuditEvent, Booking, Customer, PricingPolicy
 from .permissions import staff_permission
+from .session_blocks import booking_has_blocks
 
 
 def form_error(form, error):
@@ -41,6 +42,7 @@ def booking_detail(request, pk):
             "booking": booking,
             "quote": booking.quotes.first(),
             "quotes": booking.quotes.select_related("policy", "actor"),
+            "has_reservation_blocks": booking_has_blocks(booking),
             "history": AuditEvent.objects.filter(
                 record_type="booking", record_id=str(booking.reference)
             ).select_related("actor"),
@@ -60,19 +62,18 @@ def booking_create(request):
         and len(request.GET["customer"]) <= 18
     ):
         customer = Customer.objects.filter(pk=int(request.GET["customer"])).first()
-    form = TestBookingForm(
-        request.POST if request.method == "POST" else None,
-        owner=request.user.is_superuser,
-        customer=customer,
-    )
+    posted = request.POST if request.method == "POST" else None
+    form = TestBookingForm(posted, owner=request.user.is_superuser, customer=customer)
     if (
         request.method == "GET"
         and request.GET.get("session", "").isdigit()
         and len(request.GET["session"]) < 19
     ):
         form.initial["session"] = request.GET["session"]
-    if request.method == "POST" and form.is_valid():
+        session_date_picker(form)
+    if request.method == "POST" and request.POST.get("load_sessions") != "1" and form.is_valid():
         data = dict(form.cleaned_data)
+        data.pop("session_date", None)
         data["session_id"] = data.pop("session").pk
         try:
             booking = create_test_booking(actor=request.user, **data)
@@ -103,7 +104,7 @@ def booking_edit(request, pk):
 
     estimate = None
     show_reminder = False
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and request.POST.get("load_sessions") != "1" and form.is_valid():
         try:
             estimate = edit_estimate(booking, form.cleaned_data)
             if estimate["amount_changed"] and not amount_reviewed(
@@ -116,6 +117,7 @@ def booking_edit(request, pk):
             else:
                 data = dict(form.cleaned_data)
                 data.pop("estimate_token", None)
+                data.pop("session_date", None)
                 edit_test_booking(actor=request.user, booking_id=pk, **data)
                 messages.success(
                     request,
@@ -181,8 +183,9 @@ def booking_move(request, pk):
         owner=request.user.is_superuser,
         booking=booking,
     )
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and request.POST.get("load_sessions") != "1" and form.is_valid():
         data = dict(form.cleaned_data)
+        data.pop("session_date", None)
         data["session_id"] = data.pop("session").pk
         try:
             move_test_booking(actor=request.user, booking_id=pk, **data)
@@ -204,10 +207,19 @@ def booking_move(request, pk):
 def booking_release(request, pk):
     booking = get_object_or_404(Booking.objects.select_related("customer", "session"), pk=pk)
     if request.POST.get("confirm_cancel") != "1":
-        return render(request, "core/booking_cancel_confirm.html", {"booking": booking})
+        return render(
+            request,
+            "core/booking_cancel_confirm.html",
+            {"booking": booking, "has_reservation_blocks": booking_has_blocks(booking)},
+        )
     try:
         version = int(request.POST.get("version", ""))
-        release_test_booking(actor=request.user, booking_id=pk, version=version)
+        release_test_booking(
+            actor=request.user,
+            booking_id=pk,
+            version=version,
+            reopen_affected_sessions=request.POST.get("reopen_affected_sessions") == "on",
+        )
     except ValueError:
         messages.error(request, "Reload the record before cancelling it.")
     except ValidationError as exc:
@@ -227,7 +239,7 @@ def pricing_settings(request):
         raise PermissionDenied
     policy = PricingPolicy.objects.first()
     form = PricingPolicyForm(request.POST if request.method == "POST" else None, policy=policy)
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and request.POST.get("load_sessions") != "1" and form.is_valid():
         with transaction.atomic():
             new = form.save(commit=False)
             new.actor = request.user
@@ -245,3 +257,31 @@ def pricing_settings(request):
         )
         return redirect("pricing_settings")
     return render(request, "core/pricing_settings.html", {"form": form, "policy": policy})
+
+
+@staff_permission("core.view_booking")
+@require_safe
+def dated_sessions(request):
+    from django import forms
+    from django.http import JsonResponse
+
+    from .booking_forms import selectable_sessions
+
+    if not (
+        request.user.has_perm("core.add_booking") or request.user.has_perm("core.change_booking")
+    ):
+        raise PermissionDenied
+    try:
+        day = forms.DateField().clean(request.GET.get("day"))
+    except forms.ValidationError:
+        return JsonResponse({"error": "Choose a valid session date."}, status=400)
+    booking = None
+    if request.GET.get("booking", "").isdigit() and len(request.GET["booking"]) < 19:
+        if not request.user.has_perm("core.change_booking"):
+            raise PermissionDenied
+        booking = get_object_or_404(Booking, pk=request.GET["booking"])
+    rows = selectable_sessions(booking).filter(starts_at__date=day)
+    return JsonResponse(
+        {"sessions": [{"id": row.pk, "label": str(row)} for row in rows]},
+        headers={"Cache-Control": "private, no-store"},
+    )

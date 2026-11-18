@@ -94,9 +94,11 @@ class PublicBookingTests(TestCase):
         self.assertNotContains(response, customer.email)
         self.assertNotContains(response, customer.last_name)
         response = self.client.post("/book/details/", {"last_name": "Wrong"})
-        self.assertContains(response, "The last name you entered", status_code=400)
+        self.assertContains(
+            response, "You can try finding your customer profile by entering your email address."
+        )
         self.assertEqual(Booking.objects.count(), 0)
-        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "blocked")
+        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "email_lookup")
 
     def test_new_customer_choice_cannot_bypass_current_phone_verification(self):
         c = Customer.objects.create(
@@ -342,8 +344,8 @@ class PublicBookingTests(TestCase):
         response = self.client.post(
             "/book/details/", {"last_name": "Greenfield", "customer_id": other.pk}
         )
-        self.assertEqual(response.status_code, 400)
-        self.assertNotContains(response, other.email, status_code=400)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, other.email)
         self.assertNotIn("proof", self.client.session["customer_test_booking"])
 
     def test_similar_name_confirmation_rechecks_profile_revision(self):

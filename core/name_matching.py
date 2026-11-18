@@ -1,5 +1,6 @@
 """Conservative spelling suggestions. Public matching only examines the phone-selected record."""
 
+import re
 import unicodedata
 
 from django.db.models import Case, IntegerField, Value, When
@@ -9,7 +10,7 @@ def normalized_name(value):
     return "".join(c for c in unicodedata.normalize("NFKD", value).casefold() if c.isalnum())
 
 
-def similar_name(left, right):
+def spelling_match(left, right):
     a, b = normalized_name(left), normalized_name(right)
     if not a or not b:
         return False
@@ -32,6 +33,30 @@ def similar_name(left, right):
             row.append(value)
         before_previous, previous = previous, row
     return previous[-1] <= limit
+
+
+def similar_name(left, right):
+    """Compare words/prefixes against one selected profile, never broaden identity lookup."""
+    if spelling_match(left, right):
+        return True
+    entered = [normalized_name(w) for w in re.findall(r"[^\W_]+", left, re.UNICODE)]
+    stored = [normalized_name(w) for w in re.findall(r"[^\W_]+", right, re.UNICODE)]
+    if not entered or not stored:
+        return False
+
+    def word_match(a, b):
+        return spelling_match(a, b) or (len(a) >= 3 and b.startswith(a))
+
+    # Every entered word must be accounted for, so an unrelated extra surname fails.
+    remaining = list(stored)
+    for word in entered:
+        match = next(
+            (i for i, candidate in enumerate(remaining) if word_match(word, candidate)), None
+        )
+        if match is None:
+            return False
+        remaining.pop(match)
+    return True
 
 
 def name_candidates(query):

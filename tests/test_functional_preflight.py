@@ -50,6 +50,9 @@ class FunctionalPreflightTests(TestCase):
             False,
             False,
             False,
+            True,
+            True,
+            False,
         )
         manager = MagicMock()
         manager.__enter__.return_value = cursor
@@ -66,8 +69,66 @@ class FunctionalPreflightTests(TestCase):
 
     def test_design_database_or_schema_privilege_or_missing_allowlist_fail_closed(self):
         for row in (
-            ("monkeydo_staging", "monkeydo-functional", False, True, False, False, False),
-            ("monkeydo_functional", "monkeydo-functional", True, True, False, False, False),
+            (
+                "monkeydo_staging",
+                "monkeydo-functional",
+                False,
+                True,
+                False,
+                False,
+                False,
+                True,
+                True,
+                False,
+            ),
+            (
+                "monkeydo_functional",
+                "monkeydo-functional",
+                True,
+                True,
+                False,
+                False,
+                False,
+                True,
+                True,
+                False,
+            ),
+            (
+                "monkeydo_functional",
+                "monkeydo-functional",
+                False,
+                True,
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+            ),
+            (
+                "monkeydo_functional",
+                "monkeydo-functional",
+                False,
+                True,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+            ),
+            (
+                "monkeydo_functional",
+                "monkeydo-functional",
+                False,
+                True,
+                False,
+                False,
+                False,
+                True,
+                True,
+                True,
+            ),
         ):
             with self.assertRaises(CommandError):
                 self.run_preflight(row)

@@ -22,6 +22,23 @@ def date_closed(session):
     ).exists()
 
 
+def date_backend_only(session):
+    from .availability import NEW_YORK
+
+    return CalendarDate.objects.filter(
+        day=session.starts_at.astimezone(NEW_YORK).date(), backend_only=True
+    ).exists()
+
+
+def reservation_blocked(session, *, ignore_booking_id=None):
+    blocks = session.reservation_blocks.filter(active=True)
+    if ignore_booking_id:
+        from django.db.models import Q
+
+        blocks = blocks.filter(Q(booking__isnull=True) | ~Q(booking_id=ignore_booking_id))
+    return blocks.exists()
+
+
 def weekly_default_blocked(session):
     """Read current policy, even when the caller holds an older Session instance."""
     from .models import WeeklySlot

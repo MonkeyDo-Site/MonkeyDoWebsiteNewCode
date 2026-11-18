@@ -15,14 +15,16 @@ class Customer(models.Model):
     phone = models.CharField(
         max_length=10,
         unique=True,
-        validators=[RegexValidator(r"^\d{10}$", "Use a ten-digit US phone number.")],
+        validators=[RegexValidator(r"^\d{10}$", "Use a ten-digit phone number.")],
     )
     email = models.EmailField(blank=True)
     referral_source = models.CharField(max_length=240, blank=True)
     previous_phone = models.CharField(max_length=10, blank=True)
     previous_email = models.EmailField(blank=True)
     customer_type = models.CharField(
-        max_length=10, choices=[("family", "Family"), ("day_camp", "Day Camp")], default="family"
+        max_length=10,
+        choices=[("family", "Family"), ("day_camp", "Day Camp"), ("school", "School")],
+        default="family",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -96,11 +98,12 @@ class Session(models.Model):
         ],
         default="both",
     )
-    starts_at = models.DateTimeField(unique=True)
+    starts_at = models.DateTimeField(db_index=True)
     ends_at = models.DateTimeField()
     kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.ORDINARY)
     public = models.BooleanField(default=False)
     closed = models.BooleanField(default=False)
+    custom_blocking = models.BooleanField(default=False)
     private_label = models.CharField(max_length=120, blank=True)
     child_capacity = models.PositiveSmallIntegerField(default=35)
     total_capacity = models.PositiveSmallIntegerField(default=50)
@@ -110,6 +113,11 @@ class Session(models.Model):
     class Meta:
         ordering = ["starts_at"]
         constraints = [
+            models.UniqueConstraint(
+                fields=["starts_at"],
+                condition=Q(custom_blocking=False),
+                name="standard_session_start_unique",
+            ),
             models.CheckConstraint(
                 condition=Q(ends_at__gt=F("starts_at")), name="session_end_after_start"
             ),
@@ -394,6 +402,7 @@ class BookingQuote(ImmutablePriceRecord):
 
 
 class CalendarDate(models.Model):
+    backend_only = models.BooleanField(default=False)
     day = models.DateField(unique=True)
     closed = models.BooleanField(default=False)
     private_reason = models.CharField(max_length=500, blank=True)
@@ -557,4 +566,38 @@ class MembershipDraftRevision(ImmutablePriceRecord):
         constraints = [
             models.UniqueConstraint(fields=["draft", "number"], name="membership_revision_number"),
             models.CheckConstraint(condition=Q(number__gte=2), name="membership_revision_minimum"),
+        ]
+
+
+class SessionReservationBlock(models.Model):
+    """A reversible source-specific closure, independent of manual/date closures."""
+
+    session = models.ForeignKey(
+        Session, on_delete=models.PROTECT, related_name="reservation_blocks"
+    )
+    source_session = models.ForeignKey(
+        Session, null=True, blank=True, on_delete=models.PROTECT, related_name="caused_blocks"
+    )
+    booking = models.ForeignKey(
+        Booking, null=True, blank=True, on_delete=models.PROTECT, related_name="session_blocks"
+    )
+    active = models.BooleanField(default=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(source_session__isnull=False, booking__isnull=True)
+                    | Q(source_session__isnull=True, booking__isnull=False)
+                ),
+                name="reservation_block_one_source",
+            ),
+            models.UniqueConstraint(
+                fields=["session", "source_session"], name="session_custom_block_unique"
+            ),
+            models.UniqueConstraint(
+                fields=["session", "booking"], name="session_booking_block_unique"
+            ),
         ]

@@ -1,4 +1,4 @@
-"""Shared date-bounded staff booking filters; Today fixes the date server-side."""
+"""Shared optional-date staff booking filters; Today fixes the date server-side."""
 
 from datetime import datetime, time, timedelta
 
@@ -7,15 +7,19 @@ from django.db.models import BooleanField, Case, Q, Value, When
 from django.utils import timezone
 
 from .availability import NEW_YORK, occupancy
-from .calendar import date_closed, weekly_default_blocked
+from .calendar import date_closed, reservation_blocked, weekly_default_blocked
 from .forms import phone_search_digits
 from .models import Booking, Session
 from .name_matching import match_rank, name_candidates
 
 
 class BookingFilters(forms.Form):
-    start = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}), label="From date")
-    end = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}), label="Through date")
+    start = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={"type": "date"}), label="From date"
+    )
+    end = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Through date"
+    )
     q = forms.CharField(max_length=120, required=False, label="Family name, phone or email")
     session = forms.MultipleChoiceField(
         required=False, label="Sessions", choices=[], widget=forms.CheckboxSelectMultiple
@@ -53,8 +57,6 @@ class BookingFilters(forms.Form):
         if data.get("start") and data.get("end"):
             if data["end"] < data["start"]:
                 self.add_error("end", "Choose an end date on or after the start date.")
-            elif (data["end"] - data["start"]).days > 730:
-                self.add_error("end", "Choose a range of no more than two years.")
         return data
 
 
@@ -64,26 +66,34 @@ def booking_context(request, *, today_only=False):
     if data.get("all_sessions") == "1":
         data.setlist("session", [])
     data.setlist("session", [value for value in data.getlist("session") if value])
+    try:
+        next_year = today.replace(year=today.year + 1)
+    except ValueError:
+        next_year = today.replace(year=today.year + 1, day=28)
     data.setdefault("start", today.isoformat())
-    data.setdefault("end", data["start"])
+    data.setdefault("end", next_year.isoformat())
+    if data.get("clear_dates") == "1":
+        data["start"] = data["end"] = ""
     if today_only:
         data["start"] = data["end"] = today.isoformat()
     form = BookingFilters(data)
-    # Validate dates independently to build the permitted session picker safely.
+    session_rows = Session.objects.all()
     try:
         start = form.fields["start"].clean(data.get("start"))
         end = form.fields["end"].clean(data.get("end"))
-        if end < start or (end - start).days > 730:
+        if start and end and end < start:
             raise forms.ValidationError("Invalid range")
-    except forms.ValidationError:
-        start = end = today
-    begin = datetime.combine(start, time.min, NEW_YORK)
-    finish = datetime.combine(end + timedelta(days=1), time.min, NEW_YORK)
-    sessions = list(
-        Session.objects.filter(starts_at__gte=begin, starts_at__lt=finish).select_related(
-            "source_slot"
-        )
-    )
+        if start:
+            session_rows = session_rows.filter(
+                starts_at__gte=datetime.combine(start, time.min, NEW_YORK)
+            )
+        if end:
+            session_rows = session_rows.filter(
+                starts_at__lt=datetime.combine(end + timedelta(days=1), time.min, NEW_YORK)
+            )
+    except (forms.ValidationError, OverflowError):
+        session_rows = Session.objects.none()
+    sessions = list(session_rows.select_related("source_slot"))
     if today_only:
         form.fields["session"].choices = [
             (str(s.pk), timezone.localtime(s.starts_at, NEW_YORK).strftime("%I:%M %p").lstrip("0"))
@@ -97,6 +107,9 @@ def booking_context(request, *, today_only=False):
             (clock, datetime.strptime(clock, "%H:%M").strftime("%I:%M %p").lstrip("0"))
             for clock in clocks
         ]
+    if not today_only:
+        allowed = {key for key, label in form.fields["session"].choices}
+        data.setlist("session", [key for key in data.getlist("session") if key in allowed])
     for field in form.fields.values():
         field.widget.attrs["form"] = "booking-filter-form"
     sort_links = {}
@@ -107,7 +120,7 @@ def booking_context(request, *, today_only=False):
         sort_links[key] = "?" + params.urlencode()
     valid = form.is_valid()
     rows = Booking.objects.select_related("customer", "session").filter(
-        session__starts_at__gte=begin, session__starts_at__lt=finish
+        session_id__in=session_rows.values("pk")
     )
     possible = []
     if not valid:
@@ -150,9 +163,9 @@ def booking_context(request, *, today_only=False):
                 attendance__in=[s for s in filters["status"] if s not in {"pending", "upcoming"}]
             )
             if "pending" in filters["status"]:
-                status |= Q(attendance__isnull=True, setup_pending=True)
+                status |= Q(attendance="", setup_pending=True)
             if "upcoming" in filters["status"]:
-                status |= Q(attendance__isnull=True, setup_pending=False)
+                status |= Q(attendance="", setup_pending=False)
             rows = rows.filter(status)
         order = ["session__starts_at", "created_at", "pk"]
         if query:
@@ -168,7 +181,7 @@ def booking_context(request, *, today_only=False):
         )
     )
     overview = []
-    for session in sessions:
+    for session in sessions if today_only else []:
         children, adults, supervised = occupancy(session)
         overview.append(
             {
@@ -176,6 +189,7 @@ def booking_context(request, *, today_only=False):
                 "bookable": session.kind == Session.Kind.ORDINARY
                 and not session.closed
                 and not date_closed(session)
+                and not reservation_blocked(session)
                 and not weekly_default_blocked(session)
                 and session.ends_at > timezone.now()
                 and not (session.play_mode == "supervised" and session.starts_at <= timezone.now()),

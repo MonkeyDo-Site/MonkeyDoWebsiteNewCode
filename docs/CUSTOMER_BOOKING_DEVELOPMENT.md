@@ -73,3 +73,53 @@ Align the progress-bar completion message vertically with the step labels, using
 ## Motzei Shabbos public booking
 
 Owner-designated public sessions on Motzei Shabbos now use the normal availability and pending-test booking path; private sessions remain hidden and blocked from public start. The public calendar, Details, Payment Details and saved-test receipt render the business weekday wording through the app-wide date filter. Actual dates/times remain unchanged. No default weekly session, evening threshold, automatic visibility, payment or waiver functionality is added.
+
+
+## Approved third owner-feedback batch
+
+The approved third batch adds exact-current-email plus tolerant surname recovery when no phone matches or phone-selected surname matching fails. Reveal the family only after matching both values, then confirm; retain the saved phone and never identify customers from historical-only email. New-customer continuation has the approved go back link. Success! Your details are ready precedes final atomic creation. Session Details has a read-only pretax live estimate and compact shared play information; final Payment Details retains full tax. No card, waiver, benefit or email delivery is enabled by these screens.
+
+Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).
+
+
+## Image-review follow-up — consolidated contact choices
+
+The new-customer continuation paragraph now uses the owner's exact expanded
+wording, with go back and enter an email address as inline hyperlinks. It replaces
+the duplicated phone/email actions beneath that contact form. Email recovery
+accepts navigation by GET as well as its existing POST entry; this only changes
+the in-progress browser flow and still requires matching email and surname before
+family disclosure. Final customer/booking persistence, saved phone and selected
+session are unchanged. Remove the obsolete duplicate-email hint that referred to
+the removed standalone button; the approved full error wording remains.
+
+
+## Image-review clarification — lower estimate and no repeated name entry
+
+The owner clarified the failed-name case: the phone number was already found,
+so that phone plus matching current email are sufficient. Recovery now asks for
+email only, reuses the earlier phone and reveals the family only after both
+identify the same profile. A mismatching email cannot switch a phone-selected
+customer to a different record. The wording is You can try finding your customer
+profile by entering your email address. The surname is never requested again.
+For the earlier unmatched-phone branch, only a surname already supplied in the
+contact step can serve as the second detail; otherwise email alone cannot reveal
+the record. Historical-only email remains excluded, and saved phones are unchanged.
+Confirmation rechecks the same details and profile revision. After recovery the
+success message says Your details match our records, avoiding a false claim that
+the originally mismatched surname was accepted.
+
+The desktop live estimate is vertically centered lower beside the attendee
+fields instead of starting next to Play type. Its narrow-screen placement after
+the fields is unchanged. Screens 24–27 were refreshed where affected.
+
+
+## Final estimate presentation clarification
+
+The live estimate is now low beside socks/payment method on desktop and omits
+both processing fees and tax from its rows and total, displaying the base item
+subtotal. Final Payment Details and saved quotes keep their full fee/tax totals;
+payment-choice percentage information remains. The failed-name recovery notice
+retains its original first sentence before the revised email-search sentence,
+while direct recovery omits an inapplicable failed-name claim. The repeated name
+field remains absent.

@@ -39,3 +39,10 @@ Today/Bookings place Add booking beside the title, filters above headings, and A
 ## Final review refinements
 
 Create/Edit booking order is Session, Supervised Play, attendee counts, socks and expected method. Referral collection moved to the customer profile; legacy booking answers remain stored and are omitted from booking detail. Today/Bookings use a compact wrapping multi-select with explicit All sessions. Native popovers keep choices above the scrolling table without increasing the filter row; a details/checkbox fallback remains usable without popovers. All-session requests are validated server-side, and choices remain associated with the filter form. See OWNER_EDITS_BATCH_2_FINAL_REVIEW.md for current screenshots.
+
+
+## Approved third owner-feedback batch
+
+Bookings now defaults to today through the same date next year; optional bounds permit all-history searches and single-sided ranges. Clear dates fits within the existing controls; Clear all restores defaults. Dates and session selection apply automatically, with explicit/no-JavaScript fallback. Today stays fixed. Staff booking forms choose date then eligible session. Owner-only reservation closure saves atomically with the booking; cancellation/moves can explicitly reopen only its source-specific blocks. Other bookings/independent closures remain. Redundant visible table captions are hidden accessibly.
+
+Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).

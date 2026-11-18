@@ -237,7 +237,19 @@ class ReviewedSchemaIntegrationTests(TransactionTestCase):
             cycle_before = (
                 legacy.get_model("core", "MembershipDraftCycle").objects.values().get(pk=cycle.pk)
             )
+
+            def historical_executor(database):
+                # Exercise the frozen batch-two release graph, not the newer 0026 release.
+                executor = MigrationExecutor(database)
+                nodes = [node for node in executor.loader.graph.leaf_nodes() if node[0] != "core"]
+                nodes.append(schema.REVIEWED[-1])
+                executor.loader.graph.leaf_nodes = lambda app=None: [
+                    node for node in nodes if app is None or node[0] == app
+                ]
+                return executor
+
             with (
+                patch.object(schema, "MigrationExecutor", side_effect=historical_executor),
                 patch.object(schema, "guard_database"),
                 patch.object(schema, "RUNTIME_ROLE", runtime_role),
             ):

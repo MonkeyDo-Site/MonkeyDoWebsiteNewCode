@@ -49,6 +49,17 @@ try {
     try { & $wrapper -ApplyReviewedBatchTwo -Archive $archive -Commit $commit } catch { $failed = $true }
     if (-not $failed -or $global:Calls.Count -ne 0) { throw 'Reviewed schema option must reject Design before remote calls.' }
     $global:Calls.Clear()
+    & $wrapper -Target Functional -ApplyReviewedBatchThree -Archive $archive -Commit $commit
+    if ($global:Calls[1].arguments -notcontains '--apply-reviewed-batch-three' -or $global:Calls[1].arguments -contains '--apply-reviewed-batch-two') { throw 'Third-batch flag must be explicit and separate.' }
+    foreach ($bad in @('design','both')) {
+        $global:Calls.Clear(); $failed = $false
+        try {
+            if ($bad -eq 'design') { & $wrapper -ApplyReviewedBatchThree -Archive $archive -Commit $commit }
+            else { & $wrapper -Target Functional -ApplyReviewedBatchTwo -ApplyReviewedBatchThree -Archive $archive -Commit $commit }
+        } catch { $failed = $true }
+        if (-not $failed -or $global:Calls.Count -ne 0) { throw 'Invalid third-batch schema options must fail before transport.' }
+    }
+    $global:Calls.Clear()
     & $wrapper -Target Functional -Install -Archive $archive -Commit $commit
     if ($global:Calls[1].stdin -notmatch '/etc/monkeydo/functional.env' -or $global:Calls[1].stdin -notmatch '/var/lib/monkeydo-functional-deploy') { throw 'Functional installer used the design environment.' }
     $global:Calls.Clear()
@@ -92,6 +103,26 @@ try {
     $global:Calls.Clear()
     & ([scriptblock]::Create($body))
     if ($global:Calls.Count -ne 5 -or $global:Calls[0].kind -ne 'download' -or $global:Calls[0].uri -notmatch "/$commit`$" -or $global:Calls[-1].arguments -notcontains '--apply-reviewed-batch-two') { throw 'Single-command handoff must download the pinned archive, install, then deploy with the explicit schema option.' }
+    # Execute the new browser-downloaded ZIP handoff, including a duplicate suffix.
+    $handoff = [IO.File]::ReadAllText((Join-Path $root 'docs/OWNER_FEEDBACK_BATCH_THREE_RELEASE.md'))
+    $sample = [regex]::Match($handoff, '```powershell\r?\n([\s\S]*?)```').Groups[1].Value
+    $sampleErrors = $null; $sampleTokens = $null
+    [void][Management.Automation.Language.Parser]::ParseInput($sample, [ref]$sampleTokens, [ref]$sampleErrors)
+    if ($sampleErrors.Count -gt 0) { throw 'Third-batch one-command handoff syntax errors.' }
+    $body = [regex]::Replace($sample, '(?s)^powershell[^\n]*\{\r?\n(.*)\}\s*$', '$1')
+    $body = $body.Replace('APPROVED_COMMIT', $commit).Replace('$HOME\Downloads', "$temporary\browser\Downloads").Replace('$HOME\MonkeyDoDeploy', "$temporary\browser\MonkeyDoDeploy")
+    [void][IO.Directory]::CreateDirectory((Join-Path $temporary 'browser/Downloads'))
+    $browserArchive = Join-Path $temporary "browser/Downloads/MonkeyDoWebsiteNewCode-$commit (1).zip"
+    Copy-Item -LiteralPath $archive -Destination $browserArchive
+    $global:Calls.Clear()
+    & ([scriptblock]::Create($body))
+    if ($global:Calls.Count -ne 4 -or $global:Calls[0].kind -ne 'scp' -or $global:Calls[-1].arguments -notcontains '--apply-reviewed-batch-three') { throw 'Browser handoff must install then deploy without a web download.' }
+    if ($global:Calls[2].arguments[-2] -ne $browserArchive) { throw 'Browser duplicate-name suffix was not supported.' }
+    # A missing completed download must stop before even installing a helper.
+    Remove-Item -LiteralPath $browserArchive
+    $global:Calls.Clear(); $failed = $false
+    try { & ([scriptblock]::Create($body)) } catch { $failed = $true }
+    if (-not $failed -or $global:Calls.Count -ne 0) { throw 'Missing browser ZIP must stop all remote operations.' }
     Write-Output 'PASS: PowerShell parse, upload/hash, safe install, rollback/status, spaces, failure stop and strict host-key verification. SSH/SCP calls were mocked.'
 } finally {
     Remove-Item Function:\scp -ErrorAction SilentlyContinue

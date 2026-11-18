@@ -4,7 +4,7 @@ This increment adds functional staff-only customer operations to the local stagi
 
 ## Implemented customer operations
 
-- Customer list/search and creation, Last Name-only records, database-generated six-digit display IDs, normalized current/previous phones, current/previous emails and Family/Day Camp type.
+- Customer list/search and creation, Last Name-only records, database-generated six-digit display IDs, normalized current/previous phones, current/previous emails and Family/Day Camp/School type.
 - Search by Last Name, customer ID, current/previous email/phone and authorized comments, including phone punctuation normalization inside comments. Results label the matched fields. Public returning-customer verification remains separate future booking work.
 - Customer detail cards: information, waiver placeholder, comments, one expandable Bookings card with the first booking today, additional today bookings and always-visible upcoming/previous counts. No waiver coverage is claimed until actual waiver records are integrated.
 - Contact corrections ask the approved Yes/No question on a phone change. Yes moves the old current number into Previous phone; No preserves the existing Previous phone even when returning to the same number. Displaced previous phone preservation in comments remains manual. Automatic before/after audit still records corrections.
@@ -60,3 +60,10 @@ The second-batch response follow-up shows added comments/customer creation value
 ## Customer-owned referral information
 
 Migration 0025 adds optional Customer.referral_source (240 characters), displayed and edited as “How did you hear about MonkeyDo?”. Staff create/edit use existing customer permissions, validation, revision and audit handling. Public collection occurs once for a new customer and is saved only on successful booking submission; returning customers are not prompted. Existing booking-level answers remain stored but are not displayed on booking details, with no automatic backfill or overwrite of the customer profile. New booking forms no longer collect or edit that legacy field.
+
+
+## Approved third owner-feedback batch
+
+Staff search now compares individual/partial words with spelling tolerance across customer lists, booking filters and both customer pickers. Exact/direct matches precede marked possible matches. Customer types include School, with an All/Family/Day Camp/School list filter; existing type-change permissions remain. Phone errors say ten-digit phone number and keep Canadian/+1 normalization.
+
+Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).

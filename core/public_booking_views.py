@@ -94,6 +94,19 @@ class RetryPhoneForm(forms.Form):
         return normalize_phone(self.cleaned_data["phone"], optional=True)
 
 
+class EmailRecoveryForm(forms.Form):
+    email = forms.EmailField(label="Email address")
+
+
+def recovery_match_kind(flow, customer):
+    """Match current email plus earlier inputs; never request a surname twice."""
+    phone_customer = lookup_phone(flow["phone"])
+    if phone_customer is not None:
+        return "phone_email" if phone_customer.pk == customer.pk else None
+    entered_name = flow.get("entered_name", "")
+    return "name_email" if entered_name and similar_name(entered_name, customer.last_name) else None
+
+
 class ContactForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last Name")
     email = forms.EmailField(label="Email address")
@@ -231,6 +244,7 @@ def display(request, flow, *, form=None, error=None):
             "error": error,
             "customer": customer,
             "quote": flow.get("quote"),
+            "live_quote": initial_live_quote(form, flow) if flow["stage"] == "details" else None,
         },
     )
 
@@ -262,6 +276,15 @@ def start(request, session_id):
 def wizard(request):
     try:
         flow = current(request)
+        if (
+            request.method == "GET"
+            and request.GET.get("restart") == "1"
+            and flow["stage"] != "done"
+        ):
+            flow = {key: flow[key] for key in ("key", "session_id", "expires")}
+            flow["stage"] = "phone"
+            save(request, flow)
+            return redirect("customer_booking")
         if flow["stage"] == "done":
             return redirect("customer_booking_receipt")
         session = public_session(flow["session_id"])
@@ -271,6 +294,8 @@ def wizard(request):
             "retry_phone": RetryPhoneForm,
             "name": NameForm,
             "name_confirm": SimilarNameForm,
+            "email_lookup": EmailRecoveryForm,
+            "email_confirm": SimilarNameForm,
             "previous": PreviousPhoneForm,
             "contact": ContactForm,
             "email": RequiredEmailForm,
@@ -287,6 +312,11 @@ def wizard(request):
         form = form_type(request.POST if request.method == "POST" else None, **args)
         if stage == "review" and request.method == "GET":
             form = ConfirmForm(initial={"flow_key": flow["key"]})
+        if request.method == "POST" and stage == "contact":
+            form.is_valid()
+            if form.cleaned_data.get("last_name"):
+                flow["entered_name"] = form.cleaned_data["last_name"]
+                save(request, flow)
         if request.method == "POST" and form.is_valid():
             limit(request, stage, 60)
             data = form.cleaned_data
@@ -299,6 +329,7 @@ def wizard(request):
                 flow["phone"] = data["phone"]
                 flow["visited"] = data["visited"]
                 flow["stage"] = "contact"
+                flow["lookup_note"] = not bool(customer)
                 if not customer and data["visited"] == "yes":
                     flow["stage"] = "retry_phone"
                 if customer:
@@ -329,15 +360,33 @@ def wizard(request):
                             flow["current_phone"] = customer.phone
                     else:
                         flow["stage"] = "contact"
-                        flow["lookup_note"] = (
-                            "No customer was found with that phone number. You can continue as a new customer, or start again to try another number."
-                        )
-            elif stage in {"name", "name_confirm", "previous"}:
+                        flow["lookup_note"] = True
+            elif stage == "email_lookup":
+                address = data["email"].strip().lower()
+                if not allow_security_request("public-booking-email:" + address, 8):
+                    raise ValidationError(
+                        "Please wait before trying again, or call/text 848-238-5147."
+                    )
+                customer = Customer.objects.filter(email__iexact=address).first()
+                matched_by = recovery_match_kind(flow, customer) if customer is not None else None
+                if not matched_by:
+                    form.add_error(
+                        None,
+                        "We couldn't match those details. Please try again or call/text 848-238-5147 for help.",
+                    )
+                    return display(request, flow, form=form)
+                flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
+                flow["candidate_name"] = customer.last_name
+                flow["recovery_match_kind"] = matched_by
+                flow["recovery_email"] = address
+                flow["stage"] = "email_confirm"
+            elif stage in {"name", "name_confirm", "previous", "email_confirm"}:
                 candidate = flow["candidate"]
                 customer = Customer.objects.get(pk=candidate["id"])
                 if customer.revision != candidate["revision"]:
                     raise ValidationError("Customer details changed. Please start again.")
                 if stage == "name":
+                    flow["entered_name"] = data["last_name"]
                     exact = canonical_name(data["last_name"]) == canonical_name(customer.last_name)
                     if not exact and similar_name(data["last_name"], customer.last_name):
                         flow["entered_name"] = data["last_name"]
@@ -346,10 +395,24 @@ def wizard(request):
                         save(request, flow)
                         return redirect("customer_booking")
                     matched = exact
+                elif stage == "email_confirm":
+                    matched = customer.email.casefold() == flow.get(
+                        "recovery_email", ""
+                    ).casefold() and bool(recovery_match_kind(flow, customer))
                 elif stage == "name_confirm":
                     matched = similar_name(flow.get("entered_name", ""), customer.last_name)
                 else:
                     matched = data["confirm_phone"] == "yes"
+                if not matched and stage in {"name", "name_confirm"}:
+                    flow["stage"] = "email_lookup"
+                    flow.pop("candidate_name", None)
+                    save(request, flow)
+                    recovery = EmailRecoveryForm()
+                    flow["recovery_notice"] = (
+                        "We couldn't match that name to the entered phone number."
+                    )
+                    save(request, flow)
+                    return display(request, flow, form=recovery)
                 if not matched:
                     flow["stage"] = "blocked"
                     save(request, flow)
@@ -361,6 +424,8 @@ def wizard(request):
                     return render(
                         request, "core/customer_booking.html", {"error": message}, status=400
                     )
+                flow.pop("lookup_note", None)
+                flow.pop("contact", None)
                 flow["proof"] = profile_proof(customer, flow["key"])
                 flow["verification_mode"] = stage
                 flow["stage"] = "details" if customer.email else "email"
@@ -368,6 +433,8 @@ def wizard(request):
                 flow["contact_email"] = data["email"]
                 flow["stage"] = "details"
             elif stage == "contact":
+                flow.pop("lookup_note", None)
+                flow["new_contact_ready"] = True
                 flow["contact"] = {
                     "last_name": data["last_name"].strip(),
                     "email": data["email"],
@@ -462,3 +529,74 @@ def revise(request):
             request, "core/customer_booking.html", {"error": " ".join(exc.messages)}, status=400
         )
     return redirect("customer_booking")
+
+
+@enabled
+@require_http_methods(["GET", "POST"])
+def recover_by_email(request):
+    try:
+        flow = current(request)
+        if flow["stage"] not in {"contact", "retry_phone", "name", "email_lookup"}:
+            raise ValidationError("Return to customer details to find your profile.")
+        limit(request, "email-recovery", 12)
+        flow["stage"] = "email_lookup"
+        for key in ("candidate", "candidate_name", "proof", "contact", "lookup_note"):
+            flow.pop(key, None)
+        save(request, flow)
+        return redirect("customer_booking")
+    except ValidationError as exc:
+        return render(
+            request, "core/customer_booking.html", {"error": " ".join(exc.messages)}, status=400
+        )
+
+
+def initial_live_quote(form, flow):
+    if form is None:
+        return None
+    values = {name: form.initial.get(name, field.initial) for name, field in form.fields.items()}
+    values["play_type"] = values.get("play_type") or form.fields["play_type"].initial
+    values["expected_method"] = (
+        values.get("expected_method") or form.fields["expected_method"].choices[0][0]
+    )
+    candidate = DetailsForm(values, session=public_session(flow["session_id"]))
+    if candidate.is_valid():
+        try:
+            quote = review_quote(flow, candidate.cleaned_data)
+        except ValidationError:
+            return None
+        return quote
+    return None
+
+
+@enabled
+@sensitive_post_parameters("phone", "last_name", "email")
+@require_POST
+def live_estimate(request):
+
+    from django.http import JsonResponse
+    from django.template.loader import render_to_string
+
+    try:
+        flow = current(request)
+        if flow["stage"] != "details":
+            raise ValidationError("Return to Session Details to update the estimate.")
+        limit(request, "estimate", 240)
+        form = DetailsForm(request.POST, session=public_session(flow["session_id"]))
+        if not form.is_valid():
+            return JsonResponse(
+                {
+                    "error": "Enter valid quantities and an available play type to update the estimate."
+                },
+                status=400,
+            )
+        quote = review_quote(flow, form.cleaned_data)
+        return JsonResponse(
+            {
+                "html": render_to_string(
+                    "core/partials/live_quote.html", {"data": quote}, request=request
+                )
+            },
+            headers={"Cache-Control": "private, no-store"},
+        )
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=400)

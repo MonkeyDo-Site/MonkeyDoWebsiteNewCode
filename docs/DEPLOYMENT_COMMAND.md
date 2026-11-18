@@ -1,5 +1,18 @@
 # One-command private-preview updates and rollback
 
+## Owner preference for future downloads
+
+**Current default:** browser-download the pinned ZIP, then run one PowerShell
+block to unpack/install/deploy. The notes below retain how this preference was
+reached; the final browser-download clarification supersedes the earlier curl
+proposal.
+
+Keep the single-command Windows PowerShell workflow, using **`curl.exe`** to download the pinned release ZIP. The owner selected this for future updates after experiencing the slower Windows PowerShell 5.1 `Invoke-WebRequest` download. Use the explicit executable name to avoid PowerShell's `curl` alias. Preserve HTTPS certificate validation, the exact release commit, download failure handling and existing archive checksum/deployment checks. This records the next handoff's preference; the deployment command already issued for PR 26 remains unchanged.
+
+On the owner's current Windows machine, `curl.exe` subsequently failed with Schannel `CRYPT_E_NO_REVOCATION_CHECK` before downloading/deploying. Use the already-working `Invoke-WebRequest -UseBasicParsing` with process-scoped `$ProgressPreference = 'SilentlyContinue'` as the immediate fallback. Do not disable certificate verification or revocation checks to force curl through. Future handoffs should account for this machine-specific result while keeping the one-command workflow.
+
+Latest clarification for this urgent release: the owner wants the browser ZIP download option offered directly, followed by one PowerShell block that only unpacks, installs the reviewed helper and deploys. Do not replace that request with another PowerShell download. Account for a completed browser ZIP being saved with a duplicate-name suffix because a partial download of the same commit may already exist.
+
 The helper defaults to the existing **design-only** service at staging.monkeydoplay.com / 107.170.1.143. After the one-time cutover, `-Target Functional` selects the functional service at the same staging.monkeydoplay.com URL. Design and Functional are internal deployment modes, not two public sites. Neither target deploys production or enables payments. Preparing/installing this helper does not update the website; a separate explicit deployment command selects an approved release.
 
 ## What an update does
@@ -7,7 +20,7 @@ The helper defaults to the existing **design-only** service at staging.monkeydop
 1. The Windows wrapper calculates the downloaded ZIP's SHA-256, uploads it with your existing SSH key, and invokes the root-owned server helper. SSH host-key verification stays strict. No personal key, passphrase, GitHub token or preview password is copied into the script.
 2. The server checks the staging target/private configuration, service identity, existing gate/HTTPS and exclusive deployment lock. It copies the upload into private root-owned storage, checks its digest and expected commit folder, and rejects unsafe ZIP entries/links, oversized archives and low disk space.
 3. It extracts into a separate release, creates that release's own Python virtualenv and installs pinned requirements as the unprivileged deploy user. It collects static files, runs Django checks, verifies design-only routing and checks the migration plan. The old site continues serving during preparation.
-4. **Routine updates stop on pending migrations.** The explicit Functional-only `-ApplyReviewedBatchTwo` option is the single reviewed exception: checksum-pinned migrations 0023–0025, duplicate-email/identity/plan preflight and a root-only local database checkpoint. Unknown migrations still stop the update. See [this release handoff](OWNER_FEEDBACK_BATCH_TWO_RELEASE.md). Code rollback does not undo schema changes.
+4. **Current third-batch handoff:** [browser ZIP + one PowerShell block](OWNER_FEEDBACK_BATCH_THREE_RELEASE.md), with the explicit Functional-only `-ApplyReviewedBatchThree` option for checksum-pinned migration 0026 and private checkpoint. Code-switch compatibility checks protect the new reservation restrictions. **Routine updates stop on pending migrations.** The explicit Functional-only `-ApplyReviewedBatchTwo` option is the single reviewed exception: checksum-pinned migrations 0023–0025, duplicate-email/identity/plan preflight and a root-only local database checkpoint. Unknown migrations still stop the update. See [this release handoff](OWNER_FEEDBACK_BATCH_TWO_RELEASE.md). Code rollback does not undo schema changes.
 5. It records a durable recovery checkpoint, briefly stops the preview service, atomically changes the current symlink/systemd override, and starts the selected code with its own virtualenv. It checks local socket responses, password-gate redirects, private headers, static CSS and public HTTPS with certificate verification.
 6. If activation or verification fails, it restores the preceding code link and exact service override/Python environment, restarts and verifies it. Existing owner accounts, preview passwords, cookies/secrets and database records are not reset. If restoration cannot be verified it reports failure and retains recovery information; it does not claim success.
 
@@ -99,3 +112,16 @@ Completed schema steps are retained, never automatically reversed. Retrying acce
 The local checkpoint is a private same-server recovery aid, not an encrypted offsite/disaster-recovery backup. It is not uploaded, exposed to the app or sent to a paid service. The full planned encrypted backup system remains separate. No cleanup deletes old releases, checkpoints or business data.
 
 The release handoff supplies a single Windows PowerShell invocation to download a pinned public archive, refresh the installed wrapper/helper and invoke this explicit option. Routine future releases can continue to omit the option; their pending-migration guard is unchanged.
+
+
+## Current third-batch release
+
+Use [OWNER_FEEDBACK_BATCH_THREE_RELEASE.md](OWNER_FEEDBACK_BATCH_THREE_RELEASE.md).
+It supersedes download wording and schema allowlists above for this release:
+browser-download the pinned ZIP, extract only the wrapper locally, install the
+matching helper, then deploy with `-Target Functional -ApplyReviewedBatchThree`.
+The new option permits only 0026 from the deployed 0025 baseline, with an atomic
+migration/grants transaction and private checkpoint. Older code rollback is
+refused after new private-date/custom-session/block state exists; the current
+service is kept. No automatic database reversal/restoration occurs. The previous
+batch-two option remains restricted to its historical release graph.

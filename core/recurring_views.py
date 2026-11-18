@@ -14,6 +14,7 @@ WEEKDAYS = [(day, weekday_name(day)) for day in (6, 0, 1, 2, 3, 4, 5)]
 
 
 class SlotForm(forms.ModelForm):
+    closed = forms.BooleanField(required=False, initial=False, label="Closed for reservation")
     weekdays = forms.TypedMultipleChoiceField(
         choices=WEEKDAYS, coerce=int, widget=forms.CheckboxSelectMultiple
     )
@@ -24,7 +25,7 @@ class SlotForm(forms.ModelForm):
 
     class Meta:
         model = WeeklySlot
-        fields = tuple(field for field in FIELDS if field != "public")
+        fields = tuple(field for field in FIELDS if field not in {"public", "active"})
         widgets = {
             "starts_at": forms.TimeInput(format="%I:%M %p", attrs={"placeholder": "2:30 PM"}),
             "ends_at": forms.TimeInput(format="%I:%M %p", attrs={"placeholder": "3:45 PM"}),
@@ -40,7 +41,7 @@ class SlotForm(forms.ModelForm):
         ]
         for name in ("starts_at", "ends_at"):
             self.fields[name].input_formats = ["%I:%M %p", "%I %p", "%H:%M"]
-        self.fields["active"].help_text = (
+        self.fields["closed"].help_text = (
             "Closed defaults cannot generate sessions. Their existing sessions are immediately "
             "hidden from customer booking and closed to new reservations. Existing bookings keep their times."
         )
@@ -48,6 +49,7 @@ class SlotForm(forms.ModelForm):
             self.initial.update(
                 visibility="public" if self.instance.public else "private",
                 revision=self.instance.revision,
+                closed=not self.instance.active,
             )
             self.fields["revision"].required = True
 
@@ -94,7 +96,8 @@ def slot_edit(request, pk=None):
     row = get_object_or_404(WeeklySlot, pk=pk, archived_at__isnull=True) if pk else None
     form = SlotForm(request.POST if request.method == "POST" else None, instance=row)
     if request.method == "POST" and form.is_valid():
-        data = {key: form.cleaned_data[key] for key in FIELDS if key != "public"}
+        data = {key: form.cleaned_data[key] for key in FIELDS if key not in {"public", "active"}}
+        data["active"] = not form.cleaned_data["closed"]
         data["public"] = form.cleaned_data["visibility"] == "public"
         try:
             save_slot(
@@ -251,6 +254,7 @@ def schedule_edit(request):
         initial.append(
             {
                 **{f: getattr(slot, f) for f in FIELDS if f != "public"},
+                "closed": not slot.active,
                 "slot_id": slot.pk,
                 "revision": slot.revision,
                 "visibility": "public" if slot.public else "private",
@@ -265,7 +269,8 @@ def schedule_edit(request):
                 raise ValidationError("Weekly schedule changed. Reload and review all defaults.")
             edits = []
             for form in formset:
-                data = {k: form.cleaned_data[k] for k in FIELDS if k != "public"}
+                data = {k: form.cleaned_data[k] for k in FIELDS if k not in {"public", "active"}}
+                data["active"] = not form.cleaned_data["closed"]
                 data["public"] = form.cleaned_data["visibility"] == "public"
                 edits.append(
                     {
@@ -287,25 +292,10 @@ def schedule_edit(request):
 
 
 def weekly_coverage():
-    from datetime import timedelta
-
-    from django.utils import timezone
-
-    from .models import Session
+    from .schedule_coverage import describe_coverage
 
     slots = list(WeeklySlot.objects.filter(archived_at__isnull=True))
     for slot in slots:
         slot.display_weekdays = sorted(slot.weekdays, key=lambda d: (d + 1) % 7)
-        days = set(
-            Session.objects.filter(
-                source_slot=slot, source_day__gte=timezone.localdate()
-            ).values_list("source_day", flat=True)
-        )
-        slot.generated_until = max(days) if days else None
-        slot.gaps = []
-        day = timezone.localdate()
-        while slot.generated_until and day <= slot.generated_until:
-            if day.weekday() in slot.weekdays and day not in days:
-                slot.gaps.append(day)
-            day += timedelta(days=1)
+        describe_coverage(slot)
     return slots

@@ -1,5 +1,37 @@
 # Staging build status
 
+## Current release checkpoint — third owner-feedback batch
+
+The owner reported PR #26 successfully deployed on the shared staging URL. That
+is the hosted baseline currently being tested. The third batch is implemented
+on `feat/owner-feedback-batch-three`; the owner authorized the PR and deployment
+handoff after image review, excluding all homepage design changes. It is not yet
+deployed. The homepage About/play template and its existing styling match the
+deployed 34a77c4 baseline, with no new homepage overrides. See the
+[third-batch record](OWNER_EDITS_BATCH_3.md), [52 desktop/phone images](design-review/owner-edits-batch-3/README.md)
+and [browser ZIP + one-command release handoff](OWNER_FEEDBACK_BATCH_THREE_RELEASE.md).
+
+Local verification: **407 PostgreSQL tests passed**, including concurrent custom
+session/booking access, preserved closures/history, optional date searches,
+School filtering, two-piece email recovery, item-only live estimates, the actual
+0025→0026 migration and rollback on grant failure. The local server is PostgreSQL
+16.2; GitHub CI uses PostgreSQL 17 and separately exercises Windows PowerShell.
+Portable PowerShell passed the exact browser-ZIP handoff with transport mocked,
+duplicate filenames and early stopping on missing downloads. Browser review used
+1440px/390px plus 320px checks with fictional data, no JS errors or document
+overflow. The six deferred homepage images were removed from the active gallery.
+Migration 0026 has not run on hosted staging. No payment, waiver, active membership
+or outbound booking-email integration is enabled by this batch.
+
+The reviewed deployment path now includes a private checkpoint, atomic schema and
+limited runtime grants, permission preflight and a code/schema compatibility
+check for every switch/recovery. Old code rollback is refused after new private
+schedule or reservation-block state exists; there is no automatic database
+restoration. Final CI and hosted acceptance are separate evidence.
+
+The earlier checkpoint entries below are historical; their undeployed/no-public-
+booking statements describe those increments, not today's shared staging site.
+
 Historical foundation checkpoint (see latest increment below): Django/PostgreSQL foundation, customer management, owner/staff security, saved pricing, staff test reservations and owner calendar/weekly schedule controls and membership draft calendars. This is a local development checkpoint, not a deployed or complete staging application.
 
 | Area | Implemented in this increment | Remaining |

@@ -5,7 +5,8 @@ from django import forms
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Booking, CalendarDate, Customer, PricingPolicy, Session
+from .availability import NEW_YORK
+from .models import Booking, CalendarDate, Customer, PricingPolicy, Session, SessionReservationBlock
 
 
 class CustomerChoice(forms.ModelChoiceField):
@@ -13,9 +14,54 @@ class CustomerChoice(forms.ModelChoiceField):
         return f"{customer.customer_number} · {customer.last_name} · {customer.phone}"
 
 
+def selectable_sessions(booking=None):
+    rows = Session.objects.filter(
+        Q(source_slot__isnull=True)
+        | Q(source_slot__active=True, source_slot__archived_at__isnull=True),
+        ends_at__gt=timezone.now(),
+        closed=False,
+        kind=Session.Kind.ORDINARY,
+    ).exclude(starts_at__date__in=CalendarDate.objects.filter(closed=True).values("day"))
+    blocks = SessionReservationBlock.objects.filter(active=True)
+    if booking:
+        blocks = blocks.exclude(booking=booking)
+        rows = Session.objects.filter(Q(pk__in=rows.values("pk")) | Q(pk=booking.session_id))
+    return rows.exclude(pk__in=blocks.values("session_id")).order_by("starts_at", "pk")
+
+
+def session_date_picker(form, booking=None):
+    selected = form.data.get("session") if form.is_bound else form.initial.get("session")
+    if isinstance(selected, Session):
+        selected = selected.pk
+    current = (
+        Session.objects.filter(pk=selected).first()
+        if str(selected).isdigit() and len(str(selected)) < 19
+        else None
+    )
+    day = form.data.get("session_date") if form.is_bound else None
+    if not day:
+        day = (
+            current.starts_at.astimezone(NEW_YORK).date()
+            if current
+            else timezone.localdate(timezone=NEW_YORK)
+        )
+    try:
+        day = forms.DateField().clean(day)
+    except forms.ValidationError:
+        form.fields["session"].queryset = Session.objects.none()
+    else:
+        form.initial["session_date"] = day
+        form.fields["session"].queryset = selectable_sessions(booking).filter(starts_at__date=day)
+    form.fields["session_date"].widget.attrs["data-session-date"] = "true"
+    form.fields["session"].widget.attrs["data-dated-sessions"] = "true"
+
+
 class TestBookingForm(forms.Form):
     estimate_token = forms.CharField(required=False, widget=forms.HiddenInput)
     customer = CustomerChoice(queryset=Customer.objects.order_by("last_name", "pk"))
+    session_date = forms.DateField(
+        required=False, label="Session date", widget=forms.DateInput(attrs={"type": "date"})
+    )
     session = forms.ModelChoiceField(queryset=Session.objects.none())
     supervised = forms.BooleanField(required=False, label="Supervised Play")
     children = forms.IntegerField(
@@ -28,6 +74,16 @@ class TestBookingForm(forms.Form):
         choices=Booking._meta.get_field("expected_method").choices, label="Expected payment method"
     )
     override_capacity = forms.BooleanField(required=False, label="Owner: override session capacity")
+    close_session = forms.BooleanField(
+        required=False,
+        label="Close this entire session to additional reservations",
+        help_text="Existing bookings remain. Separate closures are removed only by an explicit reopening action.",
+    )
+    reopen_affected_sessions = forms.BooleanField(
+        required=False,
+        label="Reopen affected sessions when moving this booking",
+        help_text="Removes only this booking/custom session’s blocks; separate closures stay in place.",
+    )
     creation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput, required=False)
 
@@ -59,7 +115,8 @@ class TestBookingForm(forms.Form):
             kind=Session.Kind.ORDINARY,
         ).exclude(starts_at__date__in=CalendarDate.objects.filter(closed=True).values("day"))
         if not owner:
-            self.fields.pop("override_capacity")
+            for name in ("override_capacity", "close_session", "reopen_affected_sessions"):
+                self.fields.pop(name)
         if booking:
             for field in ("customer", "creation_key"):
                 self.fields.pop(field)
@@ -73,13 +130,29 @@ class TestBookingForm(forms.Form):
         self.fields["expected_method"].choices = payment_method_choices(
             old_quote.policy if old_quote else PricingPolicy.objects.first()
         )
+        if not booking:
+            self.fields.pop("reopen_affected_sessions", None)
+        session_date_picker(self, booking)
         customer_picker(self)
 
 
 class TimingForm(forms.Form):
+    session_date = forms.DateField(
+        required=False, label="Session date", widget=forms.DateInput(attrs={"type": "date"})
+    )
     session = forms.ModelChoiceField(queryset=Session.objects.none())
     version = forms.IntegerField(widget=forms.HiddenInput, min_value=1)
     override_capacity = forms.BooleanField(required=False, label="Owner: override session capacity")
+    close_session = forms.BooleanField(
+        required=False,
+        label="Close this entire session to additional reservations",
+        help_text="Existing bookings remain. Separate closures are removed only by an explicit reopening action.",
+    )
+    reopen_affected_sessions = forms.BooleanField(
+        required=False,
+        label="Reopen affected sessions when moving this booking",
+        help_text="Removes only this booking/custom session’s blocks; separate closures stay in place.",
+    )
 
     def __init__(self, *args, booking, owner=False, **kwargs):
         super().__init__(
@@ -95,7 +168,10 @@ class TimingForm(forms.Form):
             kind=Session.Kind.ORDINARY,
         ).exclude(starts_at__date__in=CalendarDate.objects.filter(closed=True).values("day"))
         if not owner:
-            self.fields.pop("override_capacity")
+            for name in ("override_capacity", "close_session", "reopen_affected_sessions"):
+                self.fields.pop(name)
+
+        session_date_picker(self, booking)
 
 
 class PricingPolicyForm(forms.ModelForm):
