@@ -904,7 +904,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .with-play-info .customer-booking-form { max-width:none; min-width:0 }
 .public-details-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,.85fr); gap:24px; align-items:start }
 .public-details-layout>.button { grid-column:1 / -1; justify-self:start }
-.live-booking-estimate { padding:18px; border-radius:20px; background:#faf7ef; align-self:center; position:static; min-width:0 }
+.live-booking-estimate { padding:18px; border-radius:20px; background:#faf7ef; align-self:end; position:static; min-width:0 }
 .live-booking-estimate h3 { margin:0 0 14px; font-size:23px }
 .live-booking-estimate .quote-items div { gap:12px }
 .live-booking-estimate dd { white-space:nowrap }

@@ -409,7 +409,7 @@ def wizard(request):
                     save(request, flow)
                     recovery = EmailRecoveryForm()
                     flow["recovery_notice"] = (
-                        "You can try finding your customer profile by entering your email address."
+                        "We couldn't match that name to the entered phone number."
                     )
                     save(request, flow)
                     return display(request, flow, form=recovery)
@@ -560,13 +560,10 @@ def initial_live_quote(form, flow):
     )
     candidate = DetailsForm(values, session=public_session(flow["session_id"]))
     if candidate.is_valid():
-        from decimal import Decimal
-
         try:
             quote = review_quote(flow, candidate.cleaned_data)
         except ValidationError:
             return None
-        quote["pretax_total"] = str(Decimal(quote["subtotal"]) + Decimal(quote["processing_fee"]))
         return quote
     return None
 
@@ -575,7 +572,6 @@ def initial_live_quote(form, flow):
 @sensitive_post_parameters("phone", "last_name", "email")
 @require_POST
 def live_estimate(request):
-    from decimal import Decimal
 
     from django.http import JsonResponse
     from django.template.loader import render_to_string
@@ -594,7 +590,6 @@ def live_estimate(request):
                 status=400,
             )
         quote = review_quote(flow, form.cleaned_data)
-        quote["pretax_total"] = str(Decimal(quote["subtotal"]) + Decimal(quote["processing_fee"]))
         return JsonResponse(
             {
                 "html": render_to_string(

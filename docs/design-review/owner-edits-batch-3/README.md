@@ -69,4 +69,6 @@ Screen 16 now shows the actual new-session default: **Closed for reservation is 
 
 Screen 23 now consolidates phone retry and email recovery into the introductory paragraph, with both actions as inline links. Duplicate actions below the form were removed.
 
-Screens 24–27 were refreshed after review: the estimate sits lower beside attendee inputs, and email recovery asks only for email, reusing the phone already entered. It reveals the family after both match, without asking for the name again.
+Screens 24–27 were refreshed after review: the estimate sits low beside socks/payment-method inputs and excludes card fees as well as tax, and email recovery asks only for email, reusing the phone already entered. It reveals the family after both match, without asking for the name again.
+
+Latest review: screens 24/27 show the still-lower item-only estimate; screen 25 restores the failed-name first sentence before the revised email-search sentence. Final Payment Details continues to show the applicable fee and tax.

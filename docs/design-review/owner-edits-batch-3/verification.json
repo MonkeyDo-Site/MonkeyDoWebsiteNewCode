@@ -530,23 +530,23 @@
     },
     {
       "file": "24-new-customer-details-ready-desktop.jpg",
-      "sha256": "945c9ee9742aa7fdb4430b4b52931b8924d53c59507eb04ee524e1ae134573cb",
-      "bytes": 208641
+      "sha256": "5fe467c6e84f76a86332a8c3ab7c7bdaac85ec6c00b39948073c69dd38ca0d10",
+      "bytes": 206730
     },
     {
       "file": "24-new-customer-details-ready-phone.jpg",
-      "sha256": "fea85d9e340a4547c252b578f09a4231f2afd9ee5e854f95adbebb9442a5b9cf",
-      "bytes": 178016
+      "sha256": "d18e12d584d7c627f6940c69ee032bf0761706b5c874f89c089311eb8bac9788",
+      "bytes": 177027
     },
     {
       "file": "25-email-recovery-desktop.jpg",
-      "sha256": "4053f83864c05c4798d4a5d8aecf89872419b03e81cd5658a4ed29c5d0d84007",
-      "bytes": 105213
+      "sha256": "41ecd8540ac285856ab1b442417b2a48bd91092678280c56f3b8529c829b1a0d",
+      "bytes": 111006
     },
     {
       "file": "25-email-recovery-phone.jpg",
-      "sha256": "c29e78b64de3352e4cb72a511e3bcf24d3329e642f932ed2e374b3d8e2c1fbec",
-      "bytes": 81799
+      "sha256": "e06b0373db54dcd1b2ba204bcdc4e666cec7636edc635d60228749a168ad899d",
+      "bytes": 85192
     },
     {
       "file": "26-email-family-confirmation-desktop.jpg",
@@ -560,13 +560,13 @@
     },
     {
       "file": "27-live-estimate-and-play-info-desktop.jpg",
-      "sha256": "e4ad3f481b348410810dd66271734c9cc23fbfd497a19925391a3865919e5184",
-      "bytes": 215543
+      "sha256": "c010aee3e1e8e52fa37a1e2002dca7632bf0d940945ffda21e1b91a8504fe818",
+      "bytes": 213222
     },
     {
       "file": "27-live-estimate-and-play-info-phone.jpg",
-      "sha256": "0826dd6c9bebe4226e0d60c160da15cb5edb118505f07f38c63e80ebbc4d71b7",
-      "bytes": 185939
+      "sha256": "79a4ad67314c44c3378cfe0b46b4f54e7ee03da23d23509d0a670fdae9b99d27",
+      "bytes": 184221
     },
     {
       "file": "28-final-payment-details-tax-desktop.jpg",
@@ -735,17 +735,17 @@
     "email_lookup_reuses_already_entered_details": true
   },
   "lowered_estimate_followup": {
-    "desktop_alignment": "Vertically centered beside attendee inputs instead of top-aligned at Play type",
+    "desktop_alignment": "Bottom-aligned beside socks and payment-method fields, below the initial attendee inputs",
     "checks": [
       {
         "screen": "24-new-customer-details-ready",
         "viewport": 1440,
-        "estimate_offset": 216.5
+        "estimate_offset": 473.4
       },
       {
         "screen": "27-live-estimate-and-play-info",
         "viewport": 1440,
-        "estimate_offset": 176.1
+        "estimate_offset": 392.6
       }
     ],
     "mobile_position": "After group fields, unchanged"
@@ -760,8 +760,13 @@
       1440,
       390
     ],
-    "javascript_errors": [],
-    "affected_tests_passed": 30,
-    "full_postgresql_tests_passed": 400
+    "javascript_errors": []
+  },
+  "item_only_estimate_followup": {
+    "live_total": "Base item subtotal only; excludes processing fees and tax",
+    "card_cash_live_estimates_equal": true,
+    "final_payment_details_retains_fee_and_tax": true,
+    "failed_name_first_sentence_restored": true,
+    "affected_tests_passed": 30
   }
 }

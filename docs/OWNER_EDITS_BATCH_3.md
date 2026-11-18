@@ -30,7 +30,7 @@ previous approved release. [Desktop and phone JPG gallery](design-review/owner-e
 | 16 | Approved new-customer continuation wording and go back link retain the selected session. | 23 |
 | 17 | Success! Your details are ready. Please proceed with your booking. Customer/booking still save atomically at final submission. | 24 |
 | 18 | Exact current email plus tolerant surname recovery on unmatched phone or failed phone-selected surname, then family confirmation. No historical-email identification, profile rename, phone rewrite, unrelated public suggestions or merge. | 25–26 |
-| 19 | Read-only live itemized estimate inside Session Details, including applicable card fee, no displayed tax and Total before applicable taxes. Final Payment Details retains tax. | 27–28 |
+| 19 | Read-only live itemized estimate low beside socks/payment-method fields, showing the base item subtotal only, without card fee or tax. Final Payment Details retains the applicable card fee and tax. | 27–28 |
 | 20 | Compact shared Open/Supervised information cards outside the form; no duplicate booking buttons; phone stack below form. | 27 |
 | Homepage | Compact 2×2 About areas and smaller play-card images/spacing on Home; standalone About layout and approved masters retained; play buttons remain aligned. | 01–03 |
 
@@ -141,3 +141,25 @@ with the mobile order unchanged. Chromium verifies its lower position and the
 one-field recovery/phone-email confirmation at 1440px and 390px; screens 24–27
 were refreshed. The affected 30 public-booking/recovery tests passed, including
 new disclosure/refusal cases. The full PostgreSQL regression suite passed: 400 tests. Staging remains unchanged and image approval still precedes PR/deploy.
+
+
+## Further image-review adjustment — item-only estimate and restored lead-in
+
+Owner requested the estimate even lower and no card-processing fee in that
+estimate. The desktop panel is now bottom-aligned beside socks/payment method;
+mobile remains after the inputs. Its rows and displayed total include only base
+items (admissions, additional adults and socks). Card choice no longer changes
+that live subtotal. The next Payment Details page and saved/staff quotes retain
+their existing card-fee/tax calculations and full total. The payment-method
+selector's previously approved percentage information remains separate.
+
+After failed surname verification, restore the original first sentence, followed
+by the owner's revised second sentence: We couldn't match that name to the
+entered phone number. You can try finding your customer profile by entering your
+email address. Direct email navigation without a name mismatch does not falsely
+claim one. The form still asks only for email and reuses earlier matching details.
+
+Thirty affected PostgreSQL tests passed, including equality of card/cash live
+subtotals and fee/tax preservation on final Payment Details. Browser screenshots
+24/25/27 were refreshed for desktop and phone; 26 was rechecked. No new migration,
+PR or staging deployment was performed.

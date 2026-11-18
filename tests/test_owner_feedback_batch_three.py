@@ -287,6 +287,9 @@ class PublicThirdBatchTests(TestCase):
         response = self.client.post("/book/details/", {"last_name": "Different"})
         self.assertNotContains(response, 'name="last_name"')
         self.assertContains(
+            response, "We couldn&#x27;t match that name to the entered phone number."
+        )
+        self.assertContains(
             response, "You can try finding your customer profile by entering your email address."
         )
         self.client.post("/book/details/", {"email": c.email})
@@ -347,11 +350,18 @@ class PublicThirdBatchTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Total before applicable taxes", response.json()["html"])
         self.assertNotIn("Sales tax", response.json()["html"])
+        self.assertNotIn("Credit-card processing fee", response.json()["html"])
+        self.assertIn("$31.99", response.json()["html"])
+        cash_response = self.client.post("/book/estimate/", data | {"expected_method": "cash"})
+        self.assertEqual(cash_response.json()["html"], response.json()["html"])
         self.assertFalse(Booking.objects.exists())
         self.assertFalse(Customer.objects.exists())
         self.assertEqual(self.client.session["customer_test_booking"], original)
         self.client.post("/book/details/", data)
-        self.assertContains(self.client.get("/book/details/"), "Sales tax")
+        final = self.client.get("/book/details/")
+        self.assertContains(final, "Sales tax")
+        self.assertContains(final, "Credit-card processing fee")
+        self.assertContains(final, "$0.96")
 
     def test_new_customer_notice_does_not_claim_early_persistence(self):
         self.begin("5145550199", "yes")

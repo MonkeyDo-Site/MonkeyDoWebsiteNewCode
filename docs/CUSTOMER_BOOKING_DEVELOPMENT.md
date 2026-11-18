@@ -112,3 +112,14 @@ the originally mismatched surname was accepted.
 The desktop live estimate is vertically centered lower beside the attendee
 fields instead of starting next to Play type. Its narrow-screen placement after
 the fields is unchanged. Screens 24–27 were refreshed where affected.
+
+
+## Final estimate presentation clarification
+
+The live estimate is now low beside socks/payment method on desktop and omits
+both processing fees and tax from its rows and total, displaying the base item
+subtotal. Final Payment Details and saved quotes keep their full fee/tax totals;
+payment-choice percentage information remains. The failed-name recovery notice
+retains its original first sentence before the revised email-search sentence,
+while direct recovery omits an inapplicable failed-name claim. The repeated name
+field remains absent.
