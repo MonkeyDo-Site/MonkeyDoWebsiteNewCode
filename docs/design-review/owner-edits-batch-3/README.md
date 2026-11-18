@@ -30,7 +30,7 @@ remain welcome.
 | 13 | Date settings — backend-only date | [Desktop JPG](13-backend-only-date-desktop.jpg) | [Phone JPG](13-backend-only-date-phone.jpg) |
 | 14 | Weekly schedule — coverage summary | [Desktop JPG](14-weekly-coverage-summary-desktop.jpg) | [Phone JPG](14-weekly-coverage-summary-phone.jpg) |
 | 15 | Weekly schedule — generated timing ranges | [Desktop JPG](15-generated-timing-ranges-desktop.jpg) | [Phone JPG](15-generated-timing-ranges-phone.jpg) |
-| 16 | Add weekly default — checked means closed | [Desktop JPG](16-weekly-default-closed-control-desktop.jpg) | [Phone JPG](16-weekly-default-closed-control-phone.jpg) |
+| 16 | Add weekly default — Closed for reservation starts unchecked | [Desktop JPG](16-weekly-default-closed-control-desktop.jpg) | [Phone JPG](16-weekly-default-closed-control-phone.jpg) |
 | 17 | Bulk weekly editing — consistent closure controls | [Desktop JPG](17-edit-weekly-schedule-controls-desktop.jpg) | [Phone JPG](17-edit-weekly-schedule-controls-phone.jpg) |
 | 18 | Custom session — preview affected slots | [Desktop JPG](18-custom-session-review-desktop.jpg) | [Phone JPG](18-custom-session-review-phone.jpg) |
 | 19 | Custom session — linked blocking bookings | [Desktop JPG](19-custom-session-booking-conflicts-desktop.jpg) | [Phone JPG](19-custom-session-booking-conflicts-phone.jpg) |
@@ -64,3 +64,5 @@ final Payment Details, not the new live estimate.
 No real bookings, payments, card setup, signed waivers, active memberships,
 provider delivery, hosting changes or deployments were performed. Confirmed
 customer visits remain unfinished. [Implementation and migration notes](../../OWNER_EDITS_BATCH_3.md).
+
+Screen 16 now shows the actual new-session default: **Closed for reservation is unchecked**. Existing saved defaults retain their own open/closed setting.

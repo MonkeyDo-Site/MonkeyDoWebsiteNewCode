@@ -14,7 +14,7 @@ WEEKDAYS = [(day, weekday_name(day)) for day in (6, 0, 1, 2, 3, 4, 5)]
 
 
 class SlotForm(forms.ModelForm):
-    closed = forms.BooleanField(required=False, label="Closed for reservation")
+    closed = forms.BooleanField(required=False, initial=False, label="Closed for reservation")
     weekdays = forms.TypedMultipleChoiceField(
         choices=WEEKDAYS, coerce=int, widget=forms.CheckboxSelectMultiple
     )

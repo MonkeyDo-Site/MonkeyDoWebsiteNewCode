@@ -450,13 +450,13 @@
     },
     {
       "file": "16-weekly-default-closed-control-desktop.jpg",
-      "sha256": "6eacc567d98da1248c7014f7e8845b2ef445b980356f830a241248f5f7c8f240",
-      "bytes": 172172
+      "sha256": "5dc8e2d541fd09d7bb8169ba21090ea0c5c34e84c59bd5ade7ce727fbc20846a",
+      "bytes": 171990
     },
     {
       "file": "16-weekly-default-closed-control-phone.jpg",
-      "sha256": "2a1c6404804df6a615a76b0733adc8b366d29defff4ad51d6976987c8cbe9971",
-      "bytes": 109178
+      "sha256": "d9ca6bb8ec7ee8069fbf5615d8262df6ce2f92f5dfefd75e0685eee1c9ba1898",
+      "bytes": 108869
     },
     {
       "file": "17-edit-weekly-schedule-controls-desktop.jpg",
@@ -712,6 +712,15 @@
         "javascript_errors": [],
         "horizontal_overflow": false
       }
+    ]
+  },
+  "weekly_default_followup": {
+    "new_closed_checkbox_checked": false,
+    "existing_closed_setting_preserved": true,
+    "explicit_checked_input_preserved": true,
+    "viewports": [
+      1440,
+      390
     ]
   }
 }

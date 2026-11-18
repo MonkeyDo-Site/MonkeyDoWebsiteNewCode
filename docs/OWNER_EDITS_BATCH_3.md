@@ -99,3 +99,14 @@ standalone About styling. Screens 01–02 were refreshed at desktop/phone sizes;
 other gallery images remain unchanged. This styling-only follow-up did not
 require a new migration or another full application-suite run. Staging remains
 unchanged; PR/deployment still await the owner's image review.
+
+
+## Image-review clarification — new weekly default starts open
+
+The owner confirmed that Add a weekly default session must start with Closed for
+reservation unchecked. The form already behaved that way; its field now states
+initial=False explicitly. The earlier review capture had intentionally checked
+it to illustrate the closed state. Screen 16 desktop/phone now shows the actual
+unchecked default. Existing closed defaults still render checked on editing;
+explicit user selections remain intact. Browser checks and direct form checks
+passed; no migration or deployment was performed.
