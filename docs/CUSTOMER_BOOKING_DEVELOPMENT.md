@@ -92,3 +92,23 @@ the in-progress browser flow and still requires matching email and surname befor
 family disclosure. Final customer/booking persistence, saved phone and selected
 session are unchanged. Remove the obsolete duplicate-email hint that referred to
 the removed standalone button; the approved full error wording remains.
+
+
+## Image-review clarification — lower estimate and no repeated name entry
+
+The owner clarified the failed-name case: the phone number was already found,
+so that phone plus matching current email are sufficient. Recovery now asks for
+email only, reuses the earlier phone and reveals the family only after both
+identify the same profile. A mismatching email cannot switch a phone-selected
+customer to a different record. The wording is You can try finding your customer
+profile by entering your email address. The surname is never requested again.
+For the earlier unmatched-phone branch, only a surname already supplied in the
+contact step can serve as the second detail; otherwise email alone cannot reveal
+the record. Historical-only email remains excluded, and saved phones are unchanged.
+Confirmation rechecks the same details and profile revision. After recovery the
+success message says Your details match our records, avoiding a false claim that
+the originally mismatched surname was accepted.
+
+The desktop live estimate is vertically centered lower beside the attendee
+fields instead of starting next to Play type. Its narrow-screen placement after
+the fields is unchanged. Screens 24–27 were refreshed where affected.

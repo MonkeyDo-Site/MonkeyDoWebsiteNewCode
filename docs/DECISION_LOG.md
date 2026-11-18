@@ -435,3 +435,14 @@ tax only from the live estimate while preserving final tax-inclusive details.
 Generate desktop/phone screenshots in GitHub for owner review, then corrections,
 PR and one-command deployment preparation. This does not authorize deploying
 before image review or implementing the separate next-phase proposal.
+
+
+## 2026-11-17 — Email recovery reuses the matched phone; estimate lower
+
+Owner clarified that when phone lookup finds a record but the entered surname
+fails, the previously entered phone plus matching current email are sufficient.
+Do not ask for the name again. Use You can try finding your customer profile by
+entering your email address. Keep two matching details before family disclosure,
+with current email/phone identifying the same record and saved phone unchanged.
+Move the live estimate down beside the attendee inputs to reduce crowding near
+Play type. Updated review screenshots precede PR/deployment as before.

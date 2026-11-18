@@ -36,7 +36,7 @@ previous approved release. [Desktop and phone JPG gallery](design-review/owner-e
 
 ## Verification
 
-- **397 tests passed on local PostgreSQL 16.2.** GitHub CI runs PostgreSQL 17;
+- **400 tests passed on local PostgreSQL 16.2.** GitHub CI runs PostgreSQL 17;
   record its separate results before PR readiness. This is not production or
   hosted owner acceptance.
 - New coverage includes concurrent custom-session creation versus booking,
@@ -122,3 +122,22 @@ session. Email lookup still requires email and surname, with no early customer
 creation or saved-phone change. The 27 affected PostgreSQL public-flow tests
 passed and Chromium checked both links at desktop/phone widths. Screen 23 and
 its image checksums were refreshed. Staging and PR/deployment remain unchanged.
+
+
+## Image-review follow-up — lower estimate and reuse the entered phone
+
+The owner requested moving the estimate lower and removing the repeated surname
+field from recovery. Clarification: after a phone matches but the surname fails,
+the already-entered phone plus current email are the two matching details. The
+recovery form now has just Email address, with You can try finding your customer
+profile by entering your email address. It cannot reveal a different profile
+whose email does not match the phone. Prior unmatched-phone recovery can reuse a
+surname already entered earlier; email alone and extra forged recovery-name
+fields cannot disclose a profile. Saved phone and customer creation timing remain
+unchanged. Recovery completion says Your details match our records.
+
+The estimate now starts lower beside attendee inputs through vertical alignment,
+with the mobile order unchanged. Chromium verifies its lower position and the
+one-field recovery/phone-email confirmation at 1440px and 390px; screens 24–27
+were refreshed. The affected 30 public-booking/recovery tests passed, including
+new disclosure/refusal cases. The full PostgreSQL regression suite passed: 400 tests. Staging remains unchanged and image approval still precedes PR/deploy.

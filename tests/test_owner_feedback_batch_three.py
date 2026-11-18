@@ -253,15 +253,14 @@ class PublicThirdBatchTests(TestCase):
         self.begin(c.phone, "yes")
         self.client.post("/book/details/", {"last_name": "Unrelated"})
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "email_lookup")
-        response = self.client.post("/book/details/", {"last_name": "Wrong", "email": c.email})
+        response = self.client.post("/book/details/", {"email": "wrong@example.invalid"})
         self.assertNotContains(response, c.last_name)
-        response = self.client.post(
-            "/book/details/", {"last_name": "Brawn", "email": c.email.upper()}
-        )
+        response = self.client.post("/book/details/", {"email": c.email.upper()})
         self.assertEqual(response.status_code, 302)
         self.assertContains(self.client.get("/book/details/"), c.last_name)
         self.client.post("/book/details/", {})
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "details")
+        self.assertContains(self.client.get("/book/details/"), "Your details match our records")
         c.refresh_from_db()
         self.assertEqual(c.phone, "2025550100")
         self.assertFalse(Booking.objects.exists())
@@ -270,13 +269,54 @@ class PublicThirdBatchTests(TestCase):
         c = Customer.objects.create(
             last_name="Known", phone="2025550100", email="known@example.invalid"
         )
-        self.begin("5145550199", "yes")
-        self.client.post("/book/recover/")
+        self.begin("5145550199", "no")
+        # A name already entered on the contact form can be reused; it is never asked again.
         self.client.post("/book/details/", {"last_name": "Kno", "email": c.email})
+        self.client.post("/book/recover/")
+        self.client.post("/book/details/", {"email": c.email})
         self.client.post("/book/details/", {})
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "details")
         c.refresh_from_db()
         self.assertEqual(c.phone, "2025550100")
+
+    def test_email_recovery_uses_phone_without_repeating_name(self):
+        c = Customer.objects.create(
+            last_name="Known", phone="2025550100", email="known@example.invalid"
+        )
+        self.begin(c.phone, "yes")
+        response = self.client.post("/book/details/", {"last_name": "Different"})
+        self.assertNotContains(response, 'name="last_name"')
+        self.assertContains(
+            response, "You can try finding your customer profile by entering your email address."
+        )
+        self.client.post("/book/details/", {"email": c.email})
+        self.assertContains(self.client.get("/book/details/"), c.last_name)
+        self.assertNotIn("proof", self.client.session["customer_test_booking"])
+
+    def test_email_for_another_profile_cannot_override_a_matched_phone(self):
+        current = Customer.objects.create(
+            last_name="Current", phone="2025550100", email="current@example.invalid"
+        )
+        other = Customer.objects.create(
+            last_name="Other", phone="2025550101", email="other@example.invalid"
+        )
+        self.begin(current.phone, "yes")
+        self.client.post("/book/details/", {"last_name": other.last_name})
+        response = self.client.post("/book/details/", {"email": other.email})
+        self.assertNotContains(response, "Is this your family?")
+        self.assertNotIn("candidate_name", self.client.session["customer_test_booking"])
+        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "email_lookup")
+
+    def test_email_alone_with_unknown_phone_does_not_reveal_profile(self):
+        c = Customer.objects.create(
+            last_name="Known", phone="2025550100", email="known@example.invalid"
+        )
+        self.begin("5145550199", "yes")
+        self.client.get("/book/recover/")
+        response = self.client.post("/book/details/", {"email": c.email, "last_name": c.last_name})
+        self.assertNotContains(response, "Is this your family?")
+        self.assertNotIn("candidate_name", self.client.session["customer_test_booking"])
+        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "email_lookup")
 
     def test_email_from_history_cannot_identify_customer(self):
         c = Customer.objects.create(

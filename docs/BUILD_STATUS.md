@@ -8,7 +8,7 @@ locally on `feat/owner-feedback-batch-three` and awaits owner screenshot review;
 it is not deployed. See [third-batch record](OWNER_EDITS_BATCH_3.md) and
 [desktop/phone gallery](design-review/owner-edits-batch-3/README.md).
 
-Local verification: 397 PostgreSQL tests passed, including a concurrent booking
+Local verification: 400 PostgreSQL tests passed, including a concurrent booking
 versus custom-session race, preserved closures/history, optional date searches,
 public email/name recovery and read-only pretax estimates. The local PostgreSQL
 server is 16.2; GitHub CI uses PostgreSQL 17. Browser gallery: 58 JPGs at 1440px

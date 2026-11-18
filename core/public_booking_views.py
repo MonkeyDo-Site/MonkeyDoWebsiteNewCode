@@ -96,7 +96,15 @@ class RetryPhoneForm(forms.Form):
 
 class EmailRecoveryForm(forms.Form):
     email = forms.EmailField(label="Email address")
-    last_name = forms.CharField(max_length=120, label="Last Name")
+
+
+def recovery_match_kind(flow, customer):
+    """Match current email plus earlier inputs; never request a surname twice."""
+    phone_customer = lookup_phone(flow["phone"])
+    if phone_customer is not None:
+        return "phone_email" if phone_customer.pk == customer.pk else None
+    entered_name = flow.get("entered_name", "")
+    return "name_email" if entered_name and similar_name(entered_name, customer.last_name) else None
 
 
 class ContactForm(forms.Form):
@@ -304,6 +312,11 @@ def wizard(request):
         form = form_type(request.POST if request.method == "POST" else None, **args)
         if stage == "review" and request.method == "GET":
             form = ConfirmForm(initial={"flow_key": flow["key"]})
+        if request.method == "POST" and stage == "contact":
+            form.is_valid()
+            if form.cleaned_data.get("last_name"):
+                flow["entered_name"] = form.cleaned_data["last_name"]
+                save(request, flow)
         if request.method == "POST" and form.is_valid():
             limit(request, stage, 60)
             data = form.cleaned_data
@@ -355,7 +368,8 @@ def wizard(request):
                         "Please wait before trying again, or call/text 848-238-5147."
                     )
                 customer = Customer.objects.filter(email__iexact=address).first()
-                if customer is None or not similar_name(data["last_name"], customer.last_name):
+                matched_by = recovery_match_kind(flow, customer) if customer is not None else None
+                if not matched_by:
                     form.add_error(
                         None,
                         "We couldn't match those details. Please try again or call/text 848-238-5147 for help.",
@@ -363,7 +377,7 @@ def wizard(request):
                     return display(request, flow, form=form)
                 flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
                 flow["candidate_name"] = customer.last_name
-                flow["entered_name"] = data["last_name"]
+                flow["recovery_match_kind"] = matched_by
                 flow["recovery_email"] = address
                 flow["stage"] = "email_confirm"
             elif stage in {"name", "name_confirm", "previous", "email_confirm"}:
@@ -372,6 +386,7 @@ def wizard(request):
                 if customer.revision != candidate["revision"]:
                     raise ValidationError("Customer details changed. Please start again.")
                 if stage == "name":
+                    flow["entered_name"] = data["last_name"]
                     exact = canonical_name(data["last_name"]) == canonical_name(customer.last_name)
                     if not exact and similar_name(data["last_name"], customer.last_name):
                         flow["entered_name"] = data["last_name"]
@@ -380,25 +395,21 @@ def wizard(request):
                         save(request, flow)
                         return redirect("customer_booking")
                     matched = exact
-                elif stage in {"name_confirm", "email_confirm"}:
+                elif stage == "email_confirm":
+                    matched = customer.email.casefold() == flow.get(
+                        "recovery_email", ""
+                    ).casefold() and bool(recovery_match_kind(flow, customer))
+                elif stage == "name_confirm":
                     matched = similar_name(flow.get("entered_name", ""), customer.last_name)
-                    if stage == "email_confirm":
-                        matched = (
-                            matched
-                            and customer.email.casefold()
-                            == flow.get("recovery_email", "").casefold()
-                        )
                 else:
                     matched = data["confirm_phone"] == "yes"
                 if not matched and stage in {"name", "name_confirm"}:
                     flow["stage"] = "email_lookup"
                     flow.pop("candidate_name", None)
                     save(request, flow)
-                    recovery = EmailRecoveryForm(
-                        initial={"last_name": data.get("last_name", flow.get("entered_name", ""))}
-                    )
+                    recovery = EmailRecoveryForm()
                     flow["recovery_notice"] = (
-                        "We couldn't match that name to the entered phone number. You can try your email address and last name below."
+                        "You can try finding your customer profile by entering your email address."
                     )
                     save(request, flow)
                     return display(request, flow, form=recovery)

@@ -94,7 +94,9 @@ class PublicBookingTests(TestCase):
         self.assertNotContains(response, customer.email)
         self.assertNotContains(response, customer.last_name)
         response = self.client.post("/book/details/", {"last_name": "Wrong"})
-        self.assertContains(response, "try your email address and last name")
+        self.assertContains(
+            response, "You can try finding your customer profile by entering your email address."
+        )
         self.assertEqual(Booking.objects.count(), 0)
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "email_lookup")
 

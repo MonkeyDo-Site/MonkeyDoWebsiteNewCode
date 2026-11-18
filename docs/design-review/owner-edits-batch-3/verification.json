@@ -530,38 +530,38 @@
     },
     {
       "file": "24-new-customer-details-ready-desktop.jpg",
-      "sha256": "134d3e51b0f8425ad11f50b062bf8deb4974744ff3f0a32ba14483ce69533570",
-      "bytes": 208727
+      "sha256": "945c9ee9742aa7fdb4430b4b52931b8924d53c59507eb04ee524e1ae134573cb",
+      "bytes": 208641
     },
     {
       "file": "24-new-customer-details-ready-phone.jpg",
-      "sha256": "1373e7f0da675283c3b468cc8e19211ec3bb431d643ce0cf86d09c4423128056",
-      "bytes": 178048
+      "sha256": "fea85d9e340a4547c252b578f09a4231f2afd9ee5e854f95adbebb9442a5b9cf",
+      "bytes": 178016
     },
     {
       "file": "25-email-recovery-desktop.jpg",
-      "sha256": "9471273ff1b2a6faab786c86e2b0f64d478796a6f1c4e2445f84007796a580c7",
-      "bytes": 121378
+      "sha256": "4053f83864c05c4798d4a5d8aecf89872419b03e81cd5658a4ed29c5d0d84007",
+      "bytes": 105213
     },
     {
       "file": "25-email-recovery-phone.jpg",
-      "sha256": "46b53196d9ffbee99b59fa1292c006bd937cca1aa99cf777a1d5a3870cd15327",
-      "bytes": 93560
+      "sha256": "c29e78b64de3352e4cb72a511e3bcf24d3329e642f932ed2e374b3d8e2c1fbec",
+      "bytes": 81799
     },
     {
       "file": "26-email-family-confirmation-desktop.jpg",
-      "sha256": "255ae47bbf589f86bdf6ea09ff119a81b839233c01693a7bed1e8e88955f26c5",
-      "bytes": 100785
+      "sha256": "94dfddf65211a03e7ba5298b87630056c3424fff530b1eb54c1d93a68546bf4c",
+      "bytes": 101714
     },
     {
       "file": "26-email-family-confirmation-phone.jpg",
-      "sha256": "9e68e0c0b679272181c1ea8287aba0e9fef8d10dc4422635b4e42d7620569273",
-      "bytes": 78528
+      "sha256": "c14382407aa38db8a4115a89d41e30a05d4ffbbe1e1b5386e25eb284b5a27ad3",
+      "bytes": 80653
     },
     {
       "file": "27-live-estimate-and-play-info-desktop.jpg",
-      "sha256": "486e7cb25e230cbb424827ceda8941beec222e4901ef2a1ab6942e33ecfdf45a",
-      "bytes": 215525
+      "sha256": "e4ad3f481b348410810dd66271734c9cc23fbfd497a19925391a3865919e5184",
+      "bytes": 215543
     },
     {
       "file": "27-live-estimate-and-play-info-phone.jpg",
@@ -727,11 +727,41 @@
     "wording": "You can continue below as a new customer, go back to try another number, enter an email address to find your customer profile, or call/text us at 848-238-5147 for assistance.",
     "inline_back_and_email_links_verified": true,
     "duplicate_actions_removed": true,
-    "email_lookup_requires_name_and_email": true,
     "viewports": [
       1440,
       390
     ],
-    "javascript_errors": []
+    "javascript_errors": [],
+    "email_lookup_reuses_already_entered_details": true
+  },
+  "lowered_estimate_followup": {
+    "desktop_alignment": "Vertically centered beside attendee inputs instead of top-aligned at Play type",
+    "checks": [
+      {
+        "screen": "24-new-customer-details-ready",
+        "viewport": 1440,
+        "estimate_offset": 216.5
+      },
+      {
+        "screen": "27-live-estimate-and-play-info",
+        "viewport": 1440,
+        "estimate_offset": 176.1
+      }
+    ],
+    "mobile_position": "After group fields, unchanged"
+  },
+  "email_phone_recovery_followup": {
+    "recovery_form_fields": [
+      "email"
+    ],
+    "earlier_phone_and_current_email_matched_before_name_disclosure": true,
+    "no_repeated_name_entry": true,
+    "viewports": [
+      1440,
+      390
+    ],
+    "javascript_errors": [],
+    "affected_tests_passed": 30,
+    "full_postgresql_tests_passed": 400
   }
 }

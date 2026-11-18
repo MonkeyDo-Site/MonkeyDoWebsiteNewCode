@@ -39,9 +39,9 @@ remain welcome.
 | 22 | Public booking — Canadian/ten-digit phone wording | [Desktop JPG](22-phone-validation-wording-desktop.jpg) | [Phone JPG](22-phone-validation-wording-phone.jpg) |
 | 23 | Public booking — inline phone/email continuation choices | [Desktop JPG](23-new-customer-continuation-desktop.jpg) | [Phone JPG](23-new-customer-continuation-phone.jpg) |
 | 24 | Public booking — details ready, not saved early | [Desktop JPG](24-new-customer-details-ready-desktop.jpg) | [Phone JPG](24-new-customer-details-ready-phone.jpg) |
-| 25 | Public booking — email recovery | [Desktop JPG](25-email-recovery-desktop.jpg) | [Phone JPG](25-email-recovery-phone.jpg) |
+| 25 | Public booking — email entry using the earlier phone | [Desktop JPG](25-email-recovery-desktop.jpg) | [Phone JPG](25-email-recovery-phone.jpg) |
 | 26 | Public booking — matching family confirmation | [Desktop JPG](26-email-family-confirmation-desktop.jpg) | [Phone JPG](26-email-family-confirmation-phone.jpg) |
-| 27 | Public booking — live pretax estimate and play information | [Desktop JPG](27-live-estimate-and-play-info-desktop.jpg) | [Phone JPG](27-live-estimate-and-play-info-phone.jpg) |
+| 27 | Public booking — lower pretax estimate and play information | [Desktop JPG](27-live-estimate-and-play-info-desktop.jpg) | [Phone JPG](27-live-estimate-and-play-info-phone.jpg) |
 | 28 | Public booking — final tax-inclusive details | [Desktop JPG](28-final-payment-details-tax-desktop.jpg) | [Phone JPG](28-final-payment-details-tax-phone.jpg) |
 | 29 | Public booking — rose completion sentence | [Desktop JPG](29-completion-rose-message-desktop.jpg) | [Phone JPG](29-completion-rose-message-phone.jpg) |
 
@@ -68,3 +68,5 @@ customer visits remain unfinished. [Implementation and migration notes](../../OW
 Screen 16 now shows the actual new-session default: **Closed for reservation is unchecked**. Existing saved defaults retain their own open/closed setting.
 
 Screen 23 now consolidates phone retry and email recovery into the introductory paragraph, with both actions as inline links. Duplicate actions below the form were removed.
+
+Screens 24–27 were refreshed after review: the estimate sits lower beside attendee inputs, and email recovery asks only for email, reusing the phone already entered. It reveals the family after both match, without asking for the name again.
