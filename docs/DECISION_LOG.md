@@ -446,3 +446,15 @@ entering your email address. Keep two matching details before family disclosure,
 with current email/phone identifying the same record and saved phone unchanged.
 Move the live estimate down beside the attendee inputs to reduce crowding near
 Play type. Updated review screenshots precede PR/deployment as before.
+
+
+## 2026-11-17 — Release third-batch functionality; defer homepage redesign
+
+Owner approved creating the PR and browser-ZIP/one-PowerShell-block deployment
+handoff. Exclude all third-batch homepage design proposals and restore deployed
+About/play layout, spacing and images. The smaller full-image About proposal and
+shorter play-photo crop are not part of this release. Keep approved functional
+staff/customer booking changes and remove homepage images from its active gallery.
+Prepare only reviewed 0026 from baseline 0025, private checkpoint, atomic runtime
+grants and code/schema compatibility checks; never reverse the database or ignore
+new reservation restrictions on recovery. No hosted deployment is claimed.

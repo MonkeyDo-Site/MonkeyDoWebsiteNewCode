@@ -889,17 +889,6 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .booking-progress .progress-complete { color:var(--rose-ink) }
 .schedule-coverage { margin:12px 0 18px }
 .schedule-coverage summary { cursor:pointer; font-weight:600; margin:8px 0 }
-.home-page .area-grid { gap:20px 28px }
-.home-page .area-grid article { padding-bottom:18px }
-.home-page .area-photo { width:min(100%,280px); height:auto; aspect-ratio:auto; object-fit:contain }
-.home-page .area-grid h2 { font-size:clamp(22px,2.2vw,30px); margin:12px 0 8px }
-.home-page .area-grid p { margin:0; line-height:1.55 }
-.home-page .home-section:has(.area-grid) .page-heading { padding-bottom:20px; margin-bottom:8px }
-.home-page .play-card { padding:22px }
-.home-page .play-card .play-photo { height:210px; object-fit:cover }
-.home-page .play-card p { margin:10px 0; line-height:1.55 }
-.home-page .play-card h3 { margin:8px 0 }
-.home-page .play-card .button { margin-top:auto }
 .customer-booking-layout.with-play-info { display:grid; grid-template-columns:minmax(0,1fr) 290px; gap:24px; align-items:start }
 .with-play-info .customer-booking-form { max-width:none; min-width:0 }
 .public-details-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(220px,.85fr); gap:24px; align-items:start }
@@ -924,19 +913,10 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
  .public-details-layout { display:block }
  .live-booking-estimate { margin:20px 0 }
  .booking-play-info { margin-top:22px }
- .home-page .play-card .play-photo { height:185px }
 }
 .live-booking-estimate .quote-items>div { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:12px; margin-bottom:14px }
 .live-booking-estimate dd { margin:0; font-size:16px }
-.home-page .area-grid article { padding:16px }
 .public-details-layout input,.public-details-layout select { min-width:0 }
-.home-page #about { padding-block:30px }
-.home-page #about .page-heading { max-width:none; padding:0; margin:0 }
-.home-page #about .page-heading .eyebrow { margin:0 0 8px }
-.home-page #about .page-heading h2 { font-size:34px; line-height:1.2; margin:0 0 12px }
-.home-page #about .page-heading .lead { font-size:17px; line-height:1.55; margin:0 }
-.home-page #about .area-grid { margin-top:24px }
-@media(max-width:550px) { .home-page #about .page-heading h2 { font-size:30px } }
 
 .customer-booking-layout>.customer-booking-form { margin:0 }
 .table-filters td:has(.clear-dates) { position:relative }

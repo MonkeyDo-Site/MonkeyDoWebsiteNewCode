@@ -2,21 +2,6 @@
   "fixture": "Fictional local PostgreSQL data; frozen November 18, 2026, 9 AM New York",
   "screens": [
     {
-      "screen": "01-homepage",
-      "viewport": 1440,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "02-homepage-about",
-      "viewport": 1440,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "03-homepage-play",
-      "viewport": 1440,
-      "horizontal_overflow": false
-    },
-    {
       "screen": "04-bookings-default-year",
       "viewport": 1440,
       "horizontal_overflow": false
@@ -144,21 +129,6 @@
     {
       "screen": "29-completion-rose-message",
       "viewport": 1440,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "01-homepage",
-      "viewport": 390,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "02-homepage-about",
-      "viewport": 390,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "03-homepage-play",
-      "viewport": 390,
       "horizontal_overflow": false
     },
     {
@@ -298,36 +268,6 @@
   "staff_scheduling_denied": true,
   "staff_closure_control_absent": true,
   "images": [
-    {
-      "file": "01-homepage-desktop.jpg",
-      "sha256": "69f7d38d53a88be8ac644a27b0f58e4788f1d6d7f7c72223dfa8ea153ffd2815",
-      "bytes": 1062878
-    },
-    {
-      "file": "01-homepage-phone.jpg",
-      "sha256": "5c2fe5852099064de6f400378f7ca57e393d702059e3c22151413df3ff09f483",
-      "bytes": 752177
-    },
-    {
-      "file": "02-homepage-about-desktop.jpg",
-      "sha256": "04d53d87ca7f5d50cb388bec97948b361e859ff80ad5bf3fcecbc5cf40acf4b2",
-      "bytes": 170858
-    },
-    {
-      "file": "02-homepage-about-phone.jpg",
-      "sha256": "7e807c7ca592488caad2b764286df8c87ed75138229ef05956ae927cc3b13ee8",
-      "bytes": 155520
-    },
-    {
-      "file": "03-homepage-play-desktop.jpg",
-      "sha256": "422dc2facb8cfc04c3df6c5545791b4345aecc2b91cdd400484e1ec823bcfdfd",
-      "bytes": 149095
-    },
-    {
-      "file": "03-homepage-play-phone.jpg",
-      "sha256": "7ca4ef07253db33c8fea7d7a8079d06c4cebc8308c6805ebe07d17a28852ab21",
-      "bytes": 105557
-    },
     {
       "file": "04-bookings-default-year-desktop.jpg",
       "sha256": "406a13bb840bc048e470ac0ab03c885bf8c0a9e3ca6f78fbbdba2c45da7ccce6",
@@ -712,7 +652,8 @@
         "javascript_errors": [],
         "horizontal_overflow": false
       }
-    ]
+    ],
+    "included_in_release": false
   },
   "weekly_default_followup": {
     "new_closed_checkbox_checked": false,
@@ -768,5 +709,15 @@
     "final_payment_details_retains_fee_and_tax": true,
     "failed_name_first_sentence_restored": true,
     "affected_tests_passed": 30
+  },
+  "homepage_release_scope": "Deferred by owner; homepage About template and existing CSS restored to deployed 34a77c4 baseline. Screens 01-03 excluded.",
+  "release_validation": {
+    "postgresql_16_2_tests": 407,
+    "homepage_template_exact_deployed_baseline": true,
+    "homepage_styles_exact_deployed_prefix": true,
+    "added_homepage_overrides": false,
+    "review_jpgs": 52,
+    "powershell_browser_zip_handoff": "Passed locally with mocked SSH/SCP, duplicate suffix and missing ZIP; Windows CI to follow",
+    "hosted_deployment_performed": false
   }
 }

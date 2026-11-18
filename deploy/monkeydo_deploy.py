@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -I
 """Root-owned deployment controller for the private staging site.
 
-Routine deployment never migrates. The explicit Functional batch-two option
-permits only checksum-pinned migrations 0023–0025 after a private checkpoint.
+Routine deployment never migrates. Explicit Functional reviewed-batch options
+permit only checksum-pinned migrations after a private checkpoint.
 No password changes, DNS changes or destructive cleanup.
 Run `status`, `deploy --archive ... --sha256 ... --commit ...`, or `rollback`.
 """
@@ -44,6 +44,10 @@ BATCH_TWO_MIGRATIONS = {
     "0023_owner_feedback_batch_two.py": "00fbd5dcb3f8465f3df7a61769dbd7936e1fee1e595007e60e85a8697469df4f",
     "0024_membership_draft_revisions.py": "e38b36db654356b714d8d90e1959a3a5369b2d214f6736d1143d94d3493a0a51",
     "0025_customer_referral_source.py": "8cb23953f2f5de290afd433b90f34371481f029e584d8bc1614c5c3a04efe70f",
+}
+
+BATCH_THREE_MIGRATIONS = {
+    "0026_owner_feedback_batch_three.py": "ac2c2abaaf4d8f39855b3aa15e51e803746a4fb8d1bfd5ef442c10018b3acf6f",
 }
 
 TARGET = "design"
@@ -504,7 +508,59 @@ class Host:
         print("Reviewed database updates verified. Private checkpoint:", backup, flush=True)
         return {"applied": report["applied"], "checkpoint": str(backup)}
 
-    def prepare(self, archive, digest, commit, reviewed_batch_two=False):
+    def reviewed_batch_three(self, candidate, commit):
+        if TARGET != "functional":
+            raise DeployError("Reviewed batch-three schema preparation is Functional-only.")
+        for name, expected in BATCH_THREE_MIGRATIONS.items():
+            path = candidate / "core/migrations" / name
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                raise DeployError("Reviewed migration checksum mismatch; no schema update started.")
+        migration_host = Host(
+            self.environment | {"POSTGRES_USER": "monkeydo-functional-migrate"}, self.log
+        )
+        arguments = [
+            str(candidate / ".venv/bin/python"),
+            "manage.py",
+            "reviewed_batch_three_schema",
+        ]
+        migration_host.command(
+            arguments, user="monkeydo-functional-migrate", runtime=True, cwd=candidate
+        )
+        print(
+            "Reviewed database preflight passed. Saving a private checkpoint and applying approved updates...",
+            flush=True,
+        )
+        backup = None
+        failure = None
+        try:
+            self.command(["systemctl", "stop", UNIT])
+            backup = self.schema_checkpoint(commit)
+            report = json.loads(
+                migration_host.command(
+                    arguments + ["--apply"],
+                    user="monkeydo-functional-migrate",
+                    runtime=True,
+                    cwd=candidate,
+                    timeout=600,
+                )
+            )
+        except Exception as error:
+            failure = error
+        finally:
+            # The current code pointer has not changed. Restore its service even if
+            # backup/migration fails; completed additive changes are never reversed.
+            self.command(["systemctl", "start", UNIT])
+            self.healthy()
+        if failure:
+            raise DeployError(
+                "Reviewed database step stopped. The existing release was restarted and verified. Completed schema steps were retained; inspect the protected log before retrying."
+            ) from failure
+        print("Reviewed database updates verified. Private checkpoint:", backup, flush=True)
+        return {"applied": report["applied"], "checkpoint": str(backup)}
+
+    def prepare(
+        self, archive, digest, commit, reviewed_batch_two=False, reviewed_batch_three=False
+    ):
         import pwd
 
         incoming = BASE / "incoming"
@@ -559,7 +615,11 @@ class Host:
             cwd=candidate,
         )
         self.command([python, "manage.py", "check"], user=RUNTIME_USER, runtime=True, cwd=candidate)
-        schema_update = self.reviewed_batch_two(candidate, commit) if reviewed_batch_two else None
+        schema_update = None
+        if reviewed_batch_two:
+            schema_update = self.reviewed_batch_two(candidate, commit)
+        elif reviewed_batch_three:
+            schema_update = self.reviewed_batch_three(candidate, commit)
         # This checks the migration plan only. It never runs a migration.
         self.command(
             [python, "manage.py", "migrate", "--check"],
@@ -589,11 +649,61 @@ class Host:
         )
         return candidate
 
+    def ensure_compatible_release(self, target):
+        if TARGET != "functional":
+            return
+        migration = target / "core/migrations/0026_owner_feedback_batch_three.py"
+        if (
+            migration.is_file()
+            and hashlib.sha256(migration.read_bytes()).hexdigest()
+            == BATCH_THREE_MIGRATIONS[migration.name]
+        ):
+            return
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_sessionreservationblock') IS NOT NULL"]
+        )
+        if present == "f":
+            return
+        if present != "t":
+            raise DeployError(
+                "Could not verify release/schema compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_calendardate WHERE backend_only) OR EXISTS (SELECT 1 FROM core_session WHERE custom_blocking) OR EXISTS (SELECT 1 FROM core_sessionreservationblock WHERE active)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "Older code cannot enforce the current private dates/custom sessions/reservation blocks. Keep a compatible release; no database rollback was performed."
+            )
+
     def switch(self, snapshot):
         target = Path(snapshot["release"])
         if not target.is_relative_to(BASE / "releases") or not (target / "manage.py").is_file():
             raise DeployError("Saved release target is unavailable; manual recovery required.")
         self.command(["systemctl", "stop", UNIT])
+        try:
+            self.ensure_compatible_release(target)
+        except BaseException:
+            # Keep the original pointer and restart it even on a refused rollback.
+            self.command(["systemctl", "start", UNIT])
+            raise
         temporary = self.current.parent / (".current-" + uuid.uuid4().hex)
         temporary.symlink_to(target)
         os.replace(temporary, self.current)
@@ -692,17 +802,24 @@ class Controller:
                 "Update failed. The previous release was restored and verified."
             ) from failure
 
-    def deploy(self, archive, digest, commit, reviewed_batch_two=False):
+    def deploy(self, archive, digest, commit, reviewed_batch_two=False, reviewed_batch_three=False):
+        if reviewed_batch_two and reviewed_batch_three:
+            raise DeployError("Choose only one reviewed schema batch.")
         self.recover()
         self.host.healthy()
         print("Preparing a separate release; the existing site stays running...", flush=True)
-        if reviewed_batch_two:
+        if reviewed_batch_two or reviewed_batch_three:
             # Persist recovery before the optional schema step can stop the service.
             # A killed process is then handled by the existing recover-on-next-run path.
             self.state["pending"] = self.host.snapshot()
             self.save()
             try:
-                candidate = self.host.prepare(archive, digest, commit, reviewed_batch_two=True)
+                options = (
+                    {"reviewed_batch_three": True}
+                    if reviewed_batch_three
+                    else {"reviewed_batch_two": True}
+                )
+                candidate = self.host.prepare(archive, digest, commit, **options)
             except BaseException:
                 try:
                     self.host.healthy()
@@ -751,13 +868,18 @@ def main():
     deploy.add_argument("--archive", type=Path, required=True)
     deploy.add_argument("--sha256", required=True)
     deploy.add_argument("--commit", required=True)
-    deploy.add_argument("--apply-reviewed-batch-two", action="store_true")
+    reviewed = deploy.add_mutually_exclusive_group()
+    reviewed.add_argument("--apply-reviewed-batch-two", action="store_true")
+    reviewed.add_argument("--apply-reviewed-batch-three", action="store_true")
     sub.add_parser("rollback")
     sub.add_parser("status")
     args = parser.parse_args()
     select_target(args.target)
-    if getattr(args, "apply_reviewed_batch_two", False) and args.target != "functional":
-        parser.error("Reviewed batch-two schema updates require the Functional target.")
+    if (
+        getattr(args, "apply_reviewed_batch_two", False)
+        or getattr(args, "apply_reviewed_batch_three", False)
+    ) and args.target != "functional":
+        parser.error("Reviewed schema updates require the Functional target.")
     if os.geteuid() != 0:
         parser.error("Run through the authorized root SSH account.")
     if args.operation == "deploy" and (
@@ -795,7 +917,11 @@ def main():
                 controller.rollback()
             else:
                 controller.deploy(
-                    args.archive, args.sha256, args.commit, args.apply_reviewed_batch_two
+                    args.archive,
+                    args.sha256,
+                    args.commit,
+                    args.apply_reviewed_batch_two,
+                    args.apply_reviewed_batch_three,
                 )
     except Exception as error:
         print("Deployment stopped:", str(error), file=sys.stderr)

@@ -292,16 +292,18 @@ numbers and a leading +1 through the existing normalization. New-customer
 continuation says You can continue below as a new customer, go back to try another
 number, enter an email address to find your customer profile, or call/text us at
 848-238-5147 for assistance. Both go back and enter an email address are inline
-hyperlinks, leading to phone entry and email/name recovery for the same chosen
+hyperlinks, leading to phone entry and email recovery for the same chosen
 session. Remove the duplicate standalone actions beneath that form. After details are accepted, say
 Success! Your details are ready. Please proceed with your booking. Create the
 customer only with final successful booking submission, not at that earlier
 screen. Completion-bar text uses the active-leaf rose and retains alignment.
 
-Home uses compact two-by-two About areas on desktop and smaller play-card photos
-and spacing, with legible responsive layouts. Preserve the separate About page's
-layout and aligned play buttons. Homepage About images must be scaled down in full at their natural proportions,
-not cropped into short strips. These are layout/scaling changes using the
-existing approved assets, not edits to image masters. Third-batch screenshot review comes
-before its PR/deployment. Active membership benefits, waivers and actual payments
-remain separate unfinished development.
+The owner deferred all third-batch homepage design changes. For this release,
+retain the deployed homepage About/play layout, image sizing and crops from
+34a77c4; do not apply the compact-area or smaller-play-photo proposals. The
+standalone About page is unchanged. Preserve the approved source image masters.
+Future homepage work should explore compact spacing and proportional full images
+rather than narrow crops; agree a new layout separately. Third-batch staff and
+customer-booking image review is approved for PR/deployment preparation. Active
+membership benefits, waivers and actual payments remain separate unfinished
+development.

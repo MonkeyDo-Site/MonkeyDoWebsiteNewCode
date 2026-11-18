@@ -1,23 +1,20 @@
 # Third batch — desktop and phone review images
 
-**For owner review before PR and deployment.** These are screenshots of the
+**Reviewed for the third-batch release; deployment is not yet performed.** These are screenshots of the
 working local implementation with fictional test data. The staging website has
 not changed. Earlier galleries remain unchanged.
 
 Click **Desktop JPG** or **Phone JPG** to open an image in GitHub. Use the image
-page's **Download raw file** button to save it. Full-page images can be tall;
-02 and 03 are convenient homepage section close-ups.
+page's **Download raw file** button to save it. Full-page images can be tall. Homepage design changes (screens 01–03) were deferred
+by the owner and are excluded from this release and gallery.
 
-Suggested first review: **02–03** (homepage), **15** (schedule timing coverage),
+Suggested first review: **15** (schedule timing coverage),
 **18–21** (custom sessions/reopening), and **27–29** (booking estimate/completion).
 Use the screen number when sending comments; screenshots with instructions also
 remain welcome.
 
 | Screen | What to review | Desktop | Phone |
 | --- | --- | --- | --- |
-| 01 | Homepage — complete compact layout | [Desktop JPG](01-homepage-desktop.jpg) | [Phone JPG](01-homepage-phone.jpg) |
-| 02 | Homepage — compact 2×2 About areas | [Desktop JPG](02-homepage-about-desktop.jpg) | [Phone JPG](02-homepage-about-phone.jpg) |
-| 03 | Homepage — smaller play cards | [Desktop JPG](03-homepage-play-desktop.jpg) | [Phone JPG](03-homepage-play-phone.jpg) |
 | 04 | Bookings — default year and compact Clear dates | [Desktop JPG](04-bookings-default-year-desktop.jpg) | [Phone JPG](04-bookings-default-year-phone.jpg) |
 | 05 | Bookings — no date restriction and Brawn search | [Desktop JPG](05-bookings-all-history-typo-desktop.jpg) | [Phone JPG](05-bookings-all-history-typo-phone.jpg) |
 | 06 | Today — session dropdown | [Desktop JPG](06-today-session-filter-desktop.jpg) | [Phone JPG](06-today-session-filter-phone.jpg) |
@@ -47,17 +44,14 @@ remain welcome.
 
 ## Evidence and limits
 
-58 JPGs at 1440px and 390px. The browser walkthrough checks automatic filters,
+52 JPGs at 1440px and 390px. The browser walkthrough checks automatic filters,
 dated session choices, typo-aware pickers, custom previews/conflicts, email/name
 recovery, live estimate changes and final pending-test completion. It records no
 JavaScript errors or document overflow. Additional 320px and staff-permission
 checks passed. [Verification record](verification.json).
 
-The homepage About areas are two across/two down on desktop, as clarified.
-Following owner feedback, their full images are scaled down at their natural
-proportions, without the short fixed-height crop. Screens 01 and 02 were
-refreshed for desktop and phone. The standalone About page is unchanged. Images
-are loaded before capture and use the approved existing assets. Phone layouts stack
+The homepage retains its currently deployed design, including its About and play
+images. The separate About page is also unchanged. Phone layouts stack
 content and let wide staff tables scroll horizontally. Current tax remains on
 final Payment Details, not the new live estimate.
 

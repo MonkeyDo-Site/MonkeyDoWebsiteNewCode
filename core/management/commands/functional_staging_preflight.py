@@ -72,7 +72,7 @@ class Command(BaseCommand):
         else:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    "SELECT current_database(), current_user, has_schema_privilege(current_user, 'public', 'CREATE'), has_table_privilege(current_user, 'django_session', 'INSERT'), rolsuper, rolcreatedb, rolcreaterole FROM pg_roles WHERE rolname=current_user"
+                    "SELECT current_database(), current_user, has_schema_privilege(current_user, 'public', 'CREATE'), has_table_privilege(current_user, 'django_session', 'INSERT'), rolsuper, rolcreatedb, rolcreaterole, has_table_privilege(current_user, 'core_sessionreservationblock', 'SELECT,INSERT,UPDATE'), has_sequence_privilege(current_user, 'core_sessionreservationblock_id_seq', 'USAGE,SELECT'), has_table_privilege(current_user, 'core_sessionreservationblock', 'DELETE') FROM pg_roles WHERE rolname=current_user"
                 )
                 row = cursor.fetchone()
             if (
@@ -81,10 +81,11 @@ class Command(BaseCommand):
                 or row[1] != "monkeydo-functional"
                 or row[2]
                 or not row[3]
-                or any(row[4:])
+                or any(row[4:7])
+                or row[7:] != (True, True, False)
             ):
                 failures.append(
-                    "Use the isolated functional runtime role, with row access and no schema/admin privileges."
+                    "Use the isolated functional runtime role, with required reservation-block row/sequence access and no deletion/schema/admin privileges."
                 )
         if failures:
             raise CommandError(" ".join(failures))

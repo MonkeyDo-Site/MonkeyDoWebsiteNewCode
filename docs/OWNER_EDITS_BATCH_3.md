@@ -5,8 +5,8 @@ both final homepage design requests, all 26 screenshots, and the owner's answers
 and development/image-review go-ahead. The private source document is not
 published. Approved scope and clarifications: [review](OWNER_EDITS_BATCH_3_REVIEW.md).
 
-**Implemented and tested locally; owner image review pending. No PR or deployment
-has been performed for this batch.** The shared staging website remains on its
+**Owner authorized PR and deployment preparation after image review, excluding
+all homepage design changes.** Deployment is not yet performed. The shared staging website remains on its
 previous approved release. [Desktop and phone JPG gallery](design-review/owner-edits-batch-3/README.md).
 
 ## Coverage
@@ -29,14 +29,14 @@ previous approved release. [Desktop and phone JPG gallery](design-review/owner-e
 | 15 | Ten-digit phone wording omits US, preserving Canadian and +1 normalization. | 22 |
 | 16 | Approved new-customer continuation wording and go back link retain the selected session. | 23 |
 | 17 | Success! Your details are ready. Please proceed with your booking. Customer/booking still save atomically at final submission. | 24 |
-| 18 | Exact current email plus tolerant surname recovery on unmatched phone or failed phone-selected surname, then family confirmation. No historical-email identification, profile rename, phone rewrite, unrelated public suggestions or merge. | 25–26 |
+| 18 | Email-only recovery reuses the entered phone; email and phone must identify the same profile before family confirmation. An unmatched-phone branch can reuse an already-entered tolerant surname. No repeated name field, email-only disclosure, historical-email identification or phone rewrite. | 25–26 |
 | 19 | Read-only live itemized estimate low beside socks/payment-method fields, showing the base item subtotal only, without card fee or tax. Final Payment Details retains the applicable card fee and tax. | 27–28 |
 | 20 | Compact shared Open/Supervised information cards outside the form; no duplicate booking buttons; phone stack below form. | 27 |
-| Homepage | Compact 2×2 About areas and smaller play-card images/spacing on Home; standalone About layout and approved masters retained; play buttons remain aligned. | 01–03 |
+| Homepage | Deferred by owner; restore deployed homepage template/styling, exclude earlier compact/cropped proposals. Standalone About page and assets unchanged. | Excluded |
 
 ## Verification
 
-- **400 tests passed on local PostgreSQL 16.2.** GitHub CI runs PostgreSQL 17;
+- **407 tests passed on local PostgreSQL 16.2.** GitHub CI runs PostgreSQL 17;
   record its separate results before PR readiness. This is not production or
   hosted owner acceptance.
 - New coverage includes concurrent custom-session creation versus booking,
@@ -50,7 +50,7 @@ previous approved release. [Desktop and phone JPG gallery](design-review/owner-e
   unreviewed migration plans.
 - Ruff lint/format, Django checks, migration drift, static collection, JavaScript
   syntax and whitespace checks passed.
-- **58 JPGs: 29 states at 1440px and 390px.** Chromium exercised actual local
+- **52 JPGs: 26 states at 1440px and 390px.** Chromium exercised actual local
   forms, live estimates, filtering, picker searches, conflicts and completion;
   no JavaScript errors or document overflow. Additional 320px and staff access
   checks passed. Staff tables scroll within their own region.
@@ -70,18 +70,18 @@ an explicit custom interval to start at a retained standard slot's time while
 ordinary creation/generation still enforce overlap rules under transaction locks.
 It does not rewrite existing customer/booking/quote/membership records.
 
-The previous `-ApplyReviewedBatchTwo` path is pinned to 0023–0025 and intentionally
-cannot prepare this migration. After image approval, prepare the new reviewed
-schema/deployment path, private checkpoint, migration identity/runtime grants and
-recovery checks. Keep the browser-downloaded ZIP plus one PowerShell deployment
-command preference. Do not deploy or bypass guards during screenshot review.
+The explicit `-Target Functional -ApplyReviewedBatchThree` path now checks the
+pinned 0026 migration and 0025 baseline, checkpoints the private database, applies
+DDL/runtime grants atomically and verifies permissions before activation. The
+previous batch-two option cannot authorize this migration. Routine migrations
+remain refused. Use the browser ZIP plus one PowerShell block in the
+[release handoff](OWNER_FEEDBACK_BATCH_THREE_RELEASE.md).
 
-Compatibility matters: the older release does not understand date-level private
-visibility or reservation blocks. After those features have been used, a blind
-code rollback could ignore their booking restrictions. Prepare compatible
-recovery rather than reversing this migration or promising that old code enforces
-new state. Reinstating a globally unique start is also invalid once custom and
-standard sessions share a start. Production/live-payment approvals remain separate.
+All code switches, rollbacks and interrupted recovery pause writes and check
+compatibility. Older code is refused if backend-only dates, custom sessions or
+active source-specific blocks exist; it would ignore the new restrictions. The
+current pointer is preserved and service restarted on refusal. Automatic database
+rollback is never performed. Production/live-payment approvals remain separate.
 
 
 ## Image-review follow-up — full homepage About photographs
@@ -163,3 +163,14 @@ Thirty affected PostgreSQL tests passed, including equality of card/cash live
 subtotals and fee/tax preservation on final Payment Details. Browser screenshots
 24/25/27 were refreshed for desktop and phone; 26 was rechecked. No new migration,
 PR or staging deployment was performed.
+
+
+## Final release scope — homepage deferred
+
+Owner authorized the PR and browser-download/one-command deployment preparation,
+while excluding the homepage design proposals. The About/play template is restored
+byte-for-byte to 34a77c4 and its existing CSS remains the exact deployed prefix,
+with no third-batch homepage overrides. Screens 01–03 were removed from the active
+gallery; earlier proposals remain in prior commits. The other 52 desktop/phone
+screens and approved functional changes remain. Historical homepage follow-up
+notes above describe proposals superseded by this release decision.

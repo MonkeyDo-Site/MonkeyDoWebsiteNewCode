@@ -6,7 +6,8 @@ Reviewed November 17, 2026 (owner's New York time).
 all six questions, selected a compact 2×2 homepage arrangement and authorized
 development plus screenshot review. The third batch is now implemented locally;
 see [implementation and image-review record](OWNER_EDITS_BATCH_3.md). Staging is
-unchanged and PR/deployment wait for image approval. The next-phase proposal
+unchanged. The owner subsequently authorized PR/deployment preparation excluding
+all homepage design changes; see the final release note below. The next-phase proposal
 remains separate and pending.
 
 ## Sources and coverage
@@ -194,3 +195,13 @@ final Payment Details. Checked Closed for reservation means closed. Homepage
 areas remain two across/two down on desktop. Desktop/phone JPG review in GitHub
 precedes PR and deployment. These answers supersede the unresolved questions
 above; no additional answer is required to start this authorized batch.
+
+
+## Release authorization and homepage deferral
+
+The owner approved PR and one-command deployment preparation, excluding all
+homepage design changes. Restore deployed About/play imagery and spacing for
+this release. Homepage proposals, including full-image small scaling, are
+superseded and deferred; staff/customer booking changes remain approved.
+See OWNER_FEEDBACK_BATCH_THREE_RELEASE.md for the reviewed 0026 preparation and
+browser-downloaded ZIP handoff. No hosted deployment has occurred at preparation.
