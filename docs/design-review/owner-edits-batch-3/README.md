@@ -53,8 +53,11 @@ recovery, live estimate changes and final pending-test completion. It records no
 JavaScript errors or document overflow. Additional 320px and staff-permission
 checks passed. [Verification record](verification.json).
 
-The About areas are two across/two down on desktop, as clarified. Images are
-loaded before capture and use the approved existing assets. Phone layouts stack
+The homepage About areas are two across/two down on desktop, as clarified.
+Following owner feedback, their full images are scaled down at their natural
+proportions, without the short fixed-height crop. Screens 01 and 02 were
+refreshed for desktop and phone. The standalone About page is unchanged. Images
+are loaded before capture and use the approved existing assets. Phone layouts stack
 content and let wide staff tables scroll horizontally. Current tax remains on
 final Payment Details, not the new live estimate.
 

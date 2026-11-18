@@ -300,23 +300,23 @@
   "images": [
     {
       "file": "01-homepage-desktop.jpg",
-      "sha256": "f2f37f3b166cea7b54793ccd1ce5ab8c3c7c5b753d15062c587c022e39bdfdad",
-      "bytes": 1073777
+      "sha256": "69f7d38d53a88be8ac644a27b0f58e4788f1d6d7f7c72223dfa8ea153ffd2815",
+      "bytes": 1062878
     },
     {
       "file": "01-homepage-phone.jpg",
-      "sha256": "1b9aab206df9662865321d60e8837475e7e8d11ca0e6084693160f4c59d46209",
-      "bytes": 740582
+      "sha256": "5c2fe5852099064de6f400378f7ca57e393d702059e3c22151413df3ff09f483",
+      "bytes": 752177
     },
     {
       "file": "02-homepage-about-desktop.jpg",
-      "sha256": "54c61799a240fbfcee90ee3d6c6974e678061b3ca1c695dc0d85fc947d4636b3",
-      "bytes": 188614
+      "sha256": "04d53d87ca7f5d50cb388bec97948b361e859ff80ad5bf3fcecbc5cf40acf4b2",
+      "bytes": 170858
     },
     {
       "file": "02-homepage-about-phone.jpg",
-      "sha256": "920f7cd583ce5d10dcd799c017b5d0dbb46a65c7bf17e3da9d0eca097f0f7229",
-      "bytes": 150403
+      "sha256": "7e807c7ca592488caad2b764286df8c87ed75138229ef05956ae927cc3b13ee8",
+      "bytes": 155520
     },
     {
       "file": "03-homepage-play-desktop.jpg",
@@ -588,5 +588,130 @@
       "sha256": "94270f0c6e2c8356b6e36df366887f5ab2ac60ba1a66bf7f407e3492b6cdd447",
       "bytes": 107238
     }
-  ]
+  ],
+  "homepage_about_full_image_followup": {
+    "scope": "Homepage About section only; standalone About and homepage play cards unchanged.",
+    "checks": [
+      {
+        "viewport": 1440,
+        "homepage_about_images": [
+          {
+            "src": "/static/brand-derived/play-space-approved-full.webp",
+            "naturalWidth": 1451,
+            "naturalHeight": 1084,
+            "width": 280,
+            "height": 209.171875,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/children/Image 6.jpg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 280,
+            "height": 209.0625,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/brand/Image 6.jpeg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 280,
+            "height": 209.0625,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/children/Image 1.jpeg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 280,
+            "height": 209.0625,
+            "fit": "contain"
+          }
+        ],
+        "standalone_about_original_layout": true,
+        "javascript_errors": [],
+        "horizontal_overflow": false
+      },
+      {
+        "viewport": 390,
+        "homepage_about_images": [
+          {
+            "src": "/static/brand-derived/play-space-approved-full.webp",
+            "naturalWidth": 1451,
+            "naturalHeight": 1084,
+            "width": 280,
+            "height": 209.171875,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/children/Image 6.jpg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 280,
+            "height": 209.0625,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/brand/Image 6.jpeg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 280,
+            "height": 209.0625,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/children/Image 1.jpeg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 280,
+            "height": 209.0625,
+            "fit": "contain"
+          }
+        ],
+        "standalone_about_original_layout": true,
+        "javascript_errors": [],
+        "horizontal_overflow": false
+      },
+      {
+        "viewport": 320,
+        "homepage_about_images": [
+          {
+            "src": "/static/brand-derived/play-space-approved-full.webp",
+            "naturalWidth": 1451,
+            "naturalHeight": 1084,
+            "width": 240,
+            "height": 179.296875,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/children/Image 6.jpg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 240,
+            "height": 179.1875,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/brand/Image 6.jpeg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 240,
+            "height": 179.1875,
+            "fit": "contain"
+          },
+          {
+            "src": "/static/children/Image 1.jpeg",
+            "naturalWidth": 2400,
+            "naturalHeight": 1792,
+            "width": 240,
+            "height": 179.1875,
+            "fit": "contain"
+          }
+        ],
+        "standalone_about_original_layout": true,
+        "javascript_errors": [],
+        "horizontal_overflow": false
+      }
+    ]
+  }
 }

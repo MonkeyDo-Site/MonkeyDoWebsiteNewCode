@@ -82,3 +82,20 @@ code rollback could ignore their booking restrictions. Prepare compatible
 recovery rather than reversing this migration or promising that old code enforces
 new state. Reinstating a globally unique start is also invalid once custom and
 standard sessions share a start. Production/live-payment approvals remain separate.
+
+
+## Image-review follow-up — full homepage About photographs
+
+Owner clarified that smaller images means scaling the full image down, not
+cropping it to a short strip, and that the standalone About page was already
+approved. Only the homepage About image styles were revised: maximum width
+280px, proportional automatic height and no fixed aspect-ratio crop. The compact
+2×2 layout remains. Existing photo files and standalone About styles are unchanged.
+Homepage play cards were not changed by this clarification.
+
+Browser checks at 1440px, 390px and 320px verify natural image proportions, full
+loaded images, the desktop 2×2 arrangement, no page overflow and unchanged
+standalone About styling. Screens 01–02 were refreshed at desktop/phone sizes;
+other gallery images remain unchanged. This styling-only follow-up did not
+require a new migration or another full application-suite run. Staging remains
+unchanged; PR/deployment still await the owner's image review.

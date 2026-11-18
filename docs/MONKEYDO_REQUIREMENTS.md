@@ -298,7 +298,8 @@ screen. Completion-bar text uses the active-leaf rose and retains alignment.
 
 Home uses compact two-by-two About areas on desktop and smaller play-card photos
 and spacing, with legible responsive layouts. Preserve the separate About page's
-layout and aligned play buttons. These are layout/crop changes using the existing
-approved assets, not edits to image masters. Third-batch screenshot review comes
+layout and aligned play buttons. Homepage About images must be scaled down in full at their natural proportions,
+not cropped into short strips. These are layout/scaling changes using the
+existing approved assets, not edits to image masters. Third-batch screenshot review comes
 before its PR/deployment. Active membership benefits, waivers and actual payments
 remain separate unfinished development.

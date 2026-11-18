@@ -891,7 +891,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .schedule-coverage summary { cursor:pointer; font-weight:600; margin:8px 0 }
 .home-page .area-grid { gap:20px 28px }
 .home-page .area-grid article { padding-bottom:18px }
-.home-page .area-photo { width:100%; height:175px; object-fit:cover }
+.home-page .area-photo { width:min(100%,280px); height:auto; aspect-ratio:auto; object-fit:contain }
 .home-page .area-grid h2 { font-size:clamp(22px,2.2vw,30px); margin:12px 0 8px }
 .home-page .area-grid p { margin:0; line-height:1.55 }
 .home-page .home-section:has(.area-grid) .page-heading { padding-bottom:20px; margin-bottom:8px }
@@ -924,7 +924,6 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
  .public-details-layout { display:block }
  .live-booking-estimate { margin:20px 0 }
  .booking-play-info { margin-top:22px }
- .home-page .area-photo { height:170px }
  .home-page .play-card .play-photo { height:185px }
 }
 .live-booking-estimate .quote-items>div { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:12px; margin-bottom:14px }
@@ -937,7 +936,6 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .home-page #about .page-heading h2 { font-size:34px; line-height:1.2; margin:0 0 12px }
 .home-page #about .page-heading .lead { font-size:17px; line-height:1.55; margin:0 }
 .home-page #about .area-grid { margin-top:24px }
-.home-page #about .area-photo { object-position:center 30% }
 @media(max-width:550px) { .home-page #about .page-heading h2 { font-size:30px } }
 
 .customer-booking-layout>.customer-booking-form { margin:0 }
