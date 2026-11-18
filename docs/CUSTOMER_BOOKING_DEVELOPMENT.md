@@ -1,6 +1,15 @@
 # Customer self-booking and isolated functional staging
 
-This checkpoint connects customer self-booking to the existing owner/staff workspace. Reservations remain **Setup pending**, clearly marked as tests. It does not confirm a visit or take payment. The owner selected one shared staging site: design review and booking tests use `staging.monkeydoplay.com`, with protected `/staff` sign-in. Everyone sees the same deployed design. Frozen source files remain unchanged as historical artifacts; they will no longer serve the public staging root after cutover.
+Current deployed status: owner reports PR #27 deployed on the single protected
+staging.monkeydoplay.com site, with public pending-test booking and /staff sign-in.
+The functional cutover and owner account-email delivery were owner-confirmed.
+The setup checklist below is historical, not an instruction to create another
+site/database or repeat the cutover. Card/waiver/booking-email/arrival completion
+remains unbuilt; the [next-stage plan](NEXT_PHASE_REVIEW.md) includes both card
+payment and alternate-tender backup-card paths and uses new test reservations.
+The [shared standards](SHARED_WORKFLOW_STANDARDS.md) govern future UI/functionality.
+
+This checkpoint connects customer self-booking to the existing owner/staff workspace. Reservations remain **Setup pending**, clearly marked as tests. It does not confirm a visit or take payment. The owner selected one shared staging site: design review and booking tests use `staging.monkeydoplay.com`, with protected `/staff` sign-in. Everyone sees the same deployed design. Frozen source files remain unchanged as historical artifacts; they no longer serve the shared staging root.
 
 ## Customer and staff workflow
 
@@ -16,13 +25,13 @@ There is no checkout payment, stored card, waiver/signature, active membership a
 
 ## Controlled account email
 
-`MONKEYDO_EMAIL_TRANSPORT=resend` selects the staging-only transport for existing account MFA/reset mail. It requires a private `RESEND_API_KEY` and explicit comma-separated `MONKEYDO_TEST_EMAIL_RECIPIENTS`. Every To/CC/BCC recipient must be allowlisted; sender is fixed to `bookings@monkeydoplay.com`. Resend sender/domain verification is still required. No booking confirmation is sent.
+`MONKEYDO_EMAIL_TRANSPORT=resend` selects the staging-only transport for existing account MFA/reset mail. It requires a private `RESEND_API_KEY` and explicit comma-separated `MONKEYDO_TEST_EMAIL_RECIPIENTS`. Every To/CC/BCC recipient must be allowlisted; sender is fixed to `bookings@monkeydoplay.com`. Resend sender/domain verification was completed and inbox receipt was owner-confirmed. No booking confirmation is sent.
 
-The transport has a bounded timeout, rejects redirects and does not retry uncertain deliveries. Errors omit message bodies and secrets; existing account alerts report unconfirmed delivery. Provider acceptance is not proof of inbox delivery. Automated transport tests use mocked responses; **no real Resend call or email has been made for this checkpoint**.
+The transport has a bounded timeout, rejects redirects and does not retry uncertain deliveries. Errors omit message bodies and secrets; existing account alerts report unconfirmed delivery. Provider acceptance is not proof of inbox delivery. Automated transport tests use mocked responses. The original implementation checkpoint made no real call; later host setup included an owner-confirmed Resend inbox check. Booking mail remains unimplemented.
 
-## One-time shared-site cutover still required
+## Historical one-time shared-site setup checklist — completed
 
-The following is an operator checklist, not an executed deployment or a command to paste without preparing the host. Keep the existing design release/database intact for recovery. Replace its public routing only after preparing and checking the functional service. There will be one public staging URL, not a second testing hostname. See [SHARED_STAGING_CUTOVER.md](SHARED_STAGING_CUTOVER.md) for the activation/recovery sequence.
+The following records the original operator setup, subsequently completed. Do not repeat it for an ordinary release; the installed update helper is the routine deployment path. Keep the existing design release/database intact for recovery. Replace its public routing only after preparing and checking the functional service. There will be one public staging URL, not a second testing hostname. See [SHARED_STAGING_CUTOVER.md](SHARED_STAGING_CUTOVER.md) for the activation/recovery sequence.
 
 1. Prepare a distinct Linux/runtime SQL user `monkeydo-functional`, migration user/SQL owner `monkeydo-functional-migrate`, and database `monkeydo_functional`. Use peer authentication. Revoke public schema CREATE and give the runtime role only required row/sequence access; it must have no schema CREATE, superuser, CREATEDB or CREATEROLE. Set migration-owner default table/sequence privileges for future migrations. Keep migration credentials inaccessible to the application service.
 2. Extract the exact approved release under `/srv/monkeydo-functional/releases/`, prepare its virtualenv/static files and initial `/srv/monkeydo-functional/staging/current` link. Apply migrations through **0021** using the separate migration role, after reviewing the migration and backup procedure. Migration 0021 adds customer-test source/referral/fingerprint fields and permits a null quote actor for customer-created quotes. It does not rewrite existing quotes. Do not migrate the design database for this functional setup.

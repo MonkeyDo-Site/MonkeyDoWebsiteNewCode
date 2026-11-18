@@ -10,6 +10,34 @@ SMS, participant merging, day-camp/group invoicing, and possible automatic payme
 
 The owner subsequently authorized staging website/database development and explicitly approved Django with PostgreSQL; see [development status](DEVELOPMENT.md). The original documentation checkpoint was not an implementation. Production deployment, Cloudflare DNS connection, live payments (including approved cancellation charging), and opening customer booking each need separate written approval. Cancellation activation is not a separate fifth production approval. Present current recurring costs before purchasing or provisioning infrastructure.
 
+### Current baseline and remaining-stage order
+
+The owner reports PR #27 deployed on the shared protected staging site, including
+public/staff pending test reservations, editable membership drafts and the latest
+customer/filter/layout/scheduling improvements. The proposed homepage redesign
+was excluded. Account email is configured and inbox receipt was owner-confirmed;
+confirmed visits, payment/card/waiver integration, booking communications and
+active memberships remain unfinished.
+
+The owner approved this remaining order: complete ordinary **and supervised**
+booking first, including both card-payment setup and alternate-tender backup-card
+setup, saved waivers, confirmation, staff arrival review/collection, cancellations
+and no-shows; active memberships immediately afterward; then remaining party,
+physical gift-card sale, standalone socks and club operations. Member-information
+popup/detection and member-adjusted booking prices belong to the membership stage.
+Integrations, durable jobs and recoverable offsite backups accompany the workflows
+that need them. Ordinary visit collection remains after arrival review, not
+online booking. Planning is approved; next-phase application work has not begun.
+
+Use [NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md) and the mandatory inherited
+[SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md) across future modules,
+including filters/tables/forms/navigation/history and business-rule consistency.
+New integrated tests use new reservations. Plan a staff-facing Old test booking
+badge/filter for all earlier test-workflow records, including cancellations,
+without changing their IDs/status/history or generating charges/signatures/email.
+This planned distinction has not been applied to the database. Preserve browser
+ZIP download plus one PowerShell deployment block and reviewed release recovery.
+
 ## 2. Public identity and visual direction
 
 - Public phone: **848-238-5147**; public email: **monkeydoplay@gmail.com**.
@@ -157,6 +185,14 @@ At arrival one **Sign waiver now** button stays available. Distinguish no prior 
 Before completing ordinary arrival, require Yes to **Was a waiver signed for everyone in this booking?** No returns to waiver handling and preserves entered attendance/payment selections. A checkbox must not fabricate an electronic signature. Every participating minor requires coverage.
 
 ## 9. Admin experience and permissions
+
+The existing improved UI conventions apply to memberships, waivers and later
+modules as specified in [shared workflow standards](SHARED_WORKFLOW_STANDARDS.md).
+Use shared compact filters/tables/customer pickers, linked records, current-only
+membership views with history, readable audit and responsive forms/cards. Review
+module-specific columns, statuses and date meanings before building; booking date
+defaults and single-current-membership display must not hide valid waivers or
+coverage from different parents.
 
 **Today** is login landing; **Dashboard** is separate. Start staging with left-side navigation and review arrangement after owner testing before launch. Provide calendar/list/detail, customers, waivers, payment issues, programs/memberships, owner settings/staff and audit; mobile navigation adapts. Exact sidebar order is a presentation choice.
 

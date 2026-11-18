@@ -1,5 +1,14 @@
 # Staff test reservations and saved pricing
 
+Current baseline: these pending-test booking tools, improved tables/filters,
+date/session controls and owner session blocks were included in the owner-reported
+PR #27 deployment. They still do not collect money, save signed waivers or confirm
+visits. The next stage must inherit these controls and the shared customer/history
+rules, adding both card-payment and backup-card paths, arrival/collection and
+actual setup/delivery states. New reservations test that workflow; older test
+records are retained with a planned staff-facing Old test booking distinction.
+See [plan](NEXT_PHASE_REVIEW.md) and [shared standards](SHARED_WORKFLOW_STANDARDS.md).
+
 This increment supports local/staging staff testing. It does not enable public checkout or confirmed customer bookings.
 
 ## Staff workflow

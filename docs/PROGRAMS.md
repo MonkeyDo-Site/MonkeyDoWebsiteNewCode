@@ -2,6 +2,16 @@
 
 Current owner requirements, November 5, 2026. Shared [customers/waivers/admin](MONKEYDO_REQUIREMENTS.md), [membership benefits](MEMBERSHIPS.md), [payments/tax](PAYMENTS.md), and [email copy](EMAIL_TEMPLATES.md) apply unless this document states a product-specific exception. No implementation is included.
 
+Remaining sequence: supervised play completion belongs with the next ordinary
+booking stage. Party operations, standalone socks/physical gift-card sales and
+club enrollment/attendance follow active memberships and reuse the shared
+payment/waiver/communications infrastructure. Clubs remain hidden publicly until
+the owner enables them. Inherit the existing customer picker/search, compact
+filters/tables/forms, histories, scheduling restrictions and permissions from
+[SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md); this plan neither
+opens club marketing nor implements those operations. See
+[NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md).
+
 ## 1. Supervised play
 
 - Ages **3–11**, child-only/drop-off; no baby/adult quantities or ordinary adult requirement. Customer selects accompanied ordinary play or supervised; cannot mix in one booking.

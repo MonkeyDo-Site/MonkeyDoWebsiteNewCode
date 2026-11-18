@@ -1,5 +1,13 @@
 # Customer records and login protection increment
 
+Current baseline: customer records/search/contact history and public verification
+are deployed per the owner's PR #27 report. Public email recovery now reuses the
+matched phone and requires the current email to identify the same customer;
+an unmatched-phone branch may reuse an already-entered surname. No repeated-name
+recovery field or email-only profile disclosure. The historical increment below
+predates those additions. Carry [shared standards](SHARED_WORKFLOW_STANDARDS.md)
+into memberships/waivers rather than rebuilding customer selection or email rules.
+
 This increment adds functional staff-only customer operations to the local staging application. It does not deploy a server or enable public checkout, payment, waiver or email integrations.
 
 ## Implemented customer operations

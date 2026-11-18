@@ -458,3 +458,23 @@ staff/customer booking changes and remove homepage images from its active galler
 Prepare only reviewed 0026 from baseline 0025, private checkpoint, atomic runtime
 grants and code/schema compatibility checks; never reverse the database or ignore
 new reservation restrictions on recovery. No hosted deployment is claimed.
+
+
+## Owner response after PR #27 deployment — remaining stages and inherited UX
+
+Owner reported the third batch deployed and accepted completing ordinary and
+supervised booking before active memberships and remaining business workflows.
+Secure card setup must show both intended Credit card and alternate-tender backup
+routes; ordinary payment is still after arrival review. Member-information popup
+and benefit-adjusted booking prices wait for active memberships. Future sections
+must inherit phase-one filters, improved tables/forms/cards/navigation/history and
+shared functionality, not only IDs/matching; document affected pages and tests
+with each feature using SHARED_WORKFLOW_STANDARDS.md. Preserve draft editing while
+handling actual purchased-membership changes with accurate financial/benefit
+adjustments and the approved permission matrix. New reservations test the new
+completion workflow; plan Old test booking badges/filter for existing records,
+including cancellations, without reclassifying status or inventing charges or
+signatures. Nightly encrypted backups/jobs are dependencies, not provided by the
+current local deployment checkpoint. Update current status documentation and
+preserve historical evidence. This is planning only, with no next-phase code,
+provider calls, relabelling of hosted data or new deployment.

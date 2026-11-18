@@ -39,6 +39,29 @@ Use clear final action such as **Confirm arrival and charge $45**, **Confirm arr
 
 Zelle account **monkeydoplay@gmail.com**. At choice ask which account/name payment comes from. Confirmation says **You selected Zelle as your form of payment. Please Zelle payment to monkeydoplay@gmail.com.** Record verified received or resolve backup card. No old confirmation-number-in-memo requirement and no invented online Zelle collection or auto-expiry deadline.
 
+### Both ordinary booking paths are in the next stage
+
+The owner clarified that secure card setup includes **both** a customer selecting
+Credit card and a customer selecting another tender with a required backup card.
+Credit card is the intended arrival payment source; it does not require a second
+backup card. For alternate tender, the card secures unresolved applicable
+payment/fee obligations. Neither route collects ordinary admission online or
+introduces an issuer hold. Staff still review arrival and explicitly charge or
+record the actual tender. A backup-card presence does not itself incur a card fee;
+fee/tax calculations follow the actual card-funded amount if fallback is used.
+All existing consent, optional future-use and deletion/dependency rules remain.
+
+The low public Session Details estimate shows only admission/adult/sock items and
+base subtotal. Final Payment Details shows applicable processing fee and tax for
+the chosen intended method. Staff estimates and membership estimates retain
+applicable fee information; this is not a global fee-display removal. Both
+customer routes require sandbox acceptance through confirmation, arrival,
+cancellation/no-show and failed/unknown payment recovery.
+
+The [remaining-stage plan](NEXT_PHASE_REVIEW.md) and
+[shared standards](SHARED_WORKFLOW_STANDARDS.md) govern new screens. This is a
+planning clarification, not a provider integration or charge authorization.
+
 ## 2. Card retention and history
 
 - Card details stay with Banquest; MonkeyDo keeps necessary provider references/consent and limited display metadata, never PAN/CVV or locally persisted expiry.

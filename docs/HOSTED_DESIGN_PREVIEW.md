@@ -1,5 +1,10 @@
 # Hosted design preview preparation
 
+Current public staging is the shared functional site, owner-reported deployed
+through PR #27. The design-only setup below is historical/recovery reference,
+not the active public routing or a second review site. See BUILD_STATUS.md and
+NEXT_PHASE_REVIEW.md for the current boundary.
+
 The owner authorized a private design preview and has been configuring the new DigitalOcean Droplet through their own Windows SSH session. Cloud-agent SSH is not configured; commands run by the owner must not be described as agent-verified deployment.
 
 ## Operator-reported host checkpoint

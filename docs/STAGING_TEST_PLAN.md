@@ -2,6 +2,22 @@
 
 This is the living acceptance document requested by the owner. Use artificial families, email addresses you control and Banquest sandbox cards only. This document lists required coverage; listing a case does not mean its workflow is implemented or its test has passed.
 
+## Current stage and inheritance
+
+The owner reports PR #27 deployed. Customer/staff pending-test booking, improved
+search/filter/layout, scheduling restrictions and editable membership drafts are
+available for owner testing. This does not mean every scenario below passed:
+full card/waiver/arrival/payment/booking-email cases remain blocked by their
+unfinished integration, and active memberships follow that stage. Historical
+local test counts and hosted deployment evidence are in BUILD_STATUS.md.
+
+Apply [SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md) at each new
+module, with the approved sequence in [NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md).
+Both credit-card payment and alternate-payment-plus-backup-card paths are required.
+Use new reservations for integrated-workflow testing; the proposed Old test
+booking badge/filter preserves existing test records. No such relabelling has
+been applied by this documentation update.
+
 ## Recording results
 
 For each ID, record date/build, tester, setup/data, steps actually performed, expected result, actual result, Pass/Fail/Blocked and an issue or evidence reference. Re-test affected cases after corrections. Owner acceptance and automated developer checks are separate evidence.
@@ -12,7 +28,7 @@ Example result entry:
 | --- | --- | --- | --- | --- | --- |
 | BOOK-01 | To complete | To complete | Not yet performed | Not run | — |
 
-Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The foundation's automated tests cover selected availability, permissions and reservation primitives only. All owner end-to-end scenarios start **Not run**. Cases needing unfinished features are **Blocked by implementation**, not failures attributed to the owner. The production tax rate and retained-fee-tax decision must remain explicitly pending where relevant.
+Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The deployed suite covers the implemented pending-booking/customer/scheduling/draft workflows, including concurrency and permissions. It does not establish unfinished provider integration or blanket owner acceptance. Owner scenarios without a recorded result remain **Not run**. Cases needing unfinished features are **Blocked by implementation**, not failures attributed to the owner. The production tax rate and retained-fee-tax decision must remain explicitly pending where relevant.
 
 ## Public website and availability
 
@@ -35,7 +51,7 @@ Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The foundation's automa
 | ID | Tester | Scenario/steps | Expected result |
 | --- | --- | --- | --- |
 | CUST-01 | Owner | New family and Day Camp records | Last Name only; unique never-reused six-digit IDs; public default Family |
-| CUST-02 | Developer + owner | Returning and supposedly new customer with current phone; correct/incorrect last name | Approved verification wording and stop-on-mismatch; same record linked only after verification |
+| CUST-02 | Developer + owner | Returning and supposedly new customer with current phone; correct/incorrect last name | Approved verification wording and email-only recovery reusing the entered phone after a name mismatch; two matching details before family disclosure; same record linked only after confirmation |
 | CUST-03 | Owner | Previous-phone match, Yes/No, unmatched prior phone | Approved current-number disclosure/confirmation branch; no extra last-name gate in that branch |
 | CUST-04 | Developer | Concurrent new customer submissions and normalized phone variants | Unique current-phone record; no duplicate accounts or unrelated history disclosure |
 | CUST-05 | Owner | Correct phone/email with occupied previous fields | Approved old-value handling, audit and affected-booking confirmation resend only |
@@ -216,9 +232,9 @@ Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING
 - MOTZEI-03: customer calendar/details/receipt and staff booking table/detail/edit/cancellation/customer records use the same wording. Other weekday names and ISO/numeric values are unchanged. No automatic evening start or new default schedule is added. The owner waived screenshots for this change.
 
 
-## Third owner-feedback batch — local implementation, owner image review pending
+## Third owner-feedback batch — deployed per owner report, scenario results separately recorded
 
-- B3-SEARCH: Brawn/Braun Customer and bnot/bnos miriam match in staff lists, Today/Bookings and both pickers; exact results first, possible matches marked, unrelated public profiles never listed. Test partial public surname and exact current email + surname recovery, failed matches, stale profile and unchanged saved phone.
+- B3-SEARCH: Brawn/Braun Customer and bnot/bnos miriam match in staff lists, Today/Bookings and both pickers; exact results first, possible matches marked, unrelated public profiles never listed. Test partial public surname and exact current email + matched phone recovery, failed matches, stale profile and unchanged saved phone; only an unmatched-phone branch may reuse an already-entered surname, never ask it again.
 - B3-FILTER: default year, both dates empty, each single bound, Enter, automatic date/session filtering and refreshed choices, Clear dates versus Clear all, fixed Today and preserved nondate filters/pagination.
 - B3-DATE: mark a date backend-only, generate another session on it, verify public hide/direct-start refusal and authorized staff booking; removing the override preserves individual private visibility and closures.
 - B3-CUSTOM: preview and confirm 10–2 overlapping standard slots; linked active booking conflicts cause no partial write. Repeat with a concurrent booking, stale preview, duplicate start, custom/program conflict, preserved standard IDs/times and explicit reopening that retains manual/date closures.
@@ -226,4 +242,26 @@ Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING
 - B3-COVERAGE: generate through a later date, change timing and apply to an earlier date; verify separate contiguous-current and furthest-existing dates, actual timing ranges, gaps, preserved bookings/manual overrides and custom blocks.
 - B3-SCHOOL: owner creates/edits School, staff can select an existing School for booking, type filter combines with search, public default remains Family; unsupported future membership filters absent.
 - B3-PUBLIC: Canadian/+1 error wording, go back retains chosen session, ready notice creates no early customer, live pretax estimate changes counts/play/socks/method without writes and final Payment Details retains tax; sidebar has no booking buttons; completion text rose/aligned.
-- B3-DESIGN: homepage compact 2×2 on wide desktop, responsive stacking, all images loaded, original assets retained, aligned play buttons, keyboard/focus, 390px/320px no document overflow. Review desktop/phone JPG gallery before PR/deployment; hosted interactive acceptance follows the later deployment.
+- B3-DESIGN: third-batch homepage design changes were excluded. Homepage About/play template and its existing CSS match deployed 34a77c4; no compact-area/smaller-play crop is included. The 52 remaining review JPGs cover staff/customer changes with desktop/phone layouts; retain accessible focus and 390px/320px no-overflow checks.
+
+
+## Next-stage and shared-experience acceptance — planned, not implemented
+
+| ID | Scope | Required result |
+| --- | --- | --- |
+| NEXT-CARD-01 | New Credit card ordinary/supervised booking, then arrival | Secure provider card setup/consent and saved waiver; no ordinary charge/hold at booking. Accurate final fee/tax estimate and confirmation. Staff review and explicit final charge only; test failures, unknown outcome and duplicate prevention. |
+| NEXT-CARD-02 | New cash/check/Zelle/physical-gift-card intended tender, then arrival | Required backup setup and applicable details, no charge/fee merely for storing backup. Staff verify actual tender or explicitly use fallback; fee/tax follow actual card-funded share. Preserve deletion/optional-reuse rules and partial funds after failure. |
+| NEXT-OLD-01 | Upgrade existing pending and cancelled test records | Stable Old test booking classification/badge/filter without rewriting IDs/status/quotes/history/capacity; no charges, signatures, confirmation emails or automatic data reset. New integrated tests use new bookings. |
+| NEXT-UX-01 | New membership/waiver list, detail, form and customer card | Existing compact responsive tables/cards, linked records/names, customer picker, field sizing/navigation and readable history. Membership latest-only row/#M ID; distinct waiver signer/minor coverage retained. |
+| NEXT-UX-02 | Combine staff search/status/type/date filters on future modules | Shared Enter/automatic valid-change/clear/no-JS behavior; meaningful permitted matches. Explicit module-specific date meanings/defaults; do not hide current membership/coverage because its purchase/signing is earlier. |
+| NEXT-UX-03 | Current and earlier records across new modules | Creation history has no Before; edits have readable differences/actor/time. Purchased membership adjustments preserve paid/used facts; signed waiver evidence is never edited in place. |
+| NEXT-UX-04 | Customer/public/staff privacy and capability checks | Current email uniqueness applies to customers, not all waiver signers; two-piece public lookup and private shared links. No new session controls on Today or implicit export/owner privilege. |
+| NEXT-UX-05 | Public versus staff money displays | Public Session Details has low base-item subtotal only; final Payment Details shows fee/tax for intended tender. Staff/membership estimates keep approved fee information; no charge on Save. |
+| NEXT-UX-06 | Scheduling, dates, outputs and cross-module regression | Backend-only/closure/custom blocks and capacity remain enforced even with paid membership/waiver; explicit source reopening; New York/Motzei Shabbos in relevant screens/emails/output; no membership popup until membership stage. |
+| NEXT-OPS-01 | Provider/file/message/job/backup operations | Verify actual sandbox outcomes, private signed evidence/access/retention, accurate delivery, durable reconciliation/no auto retry and isolated restore. A screenshot or same-server checkpoint is not proof of those integrations. |
+
+The new list columns/filter choices and affected screenshots must be reviewed
+before that stage's deployment. Mark cases Blocked by implementation until they
+exist; record actual owner/provider outcomes rather than inheriting a Pass from
+the pending-test foundation. No full application suite was rerun for this
+planning-only documentation change.

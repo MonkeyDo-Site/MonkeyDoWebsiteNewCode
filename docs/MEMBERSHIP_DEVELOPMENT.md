@@ -1,5 +1,13 @@
 # Membership draft foundation
 
+Current baseline: editable test drafts, latest-only tables, linked #M IDs and
+readable history are deployed per the owner's PR #27 report. Purchased/active
+memberships remain the stage after completed ordinary/supervised booking.
+Use the [shared workflow standards](SHARED_WORKFLOW_STANDARDS.md) for new
+filters, forms, customer cards and histories. Active changes must preserve paid
+and used benefits while retaining staff's approved sale/renew/add/correction
+capabilities; draft editing itself is not authority to rewrite those facts.
+
 This increment adds **test membership drafts**, not purchased/active memberships. It establishes immutable product prices, separate draft cohorts, civil-date calendar calculations and saved planned payment estimates. No payment, card consent, accepted terms, benefit grant, job or email is created.
 
 ## Staff use

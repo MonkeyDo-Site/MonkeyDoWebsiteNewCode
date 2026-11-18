@@ -2,6 +2,17 @@
 
 Consolidated November 5, 2026. This preserves owner-edited wording and the surrounding drafts for documentation-PR review. It is not executable email code and does not send messages. Bracketed fields/conditions are template instructions, never literal customer text. Escape user input, pluralize counts/verbs and render only applicable sections.
 
+Current implementation boundary: account MFA/reset transport is configured and
+owner-confirmed; the booking/member/waiver delivery workflows below remain
+requirements. Ordinary/supervised confirmations and waiver notifications are
+built with the next booking stage; membership notices follow with active
+memberships. Reuse New York/Motzei Shabbos date formatting, IDs, current customer
+contacts and actual amount/setup/delivery states from the deployed foundation.
+No historical test booking is emailed merely because the new workflow is
+released. The shared [workflow standards](SHARED_WORKFLOW_STANDARDS.md) and
+[remaining plan](NEXT_PHASE_REVIEW.md) apply. Existing approved message wording
+and prohibited reminders/receipts remain unchanged.
+
 ## 1. Delivery rules
 
 - **Resend** selected; account exists. Previously exposed credential was revoked/replaced, never reproduced. Sender **bookings@monkeydoplay.com**, replies/owner alerts **monkeydoplay@gmail.com**; sender-domain/DNS/secrets must be securely configured during authorized integration. No Gmail From assumption.

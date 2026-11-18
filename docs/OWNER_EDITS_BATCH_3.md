@@ -1,12 +1,16 @@
 # Third owner-feedback batch — implementation and image review
 
+Owner subsequently reported this reviewed release deployed. The current baseline
+and remaining stages are in BUILD_STATUS.md and NEXT_PHASE_REVIEW.md. Earlier
+image-review/pending-deployment notes below are historical.
+
 Source: the complete **THird batch of comments.docx**, all twenty numbered items,
 both final homepage design requests, all 26 screenshots, and the owner's answers
 and development/image-review go-ahead. The private source document is not
 published. Approved scope and clarifications: [review](OWNER_EDITS_BATCH_3_REVIEW.md).
 
 **Owner authorized PR and deployment preparation after image review, excluding
-all homepage design changes.** Deployment is not yet performed. The shared staging website remains on its
+all homepage design changes.** Deployment was subsequently reported complete by the owner. The shared staging website remains on its
 previous approved release. [Desktop and phone JPG gallery](design-review/owner-edits-batch-3/README.md).
 
 ## Coverage
