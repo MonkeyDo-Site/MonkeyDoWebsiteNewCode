@@ -37,7 +37,7 @@ remain welcome.
 | 20 | Custom session — explicit reopening controls | [Desktop JPG](20-custom-session-reopen-controls-desktop.jpg) | [Phone JPG](20-custom-session-reopen-controls-phone.jpg) |
 | 21 | Cancel booking — reopening choice | [Desktop JPG](21-cancellation-reopen-choice-desktop.jpg) | [Phone JPG](21-cancellation-reopen-choice-phone.jpg) |
 | 22 | Public booking — Canadian/ten-digit phone wording | [Desktop JPG](22-phone-validation-wording-desktop.jpg) | [Phone JPG](22-phone-validation-wording-phone.jpg) |
-| 23 | Public booking — new-customer continuation and back link | [Desktop JPG](23-new-customer-continuation-desktop.jpg) | [Phone JPG](23-new-customer-continuation-phone.jpg) |
+| 23 | Public booking — inline phone/email continuation choices | [Desktop JPG](23-new-customer-continuation-desktop.jpg) | [Phone JPG](23-new-customer-continuation-phone.jpg) |
 | 24 | Public booking — details ready, not saved early | [Desktop JPG](24-new-customer-details-ready-desktop.jpg) | [Phone JPG](24-new-customer-details-ready-phone.jpg) |
 | 25 | Public booking — email recovery | [Desktop JPG](25-email-recovery-desktop.jpg) | [Phone JPG](25-email-recovery-phone.jpg) |
 | 26 | Public booking — matching family confirmation | [Desktop JPG](26-email-family-confirmation-desktop.jpg) | [Phone JPG](26-email-family-confirmation-phone.jpg) |
@@ -66,3 +66,5 @@ provider delivery, hosting changes or deployments were performed. Confirmed
 customer visits remain unfinished. [Implementation and migration notes](../../OWNER_EDITS_BATCH_3.md).
 
 Screen 16 now shows the actual new-session default: **Closed for reservation is unchecked**. Existing saved defaults retain their own open/closed setting.
+
+Screen 23 now consolidates phone retry and email recovery into the introductory paragraph, with both actions as inline links. Duplicate actions below the form were removed.

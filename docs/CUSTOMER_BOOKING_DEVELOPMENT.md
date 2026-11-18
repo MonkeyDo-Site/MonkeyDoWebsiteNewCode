@@ -80,3 +80,15 @@ Owner-designated public sessions on Motzei Shabbos now use the normal availabili
 The approved third batch adds exact-current-email plus tolerant surname recovery when no phone matches or phone-selected surname matching fails. Reveal the family only after matching both values, then confirm; retain the saved phone and never identify customers from historical-only email. New-customer continuation has the approved go back link. Success! Your details are ready precedes final atomic creation. Session Details has a read-only pretax live estimate and compact shared play information; final Payment Details retains full tax. No card, waiver, benefit or email delivery is enabled by these screens.
 
 Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).
+
+
+## Image-review follow-up — consolidated contact choices
+
+The new-customer continuation paragraph now uses the owner's exact expanded
+wording, with go back and enter an email address as inline hyperlinks. It replaces
+the duplicated phone/email actions beneath that contact form. Email recovery
+accepts navigation by GET as well as its existing POST entry; this only changes
+the in-progress browser flow and still requires matching email and surname before
+family disclosure. Final customer/booking persistence, saved phone and selected
+session are unchanged. Remove the obsolete duplicate-email hint that referred to
+the removed standalone button; the approved full error wording remains.

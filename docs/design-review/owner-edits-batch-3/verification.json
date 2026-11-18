@@ -520,13 +520,13 @@
     },
     {
       "file": "23-new-customer-continuation-desktop.jpg",
-      "sha256": "c9c61681870c73a8920f2afb1ff4841558cf9da9e63b8a64a6df5c51715d435f",
-      "bytes": 124416
+      "sha256": "7677e107889b0b23326fac992d18aa75cd397ada9235c2cbce7a32bab14240ab",
+      "bytes": 121576
     },
     {
       "file": "23-new-customer-continuation-phone.jpg",
-      "sha256": "027170d0cf93dea5ab0d750fcb20e9c146b8760aef47845d0f0b8f8d52960e63",
-      "bytes": 94856
+      "sha256": "5d00102edbd00582d6cb5be8488a1e6db09fc403427592528242332aa62ca9e6",
+      "bytes": 93549
     },
     {
       "file": "24-new-customer-details-ready-desktop.jpg",
@@ -722,5 +722,16 @@
       1440,
       390
     ]
+  },
+  "inline_contact_choices_followup": {
+    "wording": "You can continue below as a new customer, go back to try another number, enter an email address to find your customer profile, or call/text us at 848-238-5147 for assistance.",
+    "inline_back_and_email_links_verified": true,
+    "duplicate_actions_removed": true,
+    "email_lookup_requires_name_and_email": true,
+    "viewports": [
+      1440,
+      390
+    ],
+    "javascript_errors": []
   }
 }

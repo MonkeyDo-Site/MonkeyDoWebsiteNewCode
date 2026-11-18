@@ -521,7 +521,7 @@ def revise(request):
 
 
 @enabled
-@require_POST
+@require_http_methods(["GET", "POST"])
 def recover_by_email(request):
     try:
         flow = current(request)

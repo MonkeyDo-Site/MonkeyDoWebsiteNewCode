@@ -110,3 +110,15 @@ it to illustrate the closed state. Screen 16 desktop/phone now shows the actual
 unchecked default. Existing closed defaults still render checked on editing;
 explicit user selections remain intact. Browser checks and direct form checks
 passed; no migration or deployment was performed.
+
+
+## Image-review follow-up — inline email recovery link
+
+Use exactly: You can continue below as a new customer, go back to try another
+number, enter an email address to find your customer profile, or call/text us at
+848-238-5147 for assistance. Go back and enter an email address are inline links;
+the duplicate actions below this form are removed. Both keep the selected
+session. Email lookup still requires email and surname, with no early customer
+creation or saved-phone change. The 27 affected PostgreSQL public-flow tests
+passed and Chromium checked both links at desktop/phone widths. Screen 23 and
+its image checksums were refreshed. Staging and PR/deployment remain unchanged.

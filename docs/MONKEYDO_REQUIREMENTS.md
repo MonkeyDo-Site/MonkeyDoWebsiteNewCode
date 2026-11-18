@@ -290,8 +290,10 @@ search. Potential future active-membership/waiver customer filters remain deferr
 Ten-digit phone wording does not say US; continue accepting ten-digit Canadian
 numbers and a leading +1 through the existing normalization. New-customer
 continuation says You can continue below as a new customer, go back to try another
-number, or call/text us at 848-238-5147 for assistance, with go back linking to
-number entry for the same chosen session. After details are accepted, say
+number, enter an email address to find your customer profile, or call/text us at
+848-238-5147 for assistance. Both go back and enter an email address are inline
+hyperlinks, leading to phone entry and email/name recovery for the same chosen
+session. Remove the duplicate standalone actions beneath that form. After details are accepted, say
 Success! Your details are ready. Please proceed with your booking. Create the
 customer only with final successful booking submission, not at that earlier
 screen. Completion-bar text uses the active-leaf rose and retains alignment.
