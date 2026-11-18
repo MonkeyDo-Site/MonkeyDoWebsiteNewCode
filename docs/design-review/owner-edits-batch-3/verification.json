@@ -1,0 +1,592 @@
+{
+  "fixture": "Fictional local PostgreSQL data; frozen November 18, 2026, 9 AM New York",
+  "screens": [
+    {
+      "screen": "01-homepage",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "02-homepage-about",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "03-homepage-play",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "04-bookings-default-year",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "05-bookings-all-history-typo",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "06-today-session-filter",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "07-customers-word-typo",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "08-customers-school-filter",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "09-school-customer-form",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "10-membership-customer-typo-picker",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "11-add-booking-date-and-session",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "12-edit-booking-date-and-estimate",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "13-backend-only-date",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "14-weekly-coverage-summary",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "15-generated-timing-ranges",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "16-weekly-default-closed-control",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "17-edit-weekly-schedule-controls",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "18-custom-session-review",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "19-custom-session-booking-conflicts",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "20-custom-session-reopen-controls",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "21-cancellation-reopen-choice",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "22-phone-validation-wording",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "23-new-customer-continuation",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "24-new-customer-details-ready",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "25-email-recovery",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "26-email-family-confirmation",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "27-live-estimate-and-play-info",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "28-final-payment-details-tax",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "29-completion-rose-message",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "01-homepage",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "02-homepage-about",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "03-homepage-play",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "04-bookings-default-year",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "05-bookings-all-history-typo",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "06-today-session-filter",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "07-customers-word-typo",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "08-customers-school-filter",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "09-school-customer-form",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "10-membership-customer-typo-picker",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "11-add-booking-date-and-session",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "12-edit-booking-date-and-estimate",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "13-backend-only-date",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "14-weekly-coverage-summary",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "15-generated-timing-ranges",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "16-weekly-default-closed-control",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "17-edit-weekly-schedule-controls",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "18-custom-session-review",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "19-custom-session-booking-conflicts",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "20-custom-session-reopen-controls",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "21-cancellation-reopen-choice",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "22-phone-validation-wording",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "23-new-customer-continuation",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "24-new-customer-details-ready",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "25-email-recovery",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "26-email-family-confirmation",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "27-live-estimate-and-play-info",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "28-final-payment-details-tax",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "29-completion-rose-message",
+      "viewport": 390,
+      "horizontal_overflow": false
+    }
+  ],
+  "javascript_errors": [],
+  "hosted_site_changed": false,
+  "extra_narrow_width_checked": 320,
+  "staff_scheduling_denied": true,
+  "staff_closure_control_absent": true,
+  "images": [
+    {
+      "file": "01-homepage-desktop.jpg",
+      "sha256": "f2f37f3b166cea7b54793ccd1ce5ab8c3c7c5b753d15062c587c022e39bdfdad",
+      "bytes": 1073777
+    },
+    {
+      "file": "01-homepage-phone.jpg",
+      "sha256": "1b9aab206df9662865321d60e8837475e7e8d11ca0e6084693160f4c59d46209",
+      "bytes": 740582
+    },
+    {
+      "file": "02-homepage-about-desktop.jpg",
+      "sha256": "54c61799a240fbfcee90ee3d6c6974e678061b3ca1c695dc0d85fc947d4636b3",
+      "bytes": 188614
+    },
+    {
+      "file": "02-homepage-about-phone.jpg",
+      "sha256": "920f7cd583ce5d10dcd799c017b5d0dbb46a65c7bf17e3da9d0eca097f0f7229",
+      "bytes": 150403
+    },
+    {
+      "file": "03-homepage-play-desktop.jpg",
+      "sha256": "422dc2facb8cfc04c3df6c5545791b4345aecc2b91cdd400484e1ec823bcfdfd",
+      "bytes": 149095
+    },
+    {
+      "file": "03-homepage-play-phone.jpg",
+      "sha256": "7ca4ef07253db33c8fea7d7a8079d06c4cebc8308c6805ebe07d17a28852ab21",
+      "bytes": 105557
+    },
+    {
+      "file": "04-bookings-default-year-desktop.jpg",
+      "sha256": "406a13bb840bc048e470ac0ab03c885bf8c0a9e3ca6f78fbbdba2c45da7ccce6",
+      "bytes": 156062
+    },
+    {
+      "file": "04-bookings-default-year-phone.jpg",
+      "sha256": "08e974e84473581067607869dece7efac00594353b660b57dece07ae7bfdde9b",
+      "bytes": 77782
+    },
+    {
+      "file": "05-bookings-all-history-typo-desktop.jpg",
+      "sha256": "6c1be0076718d7d519b7a57565e6e12e27c47123f336e9d17a7d12e9dcd264ce",
+      "bytes": 128271
+    },
+    {
+      "file": "05-bookings-all-history-typo-phone.jpg",
+      "sha256": "44ce7a508acd6378d286df212f1ecba3bc488233d1a410a6e3913e92476e9a9f",
+      "bytes": 72006
+    },
+    {
+      "file": "06-today-session-filter-desktop.jpg",
+      "sha256": "d5151adc7b6520379e1f42769b604ecf1107164120e7623e302665e4f37087b6",
+      "bytes": 187006
+    },
+    {
+      "file": "06-today-session-filter-phone.jpg",
+      "sha256": "09019295e06404479cd7692f89204165bb849d4790e6ee741a89d7876967c8f8",
+      "bytes": 90620
+    },
+    {
+      "file": "07-customers-word-typo-desktop.jpg",
+      "sha256": "655c55fce505591cd1367d210dde63c4330e0129c27a0f824b884102ebbea0a4",
+      "bytes": 91268
+    },
+    {
+      "file": "07-customers-word-typo-phone.jpg",
+      "sha256": "806efacc8371c976c9833b37a34a25ed1feede7822a6cc8f304033394885ca00",
+      "bytes": 52915
+    },
+    {
+      "file": "08-customers-school-filter-desktop.jpg",
+      "sha256": "97fe4899e956a8817155b4d7fd2e1fa59270b8d28d1aa20146b6dd680b83f904",
+      "bytes": 89112
+    },
+    {
+      "file": "08-customers-school-filter-phone.jpg",
+      "sha256": "e2f1c0fc6248ce9a2eb8ee80ccf8a84fbbc3a06357b9180a1f4de6d2c4d1cda0",
+      "bytes": 51762
+    },
+    {
+      "file": "09-school-customer-form-desktop.jpg",
+      "sha256": "a79e7b8cfaaafe718994a7edfe58f2ad35ffaeee395c137aa6d3c4286c02724b",
+      "bytes": 94038
+    },
+    {
+      "file": "09-school-customer-form-phone.jpg",
+      "sha256": "19c4e9a37be90ac444bff7e88f30424b2ea138a0a943a455082ae6a112e7bf12",
+      "bytes": 51333
+    },
+    {
+      "file": "10-membership-customer-typo-picker-desktop.jpg",
+      "sha256": "e659731aa0defbc881ec131f6d2202986240298cc38dc8d1f110e91f8aefa2d3",
+      "bytes": 164751
+    },
+    {
+      "file": "10-membership-customer-typo-picker-phone.jpg",
+      "sha256": "62c40c6f8c4046d4019e11df329056538a9a084a68ce8ab199824e19004678c1",
+      "bytes": 103009
+    },
+    {
+      "file": "11-add-booking-date-and-session-desktop.jpg",
+      "sha256": "96a4767bcfe4ea1941de7cbd79736eae94fcbfc99cb586cf78d37fbc82565617",
+      "bytes": 168056
+    },
+    {
+      "file": "11-add-booking-date-and-session-phone.jpg",
+      "sha256": "5f7ac98bae4b43ad6c99498dbf6bd286569ef5b7441698c1eebf84a678f3b262",
+      "bytes": 108571
+    },
+    {
+      "file": "12-edit-booking-date-and-estimate-desktop.jpg",
+      "sha256": "c546e04db8f51b3cf372c0ddd5aad3800a6949374664d9ba17c9a939b16cd301",
+      "bytes": 205970
+    },
+    {
+      "file": "12-edit-booking-date-and-estimate-phone.jpg",
+      "sha256": "786810c09bdb90719f5e399b91c918014a2d3e0516e49fa7b4db2443a69e3e06",
+      "bytes": 140181
+    },
+    {
+      "file": "13-backend-only-date-desktop.jpg",
+      "sha256": "70e662061f574728e8d8334421c6ca75e4c42984ce082064c5c7aa4f662764d4",
+      "bytes": 126135
+    },
+    {
+      "file": "13-backend-only-date-phone.jpg",
+      "sha256": "caa949dfbadb5f906745e08808db5a4a80689aaf5d8b2b2a7fdddb81f744fd50",
+      "bytes": 83404
+    },
+    {
+      "file": "14-weekly-coverage-summary-desktop.jpg",
+      "sha256": "7cda83090448e1ee4b1604887a71e2676769712c12478eaae0ed41e6b7197ec0",
+      "bytes": 325436
+    },
+    {
+      "file": "14-weekly-coverage-summary-phone.jpg",
+      "sha256": "5940fe5e9abd2f6aead6e9995c47467c17eaeadea310779c4a62026f9097c9b2",
+      "bytes": 261784
+    },
+    {
+      "file": "15-generated-timing-ranges-desktop.jpg",
+      "sha256": "6a1aeeb75db5277f6cba246dfa7d8c0219bd64bb884385fbd95d8a7ea291b270",
+      "bytes": 382574
+    },
+    {
+      "file": "15-generated-timing-ranges-phone.jpg",
+      "sha256": "cda3b198ae2627c8edd3947eccf8011593d25ab27669c91bc8d4624f261762ea",
+      "bytes": 315455
+    },
+    {
+      "file": "16-weekly-default-closed-control-desktop.jpg",
+      "sha256": "6eacc567d98da1248c7014f7e8845b2ef445b980356f830a241248f5f7c8f240",
+      "bytes": 172172
+    },
+    {
+      "file": "16-weekly-default-closed-control-phone.jpg",
+      "sha256": "2a1c6404804df6a615a76b0733adc8b366d29defff4ad51d6976987c8cbe9971",
+      "bytes": 109178
+    },
+    {
+      "file": "17-edit-weekly-schedule-controls-desktop.jpg",
+      "sha256": "c5c480350e6fe7b408d34f88af71f402c99da884b926e30dadc3cc870b7e3983",
+      "bytes": 344270
+    },
+    {
+      "file": "17-edit-weekly-schedule-controls-phone.jpg",
+      "sha256": "1377ac618ca3ecec70c1ffc377cf4cb78de8e5608dd405b66b1e324f279da5eb",
+      "bytes": 276625
+    },
+    {
+      "file": "18-custom-session-review-desktop.jpg",
+      "sha256": "2d4e7c348469778086bc4f9632f433696eef5649508fe950f8267659c80029d8",
+      "bytes": 208712
+    },
+    {
+      "file": "18-custom-session-review-phone.jpg",
+      "sha256": "384c563e4128dd33412bd023d1ffcbdc0711e89909d037c358f0aa90f339697f",
+      "bytes": 144746
+    },
+    {
+      "file": "19-custom-session-booking-conflicts-desktop.jpg",
+      "sha256": "f1a765add6a014358ea1401c1b8783d0e07ff91d4ce87ef3369bea394b9cb45e",
+      "bytes": 198990
+    },
+    {
+      "file": "19-custom-session-booking-conflicts-phone.jpg",
+      "sha256": "efed298beb8629fd38a91c0125626ef66b68b961acf5399307d250c4f4422b15",
+      "bytes": 137765
+    },
+    {
+      "file": "20-custom-session-reopen-controls-desktop.jpg",
+      "sha256": "e7ba0a4a9f2968a0b6b1d6c866c7be75b6ca46de748bcaaf2f3408fe6215ff2f",
+      "bytes": 209829
+    },
+    {
+      "file": "20-custom-session-reopen-controls-phone.jpg",
+      "sha256": "a919beb97fd780770707eaee7d9c089c9cb2cffd5ee66236a59981605b97b48b",
+      "bytes": 146777
+    },
+    {
+      "file": "21-cancellation-reopen-choice-desktop.jpg",
+      "sha256": "5d56b6ad3cef5236c2107fe9362e92656f8286718f963eb5037b39b03b9f5449",
+      "bytes": 90319
+    },
+    {
+      "file": "21-cancellation-reopen-choice-phone.jpg",
+      "sha256": "6aa7dd9f576f0f84d1d1ac1ed10fb46dd6bf29af483e588344e8b8db515735bf",
+      "bytes": 58139
+    },
+    {
+      "file": "22-phone-validation-wording-desktop.jpg",
+      "sha256": "6a451297561abe3a48febf75a294af8af728d3a281b729673faec92ac3fcf58c",
+      "bytes": 100915
+    },
+    {
+      "file": "22-phone-validation-wording-phone.jpg",
+      "sha256": "f16d76086cf1024c599a9de900f9abee1a8faa0d9ec302320cdfd1a9af86aad4",
+      "bytes": 78658
+    },
+    {
+      "file": "23-new-customer-continuation-desktop.jpg",
+      "sha256": "c9c61681870c73a8920f2afb1ff4841558cf9da9e63b8a64a6df5c51715d435f",
+      "bytes": 124416
+    },
+    {
+      "file": "23-new-customer-continuation-phone.jpg",
+      "sha256": "027170d0cf93dea5ab0d750fcb20e9c146b8760aef47845d0f0b8f8d52960e63",
+      "bytes": 94856
+    },
+    {
+      "file": "24-new-customer-details-ready-desktop.jpg",
+      "sha256": "134d3e51b0f8425ad11f50b062bf8deb4974744ff3f0a32ba14483ce69533570",
+      "bytes": 208727
+    },
+    {
+      "file": "24-new-customer-details-ready-phone.jpg",
+      "sha256": "1373e7f0da675283c3b468cc8e19211ec3bb431d643ce0cf86d09c4423128056",
+      "bytes": 178048
+    },
+    {
+      "file": "25-email-recovery-desktop.jpg",
+      "sha256": "9471273ff1b2a6faab786c86e2b0f64d478796a6f1c4e2445f84007796a580c7",
+      "bytes": 121378
+    },
+    {
+      "file": "25-email-recovery-phone.jpg",
+      "sha256": "46b53196d9ffbee99b59fa1292c006bd937cca1aa99cf777a1d5a3870cd15327",
+      "bytes": 93560
+    },
+    {
+      "file": "26-email-family-confirmation-desktop.jpg",
+      "sha256": "255ae47bbf589f86bdf6ea09ff119a81b839233c01693a7bed1e8e88955f26c5",
+      "bytes": 100785
+    },
+    {
+      "file": "26-email-family-confirmation-phone.jpg",
+      "sha256": "9e68e0c0b679272181c1ea8287aba0e9fef8d10dc4422635b4e42d7620569273",
+      "bytes": 78528
+    },
+    {
+      "file": "27-live-estimate-and-play-info-desktop.jpg",
+      "sha256": "486e7cb25e230cbb424827ceda8941beec222e4901ef2a1ab6942e33ecfdf45a",
+      "bytes": 215525
+    },
+    {
+      "file": "27-live-estimate-and-play-info-phone.jpg",
+      "sha256": "0826dd6c9bebe4226e0d60c160da15cb5edb118505f07f38c63e80ebbc4d71b7",
+      "bytes": 185939
+    },
+    {
+      "file": "28-final-payment-details-tax-desktop.jpg",
+      "sha256": "8b7c0c59faa7cfe46ecbe82666c6e92315f499dc78de055f181e7f45e7c80805",
+      "bytes": 145512
+    },
+    {
+      "file": "28-final-payment-details-tax-phone.jpg",
+      "sha256": "7d60a7016a2b098a6f65c8b6875c60cb05c67dd54e016155693854934684694e",
+      "bytes": 118848
+    },
+    {
+      "file": "29-completion-rose-message-desktop.jpg",
+      "sha256": "02c3dcbfc3dbdf4fc13b1ef658b8839f4975683748ae4fdbf3a634d010e5db54",
+      "bytes": 141453
+    },
+    {
+      "file": "29-completion-rose-message-phone.jpg",
+      "sha256": "94270f0c6e2c8356b6e36df366887f5ab2ac60ba1a66bf7f407e3492b6cdd447",
+      "bytes": 107238
+    }
+  ]
+}

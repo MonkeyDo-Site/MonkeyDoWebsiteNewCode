@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_safe
 
 from .availability import NEW_YORK, occupancy
-from .calendar import date_closed, weekly_default_blocked
+from .calendar import date_backend_only, date_closed, reservation_blocked, weekly_default_blocked
 from .models import CalendarDate, Session
 from .permissions import staff_permission
 from .recurring import local_time
@@ -14,6 +14,11 @@ from .scheduling import SESSION_FIELDS, save_date, save_session
 
 
 class SessionForm(forms.ModelForm):
+    reopen_affected_sessions = forms.BooleanField(
+        required=False,
+        label="Reopen sessions no longer overlapped by this custom time",
+        help_text="Removes only this custom session’s blocks; separate closures remain.",
+    )
     visibility = forms.ChoiceField(
         choices=[("", "Choose visibility"), ("private", "Backend only"), ("public", "Public")]
     )
@@ -32,7 +37,8 @@ class SessionForm(forms.ModelForm):
         }
         labels = {
             "private_label": "Internal session label",
-            "closed": "Close this session to new reservations",
+            "closed": "Closed for reservation",
+            "custom_blocking": "Custom one-time session that blocks conflicting sessions",
         }
 
     def __init__(self, *args, **kwargs):
@@ -43,6 +49,10 @@ class SessionForm(forms.ModelForm):
             ("both", "Open Play and Supervised Play"),
         ]
         self.fields["private_label"].required = True
+        if not self.instance.pk or not self.instance.custom_blocking:
+            self.fields.pop("reopen_affected_sessions", None)
+        if self.instance.pk:
+            self.fields["custom_blocking"].disabled = True
         if self.instance.pk:
             self.initial.update(
                 visibility="public" if self.instance.public else "private",
@@ -77,7 +87,10 @@ class SessionForm(forms.ModelForm):
 
 class DateForm(forms.Form):
     day = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
-    closed = forms.BooleanField(required=False, label="Close date to new reservations.")
+    closed = forms.BooleanField(required=False, label="Closed for reservation")
+    backend_only = forms.BooleanField(
+        required=False, label="Backend only — hide all sessions on this date from the public"
+    )
     private_reason = forms.CharField(max_length=500, required=False, widget=forms.Textarea)
     chol_hamoed = forms.BooleanField(required=False, label="Chol Hamoed date")
     revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
@@ -109,8 +122,13 @@ def scheduling(request):
                 {
                     "session": row,
                     "counts": occupancy(row),
-                    "blocked": row.closed or date_closed(row) or weekly_default_blocked(row),
-                    "visible": row.public and not weekly_default_blocked(row),
+                    "blocked": row.closed
+                    or date_closed(row)
+                    or reservation_blocked(row)
+                    or weekly_default_blocked(row),
+                    "visible": row.public
+                    and not date_backend_only(row)
+                    and not weekly_default_blocked(row),
                 }
                 for row in rows
             ],
@@ -125,15 +143,52 @@ def session_edit(request, pk=None):
     owner(request)
     row = get_object_or_404(Session, pk=pk) if pk else None
     form = SessionForm(request.POST if request.method == "POST" else None, instance=row)
+    conflicts = []
+    preview = None
+    preview_token = None
     if request.method == "POST" and form.is_valid():
         data = {name: form.cleaned_data[name] for name in SESSION_FIELDS if name != "public"}
         data["public"] = form.cleaned_data["visibility"] == "public"
         try:
+            if data["custom_blocking"]:
+                from django.core import signing
+
+                from .session_blocks import custom_preview
+
+                preview, preview_token, payload = custom_preview({**data, "pk": pk})
+                try:
+                    supplied = signing.loads(
+                        request.POST.get("custom_preview", ""),
+                        salt="custom-session-preview",
+                        max_age=1200,
+                    )
+                except signing.BadSignature:
+                    supplied = None
+                # JSON round-trip represents tuples as arrays.
+                import json
+
+                if supplied != json.loads(json.dumps(payload)):
+                    return render(
+                        request,
+                        "core/scheduling_form.html",
+                        {
+                            "form": form,
+                            "heading": "Review custom session",
+                            "custom_preview": preview,
+                            "custom_preview_token": preview_token,
+                        },
+                    )
             saved = save_session(
-                actor=request.user, data=data, pk=pk, revision=form.cleaned_data.get("revision")
+                actor=request.user,
+                data=data,
+                pk=pk,
+                revision=form.cleaned_data.get("revision"),
+                reopen_affected_sessions=form.cleaned_data.get("reopen_affected_sessions", False),
+                expected_conflicts=payload["sessions"] if data["custom_blocking"] else None,
             )
         except ValidationError as exc:
             form.add_error(None, " ".join(exc.messages))
+            conflicts = getattr(exc, "bookings", [])
         else:
             messages.success(
                 request,
@@ -142,10 +197,26 @@ def session_edit(request, pk=None):
             return redirect(
                 f"/staff/scheduling/?day={saved.starts_at.astimezone(NEW_YORK).date().isoformat()}"
             )
-    from .calendar import date_closed, weekly_default_blocked
+    from .calendar import (
+        date_closed,
+        weekly_default_blocked,
+    )
 
     blockers = []
     if row:
+        for block in row.reservation_blocks.filter(active=True).select_related(
+            "source_session", "booking"
+        ):
+            blockers.append(
+                {
+                    "label": "Blocked by custom session"
+                    if block.source_session_id
+                    else f"Closed from booking #{block.booking_id}",
+                    "url": f"/staff/scheduling/{block.source_session_id}/"
+                    if block.source_session_id
+                    else f"/staff/bookings/{block.booking_id}/",
+                }
+            )
         if weekly_default_blocked(row):
             blockers.append(
                 {
@@ -165,6 +236,11 @@ def session_edit(request, pk=None):
         "core/scheduling_form.html",
         {
             "form": form,
+            "conflicting_bookings": conflicts,
+            "session": row,
+            "custom_blocks": row.caused_blocks.filter(active=True).select_related("session")
+            if row
+            else [],
             "heading": "Edit session" if pk else "Add one-time session",
             "blockers": blockers,
             "session_day": row.starts_at.astimezone(NEW_YORK).date() if row else None,
@@ -183,6 +259,7 @@ def date_edit(request):
     initial = {
         "day": day,
         "closed": row.closed if row else False,
+        "backend_only": row.backend_only if row else False,
         "private_reason": row.private_reason if row else "",
         "chol_hamoed": row.chol_hamoed if row else False,
         "revision": row.revision if row else 0,
@@ -207,3 +284,30 @@ def date_edit(request):
                 )
                 return redirect(f"/staff/scheduling/?day={day.isoformat()}")
     return render(request, "core/scheduling_form.html", {"form": form, "heading": "Date settings"})
+
+
+@staff_permission("core.change_session")
+@require_http_methods(["POST"])
+def reopen_custom_session(request, pk):
+    owner(request)
+    from .session_blocks import reopen_custom
+
+    try:
+        if request.POST.get("confirm_reopen") != "on":
+            raise ValidationError(
+                "Confirm that affected sessions should reopen. Separate closures will remain."
+            )
+        reopen_custom(request.user, pk, int(request.POST.get("revision", "")))
+    except (ValueError, ValidationError) as exc:
+        messages.error(
+            request,
+            " ".join(exc.messages)
+            if isinstance(exc, ValidationError)
+            else "Reload the session before reopening its affected sessions.",
+        )
+    else:
+        messages.success(
+            request,
+            "This custom session is closed. Its blocks were removed; independent closures remain.",
+        )
+    return redirect("session_edit", pk=pk)

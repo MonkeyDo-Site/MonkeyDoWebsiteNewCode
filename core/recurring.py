@@ -5,7 +5,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from .availability import NEW_YORK
-from .calendar import date_closed, lock_calendar, overlapping_sessions, weekly_default_blocked
+from .calendar import (
+    date_closed,
+    lock_calendar,
+    overlapping_sessions,
+    reservation_blocked,
+    weekly_default_blocked,
+)
 from .models import AuditEvent, Booking, Session, SiteSettings, WeeklySlot
 from .permissions import require_actor
 from .scheduling import SESSION_FIELDS, check_day, values
@@ -189,6 +195,14 @@ def generate_sessions(*, actor, slot_ids, from_day, through_day, update_existing
             else:
                 data = {key: getattr(existing, key) for key in SESSION_FIELDS}
                 data["closed"] = True
+            if existing and reservation_blocked(existing):
+                report(
+                    slot,
+                    day,
+                    "Blocked by a custom session or booking closure. Review that block before applying the default.",
+                    existing,
+                )
+                continue
             if data["starts_at"] <= now:
                 report(slot, day, "The proposed session start time has already passed.", existing)
                 continue

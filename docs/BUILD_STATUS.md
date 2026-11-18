@@ -1,5 +1,26 @@
 # Staging build status
 
+## Current review checkpoint — third owner-feedback batch
+
+The owner reported PR #26 successfully deployed on the shared staging URL. That
+is the hosted baseline currently being tested. The third batch is implemented
+locally on `feat/owner-feedback-batch-three` and awaits owner screenshot review;
+it is not deployed. See [third-batch record](OWNER_EDITS_BATCH_3.md) and
+[desktop/phone gallery](design-review/owner-edits-batch-3/README.md).
+
+Local verification: 397 PostgreSQL tests passed, including a concurrent booking
+versus custom-session race, preserved closures/history, optional date searches,
+public email/name recovery and read-only pretax estimates. The local PostgreSQL
+server is 16.2; GitHub CI uses PostgreSQL 17. Browser gallery: 58 JPGs at 1440px
+and 390px with fictional data, no document overflow or JavaScript errors. Final
+CI and owner acceptance are separate evidence. New migration 0026 is reviewed as
+code only and has not run on hosted staging. Original images and earlier
+snapshots remain unchanged. No payment, waiver, active membership or outbound
+booking-email integration is enabled by this batch.
+
+The earlier checkpoint entries below are historical; their undeployed/no-public-
+booking statements describe those increments, not today's shared staging site.
+
 Historical foundation checkpoint (see latest increment below): Django/PostgreSQL foundation, customer management, owner/staff security, saved pricing, staff test reservations and owner calendar/weekly schedule controls and membership draft calendars. This is a local development checkpoint, not a deployed or complete staging application.
 
 | Area | Implemented in this increment | Remaining |

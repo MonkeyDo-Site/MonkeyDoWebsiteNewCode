@@ -214,3 +214,16 @@ Run the detailed scenarios in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING
 - MOTZEI-01: weekly checkbox/list and dated scheduling use Motzei Shabbos; numeric date inputs retain their actual dates. Verify late UTC timestamps use the correct New York weekday without shifting the saved appointment.
 - MOTZEI-02: owner-created public one-time and generated weekly sessions appear and accept pending-test bookings under the usual horizon, closure, mode/cutoff and capacity rules. Backend-only sessions stay hidden and public start is refused. Staff still cannot configure sessions.
 - MOTZEI-03: customer calendar/details/receipt and staff booking table/detail/edit/cancellation/customer records use the same wording. Other weekday names and ISO/numeric values are unchanged. No automatic evening start or new default schedule is added. The owner waived screenshots for this change.
+
+
+## Third owner-feedback batch — local implementation, owner image review pending
+
+- B3-SEARCH: Brawn/Braun Customer and bnot/bnos miriam match in staff lists, Today/Bookings and both pickers; exact results first, possible matches marked, unrelated public profiles never listed. Test partial public surname and exact current email + surname recovery, failed matches, stale profile and unchanged saved phone.
+- B3-FILTER: default year, both dates empty, each single bound, Enter, automatic date/session filtering and refreshed choices, Clear dates versus Clear all, fixed Today and preserved nondate filters/pagination.
+- B3-DATE: mark a date backend-only, generate another session on it, verify public hide/direct-start refusal and authorized staff booking; removing the override preserves individual private visibility and closures.
+- B3-CUSTOM: preview and confirm 10–2 overlapping standard slots; linked active booking conflicts cause no partial write. Repeat with a concurrent booking, stale preview, duplicate start, custom/program conflict, preserved standard IDs/times and explicit reopening that retains manual/date closures.
+- B3-CLOSE: owner booking closure saves atomically; staff forged/direct closure fails; invalid booking leaves no block. Ordinary cancellation keeps blocks; explicit owner reopening removes only the relevant source. Test moved bookings and other bookings in a custom session.
+- B3-COVERAGE: generate through a later date, change timing and apply to an earlier date; verify separate contiguous-current and furthest-existing dates, actual timing ranges, gaps, preserved bookings/manual overrides and custom blocks.
+- B3-SCHOOL: owner creates/edits School, staff can select an existing School for booking, type filter combines with search, public default remains Family; unsupported future membership filters absent.
+- B3-PUBLIC: Canadian/+1 error wording, go back retains chosen session, ready notice creates no early customer, live pretax estimate changes counts/play/socks/method without writes and final Payment Details retains tax; sidebar has no booking buttons; completion text rose/aligned.
+- B3-DESIGN: homepage compact 2×2 on wide desktop, responsive stacking, all images loaded, original assets retained, aligned play buttons, keyboard/focus, 390px/320px no document overflow. Review desktop/phone JPG gallery before PR/deployment; hosted interactive acceptance follows the later deployment.

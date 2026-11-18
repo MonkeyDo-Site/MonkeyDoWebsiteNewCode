@@ -73,3 +73,10 @@ Align the progress-bar completion message vertically with the step labels, using
 ## Motzei Shabbos public booking
 
 Owner-designated public sessions on Motzei Shabbos now use the normal availability and pending-test booking path; private sessions remain hidden and blocked from public start. The public calendar, Details, Payment Details and saved-test receipt render the business weekday wording through the app-wide date filter. Actual dates/times remain unchanged. No default weekly session, evening threshold, automatic visibility, payment or waiver functionality is added.
+
+
+## Approved third owner-feedback batch
+
+The approved third batch adds exact-current-email plus tolerant surname recovery when no phone matches or phone-selected surname matching fails. Reveal the family only after matching both values, then confirm; retain the saved phone and never identify customers from historical-only email. New-customer continuation has the approved go back link. Success! Your details are ready precedes final atomic creation. Session Details has a read-only pretax live estimate and compact shared play information; final Payment Details retains full tax. No card, waiver, benefit or email delivery is enabled by these screens.
+
+Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).

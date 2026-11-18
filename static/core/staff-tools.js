@@ -84,7 +84,12 @@ for (const details of document.querySelectorAll('.session-filter')) {
     panel.addEventListener('toggle', event => { if (event.newState === 'closed') details.open = false; });
     const close = () => { details.open = false; };
     window.addEventListener('resize', position);
-    details.closest('.staff-table-scroll')?.addEventListener('scroll', close);
+    details.closest('.staff-table-scroll')?.addEventListener('scroll', () => {
+      const anchor = summary.getBoundingClientRect();
+      const region = details.closest('.staff-table-scroll').getBoundingClientRect();
+      if (anchor.right < region.left || anchor.left > region.right) close();
+      else position();
+    });
   }
 }
 for (const form of document.querySelectorAll('form[data-booking-estimate]')) {
@@ -135,4 +140,77 @@ for (const form of document.querySelectorAll('form[data-booking-estimate]')) {
     form.querySelector('[name=estimate_token]').value = lastEstimate.token;
     dialog.close(); saving = true; form.requestSubmit();
   });
+}
+
+/* Third-batch date/navigation enhancements; server-side save actions stay explicit. */
+const filterForm = document.querySelector('#booking-filter-form');
+if (filterForm) {
+  for (const name of ['start', 'end']) {
+    const input = document.querySelector('#id_' + name);
+    input?.addEventListener('change', () => { if (input.validity.valid) filterForm.requestSubmit(); });
+  }
+  for (const details of document.querySelectorAll('.session-filter')) {
+    let changed = false;
+    details.addEventListener('change', () => { changed = true; });
+    // Popover content is moved to the top layer, but remains a DOM descendant.
+    details.addEventListener('toggle', () => {
+      if (!details.open && changed) { changed = false; filterForm.requestSubmit(); }
+    });
+    document.addEventListener('click', event => {
+      if (details.open && !details.contains(event.target)) details.open = false;
+    });
+  }
+}
+for (const form of document.querySelectorAll('[data-auto-date]')) {
+  form.querySelector('[data-date-fallback]').hidden = true;
+  form.querySelector('input[type=date]').addEventListener('change', event => {
+    if (event.target.value && event.target.validity.valid) form.requestSubmit();
+  });
+}
+for (const date of document.querySelectorAll('[data-session-date]')) {
+  const form = date.closest('form');
+  const select = form.querySelector('[data-dated-sessions]');
+  form.querySelector('[data-session-fallback]').hidden = true;
+  let controller;
+  date.addEventListener('change', async () => {
+    if (controller) controller.abort();
+    select.replaceChildren(new Option('Loading sessions…', ''));
+    if (!date.value || !date.validity.valid) { select.replaceChildren(new Option('Choose a date first', '')); return; }
+    controller = new AbortController();
+    try {
+      const params = new URLSearchParams({day: date.value});
+      if (form.dataset.bookingId) params.set('booking', form.dataset.bookingId);
+      const response = await fetch('/staff/bookings/sessions/?' + params, {signal: controller.signal, headers: {Accept: 'application/json'}});
+      if (!response.ok) throw new Error('Sessions could not be loaded. Reload and try again.');
+      const data = await response.json();
+      select.replaceChildren(new Option(data.sessions.length ? 'Choose a session' : 'No available sessions for this date', ''));
+      for (const session of data.sessions) select.add(new Option(session.label, session.id));
+      select.dispatchEvent(new Event('change', {bubbles: true}));
+    } catch (error) {
+      if (error.name !== 'AbortError') select.replaceChildren(new Option(error.message, ''));
+    }
+  });
+}
+for (const form of document.querySelectorAll('[data-public-estimate]')) {
+  const content = form.querySelector('[data-public-estimate-content]');
+  const status = form.querySelector('[data-public-estimate-status]');
+  let timer, controller;
+  const refresh = async () => {
+    if (controller) controller.abort();
+    controller = new AbortController();
+    status.textContent = 'Updating estimate…';
+    try {
+      const response = await fetch(form.dataset.publicEstimate, {method: 'POST', body: new FormData(form), signal: controller.signal, headers: {Accept: 'application/json'}});
+      if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('Reload the page to update the estimate.');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Check your group details.');
+      content.innerHTML = data.html;
+      status.textContent = 'Estimate only. Not saved yet.';
+    } catch (error) {
+      if (error.name !== 'AbortError') { content.replaceChildren(); status.textContent = error.message; }
+    }
+  };
+  const queue = () => { clearTimeout(timer); timer = setTimeout(refresh, 180); };
+  form.addEventListener('input', queue); form.addEventListener('change', queue);
+  refresh();
 }

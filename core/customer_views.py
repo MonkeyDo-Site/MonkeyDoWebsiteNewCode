@@ -23,6 +23,9 @@ def form_error(form, exc):
 def customer_list(request):
     query = request.GET.get("q", "").strip()[:120]
     customers = Customer.objects.order_by("last_name", "pk")
+    customer_type = request.GET.get("type", "")
+    if customer_type in dict(Customer._meta.get_field("customer_type").choices):
+        customers = customers.filter(customer_type=customer_type)
     can_comments = request.user.has_perm("core.view_customercomment")
     digits = phone_search_digits(query)
     exact, possible = name_candidates(query) if query else ([], [])
@@ -75,7 +78,17 @@ def customer_list(request):
                 if customer.comments.filter(comment_filter).exists():
                     matched.append("Comment")
         customer.search_matches = ", ".join(matched)
-    return render(request, "core/customers.html", {"customers": page, "query": query})
+    return render(
+        request,
+        "core/customers.html",
+        {
+            "customers": page,
+            "query": query,
+            "customer_type": customer_type,
+            "type_choices": Customer._meta.get_field("customer_type").choices,
+            "filter_query": request.GET.urlencode(),
+        },
+    )
 
 
 @staff_permission("core.view_customer")

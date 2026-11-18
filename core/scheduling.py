@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -12,6 +14,7 @@ SESSION_FIELDS = (
     "ends_at",
     "public",
     "closed",
+    "custom_blocking",
     "private_label",
     "play_mode",
     "child_capacity",
@@ -44,7 +47,16 @@ def values(record, fields):
 
 
 @transaction.atomic
-def save_session(*, actor, data, pk=None, revision=None, preserve_management=False):
+def save_session(
+    *,
+    actor,
+    data,
+    pk=None,
+    revision=None,
+    preserve_management=False,
+    reopen_affected_sessions=False,
+    expected_conflicts=None,
+):
     require_actor(actor, "core.change_session", owner=True)
     lock_calendar(exclusive=True)
     current = Session.objects.select_for_update().get(pk=pk) if pk else None
@@ -55,7 +67,7 @@ def save_session(*, actor, data, pk=None, revision=None, preserve_management=Fal
     before = values(current, SESSION_FIELDS) if current else None
     row = current or Session()
     for name in SESSION_FIELDS:
-        setattr(row, name, data[name])
+        setattr(row, name, data.get(name, getattr(row, name)))
     row.full_clean()
     if timezone.is_naive(row.starts_at) or timezone.is_naive(row.ends_at):
         raise ValidationError("Use timezone-aware New York session times.")
@@ -77,8 +89,42 @@ def save_session(*, actor, data, pk=None, revision=None, preserve_management=Fal
         raise ValidationError("Enable a supervised limit or choose accompanied only.")
     if not row.private_label.strip():
         raise ValidationError("An internal session label is required.")
-    if overlapping_sessions(row.starts_at, row.ends_at, exclude_pk=pk).exists():
-        raise ValidationError("This time overlaps another session. Edit that session instead.")
+    from .session_blocks import SessionConflict, active_bookings, sync_custom_blocks
+
+    conflicts = list(overlapping_sessions(row.starts_at, row.ends_at, exclude_pk=pk))
+    if current and current.custom_blocking != row.custom_blocking:
+        raise ValidationError(
+            "Keep this session's original custom/standard type. Create a separate session instead."
+        )
+    if row.custom_blocking:
+        if expected_conflicts is not None and sorted(
+            (s.pk, s.revision) for s in conflicts
+        ) != sorted(tuple(s) for s in expected_conflicts):
+            raise ValidationError(
+                "The affected sessions changed. Review the custom-session preview again."
+            )
+        blocked_bookings = active_bookings(conflicts)
+        if blocked_bookings.exists():
+            raise SessionConflict(blocked_bookings)
+        if any(s.custom_blocking or s.kind != Session.Kind.ORDINARY for s in conflicts):
+            raise SessionConflict(
+                message="This custom time overlaps another custom or program session. Review that session first."
+            )
+    else:
+        # Existing blocked sessions remain editable without allowing new overlaps.
+        permitted = (
+            set(
+                current.reservation_blocks.filter(
+                    active=True, source_session__isnull=False
+                ).values_list("source_session_id", flat=True)
+            )
+            if current
+            and row.starts_at == datetime.fromisoformat(before["starts_at"])
+            and row.ends_at == datetime.fromisoformat(before["ends_at"])
+            else set()
+        )
+        if any(s.pk not in permitted for s in conflicts):
+            raise ValidationError("This time overlaps another session. Edit that session instead.")
     if current:
         after = values(row, SESSION_FIELDS)
         # Earlier seed rows used both/zero to mean accompanied-only. Making
@@ -108,6 +154,8 @@ def save_session(*, actor, data, pk=None, revision=None, preserve_management=Fal
     if not preserve_management:
         row.recurring_managed = False
     row.save()
+    if row.custom_blocking:
+        sync_custom_blocks(actor, row, conflicts, reopen_removed=reopen_affected_sessions)
     AuditEvent.objects.create(
         actor=actor,
         action="schedule.session_updated" if current else "schedule.session_created",
@@ -124,19 +172,20 @@ def save_session(*, actor, data, pk=None, revision=None, preserve_management=Fal
 
 
 @transaction.atomic
-def save_date(*, actor, day, closed, private_reason, chol_hamoed, revision):
+def save_date(*, actor, day, closed, private_reason, chol_hamoed, revision, backend_only=False):
     require_actor(actor, "core.change_calendardate", owner=True)
     check_day(day)
     lock_calendar(exclusive=True)
     row = CalendarDate.objects.select_for_update().filter(day=day).first()
     if (row.revision if row else 0) != revision:
         raise ValidationError("Date changed while you were editing. Reload and review it.")
-    fields = ("day", "closed", "private_reason", "chol_hamoed")
+    fields = ("day", "closed", "backend_only", "private_reason", "chol_hamoed")
     before = values(row, fields) if row else None
     if closed and not private_reason.strip():
         raise ValidationError("Enter a private closure reason.")
     row = row or CalendarDate(day=day, revision=0)
     row.closed, row.private_reason, row.chol_hamoed = closed, private_reason, chol_hamoed
+    row.backend_only = backend_only
     row.revision += 1
     row.full_clean()
     row.save()

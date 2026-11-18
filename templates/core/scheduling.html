@@ -1,9 +1,9 @@
 {% extends 'core/staff_base.html' %}{% load scheduling_labels %}
 {% block staff_content %}
 <h1>Individual Date</h1><p class="caption">New York local time. Closures block new reservations and retain existing bookings.</p>
-<form method="get" class="schedule-toolbar"><label for="schedule-day">Date</label><input id="schedule-day" type="date" name="day" value="{{ day|date:'Y-m-d' }}"><button class="button small">View date</button><a class="button small secondary" href="{% url 'date_edit' %}?day={{ day|date:'Y-m-d' }}">Edit date settings</a><a class="button small secondary" href="{% url 'session_create' %}?day={{ day|date:'Y-m-d' }}">Add one-time session</a></form>
+<form method="get" class="schedule-toolbar" data-auto-date><label for="schedule-day">Date</label><input id="schedule-day" type="date" name="day" value="{{ day|date:'Y-m-d' }}"><button class="button small" data-date-fallback>View date</button><a class="button small secondary" href="{% url 'date_edit' %}?day={{ day|date:'Y-m-d' }}">Edit date settings</a><a class="button small secondary" href="{% url 'session_create' %}?day={{ day|date:'Y-m-d' }}">Add one-time session</a></form>
 <h2>{{ day|date:'l, F j, Y' }}</h2>
-{% if date_rule.closed %}<p class="notice">Date closed. Private reason: {{ date_rule.private_reason }}</p>{% endif %}
+{% if date_rule.backend_only %}<p class="notice">Backend only: all sessions on this date are hidden from the public.</p>{% endif %}{% if date_rule.closed %}<p class="notice">Date closed. Private reason: {{ date_rule.private_reason }}</p>{% endif %}
 {% if date_rule.chol_hamoed %}<p>Chol Hamoed marked for this date. Membership pricing integration remains pending.</p>{% endif %}
 <div class="staff-table-scroll" role="region" aria-label="Daily sessions" tabindex="0">
 <table class="staff-table schedule-table">

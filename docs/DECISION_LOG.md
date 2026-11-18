@@ -412,3 +412,26 @@ Owner requested that the civil weekday previously labelled Saturday appear as Mo
 ## 2026-11-15 — Authorize PR and single-command deployment preparation
 
 Owner requested a PR containing all reviewed work since the last deployment, followed by deployment using one command. This supersedes the earlier image-review-only boundary. Add an explicit Functional-only deployment option restricted to checksum-pinned migrations 0023–0025, preflight/duplicate-email checks, a private local staging checkpoint, separate migration identity, runtime grants and service recovery. The default deployment guard still rejects migrations. No payments, new paid services, public production launch or automatic database restoration is authorized. The owner’s existing SSH access is required for actual Droplet execution; local tests do not establish hosted success. See OWNER_FEEDBACK_BATCH_TWO_RELEASE.md.
+
+## Future deployment download preference — owner confirmed
+
+Keep fully automatic one-command deployment, using `curl.exe` for future release downloads. The owner prefers this to both the slower Windows PowerShell 5.1 downloader and returning to a separate manual browser download. Retain commit pinning, HTTPS verification, checked download exit status and archive checksum checks. This is a recorded future preference, not a change to the PR 26 command currently in progress.
+
+Observed follow-up: the owner's Windows curl failed with `CRYPT_E_NO_REVOCATION_CHECK`; the checked command stopped before deployment. The immediate download fallback is the existing working PowerShell downloader with its progress display disabled for that process. Preserve certificate validation and the single-command workflow; do not assume curl works on this machine without addressing that observed limitation.
+
+The owner then clarified that the urgent goal is a faster handoff using a browser-downloaded ZIP followed by PowerShell unpack/deployment. Provide that option directly rather than another automatic PowerShell download. Preserve the exact merged release and reviewed schema/deployment checks, and handle browser duplicate-name suffixes when selecting the completed ZIP.
+
+
+## 2026-11-17 — Third batch approved; images before PR/deployment
+
+The owner approved the complete third-batch scope and clarification answers,
+selected compact 2×2 homepage areas rather than four across, and authorized
+implementation. Clear dates must fit existing controls; Clear all restores the
+default year. Custom conflicts identify linked blocking bookings; reopening is
+explicit and preserves separate closures. Phone/name or current-email/name must
+match before revealing family identity; no automatic phone rewrite. Use the
+truthful Your details are ready message, retain final atomic creation, and omit
+tax only from the live estimate while preserving final tax-inclusive details.
+Generate desktop/phone screenshots in GitHub for owner review, then corrections,
+PR and one-command deployment preparation. This does not authorize deploying
+before image review or implementing the separate next-phase proposal.

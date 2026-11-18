@@ -25,3 +25,10 @@ PostgreSQL transaction advisory locks coordinate calendar changes with both rese
 Automatic affected-booking notifications, final program scheduling, membership benefit integration and public checkout remain unfinished. This checkpoint changes no DigitalOcean resources and does not deploy, send mail, charge payments or access Banquest/R2/Resend.
 
 Weekly template generation and booking-horizon controls are documented in [RECURRING_SCHEDULE_DEVELOPMENT.md](RECURRING_SCHEDULE_DEVELOPMENT.md).
+
+
+## Approved third owner-feedback batch
+
+Date-level Backend only overrides public visibility without closing staff booking and applies to later generated sessions. Custom one-time intervals preview affected standard slots, refuse and link active booking conflicts, retain original session identity/history, and create reversible reservation blocks. Ordinary overlap rules remain. Reopening is explicit and preserves independent closures; it closes the retired custom interval. Date selection navigates automatically without saving settings. Checked Closed for reservation means closed.
+
+Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).

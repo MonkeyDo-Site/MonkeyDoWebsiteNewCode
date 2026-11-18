@@ -6,10 +6,11 @@ from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.utils import timezone
 
-from .calendar import date_closed, lock_calendar, weekly_default_blocked
+from .calendar import date_closed, lock_calendar, reservation_blocked, weekly_default_blocked
 from .models import AuditEvent, Booking, BookingQuote, PricingPolicy, Session
 from .permissions import require_actor
 from .pricing import booking_quote, validate_attendees
+from .session_blocks import close_for_booking, reopen_for_booking
 
 
 def snapshot(booking):
@@ -48,6 +49,7 @@ def assert_capacity(
     if (
         session.closed
         or date_closed(session)
+        or reservation_blocked(session, ignore_booking_id=booking_id)
         or weekly_default_blocked(session)
         or session.kind != Session.Kind.ORDINARY
     ):
@@ -113,8 +115,11 @@ def create_test_booking(
     creation_key,
     override_capacity=False,
     referral_source="",
+    close_session=False,
 ):
-    lock_calendar()
+    lock_calendar(exclusive=close_session)
+    if close_session:
+        require_actor(actor, "core.change_session", owner=True)
     require_actor(actor, "core.add_booking")
     require_actor(actor, "core.view_customer")
     require_actor(actor, "core.view_booking")
@@ -136,6 +141,7 @@ def create_test_booking(
     if existing:
         same = (
             existing.creation_actor_id == actor.pk
+            and close_session == existing.session_blocks.exists()
             and existing.customer_id == customer.pk
             and existing.session_id == session_id
             and existing.referral_source == referral_source
@@ -194,6 +200,8 @@ def create_test_booking(
             "capacity_override": override_capacity,
         },
     )
+    if close_session:
+        close_for_booking(actor, booking)
     return booking
 
 
@@ -213,8 +221,12 @@ def edit_test_booking(
     supervised=None,
     payment_reviewed=None,
     referral_source=None,
+    close_session=False,
+    reopen_affected_sessions=False,
 ):
-    lock_calendar()
+    lock_calendar(exclusive=close_session or reopen_affected_sessions)
+    if close_session or reopen_affected_sessions:
+        require_actor(actor, "core.change_session", owner=True)
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
@@ -252,6 +264,7 @@ def edit_test_booking(
         babies,
         socks,
     )
+    old_session = booking.session
     booking.session = session
     booking.supervised = supervised
     booking.expected_method = expected_method
@@ -278,12 +291,31 @@ def edit_test_booking(
             "capacity_override": override_capacity,
         },
     )
+    if reopen_affected_sessions:
+        if old_session.pk == session.pk:
+            raise ValidationError(
+                "Choose a different session before reopening the original session’s blocks."
+            )
+        reopen_for_booking(actor, booking, old_session)
+    if close_session:
+        close_for_booking(actor, booking)
     return booking
 
 
 @transaction.atomic
-def move_test_booking(*, actor, booking_id, version, session_id, override_capacity=False):
-    lock_calendar()
+def move_test_booking(
+    *,
+    actor,
+    booking_id,
+    version,
+    session_id,
+    override_capacity=False,
+    close_session=False,
+    reopen_affected_sessions=False,
+):
+    lock_calendar(exclusive=close_session or reopen_affected_sessions)
+    if close_session or reopen_affected_sessions:
+        require_actor(actor, "core.change_session", owner=True)
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
@@ -308,6 +340,7 @@ def move_test_booking(*, actor, booking_id, version, session_id, override_capaci
         actor=actor,
     )
     before = snapshot(booking)
+    old_session = booking.session
     booking.session = target
     booking.edit_version += 1
     booking.save()
@@ -322,12 +355,22 @@ def move_test_booking(*, actor, booking_id, version, session_id, override_capaci
             "capacity_override": override_capacity,
         },
     )
+    if reopen_affected_sessions:
+        if old_session.pk == target.pk:
+            raise ValidationError(
+                "Choose a different session before reopening the original session’s blocks."
+            )
+        reopen_for_booking(actor, booking, old_session)
+    if close_session:
+        close_for_booking(actor, booking)
     return booking
 
 
 @transaction.atomic
-def release_test_booking(*, actor, booking_id, version):
-    lock_calendar()
+def release_test_booking(*, actor, booking_id, version, reopen_affected_sessions=False):
+    lock_calendar(exclusive=reopen_affected_sessions)
+    if reopen_affected_sessions:
+        require_actor(actor, "core.change_session", owner=True)
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
@@ -344,4 +387,6 @@ def release_test_booking(*, actor, booking_id, version):
         record_id=str(booking.reference),
         changes={"before": before, "after": snapshot(booking), "fee_processed": False},
     )
+    if reopen_affected_sessions:
+        reopen_for_booking(actor, booking, booking.session)
     return booking

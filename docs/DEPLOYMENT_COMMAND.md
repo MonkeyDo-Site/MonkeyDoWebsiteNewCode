@@ -1,5 +1,18 @@
 # One-command private-preview updates and rollback
 
+## Owner preference for future downloads
+
+**Current default:** browser-download the pinned ZIP, then run one PowerShell
+block to unpack/install/deploy. The notes below retain how this preference was
+reached; the final browser-download clarification supersedes the earlier curl
+proposal.
+
+Keep the single-command Windows PowerShell workflow, using **`curl.exe`** to download the pinned release ZIP. The owner selected this for future updates after experiencing the slower Windows PowerShell 5.1 `Invoke-WebRequest` download. Use the explicit executable name to avoid PowerShell's `curl` alias. Preserve HTTPS certificate validation, the exact release commit, download failure handling and existing archive checksum/deployment checks. This records the next handoff's preference; the deployment command already issued for PR 26 remains unchanged.
+
+On the owner's current Windows machine, `curl.exe` subsequently failed with Schannel `CRYPT_E_NO_REVOCATION_CHECK` before downloading/deploying. Use the already-working `Invoke-WebRequest -UseBasicParsing` with process-scoped `$ProgressPreference = 'SilentlyContinue'` as the immediate fallback. Do not disable certificate verification or revocation checks to force curl through. Future handoffs should account for this machine-specific result while keeping the one-command workflow.
+
+Latest clarification for this urgent release: the owner wants the browser ZIP download option offered directly, followed by one PowerShell block that only unpacks, installs the reviewed helper and deploys. Do not replace that request with another PowerShell download. Account for a completed browser ZIP being saved with a duplicate-name suffix because a partial download of the same commit may already exist.
+
 The helper defaults to the existing **design-only** service at staging.monkeydoplay.com / 107.170.1.143. After the one-time cutover, `-Target Functional` selects the functional service at the same staging.monkeydoplay.com URL. Design and Functional are internal deployment modes, not two public sites. Neither target deploys production or enables payments. Preparing/installing this helper does not update the website; a separate explicit deployment command selects an approved release.
 
 ## What an update does
