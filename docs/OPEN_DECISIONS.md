@@ -7,7 +7,6 @@ Consolidated November 5, 2026. Owner authorized documentation reconciliation and
 | Item | Known direction | Remaining action |
 |---|---|---|
 | Production sales tax | Product categories and fee formula settled; staging6.6% | Owner supplies production rate/UEZ outcome before live billing. Do not use staging rate as production default. |
-| Tax on retained original processing fee after admission-to-membership conversion | Reverse replaced admission/base tax; original fee nonrefundable | Owner/accountant to say whether tax on retained fee stays/reverses. Example .03 tax on retained .45 fee. Do not silently settle. |
 | Exact hosting/staging/monitoring cost | DO~2vCPU4GB NY, start with staging only; later assess shared production resources | The owner reports an existing smaller Droplet and preauthorizes a necessary resize/higher fee when needed. Verify its size/price and coordinate downtime. Additional paid services still need cost review and approval. |
 
 ## 2. Technical design and provider verification (developer work)
@@ -54,6 +53,18 @@ benefit prices wait for the membership stage. Use new integrated-flow test
 reservations, retaining all older records with a planned staff-facing Old test
 booking badge/filter. Preserve/inherit the approved UX and shared functionality
 using [SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md). These choices
-need not be asked again. The production rate and retained-fee-tax accounting
-inputs above remain separate; neither blocks recording this plan. Next-phase
+need not be asked again. The production tax-rate input remains separate and does not block recording
+this plan. The retained-fee-tax question was subsequently answered below. Next-phase
 application work has not started.
+
+
+## Accountant clarification received — November 19, 2026
+
+The owner supplied the accountant's response on tax on a retained processing fee:
+if the admission payment is applied toward membership, refund/reverse that tax;
+if not applied, do not reverse it. The original processing fee remains
+nonrefundable. For the supplied $16.47 transaction, applying it to the nontaxable
+membership reverses $0.99 admission tax and $0.03 fee tax, retains $0.45, and
+makes $16.02 available toward the membership. This resolves the former open
+conversion-tax question; it does not resolve the production tax rate or change
+the existing credit/refund permissions. See [PAYMENTS.md](PAYMENTS.md).

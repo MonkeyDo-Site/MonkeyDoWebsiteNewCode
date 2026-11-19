@@ -429,3 +429,18 @@ page to phone entry while retaining the selected session and clearing old proofs
 Apply this to both new customers and identified profiles adding missing email;
 staff retain their separate shorter errors. This batch has owner-authorized
 post-deployment review, without preparing review screenshots.
+
+
+## Accountant clarification — tax on a retained processing fee
+
+Owner-supplied guidance, November 19, 2026: when an already-paid admission is
+applied toward a nontaxable membership, reverse its admission tax and the tax
+attributable to its retained original processing fee. The fee itself remains
+nonrefundable. If the payment is not applied toward membership, that fee tax is
+not reversed under this rule. Preserve historical rates, rounded amounts and
+separate reversal entries. In the supplied $16.47 example, retain $0.45 and make
+$16.02 available toward membership, including reversal of $0.99 admission tax and
+$0.03 fee tax. Existing credit/refund rules apply; do not both credit and refund
+the same funds. See [payment accounting](PAYMENTS.md) and
+[membership conversion](MEMBERSHIPS.md). This resolves the former accounting
+question without activating payment or conversion functionality.

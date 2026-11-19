@@ -252,10 +252,14 @@ go-ahead; technical provider/backup investigation belongs to that authorized sta
 
 - Production sales-tax/UEZ rate: still needed before live billing. Continue the
   approved 6.6% staging rate for sandbox work; never silently promote it.
-- On an already-paid admission converted to membership, must the tax on the
-  retained original processing fee stay or be reversed? Example: retain the
-  original $0.45 fee; the unresolved amount is its $0.03 tax. Obtain the
-  owner/accountant decision before implementing/accepting that conversion case.
+- Retained-fee tax is now resolved by the accountant answer supplied November 19,
+  2026: reverse that tax when the admission payment is applied to the nontaxable
+  membership; otherwise retain it. The original processing fee is nonrefundable.
+  The supplied $16.47 transaction leaves $16.02 applicable to membership after
+  retaining $0.45 and reversing $0.99 admission tax plus $0.03 fee tax. Preserve
+  separate audit/reversal entries and existing credit/refund rules. See
+  [payment requirements](PAYMENTS.md). This is a membership-stage acceptance
+  criterion, not a remaining question or an implemented payment feature.
 
 Banquest sandbox processor/3DS behavior, durable token and deletion semantics,
 idempotency/reconciliation, proportional cent allocation and the protected

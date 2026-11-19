@@ -143,7 +143,27 @@ Summary50subtotal+.75fee+2.01tax=**52.76**. This is not a customer handing over 
 
 Already-paid cash conversions at6.6%:1child+1adult15+.99tax=15.99paid ->17.99Subscription, reverse replaced admission/tax,2.00additional before any new card fee.2children+2adults ordinary35+2.31=37.31paid ->35.98Subscription,1.33customer credit. For original card payment keep original fee nonrefundable; new card charge has its own fee, not waived.
 
-**Still open:** tax on retained original processing fee after conversion. Example15admission+.45fee+.99admission tax+.03fee tax=16.47. Admission and .99 reverse; .45 fee remains. Whether .03 remains/reverses awaits owner/accountant. Do not silently decide or call it resolved.
+**Accountant clarification supplied by the owner, November 19, 2026:**
+
+> If it’s applied towards membership, it should be refunded.
+> If it’s not applied, then it should not be reversed.
+
+For the admission-payment-to-nontaxable-membership conversion described by the
+owner, reverse the tax on the retained original processing fee when that payment
+is applied toward membership. If it is not applied toward membership, that tax
+is not reversed under this rule. The processing fee itself remains nonrefundable.
+
+In the supplied example, $15 admission + $0.45 fee + $0.99 admission tax + $0.03
+fee tax = $16.47 already paid. When converted/applied toward membership, reverse
+the admission, its $0.99 tax and the $0.03 fee tax; retain the $0.45 original fee.
+The amount available toward the replacement membership is therefore **$16.02**.
+This is an allocation of existing paid funds, not a new payment or an automatic
+cash/card refund in addition to that allocation. Preserve separate original and
+reversal entries and the original rate/rounded amounts. Existing excess-credit
+and separately authorized refund rules still govern any remaining balance; a
+new card charge has its own applicable processing fee. The production tax rate
+is still a separate open input. This documents future behavior, not an implemented
+conversion/payment integration.
 
 ## 5. Banquest documented capabilities and limits
 

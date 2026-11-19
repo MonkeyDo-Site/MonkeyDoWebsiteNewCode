@@ -330,3 +330,19 @@ Owner waived screenshots; run browser checks without producing a new gallery.
   Inputs remain escaped; staff retain shorter permitted-profile error links.
 - B5-RELEASE: no migration; reviewed ZIP and matching helper, routine Functional
   deployment, no reviewed-schema option. Verify final HTTPS/private gate on host.
+
+
+## Future membership-conversion accounting acceptance
+
+Accountant clarification supplied November 19, 2026; implement/test in the payment
+and active-membership stages, not as a claim of current functionality.
+- Paid admission applied to nontaxable membership: $15 + $0.45 fee + $0.99 tax +
+  $0.03 fee tax = $16.47. Retain the $0.45 fee, reverse both tax components and
+  replace admission, with $16.02 available toward membership. No duplicate cash
+  refund in addition to that allocation; existing excess-credit policy applies.
+- Payment not applied to membership: retain the original fee's tax under this
+  rule. Do not reverse it merely because another membership is purchased.
+- Preserve original transaction/rate/rounded tax and linked reversal history.
+  Charge any new card-funded balance with its own applicable fee; prevent
+  duplicate reversals or double application of paid funds. Production tax rate
+  is a separate input and must not default to the staging 6.6%.
