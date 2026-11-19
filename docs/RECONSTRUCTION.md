@@ -103,6 +103,13 @@ Late reconstruction clarification confirms80.98pretax is **five total children**
 
 ## 5. Phased future reconstruction/build
 
+Historical reconstruction order follows. Its current successor is
+[NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md), with
+[SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md): integrations and
+backups accompany ordinary/supervised booking, active memberships follow, then
+remaining operations. Preserve this original evidence rather than interpreting
+integrations as still deferred until all business workflows are built.
+
 Subsequent authorization: the owner has now approved staging development and Django/PostgreSQL. The sequence below is the original reconstruction roadmap; actual completion evidence is tracked in [BUILD_STATUS.md](BUILD_STATUS.md).
 
 1. Review this coordinated documentation PR, preserving existing source/code. No original-task history changes.

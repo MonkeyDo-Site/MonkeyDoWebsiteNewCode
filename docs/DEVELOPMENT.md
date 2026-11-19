@@ -1,10 +1,19 @@
 # Staging application development
 
+Current baseline: the owner reports PR #27 deployed on the existing shared staging
+site. Pending public/staff test reservations, customer/staff/owner controls,
+scheduling and editable membership drafts are available. Confirmed visits,
+card/payment/waiver integration and active memberships remain unfinished.
+See [remaining-stage plan](NEXT_PHASE_REVIEW.md) and the required
+[shared workflow standards](SHARED_WORKFLOW_STANDARDS.md). The next phase has not
+started; this update reconciles its plan only.
+
 ## Authorization and architecture
 
 The owner explicitly authorized staging website/database development, then explicitly approved Django after discussing alternatives and costs. Django and PostgreSQL are free software running on DigitalOcean, not additional hosting subscriptions. This supersedes the earlier documentation-only authorization boundary; original transcript evidence is unchanged.
 
-Start with staging on one DigitalOcean server, subject to review of the actual server price before purchase. A separate production server is not needed while only developing staging. Before launch, assess whether staging and production can safely share resources. If shared, retain separate application processes, databases, secrets, provider endpoints and R2 buckets. No provisioned DigitalOcean server is claimed by this increment.
+Start with staging on one DigitalOcean server, subject to review of the actual server price before purchase. A separate production server is not needed while only developing staging. Before launch, assess whether staging and production can safely share resources. If shared, retain separate application processes, databases, secrets, provider endpoints and R2 buckets. The existing Droplet/shared staging setup is owner-confirmed; production sharing
+and any new worker/backup resource requirements still need assessment.
 
 Selected foundation:
 
@@ -12,8 +21,11 @@ Selected foundation:
 - PostgreSQL 17, transactional reservations with session-row locks; SQLite allowed only as a local convenience, never as evidence of concurrency safety.
 - Server-rendered responsive HTML/CSS with original owner-supplied images. No external font/CDN dependency.
 - Custom owner/staff screens; Django admin is a temporary read-only inspector, not the final administrative portal.
-- WhiteNoise for public static assets and a WSGI entry point for later Gunicorn hosting. Reverse proxy/TLS setup remains to implement and review.
-- No payment SDK, external email delivery, signed-file storage or worker has been enabled. These will be integrated with Banquest sandbox, Resend, private R2 and durable jobs in subsequent increments.
+- WhiteNoise static assets, Gunicorn and nginx/TLS on the existing shared staging
+  deployment; no second public test site.
+- Account mail uses owner-configured/verified Resend. Banquest sandbox payments,
+  booking/member email delivery, private R2 signatures, offsite backups and durable
+  jobs remain to integrate with the next relevant workflow.
 
 ## Running locally
 
@@ -49,19 +61,34 @@ The PostgreSQL tests verify concurrent requests for the last child place, transa
 
 ## Current implementation boundary
 
-Available: five public page previews, shared navigation/test banner, original logo/facility photography, New York schedule preview, customer/session/booking/settings/audit tables, Django session authentication, read-only Today/inspector, internal capacity reservation primitive and automated tests.
+Available: the protected shared public website and customer pending-test booking,
+Today/Bookings tables and combined filters, unified booking edits with estimates,
+customer contact/search/history, owner MFA/staff permissions, pricing snapshots,
+weekly/date scheduling, custom interval blocks and generation coverage, and
+editable immutable membership-draft revisions. PR #27's homepage redesign was
+excluded; its deployed About/play design remains. The current public flow can
+write a pending test reservation; it is not confirmed checkout or payment.
 
-The internal reservation function is not a finished confirmed-booking workflow. It is not exposed publicly and cannot charge a card, save a waiver, send an email or calculate membership benefits. No public write endpoint exists. Checkout is visibly disabled. It must be integrated with immutable pricing revisions, payment/waiver state, benefit reservations and confirmation operations before customer booking is enabled.
+Not yet implemented: confirmed ordinary/supervised setup/arrival, secure card
+methods and payment/tender operations, persisted waiver evidence/coverage,
+booking/member communications and reconciliation, purchased memberships/benefits,
+program/party/gift-card-sale/socks-sale operations, encrypted offsite backups and
+durable workers/retention/monitoring. These remain planned requirements.
 
-Not yet implemented: external email delivery/security alerts and security retention jobs; capability expansion for the unfinished booking/payment/program/export/backup features; public returning-customer lookup and booking-linked confirmation resends; confirmed booking/arrival integration; payment/tender ledgers; membership cohorts; clubs/parties workflows; waivers/R2; email/Resend; durable jobs; backups/restores/monitoring. These remain approved requirements, not dropped scope.
-
-`APP_ENV=staging` requires PostgreSQL, explicit allowed hosts and a strong private Django secret, switches on secure cookies/HTTPS redirection and protects previews with the independent shared staging password. Staff pages require staff sign-in; owner actions also require owner MFA. These controls are locally tested; external owner email delivery is not yet connected. Complete and test the security/hosting controls before opening a hosted staging site for acceptance. `APP_ENV=production` deliberately fails startup; production activation is separate work and approval.
+`APP_ENV=staging` uses PostgreSQL, explicit hosts, private secrets, secure cookies
+and the independent shared password; staff sign-in/permissions and owner MFA are
+separate. Account-email inbox receipt was owner-confirmed during setup. This is
+not proof that booking emails or all provider/security scenarios are accepted.
+`APP_ENV=production` remains deliberately disabled pending its separate approval.
 
 Audit records are append-only through the application manager and a PostgreSQL update/delete trigger. A privileged database administrator can still alter schema or disable triggers; least-privilege deployment roles and operational controls remain necessary.
 
 ## Provider credentials: later setup, not needed now
 
-Before functional sandbox-payment testing, install sandbox keys in protected staging-server configuration (planned location `/etc/monkeydo/staging.env`, readable only by the deployment/application account). Exact installation commands and ownership will be provided with the server setup. No such file has been installed by this increment.
+Before functional sandbox-payment testing, install sandbox keys in protected staging-server configuration (existing functional configuration `/etc/monkeydo/functional.env`, root-owned and
+restricted to the applicable service group). Provide exact secure installation instructions at the authorized integration step.
+The functional environment already exists; no Banquest key is installed by this
+planning change. The older staging.env is the retained design-service config.
 
 Reserved configuration names: `BANQUEST_API_SOURCE_KEY`, `BANQUEST_API_PIN`, `BANQUEST_TOKENIZATION_PUBLIC_KEY`, `BANQUEST_WEBHOOK_KEY`. They are placeholders, not currently wired integration settings. Only the explicitly public tokenization key may reach Banquest's browser iframe setup. Private source/PIN/webhook keys stay server-side. No raw card/CVV fields may pass through Django.
 
@@ -69,14 +96,37 @@ Production credentials belong in a separately protected production environment o
 
 ## Next implementation sequence
 
-1. Finish staff identity/security/settings controls and audited customer records before hosted access.
-2. Implement versioned pricing/tax/policy snapshots, reservation lifecycle and ordinary booking/arrival workflows.
-3. Add membership cohorts, benefit/calendar rules, renewals/conversions and customer credit.
-4. Add supervised play, clubs/attendance, parties, physical gift-card tender and socks workflows.
-5. Integrate Banquest sandbox, private R2 signatures, Resend and durable operations; verify outcome-unknown and duplicate handling.
-6. Implement and demonstrate backups/restoration, acceptance testing, owner training and infrastructure handoff.
+1. Retain the deployed foundation and review new owner findings against shared
+   requirements; do not rebuild its customer, filter, layout or scheduling rules.
+2. Complete ordinary **and supervised** booking: both card-payment setup and
+   alternate-tender backup-card setup, saved waivers, confirmation/delivery,
+   staff arrival review/collection, cancellations and no-shows. Build Banquest
+   sandbox, private R2, communications, jobs and recoverable offsite backup work
+   alongside these dependencies. Ordinary admission is still collected only
+   after staff arrival review. Use new reservations; label older test workflow
+   records without changing their history or generating external operations.
+3. Active memberships: purchases/installments, benefits and member-information
+   popup/pricing in booking, renewal/addition, conversions and customer credit.
+   Inherit current tables/filters/edit/history/calendar and permission patterns.
+4. Remaining operational party, physical gift-card sale, standalone socks and
+   club enrollment/attendance workflows, reusing the payment/waiver infrastructure.
+   Clubs remain hidden publicly until owner-enabled.
+5. Throughout these stages, verify security, storage/retention, backups/restores,
+   worker/reconciliation recovery and resources. Finish exports/printing,
+   cross-browser/accessibility, owner testing/training and production readiness.
 
-See [STAGING_TEST_PLAN.md](STAGING_TEST_PLAN.md) for acceptance coverage and [BUILD_STATUS.md](BUILD_STATUS.md) for actual verification evidence. Changes remain reviewable through PRs. Development authorization persists; production deployment, DNS, live payments, opening bookings and paid provisioning retain their approval boundaries.
+The detailed scope and inherited UX are in [NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md)
+and [SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md). At each stage,
+update main/domain/development/status/test documentation together and review
+cross-page effects and screenshots. Use browser ZIP plus one PowerShell deployment
+block, with a release-specific reviewed schema/recovery plan. Separate paid-service
+and production/live-booking approvals remain. The owner approved this order;
+next-phase application development has not started.
+
+## Historical implementation increments
+
+The entries below record how the foundation was built. Their local-only/no-email
+statements describe those checkpoints; the current status above takes precedence.
 
 ## Customer-management increment
 

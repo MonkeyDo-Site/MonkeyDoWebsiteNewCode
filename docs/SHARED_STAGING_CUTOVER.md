@@ -1,5 +1,10 @@
 # One staging site for design review and booking tests
 
+Current status: the owner completed this shared-site cutover and confirmed
+account-email inbox delivery during setup. PR #27 is now owner-reported deployed
+on that same functional staging site. The original checklist/recovery steps below
+are historical operational reference; do not create a second site or repeat setup.
+
 The owner's current instruction supersedes the earlier frozen-preview/two-URL proposal. Everyone uses **https://staging.monkeydoplay.com/** and sees the same deployed design. Customers/testers land on the homepage after the shared staging gate. Staff/owner enter **/staff/** and authenticate separately; the shared gate never grants staff permissions. Staff links are absent from public navigation, and pages remain noindex/no-store. Search exclusion is not access control; staff permissions are the access control.
 
 ## What can be tested now

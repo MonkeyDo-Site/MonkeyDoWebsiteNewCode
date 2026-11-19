@@ -93,7 +93,7 @@ class PublicBookingTests(TestCase):
         response = self.client.get("/book/details/")
         self.assertNotContains(response, customer.email)
         self.assertNotContains(response, customer.last_name)
-        response = self.client.post("/book/details/", {"last_name": "Wrong"})
+        response = self.client.post("/book/details/", {"last_name": "Wrong"}, follow=True)
         self.assertContains(
             response, "You can try finding your customer profile by entering your email address."
         )
@@ -342,7 +342,7 @@ class PublicBookingTests(TestCase):
         )
         self.begin(c.phone, "yes")
         response = self.client.post(
-            "/book/details/", {"last_name": "Greenfield", "customer_id": other.pk}
+            "/book/details/", {"last_name": "Greenfield", "customer_id": other.pk}, follow=True
         )
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, other.email)

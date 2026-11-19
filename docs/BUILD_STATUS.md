@@ -1,33 +1,68 @@
 # Staging build status
 
-## Current release checkpoint — third owner-feedback batch
+## Fourth batch — local implementation, draft PR/image review
 
-The owner reported PR #26 successfully deployed on the shared staging URL. That
-is the hosted baseline currently being tested. The third batch is implemented
-on `feat/owner-feedback-batch-three`; the owner authorized the PR and deployment
-handoff after image review, excluding all homepage design changes. It is not yet
-deployed. The homepage About/play template and its existing styling match the
-deployed 34a77c4 baseline, with no new homepage overrides. See the
-[third-batch record](OWNER_EDITS_BATCH_3.md), [52 desktop/phone images](design-review/owner-edits-batch-3/README.md)
-and [browser ZIP + one-command release handoff](OWNER_FEEDBACK_BATCH_THREE_RELEASE.md).
+The full fourth batch is implemented locally, with the owner-authorized narrower
+booking form/play controls, scoped matching branches and owner conflict notices,
+compact customer search, shared four-list pagination and immediate session
+filtering. **428 tests passed locally on PostgreSQL 16.2.** Chromium checks passed
+at 1440/390px plus 320px; eight JPGs show only the customer booking page as
+requested. Staff/matching flows were exercised without publishing extra screen
+images. The routine browser-ZIP PowerShell handoff passed with transport mocked;
+GitHub PostgreSQL 17/native Windows CI is separate release evidence.
 
-Local verification: **407 PostgreSQL tests passed**, including concurrent custom
-session/booking access, preserved closures/history, optional date searches,
-School filtering, two-piece email recovery, item-only live estimates, the actual
-0025→0026 migration and rollback on grant failure. The local server is PostgreSQL
-16.2; GitHub CI uses PostgreSQL 17 and separately exercises Windows PowerShell.
-Portable PowerShell passed the exact browser-ZIP handoff with transport mocked,
-duplicate filenames and early stopping on missing downloads. Browser review used
-1440px/390px plus 320px checks with fictional data, no JS errors or document
-overflow. The six deferred homepage images were removed from the active gallery.
-Migration 0026 has not run on hosted staging. No payment, waiver, active membership
-or outbound booking-email integration is enabled by this batch.
+The subsequent booking-image correction left-aligns the panel, places all four
+quantity fields left and estimate/payment right, places Your Group above the
+play choices and separates age help from quantity labels. The latest owner
+correction removes Start again only from Session Details and widens the desktop
+gap before the outside play cards to 120px. A further CSS-only revision
+right-aligns Continue and adds space above/below the play choices, moving
+quantities and estimate down together. Refreshed browser checks and 1440/390px
+captures plus 320px checks cover this CSS-only revision. The prior template
+follow-up passed 41 affected tests; the existing full-suite result above precedes
+these presentation revisions. GitHub rechecks the new head.
 
-The reviewed deployment path now includes a private checkpoint, atomic schema and
-limited runtime grants, permission preflight and a code/schema compatibility
-check for every switch/recovery. Old code rollback is refused after new private
-schedule or reservation-block state exists; there is no automatic database
-restoration. Final CI and hosted acceptance are separate evidence.
+The owner requested one draft PR, updated with booking-page image comments before
+marking ready. No hosted deployment or schema change occurred for this batch;
+PR #27 below remains the hosted baseline. No next-phase payment/waiver/active
+membership integration or Old test booking classification has been built.
+[Scope](OWNER_EDITS_BATCH_4.md) · [Images](design-review/owner-edits-batch-4/README.md) ·
+[Routine deployment handoff](OWNER_FEEDBACK_BATCH_FOUR_RELEASE.md).
+
+## Current deployed baseline — third owner-feedback batch
+
+The owner reported PR #27 deployed after confirming the PR merge. The deployed
+reviewed content is pinned to `01d5bd58a401b4e6ea2beb9d4d8cbde59c6a597f`, merged as
+`a605aef5d7c43bd42852ea132937e9277a5c1b53`. GitHub PostgreSQL 17 and Windows
+PowerShell checks passed; 407 tests passed locally on PostgreSQL 16.2. Hosted
+completion is owner-reported, not an independent Droplet inspection or every
+scenario's acceptance. The homepage retains its preceding approved About/play
+design; third-batch homepage proposals were excluded.
+
+Current functionality: protected shared staging and /staff, customer/staff pending
+test reservations, pricing/edit/history, customer records/matching/contact rules,
+School/type/search filters, owner weekly/date/custom scheduling and reservation
+blocks, and editable inactive membership drafts. Account Resend/sender verification
+and inbox receipt were owner-confirmed earlier. Actual card collection/setup,
+signed waiver coverage, confirmed visits/arrival, booking/member emails and active
+memberships remain unfinished. Review evidence: [third batch](OWNER_EDITS_BATCH_3.md)
+and [52 desktop/phone images](design-review/owner-edits-batch-3/README.md).
+
+The reviewed deployment helper includes the private checkpoint, atomic schema
+and limited runtime grants and compatibility checks; it refuses old code that
+would ignore new schedule restrictions. It does not implement encrypted nightly
+offsite backups, durable workers or external-operation recovery. The latest
+[release handoff](OWNER_FEEDBACK_BATCH_THREE_RELEASE.md) is completed per owner
+report; ordinary future releases need their own reviewed migration/config plan.
+
+The owner accepted the remaining order: complete ordinary/supervised booking
+with **both** card-payment and alternate-tender backup-card routes, then active
+memberships, then remaining operations. Use new integrated test reservations and
+plan an Old test booking distinction without changing existing financial/setup
+facts. Carry the improved filters/layout/forms/customer/history/scheduling rules
+through [shared workflow standards](SHARED_WORKFLOW_STANDARDS.md). The updated
+[next-stage plan](NEXT_PHASE_REVIEW.md) is documentation only; no application,
+provider or hosted changes occurred and next-phase development has not started.
 
 The earlier checkpoint entries below are historical; their undeployed/no-public-
 booking statements describe those increments, not today's shared staging site.

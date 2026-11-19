@@ -1,5 +1,13 @@
 # Customer records and login protection increment
 
+Current baseline: customer records/search/contact history and public verification
+are deployed per the owner's PR #27 report. Public email recovery now reuses the
+matched phone and requires the current email to identify the same customer;
+an unmatched-phone branch may reuse an already-entered surname. No repeated-name
+recovery field or email-only profile disclosure. The historical increment below
+predates those additions. Carry [shared standards](SHARED_WORKFLOW_STANDARDS.md)
+into memberships/waivers rather than rebuilding customer selection or email rules.
+
 This increment adds functional staff-only customer operations to the local staging application. It does not deploy a server or enable public checkout, payment, waiver or email integrations.
 
 ## Implemented customer operations
@@ -67,3 +75,14 @@ Migration 0025 adds optional Customer.referral_source (240 characters), displaye
 Staff search now compares individual/partial words with spelling tolerance across customer lists, booking filters and both customer pickers. Exact/direct matches precede marked possible matches. Customer types include School, with an All/Family/Day Camp/School list filter; existing type-change permissions remain. Phone errors say ten-digit phone number and keep Canadian/+1 normalization.
 
 Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).
+
+
+## Fourth batch — customer list and conflict notices
+
+Customer search, type selector and Search align compactly on desktop; All types
+remains the initial choice. Bounded 10/25/50/100-row paging and numbered links
+preserve type/search. The shared pager is also used by Bookings, Today and
+Membership drafts. Owner-only booking profile-conflict notices use the existing
+Dashboard/notice storage, with protected customer links, retry deduplication and
+readable audit/review labels. They do not change customer contacts or send email.
+See OWNER_EDITS_BATCH_4.md for the deliberately separate public matching paths.

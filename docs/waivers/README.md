@@ -16,3 +16,24 @@ The existing HTML still carries historical **draft** labels and deliberately rep
 Preserve the source PDF unchanged. Later source versions must be separate versioned documents, not overwritten originals. Never commit signed customer waivers.
 
 Current rules: one-year validity; new version signed at next booking; approved example label MD-WAIVER-2026-01; signed files private R2 only; two-year file deletion from signing, minimal historical metadata retained; accessible shared-parent and arrival workflows. Full requirements: [MONKEYDO_REQUIREMENTS.md](../MONKEYDO_REQUIREMENTS.md). Exact email/link content: [EMAIL_TEMPLATES.md](../EMAIL_TEMPLATES.md).
+
+
+## Next booking stage and shared experience
+
+Saved electronic waivers are part of the next ordinary/supervised booking stage,
+not a later integration after memberships/programs. Reuse the deployed compact
+tables/filters, linked customer records, responsive cards/forms, navigation and
+readable histories from [shared standards](../SHARED_WORKFLOW_STANDARDS.md).
+Review waiver-specific signing/expiry/coverage/version filters; booking date
+ranges must not hide an earlier valid signature. Different parents/minors can
+have multiple current coverage records. A signed document is immutable evidence,
+not an editable membership draft; a new signing/version preserves the old record.
+
+The owner approved wording remains unchanged. Private R2 evidence, full coverage
+and shared-link privacy/retention, signing/arrival gates, jobs and recoverable
+backups must be implemented and actually verified before claiming the flow works.
+Use new test reservations; earlier test records remain visibly distinguishable
+internally and receive no fabricated signature. Customer-email uniqueness does
+not impose a unique email constraint across separate waiver signers. The
+[remaining plan](../NEXT_PHASE_REVIEW.md) records this sequence; no waiver code or
+signed file is created by the planning update.

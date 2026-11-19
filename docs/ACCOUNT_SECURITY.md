@@ -1,6 +1,13 @@
 # Owner/staff account security increment
 
-Local implementation only. No Droplet resize, deployment, paid-service activation, DNS change, provider credential installation or external email occurred. Email tests use Django's in-memory mailbox; that is not verified external delivery.
+Current status: account controls are deployed on the shared staging site. The
+owner configured Resend, verified the sender domain and confirmed inbox delivery
+during setup. Automated local email tests are separate evidence. The paragraph
+below describes the original implementation checkpoint; booking/member email,
+worker/retention and full operational acceptance remain unfinished. No account or
+provider change occurs in this planning update.
+
+Historical initial increment: local implementation only. No Droplet resize, deployment, paid-service activation, DNS change, provider credential installation or external email occurred at that checkpoint. Email tests use Django's in-memory mailbox; that is not verified external delivery.
 
 ## Owner verification and recovery
 

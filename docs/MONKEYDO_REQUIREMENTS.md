@@ -10,6 +10,34 @@ SMS, participant merging, day-camp/group invoicing, and possible automatic payme
 
 The owner subsequently authorized staging website/database development and explicitly approved Django with PostgreSQL; see [development status](DEVELOPMENT.md). The original documentation checkpoint was not an implementation. Production deployment, Cloudflare DNS connection, live payments (including approved cancellation charging), and opening customer booking each need separate written approval. Cancellation activation is not a separate fifth production approval. Present current recurring costs before purchasing or provisioning infrastructure.
 
+### Current baseline and remaining-stage order
+
+The owner reports PR #27 deployed on the shared protected staging site, including
+public/staff pending test reservations, editable membership drafts and the latest
+customer/filter/layout/scheduling improvements. The proposed homepage redesign
+was excluded. Account email is configured and inbox receipt was owner-confirmed;
+confirmed visits, payment/card/waiver integration, booking communications and
+active memberships remain unfinished.
+
+The owner approved this remaining order: complete ordinary **and supervised**
+booking first, including both card-payment setup and alternate-tender backup-card
+setup, saved waivers, confirmation, staff arrival review/collection, cancellations
+and no-shows; active memberships immediately afterward; then remaining party,
+physical gift-card sale, standalone socks and club operations. Member-information
+popup/detection and member-adjusted booking prices belong to the membership stage.
+Integrations, durable jobs and recoverable offsite backups accompany the workflows
+that need them. Ordinary visit collection remains after arrival review, not
+online booking. Planning is approved; next-phase application work has not begun.
+
+Use [NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md) and the mandatory inherited
+[SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md) across future modules,
+including filters/tables/forms/navigation/history and business-rule consistency.
+New integrated tests use new reservations. Plan a staff-facing Old test booking
+badge/filter for all earlier test-workflow records, including cancellations,
+without changing their IDs/status/history or generating charges/signatures/email.
+This planned distinction has not been applied to the database. Preserve browser
+ZIP download plus one PowerShell deployment block and reviewed release recovery.
+
 ## 2. Public identity and visual direction
 
 - Public phone: **848-238-5147**; public email: **monkeydoplay@gmail.com**.
@@ -106,9 +134,20 @@ Collect Last Name, phone, email, date/session, baby/child/adult quantities, calc
 
 Validate in browser and server: required fields/consent, nonnegative integer counts, nonzero attendance, adult rule where applicable, card setup unless owner-comped, availability/end time, capacity and permissions. Online waiver must be covered before booking completes; admin/phone bookings may confirm pending.
 
-The visible public progress indicator has four steps: Choose Session, Customer Details, Session Details, Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. Add a waiver step only when the approved waiver workflow is implemented. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed low beside the socks/payment-method fields rather than alongside the upper attendee fields or outside play-information cards. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
+The visible public progress indicator has four steps: Choose Session, Customer Details, Session Details, Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. Add a waiver step only when the approved waiver workflow is implemented. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed at the upper right of the quantity section, with Payment method and Continue below it at the bottom right. All four quantity inputs stack on the left. Add breathing room above and below the play-type selector; the estimate stays top-aligned with the quantity fields as they move down. Right-align Continue beneath the payment selector. Show Family/contact links, Your Group, then Choose play type; omit Start again from Session Details while retaining lookup/recovery restart actions; use quantity labels with separate age guidance. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
 
 ## 7. Customers and public identification
+
+The scoped [fourth-batch branch matrix](OWNER_EDITS_BATCH_4.md) takes precedence
+for the specifically approved returning/current-phone and different-profile
+conflict paths. Returning Yes/current-phone entry offers Last Name or Email,
+with either/both accepted against that profile and explicit partial-name
+confirmation. Simultaneous name/email conflicts have a verified profile-choice
+exception; email-first conflicts require restart/help and never display the other
+profile’s saved phone. There is no public phone reassignment or profile merge.
+Owner Dashboard notices record those conflicts. Unspecified new-customer,
+previous-phone and unmatched-phone paths keep their existing behavior; do not
+apply the new exception to other scenarios/modules without approval.
 
 - Profiles have **Last Name** only, not a separate first/full-name field. If a greeting is used: **Dear Family [LastName]**. Waiver signer full legal name and named club participants are separate entities.
 - Assign backend-only sequential six-digit customer IDs starting **000001**, never reused. One customer may have many bookings and membership cohorts.
@@ -158,9 +197,17 @@ Before completing ordinary arrival, require Yes to **Was a waiver signed for eve
 
 ## 9. Admin experience and permissions
 
+The existing improved UI conventions apply to memberships, waivers and later
+modules as specified in [shared workflow standards](SHARED_WORKFLOW_STANDARDS.md).
+Use shared compact filters/tables/customer pickers, linked records, current-only
+membership views with history, readable audit and responsive forms/cards. Review
+module-specific columns, statuses and date meanings before building; booking date
+defaults and single-current-membership display must not hide valid waivers or
+coverage from different parents.
+
 **Today** is login landing; **Dashboard** is separate. Start staging with left-side navigation and review arrangement after owner testing before launch. Provide calendar/list/detail, customers, waivers, payment issues, programs/memberships, owner settings/staff and audit; mobile navigation adapts. Exact sidebar order is a presentation choice.
 
-- Today and Bookings use linked booking IDs, clickable permitted customer names, Phone and Email columns. Filters sit above column headings, with headings directly above booking rows: family/contact search, session, Open/Supervised Play checkboxes, status checkboxes and attendee-count sort toggles, combinable with Clear all filters. Bookings defaults to today through the same calendar date next year, with optional inclusive date bounds; clearing both dates searches all history. Clear all filters restores the default year, while a compact Clear dates control removes only the date restriction. Valid date changes immediately refresh results and session choices; closing the session selector applies its selections without Apply. Today remains fixed to today. On Bookings, one or more recurring session times may be selected across the range; no session selection means all times. Today also permits multiple session selections. Apply/Clear actions sit beneath contact search, Enter submits it, and Add booking sits beside the page title. Today fixes the New York date, includes empty sessions in its selector, and shows all sessions' booking counts and reserved/capacity totals independently of filtered matches.
+- Today and Bookings use linked booking IDs, clickable permitted customer names, Phone and Email columns. Filters sit above column headings, with headings directly above booking rows: family/contact search, session, Open/Supervised Play checkboxes, status checkboxes and attendee-count sort toggles, combinable with Clear all filters. Bookings defaults to today through the same calendar date next year, with optional inclusive date bounds; clearing both dates searches all history. Clear all filters restores the default year, while a compact Clear dates control removes only the date restriction. Valid date changes immediately refresh results and session choices; checking or unchecking a session immediately updates results without Apply while retaining multi-selection. Today remains fixed to today. On Bookings, one or more recurring session times may be selected across the range; no session selection means all times. Today also permits multiple session selections. Apply/Clear actions sit beneath contact search, Enter submits it, and Add booking sits beside the page title. Today fixes the New York date, includes empty sessions in its selector, and shows all sessions' booking counts and reserved/capacity totals independently of filtered matches.
 - Today and Owner Scheduling provide Add booking shortcuts for authorized owner/staff users, with selected session prefilled. Add/Edit session remains in Owner Scheduling and owner-only. An owner-only Close this entire session to additional reservations checkbox is also available on booking forms; it saves with the booking, preserves existing bookings and appears in Scheduling. Checked Closed for reservation controls mean closed consistently in weekly single/bulk forms. Add a weekly default session starts unchecked (open); editing preserves the saved open/closed state. Compact linked parent navigation applies across backend detail pages; scheduling tabs are Individual Date (default), weekly defaults, and horizon. Checkbox controls precede labels inline without trailing colons. Use Open Play consistently.
 - Weekly schedule editing supports saving several defaults together, validating the final nonoverlapping schedule. Generation applies eligible dated changes together, preserves booked/manual/program/past records, handles conflicts with preserved records, and reports every relevant Created/Updated/Unchanged/Not generated outcome with date, exact reason and review links. Show Current schedule applied through separately from Sessions exist through, comparing actual timing/settings and stopping contiguous coverage at the first mismatch or missing expected date. Expand date/time ranges to distinguish older settings, preserved booked/manual sessions, reservation blocks and missing dates; link to their review screens. Closed defaults do not generate. Changing a default never silently moves existing bookings.
 - Global search includes last name/ID, current/previous phone/email, comments, bookings and electronic waiver signer/minor names. Normalize phone punctuation inside comments too; label where a result matched.
@@ -307,3 +354,54 @@ rather than narrow crops; agree a new layout separately. Third-batch staff and
 customer-booking image review is approved for PR/deployment preparation. Active
 membership benefits, waivers and actual payments remain separate unfinished
 development.
+
+
+## Fourth-batch approved experience and matching scope
+
+The owner authorized this batch and a draft PR updated during booking-page image
+review. Only the redesigned customer booking page needs screenshots now; other
+changes will receive owner interactive acceptance after approved deployment.
+See [complete scope/branch matrix](OWNER_EDITS_BATCH_4.md).
+
+- Public Session Details uses a narrower, left-aligned green panel with a clear
+  wider desktop gap before outside play cards. Show Family/contact links, Your Group
+  and then Choose play type. Omit Start again here; retain lookup/recovery restart actions. All four quantity inputs stack on the left; item-only estimate
+  is upper right and Payment method/Continue bottom right. Use Number of
+  children/adults/babies and Pairs of grip socks, with ages in separate help;
+  responsive phone stacking. Do not show the card's
+  Check the booking page instruction here; keep homepage/About wording intact.
+- Always show both public play choices; disable/label unavailable ones. Default
+  Open when available, Supervised for supervised-only sessions. Public Supervised
+  selection resets/locks adults/babies to zero and shows Supervised play is
+  children only if changing is attempted; restore prior Open quantities on return.
+  Staff forms retain error validation, without automatic locking. Server rejects
+  unavailable play and invalid quantities. No fee/tax in the live estimate;
+  final Payment Details remains complete.
+- Customers search/type/Search controls align compactly, with All types default.
+  Bookings, Today, Customers and Membership drafts use 10/25/50/100 rows (25
+  default), numbered/Previous/Next links and preserved filters/sort. Changing
+  page size or applying filters starts at page one. Today's full matching/session
+  totals are not truncated to the displayed page.
+- Today/Bookings session choices filter immediately while preserving multi-select,
+  existing other filters and the no-JavaScript Apply fallback. Date/session rules
+  and server validation still apply.
+- Scenario A's specified Yes/current-phone entry offers optional Last Name and
+  Email, requiring at least one. Show accurate name/email/both success; keep
+  both fields if both fail. Name-first and email-first retries use the approved
+  entered-value/phone wording and remove stale introduction text on later failure.
+  Keep existing possible-name confirmation.
+- For simultaneously supplied correct name/phone but another profile's email,
+  allow the narrow profile-choice exception. Verify the second profile's own
+  name/email before exposing its phone or enabling its Proceed action; reuse a
+  matching supplied name, confirming possible spelling first. Original-profile
+  continuation verifies its current email, not a contact replacement. Explicit
+  choice selects the booking customer; it does not change saved phone/email.
+- For email-first different-profile conflicts, request the name. A name matching
+  phone profile gives wrong-email/restart/help instructions; a name matching the
+  email profile but not phone profile asks restart using the phone they already
+  know, without showing it; a name matching neither directs to assistance.
+  Keep these branches separate. Use 848-238-5147 throughout.
+- Owner-only Dashboard notices record conflicts once per flow/profile pair, with
+  audit and protected links, not external email. Referral remains optional; stale
+  flow/step submissions show the current step with a recovery message instead of
+  binding old fields to a new form. No historical bookings are reset or relabelled.

@@ -24,7 +24,7 @@ Consolidated November 5, 2026. Owner authorized documentation reconciliation and
 
 The owner subsequently supplied the original logo, two advertisements and nine facility photos in `monkeydo.zip`. Exact files and checksums are recorded in [brand-assets/README.md](brand-assets/README.md). Preserve these originals; final placement and accessible image descriptions remain staging choices. Original PDF/HTML waiver exist and wording is owner-approved; verify implementation matches them, do not ask again for counsel review.
 
-Secure installation/verification is still needed for existing provider accounts: DO scoped access/SSH, R2 test/production buckets and keys, Resend replacement key/sender DNS, Banquest sandbox/live/private/public keys and webhook endpoint key, production DNS/TLS, test-card material. Owner already has sandbox credentials/test-card PDF; don't ask for values in chat or commit them. Existing account ownership is not proof configuration/testing done.
+Secure installation/verification is still needed for existing provider accounts: DO scoped access/SSH, R2 test/production buckets and keys, extended booking-email transport/delivery verification (existing Resend key and sender DNS are owner-confirmed), Banquest sandbox/live/private/public keys and webhook endpoint key, production DNS/TLS, test-card material. The shared staging site, owner account and account-email setup are already deployed; do not repeat initial setup. R2/payment/worker/backup integrations remain. Owner already has sandbox credentials/test-card PDF; don't ask for values in chat or commit them. Existing account ownership is not proof configuration/testing done.
 
 Email wording is collected in [EMAIL_TEMPLATES.md](EMAIL_TEMPLATES.md) for this PR's review, including latest owner edits. Conditional variant construction and delivery tests remain implementation work, not a broad unanswered “supply all email text” requirement.
 
@@ -43,3 +43,17 @@ Banquest selection (not Stripe), purchased monkeydoplay.com/Cloudflare proxy, bo
 ## 6. Authorization, not another business question
 
 The owner subsequently explicitly authorized staging website/database development and approved Django with PostgreSQL. Development and review PRs may proceed. Production deployment, DNS connection, live payments and opening booking keep their independent written gates. Costs/purchases require review before commitment. Never treat the copied sample authorization in history AG as an actual instruction to build.
+
+
+## 7. Remaining-stage questions resolved by the owner
+
+Ordinary/supervised completion is next, active memberships immediately afterward.
+Both selected-credit-card and alternate-tender-with-backup-card flows are required;
+ordinary collection remains after staff arrival review. Member detection/popup and
+benefit prices wait for the membership stage. Use new integrated-flow test
+reservations, retaining all older records with a planned staff-facing Old test
+booking badge/filter. Preserve/inherit the approved UX and shared functionality
+using [SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md). These choices
+need not be asked again. The production rate and retained-fee-tax accounting
+inputs above remain separate; neither blocks recording this plan. Next-phase
+application work has not started.

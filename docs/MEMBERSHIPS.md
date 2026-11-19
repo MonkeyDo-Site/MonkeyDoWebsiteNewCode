@@ -2,6 +2,31 @@
 
 Current owner decisions consolidated November 5, 2026. [Main requirements](MONKEYDO_REQUIREMENTS.md), [payments](PAYMENTS.md), and [email wording](EMAIL_TEMPLATES.md) supply shared behavior. These rules are not implemented by this documentation change.
 
+## Current foundation and next-stage inheritance
+
+Editable test drafts with linked #M IDs, latest-only rows and readable earlier
+versions are deployed per the owner's PR #27 report; purchased/active memberships
+are still future work. They follow completed ordinary/supervised booking, as
+settled in [NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md). Member-information popup
+and member-adjusted booking prices are deferred to that membership stage.
+
+The membership stage must inherit the improved tables, compact combined filters,
+customer matching/pickers, field sizing/navigation, customer cards, histories and
+permissions in [SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md).
+Exact date/status filters are reviewed for memberships, not copied mechanically
+from booking appointment filters. Existing accepted calendars/prices/exceptions
+and stable IDs remain the foundation.
+
+Draft editing changes a plan without moving money or benefits. A purchased record
+must retain prior payments, accepted terms and consumed benefits; use the approved
+addition/renewal/correction or owner exception with a clear impact/effective date.
+For example, increasing a purchased place count after free visits were used is
+an addition, not rewriting the original sale as if it always had more places.
+This preserves editing and staff's approved ordinary sale/renew/add/correction
+powers. Refunds/complimentary/exceptional terms/consolidations remain owner-only.
+No new separate membership row is created just because existing details were
+corrected; actual separate purchases/additions retain the approved cohort rules.
+
 ## 1. Products, anonymous places, and public copy
 
 | Rule | Subscription Membership | Unlimited Membership |
@@ -23,16 +48,16 @@ Subscription marketing:
 > Just $5.99 for every additional play session that month <br>
 > Two free adults for every visit <br>
 > 25% off supervised play <br>
-> 15% discount on parties. Call/text for details. <br>
+> 15% discount on parties. <br>
 > Three-month minimum
 
 Unlimited marketing:
 
 > $39.99 per child, per month <br>
 > One free visit per day with two free adults <br>
-> 15% discount on parties. Call/text for details. <br>
+> 15% discount on parties. <br>
 > Three-month minimum <br>
-> * Excludes Chol Hamoed and supervised play. Unlimited Members pay full price for Chol Hamoed and supervised-play visits.
+> * Excludes Chol Hamoed and supervised play. Unlimited Members pay full price for Chol Hamoed and supervised play visits.
 
 Do not put an exhaustive technical eligibility checklist on marketing cards. Present applicable price/consent information at purchase. “Month” is public copy; cycle is an internal concept.
 

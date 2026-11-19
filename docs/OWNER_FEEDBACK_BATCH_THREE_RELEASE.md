@@ -1,5 +1,9 @@
 # Third-batch release: browser ZIP plus one PowerShell command
 
+Owner reported this release deployed after PR #27 merged. This is the retained
+release handoff, not an instruction to redeploy for the documentation-only
+next-stage planning update.
+
 This release includes the reviewed staff/customer booking and scheduling changes.
 **Homepage design changes are excluded.** The homepage About/play template and
 its existing styling match the deployed `34a77c4` baseline. The separate About

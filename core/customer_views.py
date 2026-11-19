@@ -11,6 +11,7 @@ from .forms import CommentForm, CustomerForm, PreviousPhoneForm, phone_search_di
 from .memberships import current_draft
 from .models import AuditEvent, Customer, CustomerComment
 from .name_matching import match_rank, name_candidates
+from .pagination import paginate
 from .permissions import staff_permission
 
 
@@ -48,7 +49,7 @@ def customer_list(request):
             .distinct()
             .order_by(match_rank("pk", exact, possible), "last_name", "pk")
         )
-    page = Paginator(customers, 25).get_page(request.GET.get("page"))
+    page = paginate(request, customers)
     for customer in page:
         matched = []
         if customer.pk in possible:
@@ -282,6 +283,8 @@ def customer_history(request, pk):
         "customer.public_email_added": "Email added during booking",
         "customer.public_test_created": "Customer created during booking",
         "customer.email_notice_reviewed": "Historical email notice reviewed",
+        "customer.public_profile_conflict": "Booking verification matched different customer profiles",
+        "customer.profile_conflict_reviewed": "Owner reviewed the booking profile conflict",
         "customer.comment_added": "Comment added",
         "customer.comment_updated": "Comment edited",
         "customer.email_history_archived": "Previous email archived",

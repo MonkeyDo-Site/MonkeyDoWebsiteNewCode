@@ -1,0 +1,108 @@
+{
+  "fixture": "Fictional local PostgreSQL records; frozen November 18, 2026, 9 AM New York",
+  "screens": [
+    {
+      "screen": "01-booking-open-play",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "02-booking-supervised-play",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "03-booking-open-only-session",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "04-booking-supervised-only-session",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "01-booking-open-play",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "02-booking-supervised-play",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "03-booking-open-only-session",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "04-booking-supervised-only-session",
+      "viewport": 390,
+      "horizontal_overflow": false
+    }
+  ],
+  "javascript_errors": [],
+  "hosted_site_changed": false,
+  "extra_narrow_width_checked": 320,
+  "staff_pagination_and_immediate_multi_session_filter": true,
+  "staff_supervised_locking_absent": true,
+  "distinct_matching_branches_and_other_profile_verification": true,
+  "powershell_handoff": "Passed portable PowerShell with mocked transport; routine browser ZIP handoff has no schema flag.",
+  "review_followup": {
+    "green_panel_left_aligned": true,
+    "outside_card_gap_px": 120,
+    "all_four_quantity_fields_left": true,
+    "estimate_above_payment_on_right": true,
+    "age_guidance_separate_from_quantity_labels": true,
+    "family_group_play_order": true,
+    "restart_absent_only_from_session_details": true,
+    "continue_right_aligned": true,
+    "play_choice_spacing_above_below_px": 34,
+    "estimate_top_aligned_with_quantities": true
+  },
+  "full_suite_before_layout_followup_passed": 428,
+  "layout_followup_affected_tests_passed": 41,
+  "images": [
+    {
+      "file": "01-booking-open-play-desktop.jpg",
+      "sha256": "aad5ded255ef805ca23ac999b172a4955c8dd177906193623dca33aa02cd66ce",
+      "bytes": 197886
+    },
+    {
+      "file": "01-booking-open-play-phone.jpg",
+      "sha256": "c0be72ea48637a930667adad10d5aa65d9d3a330ffe1ba8d63297b3791240542",
+      "bytes": 178259
+    },
+    {
+      "file": "02-booking-supervised-play-desktop.jpg",
+      "sha256": "3f2548e867fbd2973a5760dc95aa30234bd74530f56ac23fa492a97f42624e75",
+      "bytes": 196095
+    },
+    {
+      "file": "02-booking-supervised-play-phone.jpg",
+      "sha256": "3d4fb91d190ba0b0126e64eea11cb302edd84987ed385fb2704fcb7010faf9c6",
+      "bytes": 175322
+    },
+    {
+      "file": "03-booking-open-only-session-desktop.jpg",
+      "sha256": "dd4ab1cfd754d09bd13dd6d40c26f4535aa2adb5b52b8ecdcae68072ae4dfb5d",
+      "bytes": 194029
+    },
+    {
+      "file": "03-booking-open-only-session-phone.jpg",
+      "sha256": "80d45bd3b90534f37bb4c58b49cb7524add12f9e9d1002c07b834d19c7747e42",
+      "bytes": 171745
+    },
+    {
+      "file": "04-booking-supervised-only-session-desktop.jpg",
+      "sha256": "73de9dce1c59c85bf307cc694579d66b55781a119912f3af23717c2fd23365d2",
+      "bytes": 194829
+    },
+    {
+      "file": "04-booking-supervised-only-session-phone.jpg",
+      "sha256": "4985d604523c74777f9bcd2e6b2126cd8d1f18a55a8284ab490ea25841b34eaf",
+      "bytes": 174572
+    }
+  ]
+}

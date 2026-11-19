@@ -3,7 +3,7 @@
 <p>For children ages 3-11<br>
 $18.99 per child</p>
 <p class="supervised-benefit">Subscription members enjoy 25% off supervised play</p>
-<p class="supervised-availability">Supervised play is available for select sessions. Check the booking page to see which sessions offer it.</p>
+<p class="supervised-availability">Supervised play is available for select sessions.{% if not omit_booking_instruction %} Check the booking page to see which sessions offer it.{% endif %}</p>
 {% else %}
 <p class="play-subtitle">Play accompanied by an adult</p>
 <p>Children ages 1–11<br>

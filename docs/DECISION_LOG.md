@@ -458,3 +458,72 @@ staff/customer booking changes and remove homepage images from its active galler
 Prepare only reviewed 0026 from baseline 0025, private checkpoint, atomic runtime
 grants and code/schema compatibility checks; never reverse the database or ignore
 new reservation restrictions on recovery. No hosted deployment is claimed.
+
+
+## Owner response after PR #27 deployment — remaining stages and inherited UX
+
+Owner reported the third batch deployed and accepted completing ordinary and
+supervised booking before active memberships and remaining business workflows.
+Secure card setup must show both intended Credit card and alternate-tender backup
+routes; ordinary payment is still after arrival review. Member-information popup
+and benefit-adjusted booking prices wait for active memberships. Future sections
+must inherit phase-one filters, improved tables/forms/cards/navigation/history and
+shared functionality, not only IDs/matching; document affected pages and tests
+with each feature using SHARED_WORKFLOW_STANDARDS.md. Preserve draft editing while
+handling actual purchased-membership changes with accurate financial/benefit
+adjustments and the approved permission matrix. New reservations test the new
+completion workflow; plan Old test booking badges/filter for existing records,
+including cancellations, without reclassifying status or inventing charges or
+signatures. Nightly encrypted backups/jobs are dependencies, not provided by the
+current local deployment checkpoint. Update current status documentation and
+preserve historical evidence. This is planning only, with no next-phase code,
+provider calls, relabelling of hosted data or new deployment.
+
+
+## Fourth batch — final clarification and implementation go-ahead
+
+Owner clarified the compact booking layout, Name/Email typo, public-only supervised
+zero/locking and supervised-only default, paging on Today/Bookings/Customers/
+Membership drafts, and separate identity-conflict branches. Simultaneous entered
+name/email can lead to another-profile choice only after that profile's own
+name/email verification; reuse an already matching name. Email-first then name
+matching email profile but not phone profile instead asks restart using the phone
+the customer knows, without showing it. The revised Scenario B screenshot
+supersedes its earlier phone-update proposal; no reassignment/merge occurs. Retain
+owner Dashboard alerts and correct assistance number 848-238-5147. Referral is
+optional; owner reproduced a successful single-tab attempt. Later explicit
+go-ahead authorizes the whole batch, screenshots now only for the customer booking
+page, and one draft PR updated during review. Other owner acceptance follows
+approved deployment. Full trace: OWNER_EDITS_BATCH_4.md. The previously aligned
+next-stage plan remains planning, not payment/waiver development authorization.
+
+
+## Fourth-batch booking-page image revision
+
+Owner replaced the first quantity layout while retaining narrower spacing: move
+the green panel left, keep space before outside play cards, show Family/contact,
+Choose play type, then Your Group; stack all four quantity inputs left, with
+estimate upper right and payment/Continue bottom right. Explicit quantity labels
+and separate age help remove ambiguity about entering ages. Keep the same draft
+PR and refresh booking-page screenshots only. Matching, calculation, permissions
+and the deployment review boundary are unchanged.
+
+
+## Fourth-batch booking-page second image revision
+
+Owner approved the clearer quantity/age separation and requested three changes:
+omit Start again only from Session Details, restore Your Group above Choose play
+type, and move outside Open/Supervised information cards farther right. Keep the
+740px desktop panel and four left-side quantity fields; increase its desktop gap
+to the cards to 120px, with existing narrower-screen stacking. Lookup/recovery
+restart actions, matching, pricing and validation remain unchanged. Refresh the
+same eight booking-page images in draft PR #28; deployment awaits owner approval.
+
+
+## Fourth-batch booking-page spacing refinement
+
+Owner requested Continue aligned to the right, more space between Your Group and
+play choices and between choices and quantities. Add vertical selector margins
+without separating the shared quantities/estimate grid row, so their tops remain
+parallel. Preserve narrow fields, separate age guidance and wider outside-card
+gap. Update the same draft PR and eight booking-page images before deployment.

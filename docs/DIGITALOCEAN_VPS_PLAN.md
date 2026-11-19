@@ -1,5 +1,13 @@
 # DigitalOcean, Cloudflare, staging, storage, and backups
 
+Current status: an existing Droplet hosts the shared staging site; functional
+cutover, TLS/private-gate checks, Resend sender verification/account-mail receipt
+and PR #27 deployment are owner-reported complete. The plan below includes
+historical proposals; it is not evidence of production, Banquest, signed-file R2,
+workers or encrypted offsite backups. The local deployment checkpoint is not that
+backup system. Recheck resources and prepare those dependencies alongside the
+next booking stage; see [remaining plan](NEXT_PHASE_REVIEW.md).
+
 Current planning direction, November 5, 2026. This file is requirements, not provisioning or deployed configuration. The owner subsequently authorized staging development and approved Django/PostgreSQL. Paid provisioning and production actions retain their separate approvals.
 
 ## 1. Hosting and public addresses

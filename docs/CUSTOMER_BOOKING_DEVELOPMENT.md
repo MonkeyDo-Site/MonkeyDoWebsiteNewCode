@@ -1,6 +1,15 @@
 # Customer self-booking and isolated functional staging
 
-This checkpoint connects customer self-booking to the existing owner/staff workspace. Reservations remain **Setup pending**, clearly marked as tests. It does not confirm a visit or take payment. The owner selected one shared staging site: design review and booking tests use `staging.monkeydoplay.com`, with protected `/staff` sign-in. Everyone sees the same deployed design. Frozen source files remain unchanged as historical artifacts; they will no longer serve the public staging root after cutover.
+Current deployed status: owner reports PR #27 deployed on the single protected
+staging.monkeydoplay.com site, with public pending-test booking and /staff sign-in.
+The functional cutover and owner account-email delivery were owner-confirmed.
+The setup checklist below is historical, not an instruction to create another
+site/database or repeat the cutover. Card/waiver/booking-email/arrival completion
+remains unbuilt; the [next-stage plan](NEXT_PHASE_REVIEW.md) includes both card
+payment and alternate-tender backup-card paths and uses new test reservations.
+The [shared standards](SHARED_WORKFLOW_STANDARDS.md) govern future UI/functionality.
+
+This checkpoint connects customer self-booking to the existing owner/staff workspace. Reservations remain **Setup pending**, clearly marked as tests. It does not confirm a visit or take payment. The owner selected one shared staging site: design review and booking tests use `staging.monkeydoplay.com`, with protected `/staff` sign-in. Everyone sees the same deployed design. Frozen source files remain unchanged as historical artifacts; they no longer serve the shared staging root.
 
 ## Customer and staff workflow
 
@@ -16,13 +25,13 @@ There is no checkout payment, stored card, waiver/signature, active membership a
 
 ## Controlled account email
 
-`MONKEYDO_EMAIL_TRANSPORT=resend` selects the staging-only transport for existing account MFA/reset mail. It requires a private `RESEND_API_KEY` and explicit comma-separated `MONKEYDO_TEST_EMAIL_RECIPIENTS`. Every To/CC/BCC recipient must be allowlisted; sender is fixed to `bookings@monkeydoplay.com`. Resend sender/domain verification is still required. No booking confirmation is sent.
+`MONKEYDO_EMAIL_TRANSPORT=resend` selects the staging-only transport for existing account MFA/reset mail. It requires a private `RESEND_API_KEY` and explicit comma-separated `MONKEYDO_TEST_EMAIL_RECIPIENTS`. Every To/CC/BCC recipient must be allowlisted; sender is fixed to `bookings@monkeydoplay.com`. Resend sender/domain verification was completed and inbox receipt was owner-confirmed. No booking confirmation is sent.
 
-The transport has a bounded timeout, rejects redirects and does not retry uncertain deliveries. Errors omit message bodies and secrets; existing account alerts report unconfirmed delivery. Provider acceptance is not proof of inbox delivery. Automated transport tests use mocked responses; **no real Resend call or email has been made for this checkpoint**.
+The transport has a bounded timeout, rejects redirects and does not retry uncertain deliveries. Errors omit message bodies and secrets; existing account alerts report unconfirmed delivery. Provider acceptance is not proof of inbox delivery. Automated transport tests use mocked responses. The original implementation checkpoint made no real call; later host setup included an owner-confirmed Resend inbox check. Booking mail remains unimplemented.
 
-## One-time shared-site cutover still required
+## Historical one-time shared-site setup checklist — completed
 
-The following is an operator checklist, not an executed deployment or a command to paste without preparing the host. Keep the existing design release/database intact for recovery. Replace its public routing only after preparing and checking the functional service. There will be one public staging URL, not a second testing hostname. See [SHARED_STAGING_CUTOVER.md](SHARED_STAGING_CUTOVER.md) for the activation/recovery sequence.
+The following records the original operator setup, subsequently completed. Do not repeat it for an ordinary release; the installed update helper is the routine deployment path. Keep the existing design release/database intact for recovery. Replace its public routing only after preparing and checking the functional service. There will be one public staging URL, not a second testing hostname. See [SHARED_STAGING_CUTOVER.md](SHARED_STAGING_CUTOVER.md) for the activation/recovery sequence.
 
 1. Prepare a distinct Linux/runtime SQL user `monkeydo-functional`, migration user/SQL owner `monkeydo-functional-migrate`, and database `monkeydo_functional`. Use peer authentication. Revoke public schema CREATE and give the runtime role only required row/sequence access; it must have no schema CREATE, superuser, CREATEDB or CREATEROLE. Set migration-owner default table/sequence privileges for future migrations. Keep migration credentials inaccessible to the application service.
 2. Extract the exact approved release under `/srv/monkeydo-functional/releases/`, prepare its virtualenv/static files and initial `/srv/monkeydo-functional/staging/current` link. Apply migrations through **0021** using the separate migration role, after reviewing the migration and backup procedure. Migration 0021 adds customer-test source/referral/fingerprint fields and permits a null quote actor for customer-created quotes. It does not rewrite existing quotes. Do not migrate the design database for this functional setup.
@@ -123,3 +132,37 @@ payment-choice percentage information remains. The failed-name recovery notice
 retains its original first sentence before the revised email-search sentence,
 while direct recovery omits an inapplicable failed-name claim. The repeated name
 field remains absent.
+
+
+## Fourth batch — public layout and scoped verification
+
+The narrower public panel aligns left with a wider desktop gap before the outside play cards.
+Its order is Family/contact links, Your Group, then Choose play type. Session
+Details omits Start again; lookup/recovery screens retain their restart actions. All four
+quantity inputs stack on the left, with the estimate upper right and Payment
+method/Continue bottom right, with Continue right-aligned. Add more space above
+and below the play choices while keeping the estimate level with the quantities.
+Quantity labels are explicit and age guidance is separate; this supersedes the initial fourth-batch layout after image review. Always show both play
+choices, disabling unavailable ones. Open defaults when possible; supervised-only
+uses Supervised. Public Supervised sets/locks adults/babies to zero, reports an
+attempted edit with the approved popup and recalculates the estimate. Switching
+back restores prior Open values. Staff keep validation rather than locking.
+The booking information card alone omits Check the booking page wording.
+
+The approved [branch matrix](OWNER_EDITS_BATCH_4.md) supersedes earlier generic
+recovery descriptions only for its named scenarios. Yes/current-phone offers
+name/email or both, with appropriate success/retry messages. Name/email entered
+together can reach a verified profile-choice exception; name/email verification
+of the second profile is required before its phone/Proceed action is available.
+Email-first conflicts instead ask for a name and end in restart/help; the other
+saved phone is never shown in that branch, including when name matches email
+profile but not phone profile. No customer phone/email is changed, reassigned or
+merged. Owner-only Dashboard notices persist per flow/profile pair. Unspecified
+new-customer/previous-phone/unmatched-phone branches retain existing behavior.
+
+Referral remains optional. Browser forms carry flow/step markers; stale tab/back
+submissions show the current step with a useful warning and preserve its data.
+Clean single-tab blank-referral tests pass; this protection does not claim that
+the original intermittent report was definitively reproduced. Only booking-page
+screenshots are requested now. This batch remains pending-test booking, without
+cards, signed waivers, actual payments or next-phase integration.
