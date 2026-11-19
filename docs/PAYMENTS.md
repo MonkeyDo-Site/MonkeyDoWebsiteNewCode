@@ -234,3 +234,11 @@ current prices/rates or edited customer records cannot rewrite past financial
 facts. Accountant report screens/formats can wait; the source-data acceptance
 criteria belong in stage 1A before real payments. No accounting integration or
 provider/report configuration is activated by this planning clarification.
+
+
+Reporting clarification: the owner's requested summary uses actual amounts
+received, refunds, tax and remaining amounts. Original prices/approved discounts
+may be retained internally for accepted-charge reconciliation and refund/tax
+allocation; neither uncollected full prices nor discounts count as receipts.
+This does not require a discount report column, a new discount feature or an
+extra staff input. The displayed accountant report can remain simple.

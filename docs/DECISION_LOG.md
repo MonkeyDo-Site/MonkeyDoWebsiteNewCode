@@ -571,3 +571,17 @@ exclude sandbox/estimates. Report screens/accounting layout can follow launch;
 no server/key change is required solely for reporting. No financial models,
 migrations or reporting UI were built in this review. Full detail lives in
 ACCOUNTANT_REPORTING_FOUNDATION.md.
+
+
+## Actual-money report scope and next-stage readiness — November 19, 2026
+
+Owner clarified that accountant reports need actual dollars paid, asking why
+discounts were mentioned. Treat original price/approved discounts as internal
+reconciliation/refund-tax detail only; do not count them as income or mandate a
+report column, new discount feature or extra staff input. Reporting notes now
+state this explicitly. Review identified no additional owner business-rule
+decision required before the agreed next development scope. Technical payment
+records/failure handling, secure card/waiver setup, callback routing, delivery,
+worker/resources, backups and migration/recovery remain in that scope. Secrets
+are needed for integration tests later, not before local coding; production tax
+rate/live activation remain launch inputs. No application development began.

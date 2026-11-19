@@ -292,3 +292,36 @@ The earlier Word documents were reconciled through their repository request
 matrices and approved conversation clarifications; this review did not freshly
 extract the private Word attachments. No new provider or hosted acceptance claim
 is made.
+
+
+## Readiness recheck before the next stage — November 19, 2026
+
+The owner asked whether any other preparation is needed and clarified that the
+accountant summary should use actual receipts, refunds, tax and remaining funds.
+Internal original-price/discount detail supports reconciliation and correct
+refund allocations; no extra report columns or new discount feature are needed.
+
+No new owner business-rule decision was identified as necessary before coding
+the already-agreed next scope. Technical preparation belongs to that authorized
+work, not another owner approval checklist:
+- Design actual payment/tender/refund records, safe operation identity, webhook
+  deduplication and unknown-outcome reconciliation before making provider calls.
+- Preserve private provider-controlled card fields, consent and booking-only
+  versus retained-card lifecycle; plan signed provider callbacks through the
+  private staging gate without opening staff routes.
+- Carry the approved waiver text/coverage into private test R2 storage and verify
+  booking-email delivery/attachments; do not ask again for new waiver wording or
+  repeat the already-completed sender setup.
+- Recheck host resources and plan workers, encrypted offsite backups/restore,
+  migration compatibility and single-command deployment together. Code rollback
+  cannot undo a charge, sent email or saved signing evidence.
+- Keep old pending-test records separate from new integrated-flow reservations,
+  preserving IDs/history. Exercise both card-payment and alternate/backup-card
+  routes through arrival, cancellation, failure and recovery.
+
+Sandbox keys, private storage credentials and callback configuration are required
+for real integration testing, not to start local implementation. Provide exact
+private setup steps then; do not ask for secrets in chat/GitHub. Production tax
+rate and live configuration remain later launch inputs, not sandbox-development
+blockers. Accountant report layout/recognition presentation may wait.
+Next-phase application development still requires the owner's go-ahead.

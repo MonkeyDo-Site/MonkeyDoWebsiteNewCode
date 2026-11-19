@@ -41,8 +41,20 @@ processing-fee total and one sales-tax total.
 
 ## What the later reports must be able to distinguish
 
-- Sales by product/category and taxable/nontaxable treatment, with discounts,
-  reversals and returns, preserving the original transaction detail.
+Owner clarification: the requested accountant summary is actual money customers
+paid, refunds, tax and the remaining amount. Discounts are not additional income
+and do not require a report column, separate staff entry or a new discount
+feature. Retain pricing/discount detail internally where an approved discount
+already applies, to reconcile the accepted final charge and allocate subsequent
+refunds/tax correctly. For example, a $15 admission reduced to $12 contributes
+only the actual $12 received before any separately recorded fee/tax, not $15
+plus a fictitious $3 receipt. The future report may omit the original price and
+discount entirely. Store supporting detail without expanding the visible report.
+
+
+- Actual final sales by product/category and taxable/nontaxable treatment, with
+  reversals/returns traceable to original transaction detail. Discount breakdowns
+  are internal supporting facts, not mandatory accountant-summary columns.
 - Money collected, external refunds and net receipts, with an explicit definition
   of which date/status is included. Total receipts including tax are different
   from sales income excluding tax.
