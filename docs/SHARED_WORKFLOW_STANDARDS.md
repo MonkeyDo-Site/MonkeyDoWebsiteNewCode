@@ -135,3 +135,17 @@ Keep the same draft PR open for page-image corrections; mark ready only after
 approval and passing checks. This does not waive future screen review generally.
 The narrower two-column public form and page-specific information wording must
 not reintroduce the deferred homepage redesign.
+
+
+## Fifth-batch clarification and review exception
+
+The [fifth-batch scope](OWNER_EDITS_BATCH_5.md) explicitly extends the public
+current-phone Name/Email verification and conflict matrix to No/silent discovery
+and retry-number/current matches. Keep previous-phone confirmation distinct and
+do not extend these exceptions to membership/waiver identity flows implicitly.
+Recovery copy must reflect its actual entry path and retain the chosen session.
+Public duplicate-email messages share the safe restart link; staff retain their
+shorter profile-linked message. The owner waived review screenshots for the fifth
+batch and authorized PR preparation alongside implementation, then interactive
+acceptance after deployment with browser ZIP plus one command. This supersedes
+the general screenshot step for this batch only.

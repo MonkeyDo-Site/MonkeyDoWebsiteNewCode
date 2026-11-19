@@ -166,3 +166,23 @@ Clean single-tab blank-referral tests pass; this protection does not claim that
 the original intermittent report was definitively reproduced. Only booking-page
 screenshots are requested now. This batch remains pending-test booking, without
 cards, signed waivers, actual payments or next-phase integration.
+
+
+## Fifth batch — current-phone verification and focused recovery copy
+
+The [approved fifth-batch scope](OWNER_EDITS_BATCH_5.md) supersedes overlapping
+older descriptions: No/silent current-phone matches and current matches found
+after retry now use the same Name/Email form and guarded conflict matrix as Yes.
+Previous-phone confirmation is unchanged. Header wording distinguishes Yes from
+No discovery, and later screens retain their own name/email/confirmation context.
+Contact introductions depend on entry path; failed email-introduction removal is
+limited to the two approved scenarios. Duplicate-email errors in both public
+forms have a safe same-session phone-restart link and no removal offer.
+Quantity/age labels and estimate/input alignment follow the fifth-batch review.
+The owner reported PR #28 deployed; its reviewed commit is
+`b706e5034875529d74d26c10d72064c118165c9b`, merged as
+`d92408c5545e9fa89140061595e1a6d8b8e52ca4`. This is owner-reported evidence,
+not a new server inspection. Fifth-batch deployment awaits merge and the owner's
+[routine browser-ZIP command](OWNER_FEEDBACK_BATCH_FIVE_RELEASE.md). No migration
+or hosted/provider change is performed by local development. Review screenshots
+were explicitly waived for this batch.

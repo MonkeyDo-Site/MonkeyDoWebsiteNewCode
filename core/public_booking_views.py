@@ -92,6 +92,8 @@ class RetryPhoneForm(forms.Form):
     )
 
     def clean_phone(self):
+        if self.data.get("continue_new") == "1":
+            return ""
         return normalize_phone(self.cleaned_data["phone"], optional=True)
 
 
@@ -124,7 +126,9 @@ class ContactForm(forms.Form):
         except ValidationError:
             from .customers import public_duplicate_email_message
 
-            raise ValidationError(public_duplicate_email_message(email)) from None
+            raise ValidationError(
+                public_duplicate_email_message(email), code="duplicate_email"
+            ) from None
         return email
 
 
@@ -140,7 +144,9 @@ class RequiredEmailForm(forms.Form):
         except ValidationError:
             from .customers import public_duplicate_email_message
 
-            raise ValidationError(public_duplicate_email_message(email)) from None
+            raise ValidationError(
+                public_duplicate_email_message(email), code="duplicate_email"
+            ) from None
         return email
 
 
@@ -171,7 +177,7 @@ class DetailsForm(forms.Form):
         max_value=35,
         initial=1,
         label="Number of children",
-        help_text="Ages 1–11 for Open Play; ages 3–11 for Supervised Play.",
+        help_text="Ages 1–11 for Open Play | Ages 3–11 for Supervised Play.",
     )
     adults = forms.IntegerField(
         min_value=0, max_value=50, initial=1, label="Number of adults", help_text="Ages 12 and up."
@@ -179,7 +185,7 @@ class DetailsForm(forms.Form):
     babies = forms.IntegerField(
         min_value=0, max_value=50, initial=0, label="Number of babies", help_text="Under age one."
     )
-    socks = forms.IntegerField(min_value=0, max_value=35, initial=0, label="Pairs of grip socks")
+    socks = forms.IntegerField(min_value=0, max_value=35, initial=0, label="Grip socks")
     expected_method = forms.ChoiceField(
         choices=Booking._meta.get_field("expected_method").choices, label="Payment method"
     )
@@ -256,6 +262,9 @@ def display(request, flow, *, form=None, error=None, notice=None):
             "form": form,
             "error": error,
             "flow_notice": notice,
+            "show_contact_recovery": flow["stage"] == "contact"
+            and flow.get("contact_origin") == "retry_unmatched"
+            and not (form and form.errors),
             **public_verification.choice_context(flow),
             "customer": customer,
             "quote": flow.get("quote"),
@@ -369,13 +378,14 @@ def wizard(request):
                 flow["phone"] = data["phone"]
                 flow["visited"] = data["visited"]
                 flow["stage"] = "contact"
+                flow["contact_origin"] = "new"
                 flow["lookup_note"] = not bool(customer)
                 if not customer and data["visited"] == "yes":
                     flow["stage"] = "retry_phone"
                 if customer:
                     flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
                     flow["stage"] = "name" if customer.phone == data["phone"] else "previous"
-                    if flow["stage"] == "name" and data["visited"] == "yes":
+                    if flow["stage"] == "name":
                         flow["verification_entry"] = "returning_current"
                     if flow["stage"] == "previous":
                         flow["current_phone"] = customer.phone
@@ -383,6 +393,7 @@ def wizard(request):
                 phone = data.get("phone")
                 if request.POST.get("continue_new") == "1":
                     flow["stage"] = "contact"
+                    flow["contact_origin"] = "explicit_new"
                 elif not phone:
                     form.add_error(
                         "phone", "Enter another phone number, or choose Continue as a new customer."
@@ -398,10 +409,13 @@ def wizard(request):
                     if customer:
                         flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
                         flow["stage"] = "name" if customer.phone == phone else "previous"
+                        if flow["stage"] == "name":
+                            flow["verification_entry"] = "returning_current"
                         if flow["stage"] == "previous":
                             flow["current_phone"] = customer.phone
                     else:
                         flow["stage"] = "contact"
+                        flow["contact_origin"] = "retry_unmatched"
                         flow["lookup_note"] = True
             elif stage == "email_lookup":
                 address = data["email"].strip().lower()
@@ -412,6 +426,11 @@ def wizard(request):
                 customer = Customer.objects.filter(email__iexact=address).first()
                 matched_by = recovery_match_kind(flow, customer) if customer is not None else None
                 if not matched_by:
+                    # Only the unmatched-phone failure from comment 8 loses its
+                    # introduction. Other legacy recovery contexts retain theirs.
+                    if lookup_phone(flow["phone"]) is None:
+                        flow["unmatched_email_failed"] = True
+                        save(request, flow)
                     form.add_error(
                         None,
                         "We couldn't match those details. Please try again or call/text 848-238-5147 for help.",

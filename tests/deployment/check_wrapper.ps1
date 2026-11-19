@@ -123,19 +123,21 @@ try {
     $global:Calls.Clear(); $failed = $false
     try { & ([scriptblock]::Create($body)) } catch { $failed = $true }
     if (-not $failed -or $global:Calls.Count -ne 0) { throw 'Missing browser ZIP must stop all remote operations.' }
-    # Fourth-batch deployment uses the same browser ZIP path without a schema opt-in.
-    $handoff = [IO.File]::ReadAllText((Join-Path $root 'docs/OWNER_FEEDBACK_BATCH_FOUR_RELEASE.md'))
-    $sample = [regex]::Match($handoff, '```powershell\r?\n([\s\S]*?)```').Groups[1].Value
-    $sampleErrors = $null; $sampleTokens = $null
-    [void][Management.Automation.Language.Parser]::ParseInput($sample, [ref]$sampleTokens, [ref]$sampleErrors)
-    if ($sampleErrors.Count -gt 0) { throw 'Fourth-batch handoff syntax errors.' }
-    $body = [regex]::Replace($sample, '(?s)^powershell[^\n]*\{\r?\n(.*)\}\s*$', '$1')
-    $body = $body.Replace('APPROVED_COMMIT', $commit).Replace('$HOME\Downloads', "$temporary\browser\Downloads").Replace('$HOME\MonkeyDoDeploy', "$temporary\browser\MonkeyDoDeploy")
-    Copy-Item -LiteralPath $archive -Destination $browserArchive
-    $global:Calls.Clear()
-    & ([scriptblock]::Create($body))
-    if ($global:Calls.Count -ne 4 -or $global:Calls[0].kind -ne 'scp' -or $global:Calls[-1].arguments -notcontains 'deploy') { throw 'Fourth-batch handoff must install and routinely deploy from browser ZIP.' }
-    if (@($global:Calls[-1].arguments | Where-Object { $_ -like '--apply-reviewed-*' }).Count -ne 0) { throw 'Fourth batch has no reviewed schema update.' }
+    # Routine batches use browser ZIPs without schema opt-in.
+    foreach ($releaseName in @('FOUR', 'FIVE')) {
+        $handoff = [IO.File]::ReadAllText((Join-Path $root "docs/OWNER_FEEDBACK_BATCH_${releaseName}_RELEASE.md"))
+        $sample = [regex]::Match($handoff, '```powershell\r?\n([\s\S]*?)```').Groups[1].Value
+        $sampleErrors = $null; $sampleTokens = $null
+        [void][Management.Automation.Language.Parser]::ParseInput($sample, [ref]$sampleTokens, [ref]$sampleErrors)
+        if ($sampleErrors.Count -gt 0) { throw 'Routine handoff syntax errors.' }
+        $body = [regex]::Replace($sample, '(?s)^powershell[^\n]*\{\r?\n(.*)\}\s*$', '$1')
+        $body = $body.Replace('APPROVED_COMMIT', $commit).Replace('$HOME\Downloads', "$temporary\browser\Downloads").Replace('$HOME\MonkeyDoDeploy', "$temporary\browser\MonkeyDoDeploy")
+        Copy-Item -LiteralPath $archive -Destination $browserArchive
+        $global:Calls.Clear()
+        & ([scriptblock]::Create($body))
+        if ($global:Calls.Count -ne 4 -or $global:Calls[0].kind -ne 'scp' -or $global:Calls[-1].arguments -notcontains 'deploy') { throw 'Routine handoff must install and deploy from browser ZIP.' }
+        if (@($global:Calls[-1].arguments | Where-Object { $_ -like '--apply-reviewed-*' }).Count -ne 0) { throw 'Routine batch has no reviewed schema update.' }
+    }
     Write-Output 'PASS: PowerShell parse, upload/hash, safe install, rollback/status, spaces, failure stop and strict host-key verification. SSH/SCP calls were mocked.'
 } finally {
     Remove-Item Function:\scp -ErrorAction SilentlyContinue

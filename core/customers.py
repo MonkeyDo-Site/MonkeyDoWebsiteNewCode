@@ -5,6 +5,8 @@ import re
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.db.models import Q
+from django.urls import reverse
+from django.utils.html import format_html
 
 from .forms import normalize_phone
 from .models import AuditEvent, Customer, CustomerComment
@@ -231,4 +233,15 @@ def historical_email_customers(email, customer_id=None):
 
 
 def public_duplicate_email_message(email):
-    return f"The email address you entered {email} already exists for another customer. Please enter another email address or if {email} is your email address, perhaps you entered a different phone number now than the one associated with a previous booking using this email address. Please go back to the booking page and enter a phone number and name you may have entered in the past for this email address. If you need further help, we’re happy to help. We can remove this email address from the other customer profile. Please contact us at 848-238-5147."
+    return format_html(
+        "The email address you entered {} already exists for another customer. "
+        "Please enter another email address or if {} is your email address, "
+        "perhaps you entered a different phone number now than the one associated "
+        "with a previous booking using this email address. Please "
+        '<a href="{}">go back to the booking page</a> and enter a phone number and '
+        "name you may have entered in the past for this email address. "
+        "If you need further help, we’re happy to help. Please contact us at 848-238-5147.",
+        email,
+        email,
+        reverse("customer_booking") + "?restart=1",
+    )

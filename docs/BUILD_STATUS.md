@@ -1,6 +1,23 @@
 # Staging build status
 
-## Fourth batch — local implementation, draft PR/image review
+## Fifth batch — implementation and PR authorized
+
+The owner reported PR #28 deployed to staging. Reviewed commit
+`b706e5034875529d74d26c10d72064c118165c9b` merged as
+`d92408c5545e9fa89140061595e1a6d8b8e52ca4`; its GitHub PostgreSQL 17/native
+Windows checks passed. This is owner-reported deployment, not a fresh host check.
+
+The fifth batch refines public quantity labels/input-aligned estimate, entry-path
+introductions, inline retry actions and linked duplicate-email recovery; it extends
+guarded Name/Email verification to No/silent and retry current-phone matches.
+441 local PostgreSQL 16.2 tests passed. Chromium passed at 1440/1024/390/320px
+without screenshots, overflow or page JS errors. The routine PowerShell handoff
+passed with transport mocked. No schema or provider change is required.
+No review screenshots were requested; owner acceptance follows deployment.
+[Complete scope](OWNER_EDITS_BATCH_5.md) ·
+[Browser ZIP and routine command](OWNER_FEEDBACK_BATCH_FIVE_RELEASE.md).
+
+## Fourth batch — archived local implementation and image-review evidence
 
 The full fourth batch is implemented locally, with the owner-authorized narrower
 booking form/play controls, scoped matching branches and owner conflict notices,
@@ -22,9 +39,9 @@ captures plus 320px checks cover this CSS-only revision. The prior template
 follow-up passed 41 affected tests; the existing full-suite result above precedes
 these presentation revisions. GitHub rechecks the new head.
 
-The owner requested one draft PR, updated with booking-page image comments before
-marking ready. No hosted deployment or schema change occurred for this batch;
-PR #27 below remains the hosted baseline. No next-phase payment/waiver/active
+At this checkpoint the owner requested one draft PR updated during image review;
+no hosted deployment or schema change had occurred yet. PR #27 below was the
+hosted baseline. The later owner-reported PR #28 deployment is recorded above. No next-phase payment/waiver/active
 membership integration or Old test booking classification has been built.
 [Scope](OWNER_EDITS_BATCH_4.md) · [Images](design-review/owner-edits-batch-4/README.md) ·
 [Routine deployment handoff](OWNER_FEEDBACK_BATCH_FOUR_RELEASE.md).

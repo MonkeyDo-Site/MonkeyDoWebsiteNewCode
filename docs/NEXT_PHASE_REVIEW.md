@@ -11,6 +11,15 @@ memberships next, and the remaining business workflows afterward.
 
 ## Baseline and evidence
 
+The owner subsequently reported PR #28 deployed, reviewed commit
+`b706e5034875529d74d26c10d72064c118165c9b`, merge
+`d92408c5545e9fa89140061595e1a6d8b8e52ca4`. The approved
+[fifth-batch clarification](OWNER_EDITS_BATCH_5.md) updates customer verification,
+recovery wording and quantity/estimate presentation; carry those rules forward
+with [shared workflow standards](SHARED_WORKFLOW_STANDARDS.md). Fifth-batch
+implementation does not authorize or start the next-phase integrations below.
+
+
 The owner reported successful deployment of PR #27. Its merge commit is
 `a605aef5d7c43bd42852ea132937e9277a5c1b53`; the reviewed deployment ZIP is pinned
 to `01d5bd58a401b4e6ea2beb9d4d8cbde59c6a597f`. The PR included the final reviewed

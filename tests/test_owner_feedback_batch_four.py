@@ -37,8 +37,6 @@ class FourthMatchingTests(TestCase):
 
     def email_first_conflict(self, visited="yes"):
         self.begin(self.original.phone, visited)
-        if visited == "no":
-            self.client.get("/book/recover/")
         response = self.post({"email": self.other.email})
         self.assertEqual(self.flow["stage"], "conflict_name")
         self.assertNotContains(response, self.other.phone)
@@ -51,11 +49,11 @@ class FourthMatchingTests(TestCase):
         self.assertNotIn("proof", self.flow)
         return response
 
-    def test_two_fields_are_limited_to_returning_current_phone_entry(self):
+    def test_two_fields_apply_to_yes_no_current_phone_but_not_previous_phone(self):
         self.begin(self.original.phone, "yes")
         self.assertContains(self.client.get("/book/details/"), 'name="email"')
         self.begin(self.original.phone, "no")
-        self.assertNotContains(self.client.get("/book/details/"), 'name="email"')
+        self.assertContains(self.client.get("/book/details/"), 'name="email"')
         self.original.previous_phone = "2025550177"
         self.original.save()
         self.begin(self.original.previous_phone, "yes")

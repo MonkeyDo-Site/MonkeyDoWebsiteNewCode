@@ -306,3 +306,27 @@ after approved deployment, per this batch's explicit review instruction.
 - B4-C: new-customer referral blank succeeds without early save; stale/double/back
   submissions retain current step/quote and do not show unrelated required-field
   errors or create another booking. A current review form remains submittable.
+
+
+## Fifth-batch acceptance — owner review after deployment
+
+Owner waived screenshots; run browser checks without producing a new gallery.
+- B5-LAYOUT: age-help separator and Grip socks label; estimate level with first
+  input box on desktop, below group on phone. Right-aligned Continue, wider
+  outside-card gap, no fees/tax in live estimate; final Payment Details unchanged.
+- B5-ENTRY: initial phone/revalidation has no restart; Yes/unmatched retry has
+  inline email/new-customer choices, no duplicate action. An unfinished retry
+  number does not replace the checked phone when continuing as new.
+- B5-CONTACT: No/unmatched and explicit-new start at Your details; second failed
+  lookup shows the second phone's notice/options; contact errors omit this intro.
+- B5-VERIFY: Yes/No/retry current matches accept name/email or both and accurate
+  headers. Possible spelling still needs confirmation. Both conflict branches
+  preserve privacy and audited owner alerts; previous-phone behavior is unchanged.
+- B5-EMAIL: introductions disappear only for the two approved unsuccessful-search
+  cases; initial/other recovery instructions remain. Neither email-only unmatched
+  phone lookup nor forged profile actions reveal another customer's details.
+- B5-DUPLICATE: both public email forms show the shorter linked message; link
+  resets to phone entry while retaining session and clearing proof/contact state.
+  Inputs remain escaped; staff retain shorter permitted-profile error links.
+- B5-RELEASE: no migration; reviewed ZIP and matching helper, routine Functional
+  deployment, no reviewed-schema option. Verify final HTTPS/private gate on host.
