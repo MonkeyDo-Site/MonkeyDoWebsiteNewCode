@@ -151,3 +151,15 @@ Test membership planning and persisted calendar/price history are available; rer
 ## Weekly schedule increment
 
 Owners can edit weekly templates, explicitly generate/apply dated sessions and configure the booking horizon. See [RECURRING_SCHEDULE_DEVELOPMENT.md](RECURRING_SCHEDULE_DEVELOPMENT.md). Generation retains booked/manual/independent sessions; it is not a recurring worker or a public checkout activation.
+
+
+## Accountant reporting foundation — November 19, 2026
+
+The owner may defer accountant report screens until after launch. When the next
+payment phase is authorized, include the [source-data requirements](ACCOUNTANT_REPORTING_FOUNDATION.md)
+from its start: actual receipt/tax/fee/tender facts and dates, safe provider
+references, immutable linked refunds/voids/credits/conversions and test/live
+separation. The existing booking quotes/drafts are not a payment ledger and
+should never be reported as income. No separate reporting server or new provider
+key is required merely for this planning need. Report presentation and accounting
+basis can be agreed later; basic operational export scope remains unchanged.

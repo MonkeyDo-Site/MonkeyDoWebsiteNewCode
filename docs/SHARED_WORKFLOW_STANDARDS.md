@@ -149,3 +149,17 @@ shorter profile-linked message. The owner waived review screenshots for the fift
 batch and authorized PR preparation alongside implementation, then interactive
 acceptance after deployment with browser ZIP plus one command. This supersedes
 the general screenshot step for this batch only.
+
+
+## Financial facts carried into every paid workflow
+
+The [reporting foundation](ACCOUNTANT_REPORTING_FOUNDATION.md) applies to ordinary
+visits, supervised play, membership installments/conversions, parties, clubs,
+socks and physical gift-card sale/tender records. Reuse one consistent financial
+record structure with immutable sale/tax/fee allocations, actual tender/status,
+linked adjustments and distinct service/payment/refund/settlement dates. A new
+screen must not silently record only an editable paid-total field. Estimates,
+unknown outcomes and credit applications are not cash received. Accountant
+reporting UI may follow launch, but its source facts must be collected from the
+first live payment, within existing permissions/retention and without adding
+raw card data or an unapproved gift-card balance ledger.

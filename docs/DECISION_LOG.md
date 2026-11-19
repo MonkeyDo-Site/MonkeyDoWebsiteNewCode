@@ -554,3 +554,20 @@ paid, $16.02 is available for the replacement purchase; do not refund and credit
 the same money twice. No application/payment behavior was changed by recording
 this answer. Production tax rate remains open. Companion payment, membership,
 open-decision and remaining-stage documents now reflect this clarification.
+
+
+## Accountant reports later; financial source facts from the start — November 19, 2026
+
+Owner requested eventual income/tax/refund/net-income reports and allowed report
+implementation after go-live, asking whether the underlying configuration must
+change now. Review found immutable quote snapshots and audit in the current
+application; actual payment/tender/refund records remain planned. Add explicit
+source-data acceptance criteria to the next payment phase, before real money:
+item/category/tax/fee allocations, actual tenders/outcomes, original/correction
+links, distinct service/receipt/refund/settlement dates and safe provider IDs.
+Keep tax versus income, customer fees versus processor costs, credits versus
+external refunds and receipts versus deposits distinct; preserve retention and
+exclude sandbox/estimates. Report screens/accounting layout can follow launch;
+no server/key change is required solely for reporting. No financial models,
+migrations or reporting UI were built in this review. Full detail lives in
+ACCOUNTANT_REPORTING_FOUNDATION.md.

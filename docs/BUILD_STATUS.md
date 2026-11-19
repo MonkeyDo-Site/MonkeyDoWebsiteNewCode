@@ -1,5 +1,16 @@
 # Staging build status
 
+## Subsequent planning: accountant tax clarification and future reports
+
+Owner supplied the retained-processing-fee tax answer; payment/membership rules
+now document reversal when the admission payment is applied to membership.
+Accountant report screens may be built after launch. The next payment foundation
+must capture [reportable financial source facts](ACCOUNTANT_REPORTING_FOUNDATION.md)
+from the start; existing price estimates are not real receipts. These updates
+change documentation only. No ledger, report, payment operation, migration or
+provider configuration was implemented by this planning review.
+
+
 ## Fifth batch — implementation and PR authorized
 
 The owner reported PR #28 deployed to staging. Reviewed commit

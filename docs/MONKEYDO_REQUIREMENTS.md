@@ -242,6 +242,18 @@ Staff see calculated fee changes but cannot enter special prices. Enforce every 
 
 ## 10. Export, print, retention, and security
 
+Owner accountant reports for income, sales tax, refunds and net receipts may be
+built after launch. Before live payments, implement the source records in
+[ACCOUNTANT_REPORTING_FOUNDATION.md](ACCOUNTANT_REPORTING_FOUNDATION.md): immutable
+sale lines/tax/fee allocations, actual tenders/outcomes, linked adjustments and
+credits, separate service/receipt/refund/settlement dates, safe provider IDs and
+test/live distinction. Distinguish tax collected from sales income, customer
+processing fees from provider expenses, external refunds from customer credit,
+and net receipts from bank deposits/profit. Final report format/accounting basis
+can be agreed later; do not discard facts needed to choose it. Existing basic
+operational exports and access rules remain separately required.
+
+
 - Export customers, all bookings/by booking-date range, one customer's payment history, all payments/by date range; membership and program exports in companion docs. CSV is the documented export format.
 - Customer standard fields: Last Name/current phone/current email. Optional ID, previous phone/email, next booking, waiver status and comments. Booking comments optional/default excluded. Never export tokens, raw cards, passwords or secrets.
 - Staff print daily/session schedules with Last Name, phone, attendance/appointment/payment information, without customer/booking comments or redundant waiver column. Club rosters have different participant/age/waiver fields. Owner sees export history; no extra owner password prompt for exports while logged in.

@@ -88,7 +88,7 @@ They can be reviewed and deployed as useful staging increments.
 | Order | Work | What becomes testable |
 | --- | --- | --- |
 | 0 | Review the owner's current test findings; correct defects affecting shared rules; reconcile the current status and roadmap. | A reliable baseline with known remaining issues. Testing can continue while independent design/integration investigation proceeds. |
-| 1A | Payment-operation/tender records, durable jobs and message outbox, Banquest sandbox adapter, secure provider-controlled card setup, consent and method lifecycle, webhook/reconciliation handling and permissions. | Both card-payment setup and alternate-tender backup-card setup, plus explicit sandbox payment operations, including failure, timeout, replay and duplicate handling. No live payments. |
+| 1A | Payment-operation/tender records with reportable line/tax/fee allocations and linked adjustment dates, durable jobs and message outbox, Banquest sandbox adapter, secure provider-controlled card setup, consent and method lifecycle, webhook/reconciliation handling and permissions. | Both card-payment setup and alternate-tender backup-card setup, plus explicit sandbox payment operations, including failure, timeout, replay and duplicate handling. No live payments. |
 | 1B | Approved waiver text/version and signing evidence, private test R2 storage, coverage/expiry, shared-parent links, paper fallback, staff viewing and retention. Develop alongside 1A where independent. | Actual saved electronic evidence and correct coverage decisions, rather than the preserved unsigned prototype. |
 | 1C | Complete ordinary and supervised public/staff booking, confirmations, customer email correction/resend, arrival review, actual collection, split tenders, cancellation/no-show and partial-arrival fees, owner comped/custom/exclusive booking behavior. | An end-to-end test visit: reserve, complete required setup, receive an accurate email, review attendance/coverage, explicitly charge or record payment, and inspect history. |
 | 2 | Active membership purchase, accepted terms, monthly/prepaid collection, installments, benefit reservation/usage, renewal/addition, owner exceptions, conversion and customer credit. | Memberships actually affect bookings, including member information/popup and adjusted pricing at the appropriate booking step; failures, calendar boundaries, mixed benefits and conversion credit can be tested. Preserve existing calendar/price work and the shared filters/layout conventions. |
@@ -105,6 +105,17 @@ choices and the required backup-card rules, including manual physical gift-card
 verification. It need not invent a digital gift-card balance system. Standalone
 gift-card sales and later customer-credit consumption belong to their dependent
 increments. Shared ledger design must accommodate them from the start.
+
+The owner allows accountant income/tax/refund report screens to follow launch.
+[Financial source-data requirements](ACCOUNTANT_REPORTING_FOUNDATION.md) belong
+in stage 1A before real receipts: preserve original sale/tax/fee allocations,
+actual tenders and dates, linked refunds/voids/credits/conversions and safe
+provider/settlement references. Estimates and credit reallocations are not new
+cash receipts. Keep tax, customer fee, provider cost and deposit separate. Final
+report layout/accounting presentation may wait without delaying the required
+source-data capture. Existing operational exports/printing remain in their
+previously approved acceptance scope.
+
 
 ## Both card paths belong to the next stage
 

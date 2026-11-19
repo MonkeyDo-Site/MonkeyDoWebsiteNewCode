@@ -346,3 +346,16 @@ and active-membership stages, not as a claim of current functionality.
   Charge any new card-funded balance with its own applicable fee; prevent
   duplicate reversals or double application of paid funds. Production tax rate
   is a separate input and must not default to the staging 6.6%.
+
+
+## Payment-foundation acceptance for later accountant reports
+
+Before live receipts, test the [financial source-data criteria](ACCOUNTANT_REPORTING_FOUNDATION.md):
+sale/line/tax/fee/tender totals reconcile; split failure preserves received funds;
+refunds use original tax allocation and retain both dates; conversion/credit
+application is not counted as new cash; customer fees differ from actual gateway
+costs; retries/replayed provider events do not duplicate money; sandbox/quotes
+are excluded from live aggregates. Include New York period boundaries, later
+partial refunds and the accountant's $0.03 retained-fee-tax reversal example.
+These are future payment-stage tests, not current report/payment functionality.
+Accountant report UI may follow launch.

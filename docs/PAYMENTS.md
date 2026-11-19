@@ -217,3 +217,20 @@ Sandbox transactions **cannot move to live**. Separate credentials/data/endpoint
 One Edit booking form changes eligible session, attendee counts, play type and expected tender. The revised itemized estimate is visible before saving; if the amount changes, show a save-time reminder to review the expected payment method rather than an extra dropdown; this is not a collection action. Reprice with the original immutable policy and append a quote revision. Customer payment-history cards remain truthful empty transaction states until a payment ledger is implemented; quotes and planned membership installments are estimates. Actual payment/card replacement/arrival workflows remain as specified above and are not enabled by these UI changes.
 
 Booking/membership payment selectors explain the actual applicable credit-card rate (currently 3%). This is label presentation only; the existing fee base, rounding and tax rules above still apply. Public selection stays in Session Details; Payment Details provides the breakdown/final reviewed save action.
+
+
+## 6. Capture financial facts before live payments; accountant reports later
+
+The owner permits building accountant income/tax/refund reports after launch.
+The payment foundation must first capture the source records described in
+[reporting foundation](ACCOUNTANT_REPORTING_FOUNDATION.md): stable sale/line/operation
+IDs, immutable price/tax categories and cent allocations (including fee tax),
+actual tenders and statuses, linked refunds/voids/corrections/conversions/credits,
+distinct event/service/settlement dates, safe provider references and environment.
+Keep customer processing fees separate from actual provider costs and deposits.
+Do not count estimates, failed/unknown attempts, credit applications or converted
+funds as new receipts. Preserve the original transaction and later adjustment;
+current prices/rates or edited customer records cannot rewrite past financial
+facts. Accountant report screens/formats can wait; the source-data acceptance
+criteria belong in stage 1A before real payments. No accounting integration or
+provider/report configuration is activated by this planning clarification.
