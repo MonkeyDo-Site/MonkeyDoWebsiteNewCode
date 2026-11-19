@@ -496,3 +496,14 @@ go-ahead authorizes the whole batch, screenshots now only for the customer booki
 page, and one draft PR updated during review. Other owner acceptance follows
 approved deployment. Full trace: OWNER_EDITS_BATCH_4.md. The previously aligned
 next-stage plan remains planning, not payment/waiver development authorization.
+
+
+## Fourth-batch booking-page image revision
+
+Owner replaced the first quantity layout while retaining narrower spacing: move
+the green panel left, keep space before outside play cards, show Family/contact,
+Choose play type, then Your Group; stack all four quantity inputs left, with
+estimate upper right and payment/Continue bottom right. Explicit quantity labels
+and separate age help remove ambiguity about entering ages. Keep the same draft
+PR and refresh booking-page screenshots only. Matching, calculation, permissions
+and the deployment review boundary are unchanged.

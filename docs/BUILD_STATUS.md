@@ -11,6 +11,12 @@ requested. Staff/matching flows were exercised without publishing extra screen
 images. The routine browser-ZIP PowerShell handoff passed with transport mocked;
 GitHub PostgreSQL 17/native Windows CI is separate release evidence.
 
+The subsequent booking-image correction left-aligns the panel, places all four
+quantity fields left and estimate/payment right, reorders play choice above
+Your Group and separates age help from quantity labels. It passed 41 affected
+tests and refreshed 1440/390px captures plus 320px checks; the existing full-suite
+result above precedes that presentation follow-up. GitHub rechecks the new head.
+
 The owner requested one draft PR, updated with booking-page image comments before
 marking ready. No hosted deployment or schema change occurred for this batch;
 PR #27 below remains the hosted baseline. No next-phase payment/waiver/active

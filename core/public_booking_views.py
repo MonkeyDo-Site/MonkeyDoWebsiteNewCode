@@ -170,10 +170,15 @@ class DetailsForm(forms.Form):
         min_value=0,
         max_value=35,
         initial=1,
-        label="Children (ages 1–11 for Open Play; 3–11 for Supervised Play)",
+        label="Number of children",
+        help_text="Ages 1–11 for Open Play; ages 3–11 for Supervised Play.",
     )
-    adults = forms.IntegerField(min_value=0, max_value=50, initial=1, label="Adults ages 12+")
-    babies = forms.IntegerField(min_value=0, max_value=50, initial=0, label="Babies under one")
+    adults = forms.IntegerField(
+        min_value=0, max_value=50, initial=1, label="Number of adults", help_text="Ages 12 and up."
+    )
+    babies = forms.IntegerField(
+        min_value=0, max_value=50, initial=0, label="Number of babies", help_text="Under age one."
+    )
     socks = forms.IntegerField(min_value=0, max_value=35, initial=0, label="Pairs of grip socks")
     expected_method = forms.ChoiceField(
         choices=Booking._meta.get_field("expected_method").choices, label="Payment method"
@@ -208,7 +213,7 @@ class DetailsForm(forms.Form):
             self.fields["adults"].initial = self.fields["babies"].initial = 0
         self.fields[
             "socks"
-        ].label = "Grip socks are required for play at MonkeyDo. You can pay for them now or bring your own. Please select the amount you want to purchase:"
+        ].help_text = "Grip socks are required for play at MonkeyDo. You can pay for them now or bring your own. Select the number of pairs you want to purchase."
         self.fields["expected_method"].choices = payment_method_choices(
             PricingPolicy.objects.first()
         )

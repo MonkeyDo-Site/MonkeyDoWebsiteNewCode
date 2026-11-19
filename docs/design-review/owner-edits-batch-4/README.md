@@ -7,7 +7,7 @@ approved deployment. Hosted staging has not changed.
 
 | Booking-page state | Desktop | Phone |
 | --- | --- | --- |
-| Open Play — new two-column fields, estimate left/payment right | [Desktop JPG](01-booking-open-play-desktop.jpg) | [Phone JPG](01-booking-open-play-phone.jpg) |
+| Open Play — four quantity fields left, estimate/payment right | [Desktop JPG](01-booking-open-play-desktop.jpg) | [Phone JPG](01-booking-open-play-phone.jpg) |
 | Supervised Play — adults/babies zero and locked | [Desktop JPG](02-booking-supervised-play-desktop.jpg) | [Phone JPG](02-booking-supervised-play-phone.jpg) |
 | Open-only session — Supervised choice visible but unavailable | [Desktop JPG](03-booking-open-only-session-desktop.jpg) | [Phone JPG](03-booking-open-only-session-phone.jpg) |
 | Supervised-only session — Open choice visible but unavailable | [Desktop JPG](04-booking-supervised-only-session-desktop.jpg) | [Phone JPG](04-booking-supervised-only-session-phone.jpg) |
@@ -23,3 +23,11 @@ Homepage/About imagery and layout are unchanged.
 
 [Implementation/branch rules](../../OWNER_EDITS_BATCH_4.md) ·
 [Browser and image evidence](verification.json)
+
+
+Latest image-review revision: the narrower green panel aligns left with a clear
+gap before the outside cards. Family/contact links precede Choose play type and
+Your Group. Four inputs stack left with explicit quantity labels and separate
+age guidance; the estimate is upper right, payment/Continue bottom right. All
+eight JPGs reflect this revision. The 41 affected public-booking tests and browser
+checks passed; the PR remains a draft for image approval.

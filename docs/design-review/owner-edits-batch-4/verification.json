@@ -7,33 +7,33 @@
       "horizontal_overflow": false
     },
     {
+      "screen": "02-booking-supervised-play",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "03-booking-open-only-session",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "04-booking-supervised-only-session",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
       "screen": "01-booking-open-play",
       "viewport": 390,
       "horizontal_overflow": false
     },
     {
       "screen": "02-booking-supervised-play",
-      "viewport": 1440,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "02-booking-supervised-play",
       "viewport": 390,
       "horizontal_overflow": false
     },
     {
       "screen": "03-booking-open-only-session",
-      "viewport": 1440,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "03-booking-open-only-session",
       "viewport": 390,
-      "horizontal_overflow": false
-    },
-    {
-      "screen": "04-booking-supervised-only-session",
-      "viewport": 1440,
       "horizontal_overflow": false
     },
     {
@@ -48,48 +48,57 @@
   "staff_pagination_and_immediate_multi_session_filter": true,
   "staff_supervised_locking_absent": true,
   "distinct_matching_branches_and_other_profile_verification": true,
+  "powershell_handoff": "Passed portable PowerShell with mocked transport; routine browser ZIP handoff has no schema flag.",
+  "review_followup": {
+    "green_panel_left_aligned": true,
+    "outside_card_gap_px": 56,
+    "all_four_quantity_fields_left": true,
+    "estimate_above_payment_on_right": true,
+    "age_guidance_separate_from_quantity_labels": true,
+    "family_play_group_order": true
+  },
   "images": [
     {
       "file": "01-booking-open-play-desktop.jpg",
-      "sha256": "391283f28c7e9868940ba01cc2a202b146c09cbc9ccc50ccf4a5e89246fe5885",
-      "bytes": 206943
+      "sha256": "8514840d518b4ed5ef53d39b7c04602043da12af132ad5fb54def62c764679b7",
+      "bytes": 202696
     },
     {
       "file": "01-booking-open-play-phone.jpg",
-      "sha256": "6f6092399d3b5e1371d4946a0546842011c2db0832c344621425b96862b0f0e2",
-      "bytes": 180702
+      "sha256": "851ec08876d5ec8300c6c1b29627dc2ed2fbb9ce1cd69c82257e3b24306ed349",
+      "bytes": 181028
     },
     {
       "file": "02-booking-supervised-play-desktop.jpg",
-      "sha256": "026388fbcd8300b2e7af27c66846c20c70303aac5f8040f57c262e4bd136991b",
-      "bytes": 203893
+      "sha256": "0a30a81c526b7640b2c56ade9159b9f3b334d07f54ee9423b5dc1080f398f5d9",
+      "bytes": 200938
     },
     {
       "file": "02-booking-supervised-play-phone.jpg",
-      "sha256": "c82c842579878a45f17338e56ff78884f8c9768c4c32ee44f4fa46e297cc8880",
-      "bytes": 178405
+      "sha256": "e2a823a14ff4b9aaf6623e2fc5903ecc90ba495820102166e35b2ae464b92211",
+      "bytes": 178283
     },
     {
       "file": "03-booking-open-only-session-desktop.jpg",
-      "sha256": "336ba2a55e5d2cac742ce540a3dc4f2a4d6784baa09d2053249e76be0732cc76",
-      "bytes": 201036
+      "sha256": "e3cc54c1cfb48e5dff8e9d4655a989411e04ab49273ca826b199b4356f3f1ef5",
+      "bytes": 198957
     },
     {
       "file": "03-booking-open-only-session-phone.jpg",
-      "sha256": "55a73bf8a0c49ab12fd1b6abcdab0d5cac51718a1bbc05122cc5ff1103f5175a",
-      "bytes": 174963
+      "sha256": "05fee2eacb892479d51f48d3f35e71356e74f83fedda0b82d76a64c09498ea45",
+      "bytes": 176268
     },
     {
       "file": "04-booking-supervised-only-session-desktop.jpg",
-      "sha256": "96e5d9ed2f1d0b832c6ec6e96a208689a27b003c9c041ce969a06ab944f06465",
-      "bytes": 202143
+      "sha256": "8693948eb6c488e58c32322fdaa66906cd25ce6cf36d4d639f5f032377585445",
+      "bytes": 199780
     },
     {
       "file": "04-booking-supervised-only-session-phone.jpg",
-      "sha256": "c81c8eb4970785e96f5268f87f98e4dcc6190869e6bcce33d893245ea33ef25b",
-      "bytes": 177056
+      "sha256": "e683f56c1280b67749bc59254eb61d4691302387649dec3c5e076a306686cd04",
+      "bytes": 177713
     }
   ],
-  "local_postgresql_16_2_tests_passed": 428,
-  "powershell_handoff": "Passed portable PowerShell with mocked transport; routine browser ZIP handoff has no schema flag."
+  "full_suite_before_layout_followup_passed": 428,
+  "layout_followup_affected_tests_passed": 41
 }

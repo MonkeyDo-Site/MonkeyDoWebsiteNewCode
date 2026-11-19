@@ -273,8 +273,10 @@ Local developer regression/browser checks passed; owner booking-page screenshot
 review is pending. Other changed pages/scenarios receive owner interactive tests
 after approved deployment, per this batch's explicit review instruction.
 
-- B4-LAYOUT: upper Children/Adults versus Babies/Grip socks, lower estimate versus
-  Payment/Continue; narrower fields/panel, phone stacking and 320px no overflow.
+- B4-LAYOUT: left-aligned narrow panel with outside-card separation; Family/contact,
+  Choose play type and Your Group order. Four quantity fields stack left, estimate
+  upper right and Payment/Continue bottom right. Quantity labels and separate age
+  help, phone stacking and 320px no overflow.
   Check only booking card omits Check the booking page; homepage/About unchanged.
 - B4-PLAY: both radios visible, unavailable disabled, Open default/supervised-only
   exception; public zero/lock/popup/estimate, restored Open counts; forged values

@@ -13,7 +13,7 @@ with booking-page image comments; do not merge/deploy before that review.
 | Item | Implemented behavior |
 | --- | --- |
 | 1 | Omit Check the booking page to see which sessions offer it only from the booking-page Supervised Play information card. Preserve homepage/About wording. |
-| 2 | Narrower green booking panel/inputs. Upper left Children/Adults, upper right Babies/Grip socks; lower left item-only estimate, lower right Payment method/Continue. Stack on phones. |
+| 2 | Narrower left-aligned green panel/inputs with a clear gap before outside play cards. Family/contact links, Choose play type, then Your Group. All four quantity fields stack left; estimate upper right and Payment method/Continue bottom right. Quantity labels are explicit; age guidance is separate. Stack on phones. |
 | 3 | Public form always shows Open/Supervised radios; unavailable choices are disabled/labelled. Open is default when available; supervised-only defaults to Supervised. Public Supervised selection resets adults/babies to zero and makes them read-only, with Supervised play is children only popup on attempted change. Restore prior Open values when switching back. Staff retain validation rather than locking. Estimate recalculates after the reset; server still rejects forged/nonzero supervised quantities. |
 | 4 | Customers search input is narrower, with type selector and Search aligned on desktop; All types remains the initial selection. Responsive stacking retains usability. |
 | 5 | Bookings, Today, Customers and Membership drafts have 10/25/50/100 rows, default 25, numbered/Previous/Next links, preserved filters/sort and page-one reset on size/filter change. Today totals/matching count remain independent of the displayed page. |
@@ -71,3 +71,20 @@ checks remain. No hosted change, payment/card/waiver integration, active benefit
 legacy-booking relabelling or next-phase operational development is included.
 The prior next-phase documentation alignment is included in this branch; it
 records plans, not implemented integrations. Homepage design remains unchanged.
+
+
+## Booking-page image review follow-up
+
+The owner replaced the earlier two-by-two quantity arrangement: keep narrow
+spacing, align the green panel left with separation before the outside play cards,
+then Family/contact, Choose play type, and Your Group. All four quantity inputs
+stack on the left; the estimate is upper right and payment/Continue lower right.
+Labels say Number of children/adults/babies and Pairs of grip socks, with ages
+and sock instructions as separate help, so inputs cannot be mistaken for ages.
+Phone/email are linked in the details summary. This supersedes the original
+layout clarification, without changing quantity validation, pricing or matching.
+
+The follow-up passed 41 affected public-booking tests and Chromium layout/control
+checks at 1440px, 390px and 320px. Eight booking-page JPGs were refreshed. The
+prior full suite was 428 tests; GitHub runs the full suite again for the new head.
+This is the same draft PR and still awaits the owner's page-image approval.

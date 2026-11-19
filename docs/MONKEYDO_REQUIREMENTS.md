@@ -134,7 +134,7 @@ Collect Last Name, phone, email, date/session, baby/child/adult quantities, calc
 
 Validate in browser and server: required fields/consent, nonnegative integer counts, nonzero attendance, adult rule where applicable, card setup unless owner-comped, availability/end time, capacity and permissions. Online waiver must be covered before booking completes; admin/phone bookings may confirm pending.
 
-The visible public progress indicator has four steps: Choose Session, Customer Details, Session Details, Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. Add a waiver step only when the approved waiver workflow is implemented. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed in the lower-left part of the form, with Payment method and Continue parallel on the right. Children/Adults are above left and Babies/Grip socks above right. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
+The visible public progress indicator has four steps: Choose Session, Customer Details, Session Details, Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. Add a waiver step only when the approved waiver workflow is implemented. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed at the upper right of the quantity section, with Payment method and Continue below it at the bottom right. All four quantity inputs stack on the left. Show Family/contact links, Choose play type, then Your Group; use quantity labels with separate age guidance. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
 
 ## 7. Customers and public identification
 
@@ -363,9 +363,12 @@ review. Only the redesigned customer booking page needs screenshots now; other
 changes will receive owner interactive acceptance after approved deployment.
 See [complete scope/branch matrix](OWNER_EDITS_BATCH_4.md).
 
-- Public Session Details uses narrower fields/panel: Children/Adults upper left,
-  Babies/Grip socks upper right, item-only estimate lower left and Payment
-  method/Continue lower right; responsive phone stacking. Do not show the card's
+- Public Session Details uses a narrower, left-aligned green panel with a clear
+  gap before outside play cards. Show Family/contact links, Choose play type and
+  then Your Group. All four quantity inputs stack on the left; item-only estimate
+  is upper right and Payment method/Continue bottom right. Use Number of
+  children/adults/babies and Pairs of grip socks, with ages in separate help;
+  responsive phone stacking. Do not show the card's
   Check the booking page instruction here; keep homepage/About wording intact.
 - Always show both public play choices; disable/label unavailable ones. Default
   Open when available, Supervised for supervised-only sessions. Public Supervised

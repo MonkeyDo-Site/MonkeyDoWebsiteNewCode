@@ -136,8 +136,11 @@ field remains absent.
 
 ## Fourth batch — public layout and scoped verification
 
-The narrower public form groups Children/Adults left and Babies/Grip socks right,
-then estimate left and Payment method/Continue right. Always show both play
+The narrower public panel aligns left with space before the outside play cards.
+Its order is Family/contact links, Choose play type, then Your Group. All four
+quantity inputs stack on the left, with the estimate upper right and Payment
+method/Continue bottom right. Quantity labels are explicit and age guidance is
+separate; this supersedes the initial fourth-batch layout after image review. Always show both play
 choices, disabling unavailable ones. Open defaults when possible; supervised-only
 uses Supervised. Public Supervised sets/locks adults/babies to zero, reports an
 attempted edit with the approved popup and recalculates the estimate. Switching
