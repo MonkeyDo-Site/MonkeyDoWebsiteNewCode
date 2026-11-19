@@ -5,5 +5,6 @@
 {% include 'core/partials/booking_filters.html' %}
 
 {% include 'core/partials/booking_table.html' with table_caption="Today's bookings" empty_message="No test bookings for today." link_customers=True %}
+{% include 'core/pagination.html' with page=bookings %}
 {% include 'core/partials/session_overview.html' %}
 {% endblock %}

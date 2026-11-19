@@ -132,3 +132,32 @@ payment-choice percentage information remains. The failed-name recovery notice
 retains its original first sentence before the revised email-search sentence,
 while direct recovery omits an inapplicable failed-name claim. The repeated name
 field remains absent.
+
+
+## Fourth batch — public layout and scoped verification
+
+The narrower public form groups Children/Adults left and Babies/Grip socks right,
+then estimate left and Payment method/Continue right. Always show both play
+choices, disabling unavailable ones. Open defaults when possible; supervised-only
+uses Supervised. Public Supervised sets/locks adults/babies to zero, reports an
+attempted edit with the approved popup and recalculates the estimate. Switching
+back restores prior Open values. Staff keep validation rather than locking.
+The booking information card alone omits Check the booking page wording.
+
+The approved [branch matrix](OWNER_EDITS_BATCH_4.md) supersedes earlier generic
+recovery descriptions only for its named scenarios. Yes/current-phone offers
+name/email or both, with appropriate success/retry messages. Name/email entered
+together can reach a verified profile-choice exception; name/email verification
+of the second profile is required before its phone/Proceed action is available.
+Email-first conflicts instead ask for a name and end in restart/help; the other
+saved phone is never shown in that branch, including when name matches email
+profile but not phone profile. No customer phone/email is changed, reassigned or
+merged. Owner-only Dashboard notices persist per flow/profile pair. Unspecified
+new-customer/previous-phone/unmatched-phone branches retain existing behavior.
+
+Referral remains optional. Browser forms carry flow/step markers; stale tab/back
+submissions show the current step with a useful warning and preserve its data.
+Clean single-tab blank-referral tests pass; this protection does not claim that
+the original intermittent report was definitively reproduced. Only booking-page
+screenshots are requested now. This batch remains pending-test booking, without
+cards, signed waivers, actual payments or next-phase integration.

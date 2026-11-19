@@ -38,6 +38,16 @@ possible filter, expose staff data publicly or replace distinct waiver coverage
 with a single yes/no customer flag. Existing customer, membership and booking IDs
 must remain stable. The deferred homepage design is not reopened by this plan.
 
+Fourth-batch implementation refines the common list pattern: Bookings, Today,
+Customers and Membership drafts have 10/25/50/100-row paging (default 25) and
+numbered/Previous/Next links, preserving filters/sort. Today keeps full totals.
+Today/Bookings session checks filter immediately while keeping multi-selection
+usable. Public-only supervised quantity locking is not a staff-editor rule.
+The scoped [fourth-batch matching matrix](OWNER_EDITS_BATCH_4.md) overrides the
+generic public-verification description above only for its specified booking
+paths; its conflict/profile-choice exception is not silently extended to new
+membership/waiver/customer scenarios.
+
 ## Changes carried into every later booking-dependent feature
 
 - Keep scheduling's distinct backend-only visibility, closed-for-reservation and
@@ -114,3 +124,14 @@ For each future feature/change, the implementation plan and PR must include:
 The next-stage plan must use this matrix as acceptance criteria at its start,
 not postpone consistency checking until the full website is finished. This
 planning update changes documentation only, not application or hosted data.
+
+
+## Fourth-batch review exception
+
+The owner specifically requested screenshots only of the redone customer booking
+page for this batch. Backend list changes and remaining matching scenarios are
+tested internally and will receive owner acceptance after approved deployment.
+Keep the same draft PR open for page-image corrections; mark ready only after
+approval and passing checks. This does not waive future screen review generally.
+The narrower two-column public form and page-specific information wording must
+not reintroduce the deferred homepage redesign.

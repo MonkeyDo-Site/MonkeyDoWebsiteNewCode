@@ -260,7 +260,9 @@ class PublicThirdBatchTests(TestCase):
         self.assertContains(self.client.get("/book/details/"), c.last_name)
         self.client.post("/book/details/", {})
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "details")
-        self.assertContains(self.client.get("/book/details/"), "Your details match our records")
+        self.assertContains(
+            self.client.get("/book/details/"), "That email address matches our records"
+        )
         c.refresh_from_db()
         self.assertEqual(c.phone, "2025550100")
         self.assertFalse(Booking.objects.exists())
@@ -284,17 +286,17 @@ class PublicThirdBatchTests(TestCase):
             last_name="Known", phone="2025550100", email="known@example.invalid"
         )
         self.begin(c.phone, "yes")
-        response = self.client.post("/book/details/", {"last_name": "Different"})
+        response = self.client.post("/book/details/", {"last_name": "Different"}, follow=True)
         self.assertNotContains(response, 'name="last_name"')
         self.assertContains(
-            response, "We couldn&#x27;t match that name to the entered phone number."
+            response, "We couldn't match the name ‘Different’ with phone number ‘2025550100’."
         )
         self.assertContains(
             response, "You can try finding your customer profile by entering your email address."
         )
         self.client.post("/book/details/", {"email": c.email})
         self.assertContains(self.client.get("/book/details/"), c.last_name)
-        self.assertNotIn("proof", self.client.session["customer_test_booking"])
+        self.assertIn("proof", self.client.session["customer_test_booking"])
 
     def test_email_for_another_profile_cannot_override_a_matched_phone(self):
         current = Customer.objects.create(
@@ -305,10 +307,11 @@ class PublicThirdBatchTests(TestCase):
         )
         self.begin(current.phone, "yes")
         self.client.post("/book/details/", {"last_name": other.last_name})
-        response = self.client.post("/book/details/", {"email": other.email})
+        response = self.client.post("/book/details/", {"email": other.email}, follow=True)
         self.assertNotContains(response, "Is this your family?")
+        self.assertNotContains(response, other.phone)
         self.assertNotIn("candidate_name", self.client.session["customer_test_booking"])
-        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "email_lookup")
+        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "conflict_name")
 
     def test_email_alone_with_unknown_phone_does_not_reveal_profile(self):
         c = Customer.objects.create(

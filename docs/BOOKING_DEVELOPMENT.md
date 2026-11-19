@@ -55,3 +55,15 @@ Create/Edit booking order is Session, Supervised Play, attendee counts, socks an
 Bookings now defaults to today through the same date next year; optional bounds permit all-history searches and single-sided ranges. Clear dates fits within the existing controls; Clear all restores defaults. Dates and session selection apply automatically, with explicit/no-JavaScript fallback. Today stays fixed. Staff booking forms choose date then eligible session. Owner-only reservation closure saves atomically with the booking; cancellation/moves can explicitly reopen only its source-specific blocks. Other bookings/independent closures remain. Redundant visible table captions are hidden accessibly.
 
 Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).
+
+
+## Fourth batch — bounded paging and immediate session filters
+
+Today and Bookings now share 10/25/50/100-row paging, default 25, numbered links,
+Previous/Next and preserved multi-value filters/sort; Today totals stay unpaged.
+Session checkbox changes fetch/render results immediately while leaving the
+multi-select usable. Errors and selected filters remain server-authoritative;
+Apply remains the no-JavaScript fallback. Staff supervised quantities are not
+automatically reset or locked; existing validation errors remain. No arrival,
+charge, waiver, legacy-booking label or database migration is added. Full scope:
+[OWNER_EDITS_BATCH_4.md](OWNER_EDITS_BATCH_4.md).

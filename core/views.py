@@ -56,7 +56,9 @@ def today(request):
     from .booking_filters import booking_context
 
     context = booking_context(request, today_only=True)
-    context["bookings"] = context.pop("rows")
+    from .pagination import paginate
+
+    context["bookings"] = paginate(request, context.pop("rows"))
     return render(request, "core/today.html", context)
 
 

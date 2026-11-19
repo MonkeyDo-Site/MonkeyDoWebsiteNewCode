@@ -61,7 +61,9 @@ def review_notice(request, pk):
         notice.save(update_fields=["reviewed_at", "reviewed_by"])
         AuditEvent.objects.create(
             actor=request.user,
-            action="customer.email_notice_reviewed",
+            action="customer.profile_conflict_reviewed"
+            if notice.details.get("kind") == "booking_profile_conflict"
+            else "customer.email_notice_reviewed",
             record_type="customer",
             record_id=str(notice.customer_id),
             changes={"notice_id": notice.pk},

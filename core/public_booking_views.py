@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
+from . import public_verification
 from .account_security import allow_security_request
 from .booking_progress import progress
 from .forms import normalize_phone, payment_method_choices
@@ -151,14 +152,16 @@ class PreviousPhoneForm(forms.Form):
     )
 
 
-class FixedPlayChoice(forms.HiddenInput):
-    def __init__(self, choice):
-        self.choice = choice
+class AvailablePlayRadio(forms.RadioSelect):
+    def __init__(self, available):
+        self.available = available
         super().__init__()
 
-    def format_value(self, value):
-        # Keep POST validation strict, but offer the currently available value on retry.
-        return self.choice
+    def create_option(self, name, value, label, selected, index, **kwargs):
+        option = super().create_option(name, value, label, selected, index, **kwargs)
+        if not self.available.get(value, False):
+            option["attrs"]["disabled"] = True
+        return option
 
 
 class DetailsForm(forms.Form):
@@ -185,21 +188,23 @@ class DetailsForm(forms.Form):
             or 1
         )
         state = availability(session, horizon)
-        choices = []
-        if state.get("accompanied_available"):
-            choices.append(("open", "Open Play"))
-        if state.get("supervised_available"):
-            choices.append(("supervised", "Supervised Play"))
-        self.fields["play_type"].choices = choices
-        self.fields["play_type"].initial = choices[0][0] if choices else None
-        self.supervised_available = state.get("supervised_available", False)
-        self.fixed_play_type = choices[0][1] if len(choices) == 1 else None
-        if self.fixed_play_type:
-            self.fields["play_type"].widget = FixedPlayChoice(choices[0][0])
-        if choices == [("open", "Open Play")]:
-            self.fields["children"].label = "Children ages 1–11"
-        elif choices == [("supervised", "Supervised Play")]:
-            self.fields["children"].label = "Children ages 3–11"
+        self.available_play = {
+            "open": bool(state.get("accompanied_available")),
+            "supervised": bool(state.get("supervised_available")),
+        }
+        self.fields["play_type"].widget = AvailablePlayRadio(self.available_play)
+        self.fields["play_type"].choices = [
+            (
+                value,
+                label
+                if self.available_play[value]
+                else label + " (not available for this session)",
+            )
+            for value, label in (("open", "Open Play"), ("supervised", "Supervised Play"))
+        ]
+        self.fields["play_type"].initial = "open" if self.available_play["open"] else "supervised"
+        self.supervised_available = self.available_play["supervised"]
+        if not self.available_play["open"] and self.supervised_available:
             self.fields["adults"].initial = self.fields["babies"].initial = 0
         self.fields[
             "socks"
@@ -213,6 +218,9 @@ class DetailsForm(forms.Form):
 
         data = super().clean()
         if self.errors:
+            return data
+        if not self.available_play.get(data["play_type"]):
+            self.add_error("play_type", "This play type is not available for this session.")
             return data
         data["supervised"] = data.pop("play_type") == "supervised"
         validate_attendees(
@@ -228,7 +236,7 @@ class ConfirmForm(forms.Form):
     )
 
 
-def display(request, flow, *, form=None, error=None):
+def display(request, flow, *, form=None, error=None, notice=None):
     session = public_session(flow["session_id"])
     customer = customer_from_flow(flow) if flow.get("proof") else None
     return render(
@@ -242,6 +250,8 @@ def display(request, flow, *, form=None, error=None):
             "session": session,
             "form": form,
             "error": error,
+            "flow_notice": notice,
+            **public_verification.choice_context(flow),
             "customer": customer,
             "quote": flow.get("quote"),
             "live_quote": initial_live_quote(form, flow) if flow["stage"] == "details" else None,
@@ -292,7 +302,9 @@ def wizard(request):
         form_type = {
             "phone": PhoneForm,
             "retry_phone": RetryPhoneForm,
-            "name": NameForm,
+            "name": public_verification.NameOrEmailForm
+            if flow.get("verification_entry") == "returning_current"
+            else NameForm,
             "name_confirm": SimilarNameForm,
             "email_lookup": EmailRecoveryForm,
             "email_confirm": SimilarNameForm,
@@ -301,6 +313,7 @@ def wizard(request):
             "email": RequiredEmailForm,
             "details": DetailsForm,
             "review": ConfirmForm,
+            **public_verification.FORMS,
         }.get(stage)
         if form_type is None:
             raise ValidationError("Start a new booking session.")
@@ -310,6 +323,23 @@ def wizard(request):
                 "play_type": "supervised" if flow["details"]["supervised"] else "open"
             }
         form = form_type(request.POST if request.method == "POST" else None, **args)
+        if (
+            request.method == "POST"
+            and "wizard_key" in request.POST
+            and (
+                request.POST.get("wizard_key") != flow["key"]
+                or request.POST.get("wizard_stage") != stage
+            )
+        ):
+            fresh_args = dict(args)
+            if stage == "review":
+                fresh_args["initial"] = {"flow_key": flow["key"]}
+            return display(
+                request,
+                flow,
+                form=form_type(**fresh_args),
+                notice="Your booking changed in another tab or an earlier step. Please review this page before continuing.",
+            )
         if stage == "review" and request.method == "GET":
             form = ConfirmForm(initial={"flow_key": flow["key"]})
         if request.method == "POST" and stage == "contact":
@@ -320,6 +350,11 @@ def wizard(request):
         if request.method == "POST" and form.is_valid():
             limit(request, stage, 60)
             data = form.cleaned_data
+            if public_verification.handle(flow, form, stage):
+                save(request, flow)
+                if form.errors:
+                    return display(request, flow, form=form)
+                return redirect("customer_booking")
             if stage == "phone":
                 if not allow_security_request("public-booking-phone:" + data["phone"], 8):
                     raise ValidationError(
@@ -335,6 +370,8 @@ def wizard(request):
                 if customer:
                     flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
                     flow["stage"] = "name" if customer.phone == data["phone"] else "previous"
+                    if flow["stage"] == "name" and data["visited"] == "yes":
+                        flow["verification_entry"] = "returning_current"
                     if flow["stage"] == "previous":
                         flow["current_phone"] = customer.phone
             elif stage == "retry_phone":
@@ -553,7 +590,7 @@ def recover_by_email(request):
 def initial_live_quote(form, flow):
     if form is None:
         return None
-    values = {name: form.initial.get(name, field.initial) for name, field in form.fields.items()}
+    values = {name: form[name].value() for name in form.fields}
     values["play_type"] = values.get("play_type") or form.fields["play_type"].initial
     values["expected_method"] = (
         values.get("expected_method") or form.fields["expected_method"].choices[0][0]

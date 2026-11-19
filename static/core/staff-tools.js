@@ -149,12 +149,37 @@ if (filterForm) {
     const input = document.querySelector('#id_' + name);
     input?.addEventListener('change', () => { if (input.validity.valid) filterForm.requestSubmit(); });
   }
+  let sessionRequest, filterTimer;
+  const filterStatus = document.createElement('p');
+  filterStatus.className = 'caption'; filterStatus.setAttribute('role', 'status');
+  filterForm.after(filterStatus);
   for (const details of document.querySelectorAll('.session-filter')) {
-    let changed = false;
-    details.addEventListener('change', () => { changed = true; });
-    // Popover content is moved to the top layer, but remains a DOM descendant.
-    details.addEventListener('toggle', () => {
-      if (!details.open && changed) { changed = false; filterForm.requestSubmit(); }
+    details.addEventListener('change', () => {
+      clearTimeout(filterTimer);
+      if (sessionRequest) sessionRequest.abort();
+      filterTimer = setTimeout(async () => {
+        sessionRequest = new AbortController();
+        const url = new URL(location.href);
+        url.search = new URLSearchParams(new FormData(filterForm)).toString();
+        filterStatus.textContent = 'Updating bookings…';
+        try {
+          const response = await fetch(url, {signal: sessionRequest.signal, headers: {Accept: 'text/html'}});
+          if (!response.ok) throw new Error('Could not filter bookings. Use Apply filters to try again.');
+          const next = new DOMParser().parseFromString(await response.text(), 'text/html');
+          if (!next.querySelector('.booking-table')) { location.assign(url); return; }
+          const returnedFilters = next.querySelector('#booking-filter-form');
+          if (returnedFilters) filterForm.replaceChildren(...returnedFilters.childNodes);
+          for (const selector of ['.booking-table tbody', '.booking-table tfoot', '.booking-table thead tr:last-child', '[data-session-overview]', '[data-staff-pagination]']) {
+            const current = document.querySelector(selector), replacement = next.querySelector(selector);
+            if (current && replacement) current.replaceWith(replacement);
+          }
+          bindPageSizes();
+          history.replaceState(null, '', url);
+          filterStatus.textContent = filterForm.querySelector('.errorlist') ? 'Review the highlighted booking filters.' : 'Bookings updated for the selected sessions.';
+        } catch (error) {
+          if (error.name !== 'AbortError') filterStatus.textContent = error.message;
+        }
+      }, 120);
     });
     document.addEventListener('click', event => {
       if (details.open && !details.contains(event.target)) details.open = false;
@@ -191,6 +216,46 @@ for (const date of document.querySelectorAll('[data-session-date]')) {
     }
   });
 }
+/* Public-only supervised quantities; staff editors retain explicit validation. */
+for (const form of document.querySelectorAll('[data-public-estimate]')) {
+  const adults = form.querySelector('[name=adults]'), babies = form.querySelector('[name=babies]');
+  let wasSupervised = false;
+  let openAdults = adults.value || '1', openBabies = babies.value || '0';
+  const selected = () => form.querySelector('[name=play_type]:checked')?.value === 'supervised';
+  if (selected()) { openAdults = '1'; openBabies = '0'; }
+  const popup = document.createElement('dialog');
+  popup.className = 'supervised-message'; popup.setAttribute('aria-label', 'Supervised play is children only');
+  popup.innerHTML = '<p>Supervised play is children only</p><button type="button" class="button small">OK</button>';
+  form.after(popup);
+  popup.querySelector('button').addEventListener('click', () => popup.close());
+  const explain = event => {
+    if (!selected()) return;
+    if (event.type === 'keydown' && !['ArrowUp', 'ArrowDown', 'Backspace', 'Delete', '-', '+', '.', ...'0123456789'].includes(event.key)) return;
+    event.preventDefault();
+    if (typeof popup.showModal === 'function') { if (!popup.open) popup.showModal(); }
+    else window.alert('Supervised play is children only');
+  };
+  for (const field of [adults, babies]) {
+    field.addEventListener('pointerdown', explain);
+    field.addEventListener('keydown', explain);
+  }
+  const sync = () => {
+    const supervised = selected();
+    if (supervised && !wasSupervised) { openAdults = adults.value; openBabies = babies.value; }
+    for (const [field, oldValue] of [[adults, openAdults], [babies, openBabies]]) {
+      field.readOnly = supervised;
+      field.setAttribute('aria-readonly', String(supervised));
+      field.max = supervised ? '0' : '50';
+      if (supervised) field.value = '0';
+      else if (wasSupervised) field.value = oldValue;
+    }
+    wasSupervised = supervised;
+  };
+  // For supervised-only sessions, switching is unavailable; quantities still start at zero.
+  if (selected()) wasSupervised = true;
+  sync();
+  for (const radio of form.querySelectorAll('[name=play_type]')) radio.addEventListener('change', sync);
+}
 for (const form of document.querySelectorAll('[data-public-estimate]')) {
   const content = form.querySelector('[data-public-estimate-content]');
   const status = form.querySelector('[data-public-estimate-status]');
@@ -214,3 +279,13 @@ for (const form of document.querySelectorAll('[data-public-estimate]')) {
   form.addEventListener('input', queue); form.addEventListener('change', queue);
   refresh();
 }
+
+function bindPageSizes() {
+  for (const select of document.querySelectorAll('[data-page-size]')) {
+    if (select.dataset.bound) continue;
+    select.dataset.bound = '1';
+    select.form.querySelector('[data-page-size-fallback]').hidden = true;
+    select.addEventListener('change', () => select.form.requestSubmit());
+  }
+}
+bindPageSizes();

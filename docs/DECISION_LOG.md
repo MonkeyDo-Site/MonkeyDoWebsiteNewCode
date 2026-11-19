@@ -478,3 +478,21 @@ signatures. Nightly encrypted backups/jobs are dependencies, not provided by the
 current local deployment checkpoint. Update current status documentation and
 preserve historical evidence. This is planning only, with no next-phase code,
 provider calls, relabelling of hosted data or new deployment.
+
+
+## Fourth batch — final clarification and implementation go-ahead
+
+Owner clarified the compact booking layout, Name/Email typo, public-only supervised
+zero/locking and supervised-only default, paging on Today/Bookings/Customers/
+Membership drafts, and separate identity-conflict branches. Simultaneous entered
+name/email can lead to another-profile choice only after that profile's own
+name/email verification; reuse an already matching name. Email-first then name
+matching email profile but not phone profile instead asks restart using the phone
+the customer knows, without showing it. The revised Scenario B screenshot
+supersedes its earlier phone-update proposal; no reassignment/merge occurs. Retain
+owner Dashboard alerts and correct assistance number 848-238-5147. Referral is
+optional; owner reproduced a successful single-tab attempt. Later explicit
+go-ahead authorizes the whole batch, screenshots now only for the customer booking
+page, and one draft PR updated during review. Other owner acceptance follows
+approved deployment. Full trace: OWNER_EDITS_BATCH_4.md. The previously aligned
+next-stage plan remains planning, not payment/waiver development authorization.

@@ -1,0 +1,95 @@
+{
+  "fixture": "Fictional local PostgreSQL records; frozen November 18, 2026, 9 AM New York",
+  "screens": [
+    {
+      "screen": "01-booking-open-play",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "01-booking-open-play",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "02-booking-supervised-play",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "02-booking-supervised-play",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "03-booking-open-only-session",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "03-booking-open-only-session",
+      "viewport": 390,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "04-booking-supervised-only-session",
+      "viewport": 1440,
+      "horizontal_overflow": false
+    },
+    {
+      "screen": "04-booking-supervised-only-session",
+      "viewport": 390,
+      "horizontal_overflow": false
+    }
+  ],
+  "javascript_errors": [],
+  "hosted_site_changed": false,
+  "extra_narrow_width_checked": 320,
+  "staff_pagination_and_immediate_multi_session_filter": true,
+  "staff_supervised_locking_absent": true,
+  "distinct_matching_branches_and_other_profile_verification": true,
+  "images": [
+    {
+      "file": "01-booking-open-play-desktop.jpg",
+      "sha256": "391283f28c7e9868940ba01cc2a202b146c09cbc9ccc50ccf4a5e89246fe5885",
+      "bytes": 206943
+    },
+    {
+      "file": "01-booking-open-play-phone.jpg",
+      "sha256": "6f6092399d3b5e1371d4946a0546842011c2db0832c344621425b96862b0f0e2",
+      "bytes": 180702
+    },
+    {
+      "file": "02-booking-supervised-play-desktop.jpg",
+      "sha256": "026388fbcd8300b2e7af27c66846c20c70303aac5f8040f57c262e4bd136991b",
+      "bytes": 203893
+    },
+    {
+      "file": "02-booking-supervised-play-phone.jpg",
+      "sha256": "c82c842579878a45f17338e56ff78884f8c9768c4c32ee44f4fa46e297cc8880",
+      "bytes": 178405
+    },
+    {
+      "file": "03-booking-open-only-session-desktop.jpg",
+      "sha256": "336ba2a55e5d2cac742ce540a3dc4f2a4d6784baa09d2053249e76be0732cc76",
+      "bytes": 201036
+    },
+    {
+      "file": "03-booking-open-only-session-phone.jpg",
+      "sha256": "55a73bf8a0c49ab12fd1b6abcdab0d5cac51718a1bbc05122cc5ff1103f5175a",
+      "bytes": 174963
+    },
+    {
+      "file": "04-booking-supervised-only-session-desktop.jpg",
+      "sha256": "96e5d9ed2f1d0b832c6ec6e96a208689a27b003c9c041ce969a06ab944f06465",
+      "bytes": 202143
+    },
+    {
+      "file": "04-booking-supervised-only-session-phone.jpg",
+      "sha256": "c81c8eb4970785e96f5268f87f98e4dcc6190869e6bcce33d893245ea33ef25b",
+      "bytes": 177056
+    }
+  ],
+  "local_postgresql_16_2_tests_passed": 428,
+  "powershell_handoff": "Passed portable PowerShell with mocked transport; routine browser ZIP handoff has no schema flag."
+}

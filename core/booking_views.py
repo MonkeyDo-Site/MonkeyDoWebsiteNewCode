@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.core.paginator import Paginator
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
@@ -13,6 +12,7 @@ from .booking_management import (
     release_test_booking,
 )
 from .models import AuditEvent, Booking, Customer, PricingPolicy
+from .pagination import paginate
 from .permissions import staff_permission
 from .session_blocks import booking_has_blocks
 
@@ -27,7 +27,7 @@ def bookings(request):
     from .booking_filters import booking_context
 
     context = booking_context(request)
-    context["bookings"] = Paginator(context.pop("rows"), 25).get_page(request.GET.get("page"))
+    context["bookings"] = paginate(request, context.pop("rows"))
     return render(request, "core/bookings.html", context)
 
 

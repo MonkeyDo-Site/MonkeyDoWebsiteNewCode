@@ -3,10 +3,11 @@
 {% block staff_content %}
 <p class="eyebrow">Families and familiar faces</p>
 <div class="page-title-actions"><h1>Customers</h1>{% if perms.core.add_customer %}<p><a class="button small" href="{% url 'customer_create' %}">Create customer</a></p>{% endif %}</div>
-<form method="get" class="search-form">
-  <label for="customer-search">Search Last Name, ID, phone, email or comments</label>
-  <input id="customer-search" name="q" value="{{ query }}" maxlength="120" type="search">
-  <label for="customer-type">Customer type</label><select id="customer-type" name="type"><option value="">All types</option>{% for value,label in type_choices %}<option value="{{ value }}"{% if customer_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+<form method="get" class="search-form customer-list-search">
+<input type="hidden" name="per_page" value="{{ customers.page_size }}">
+  <div class="customer-search-field"><label for="customer-search">Search Last Name, ID, phone, email or comments</label>
+  <input id="customer-search" name="q" value="{{ query }}" maxlength="120" type="search"></div>
+  <div class="customer-type-field"><label for="customer-type">Customer type</label><select id="customer-type" name="type"><option value="">All types</option>{% for value,label in type_choices %}<option value="{{ value }}"{% if customer_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
   <button class="button small" type="submit">Search</button>
 </form>
 

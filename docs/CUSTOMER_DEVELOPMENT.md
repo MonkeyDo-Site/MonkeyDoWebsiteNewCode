@@ -75,3 +75,14 @@ Migration 0025 adds optional Customer.referral_source (240 characters), displaye
 Staff search now compares individual/partial words with spelling tolerance across customer lists, booking filters and both customer pickers. Exact/direct matches precede marked possible matches. Customer types include School, with an All/Family/Day Camp/School list filter; existing type-change permissions remain. Phone errors say ten-digit phone number and keep Canadian/+1 normalization.
 
 Implementation and image-review record: [OWNER_EDITS_BATCH_3.md](OWNER_EDITS_BATCH_3.md).
+
+
+## Fourth batch — customer list and conflict notices
+
+Customer search, type selector and Search align compactly on desktop; All types
+remains the initial choice. Bounded 10/25/50/100-row paging and numbered links
+preserve type/search. The shared pager is also used by Bookings, Today and
+Membership drafts. Owner-only booking profile-conflict notices use the existing
+Dashboard/notice storage, with protected customer links, retry deduplication and
+readable audit/review labels. They do not change customer contacts or send email.
+See OWNER_EDITS_BATCH_4.md for the deliberately separate public matching paths.

@@ -46,3 +46,11 @@ Customer selectors search by name/normalized phone. Staff labels are Type, Amoun
 Owner/staff Edit membership supports type, amount, months, start date, billing and expected method. Revision submission keys prevent repeat edits, stale versions are rejected, and the root membership lock serializes simultaneous edits. Original membership/fee price versions apply; changing type uses that saved membership price version's applicable unit price. An existing past start date may be retained; a newly chosen past date is rejected. Staff may retain an already-approved short term when changing billing/payment choice, but may not change its type/count/term/start into a new short-term exception. The owner can explicitly grant exceptions. Prior rows/cycles/revisions retain ORM and PostgreSQL UPDATE/DELETE guards. A membership table links internal IDs and customer names; existing numeric IDs display an M prefix (#M1, #M2), without creating a new numbering sequence or changing routes. Earlier saved details show “This previously saved version is read only”.
 
 Membership lists show one row per membership with its latest details. Do not display version numbers in the list, current detail heading or edit form. Keep earlier saved details and version links inside Membership history; an explicitly opened earlier view remains read-only. The current detail and Edit membership always resolve to the latest saved details.
+
+
+## Fourth batch — list paging
+
+Membership drafts now use shared bounded 10/25/50/100-row paging (default 25),
+numbered/Previous/Next links and preserved customer filters. Paging still displays
+one current row per root membership; revisions stay in history. This introduces
+no purchase, benefit, payment, calendar or membership-edit permission change.

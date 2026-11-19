@@ -1,4 +1,4 @@
 <aside class="booking-play-info" aria-label="Play information">
 <article class="panel"><p class="eyebrow">Together time</p><h2>Open Play</h2>{% include 'core/partials/play_info_text.html' with play_kind='open' %}</article>
-<article class="panel coral"><p class="eyebrow">A little time for you</p><h2>Supervised Play</h2>{% include 'core/partials/play_info_text.html' with play_kind='supervised' %}<p class="caption">Membership benefits are not applied in this test-booking stage.</p></article>
+<article class="panel coral"><p class="eyebrow">A little time for you</p><h2>Supervised Play</h2>{% include 'core/partials/play_info_text.html' with play_kind='supervised' omit_booking_instruction=True %}<p class="caption">Membership benefits are not applied in this test-booking stage.</p></article>
 </aside>

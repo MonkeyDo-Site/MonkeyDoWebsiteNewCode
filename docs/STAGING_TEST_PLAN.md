@@ -265,3 +265,40 @@ before that stage's deployment. Mark cases Blocked by implementation until they
 exist; record actual owner/provider outcomes rather than inheriting a Pass from
 the pending-test foundation. No full application suite was rerun for this
 planning-only documentation change.
+
+
+## Fourth owner-feedback batch
+
+Local developer regression/browser checks passed; owner booking-page screenshot
+review is pending. Other changed pages/scenarios receive owner interactive tests
+after approved deployment, per this batch's explicit review instruction.
+
+- B4-LAYOUT: upper Children/Adults versus Babies/Grip socks, lower estimate versus
+  Payment/Continue; narrower fields/panel, phone stacking and 320px no overflow.
+  Check only booking card omits Check the booking page; homepage/About unchanged.
+- B4-PLAY: both radios visible, unavailable disabled, Open default/supervised-only
+  exception; public zero/lock/popup/estimate, restored Open counts; forged values
+  rejected and staff remain editable with validation errors.
+- B4-LISTS: Customers compact search/type/Search, All types default. All four
+  approved tables page at 10/25/50/100, preserve filters/sort and provide numbered
+  Previous/Next links. Today matching/session totals stay complete.
+- B4-FILTER: checking/unchecking sessions updates Today/Bookings without closing
+  the selector or Apply; multi-select and other filters remain usable; errors,
+  row-size changes, pagination and no-JavaScript Apply remain correct.
+- B4-A: Yes/current-phone exact name/email/both messages; either/both blank or
+  incorrect; name-first/email-first retries and later failures; partial name still
+  needs confirmation. Unspecified No/current, previous-phone and unmatched-phone
+  paths must not acquire the new exception.
+- B4-BOTH: supplied name verifies phone profile and supplied email identifies
+  another profile. Other phone/Proceed stays hidden until that profile's own
+  name/email verification; reuse matching name, confirm possible spelling,
+  explicit final profile choice, stale-profile rejection and unchanged contacts.
+- B4-EMAIL-FIRST: email identifies another profile, then requested name matches
+  phone profile, email profile only, or neither. Correct restart/help wording;
+  never show the other saved phone, especially in the email/name-only match.
+  Test the specified Yes/No entry paths and ensure forged choice action fails.
+- B4-NOTICE: one conflict notice per flow/profile pair, protected links, owner-only
+  viewing/review, readable audit, no repeated notice on retries or outbound email.
+- B4-C: new-customer referral blank succeeds without early save; stale/double/back
+  submissions retain current step/quote and do not show unrelated required-field
+  errors or create another booking. A current review form remains submittable.

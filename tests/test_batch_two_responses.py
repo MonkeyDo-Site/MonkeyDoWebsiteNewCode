@@ -270,7 +270,7 @@ class PublicResponseTests(TestCase):
     setUp = public_tests.PublicBookingTests.setUp
     begin = public_tests.PublicBookingTests.begin
 
-    def test_open_only_has_no_choice_buttons_or_supervised_instructions(self):
+    def test_open_only_shows_both_choices_with_supervised_disabled(self):
         Session.objects.filter(pk=self.slot.pk).update(
             play_mode="accompanied", supervised_capacity=0
         )
@@ -279,9 +279,10 @@ class PublicResponseTests(TestCase):
             "/book/details/", {"last_name": "Family", "email": "family@example.invalid"}
         )
         response = self.client.get("/book/details/")
-        self.assertContains(response, "This session is open play only")
+        self.assertContains(response, "Supervised Play (not available for this session)")
         self.assertNotContains(response, "For supervised play")
-        self.assertNotContains(response, 'type="radio"')
+        self.assertContains(response, 'type="radio"', count=2)
+        self.assertContains(response, "disabled")
         self.assertContains(response, "Credit Card – a 3% processing fee applies.")
         self.assertContains(response, "Grip socks are required")
         self.assertEqual(len(response.context["progress_steps"]), 4)
@@ -309,7 +310,7 @@ class PublicResponseTests(TestCase):
         self.assertContains(response, 'name="play_type" value="open"')
         self.assertFalse(Booking.objects.exists())
 
-    def test_supervised_capacity_exhaustion_removes_supervised_option(self):
+    def test_supervised_capacity_exhaustion_disables_supervised_option(self):
         customer = __import__("core.models", fromlist=["Customer"]).Customer.objects.create(
             last_name="Existing", phone="2025550120", email="existing@example.invalid"
         )
@@ -319,5 +320,5 @@ class PublicResponseTests(TestCase):
         self.begin()
         self.client.post("/book/details/", {"last_name": "New", "email": "new@example.invalid"})
         response = self.client.get("/book/details/")
-        self.assertContains(response, "This session is open play only")
+        self.assertContains(response, "Supervised Play (not available for this session)")
         self.assertNotContains(response, "For supervised play")

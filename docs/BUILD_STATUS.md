@@ -1,5 +1,23 @@
 # Staging build status
 
+## Fourth batch — local implementation, draft PR/image review
+
+The full fourth batch is implemented locally, with the owner-authorized narrower
+booking form/play controls, scoped matching branches and owner conflict notices,
+compact customer search, shared four-list pagination and immediate session
+filtering. **428 tests passed locally on PostgreSQL 16.2.** Chromium checks passed
+at 1440/390px plus 320px; eight JPGs show only the customer booking page as
+requested. Staff/matching flows were exercised without publishing extra screen
+images. The routine browser-ZIP PowerShell handoff passed with transport mocked;
+GitHub PostgreSQL 17/native Windows CI is separate release evidence.
+
+The owner requested one draft PR, updated with booking-page image comments before
+marking ready. No hosted deployment or schema change occurred for this batch;
+PR #27 below remains the hosted baseline. No next-phase payment/waiver/active
+membership integration or Old test booking classification has been built.
+[Scope](OWNER_EDITS_BATCH_4.md) · [Images](design-review/owner-edits-batch-4/README.md) ·
+[Routine deployment handoff](OWNER_FEEDBACK_BATCH_FOUR_RELEASE.md).
+
 ## Current deployed baseline — third owner-feedback batch
 
 The owner reported PR #27 deployed after confirming the PR merge. The deployed

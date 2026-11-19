@@ -12,6 +12,7 @@ from .booking_forms import CustomerChoice, customer_picker
 from .forms import payment_method_choices
 from .memberships import EDIT_FIELDS, create_draft, current_draft, edit_draft
 from .models import AuditEvent, Customer, MembershipDraft, MembershipPricing, PricingPolicy
+from .pagination import paginate
 from .permissions import staff_permission
 
 
@@ -73,7 +74,7 @@ def drafts(request):
     ).prefetch_related("revisions")
     if customer.isascii() and customer.isdigit() and len(customer) <= 18:
         records = records.filter(customer_id=int(customer))
-    page = Paginator(records, 25).get_page(request.GET.get("page"))
+    page = paginate(request, records)
     page.object_list = [current_draft(record) for record in page.object_list]
     return render(request, "core/membership_drafts.html", {"drafts": page})
 
