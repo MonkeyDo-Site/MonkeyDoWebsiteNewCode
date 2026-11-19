@@ -933,7 +933,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .public-play-choice input { flex:none; margin-top:6px }
 .public-group-heading { grid-column:1 / -1; margin:0; font-size:32px }
 .public-quantities,.public-right,.public-payment { min-width:0 }
-.public-right { display:flex; flex-direction:column; align-self:stretch; gap:28px }
+.public-right { display:flex; flex-direction:column; align-self:stretch; gap:28px; padding-top:1.65em }
 .public-right .public-payment { margin-top:auto }
 .public-details-layout .form-field { margin-bottom:14px }
 .public-quantities .field-help { margin:6px 0 0; font-size:13px; line-height:1.45; color:#536459 }
@@ -962,6 +962,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 @media(max-width:560px) {
  .public-details-layout { display:flex; flex-direction:column; gap:12px }
  .public-details-layout>*,.public-quantities,.public-right,.public-payment { width:100% }
+ .public-right { padding-top:0 }
  .booking-play-info { grid-template-columns:minmax(0,1fr) }
  .customer-list-search .customer-search-field { flex-basis:100% }
  .staff-pagination { align-items:flex-start }

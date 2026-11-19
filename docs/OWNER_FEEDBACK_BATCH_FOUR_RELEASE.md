@@ -1,8 +1,8 @@
 # Fourth-batch release — browser ZIP and one PowerShell block
 
-Status: draft PR, awaiting the owner's customer-booking-page image approval.
-Do not deploy this branch before approval and merge. The release handoff will
-supply the exact reviewed full commit and pinned ZIP link.
+Historical handoff: the owner approved the final images and reported PR #28
+deployed. The reviewed commit was b706e5034875529d74d26c10d72064c118165c9b.
+For the next release use the [fifth-batch handoff](OWNER_FEEDBACK_BATCH_FIVE_RELEASE.md).
 
 Download that ZIP using the browser into Downloads and wait for completion.
 The block extracts only the small wrapper locally, installs its matching helper,

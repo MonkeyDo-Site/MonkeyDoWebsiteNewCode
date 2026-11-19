@@ -527,3 +527,17 @@ play choices and between choices and quantities. Add vertical selector margins
 without separating the shared quantities/estimate grid row, so their tops remain
 parallel. Preserve narrow fields, separate age guidance and wider outside-card
 gap. Update the same draft PR and eight booking-page images before deployment.
+
+
+## Fifth owner-feedback batch — November 19, 2026
+
+Owner confirmed the complete 15-comment review and all four clarifications,
+then explicitly authorized implementation and PR together. The two failed-email
+introduction removals remain narrowly scoped; do not remove other introductions
+globally. Apply the approved guarded verification/conflict behavior to No/silent
+current-phone matches and current matches reached by retry; previous-phone
+confirmation remains. Duplicate-email link/copy updates apply to both public
+email-collection screens, preserving the chosen session. No review screenshots
+are needed; owner will accept changes after deployment. Retain browser ZIP plus
+one routine PowerShell command. No next-phase payment/waiver work is authorized.
+See OWNER_EDITS_BATCH_5.md for all comments and verification boundaries.

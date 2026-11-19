@@ -12,7 +12,7 @@ The owner subsequently authorized staging website/database development and expli
 
 ### Current baseline and remaining-stage order
 
-The owner reports PR #27 deployed on the shared protected staging site, including
+The owner reports PR #28 deployed on the shared protected staging site, including
 public/staff pending test reservations, editable membership drafts and the latest
 customer/filter/layout/scheduling improvements. The proposed homepage redesign
 was excluded. Account email is configured and inbox receipt was owner-confirmed;
@@ -134,20 +134,24 @@ Collect Last Name, phone, email, date/session, baby/child/adult quantities, calc
 
 Validate in browser and server: required fields/consent, nonnegative integer counts, nonzero attendance, adult rule where applicable, card setup unless owner-comped, availability/end time, capacity and permissions. Online waiver must be covered before booking completes; admin/phone bookings may confirm pending.
 
-The visible public progress indicator has four steps: Choose Session, Customer Details, Session Details, Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. Add a waiver step only when the approved waiver workflow is implemented. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed at the upper right of the quantity section, with Payment method and Continue below it at the bottom right. All four quantity inputs stack on the left. Add breathing room above and below the play-type selector; the estimate stays top-aligned with the quantity fields as they move down. Right-align Continue beneath the payment selector. Show Family/contact links, Your Group, then Choose play type; omit Start again from Session Details while retaining lookup/recovery restart actions; use quantity labels with separate age guidance. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
+The visible public progress indicator has four steps: Choose Session, Customer Details, Session Details, Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. Add a waiver step only when the approved waiver workflow is implemented. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed at the upper right of the quantity section, with Payment method and Continue below it at the bottom right. All four quantity inputs stack on the left. Add breathing room above and below the play-type selector; the estimate starts level with the first quantity input box, below its label, as the fields move down. Right-align Continue beneath the payment selector. Show Family/contact links, Your Group, then Choose play type; omit Start again from Session Details and initial phone entry while retaining later lookup/recovery restart actions; use quantity labels with separate age guidance. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
 
 ## 7. Customers and public identification
 
-The scoped [fourth-batch branch matrix](OWNER_EDITS_BATCH_4.md) takes precedence
-for the specifically approved returning/current-phone and different-profile
-conflict paths. Returning Yes/current-phone entry offers Last Name or Email,
+The [fifth-batch clarification](OWNER_EDITS_BATCH_5.md) extends the scoped
+[fourth-batch branch matrix](OWNER_EDITS_BATCH_4.md) to current-phone matches
+reached through Yes, No/silent search and retry-number entry. Each offers Last Name or Email,
 with either/both accepted against that profile and explicit partial-name
 confirmation. Simultaneous name/email conflicts have a verified profile-choice
 exception; email-first conflicts require restart/help and never display the other
 profile’s saved phone. There is no public phone reassignment or profile merge.
-Owner Dashboard notices record those conflicts. Unspecified new-customer,
-previous-phone and unmatched-phone paths keep their existing behavior; do not
-apply the new exception to other scenarios/modules without approval.
+Owner Dashboard notices record those conflicts. Previous-phone and unmatched-phone
+proof rules remain distinct; do not apply the exception to other modules without
+approval. Yes/current-phone headers start We found a customer profile; reserve
+Looks like you've been to Monkey Do in the past for No/current-phone discovery.
+This introduction distinction applies to current-phone verification; separate
+previous-phone confirmation stays unchanged. Later name/email retry, possible-family
+and conflict screens use their own appropriate headers.
 
 - Profiles have **Last Name** only, not a separate first/full-name field. If a greeting is used: **Dear Family [LastName]**. Waiver signer full legal name and named club participants are separate entities.
 - Assign backend-only sequential six-digit customer IDs starting **000001**, never reused. One customer may have many bookings and membership cohorts.
@@ -405,3 +409,23 @@ See [complete scope/branch matrix](OWNER_EDITS_BATCH_4.md).
   audit and protected links, not external email. Referral remains optional; stale
   flow/step submissions show the current step with a recovery message instead of
   binding old fields to a new form. No historical bookings are reset or relabelled.
+
+
+## Fifth owner-feedback batch — supersedes overlapping public copy above
+
+See [complete 15-comment scope and verification boundaries](OWNER_EDITS_BATCH_5.md).
+Child age help uses Ages 1–11 for Open Play | Ages 3–11 for Supervised Play; the
+socks field says Grip socks and its help explains pairs. Align the desktop
+estimate with the first input box, below its label; retain responsive stacking.
+Initial phone entry has no redundant restart action. Retry-number copy has inline
+email recovery and new-customer continuation, with no duplicate action below.
+Explicit new-customer continuation and No/unmatched Details start at Your details.
+After a second unmatched phone, show its No customer was found notice and recovery
+options; omit that introduction on contact validation errors. Remove email lookup
+introductions only in the specified unmatched-phone and name-failed unsuccessful
+searches, preserving other initial instructions. Public duplicate-email errors
+omit the offer to remove another profile's address and link go back to the booking
+page to phone entry while retaining the selected session and clearing old proofs.
+Apply this to both new customers and identified profiles adding missing email;
+staff retain their separate shorter errors. This batch has owner-authorized
+post-deployment review, without preparing review screenshots.
