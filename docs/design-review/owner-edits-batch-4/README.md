@@ -26,8 +26,8 @@ Homepage/About imagery and layout are unchanged.
 
 
 Latest image-review revision: the narrower green panel aligns left with a clear
-gap before the outside cards. Family/contact links precede Choose play type and
-Your Group. Four inputs stack left with explicit quantity labels and separate
+120px desktop gap before the outside cards. Family/contact links precede Your Group
+and Choose play type. Start again is removed from Session Details only. Four inputs stack left with explicit quantity labels and separate
 age guidance; the estimate is upper right, payment/Continue bottom right. All
 eight JPGs reflect this revision. The 41 affected public-booking tests and browser
 checks passed; the PR remains a draft for image approval.

@@ -136,8 +136,9 @@ field remains absent.
 
 ## Fourth batch — public layout and scoped verification
 
-The narrower public panel aligns left with space before the outside play cards.
-Its order is Family/contact links, Choose play type, then Your Group. All four
+The narrower public panel aligns left with a wider desktop gap before the outside play cards.
+Its order is Family/contact links, Your Group, then Choose play type. Session
+Details omits Start again; lookup/recovery screens retain their restart actions. All four
 quantity inputs stack on the left, with the estimate upper right and Payment
 method/Continue bottom right. Quantity labels are explicit and age guidance is
 separate; this supersedes the initial fourth-batch layout after image review. Always show both play

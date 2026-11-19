@@ -12,8 +12,10 @@ images. The routine browser-ZIP PowerShell handoff passed with transport mocked;
 GitHub PostgreSQL 17/native Windows CI is separate release evidence.
 
 The subsequent booking-image correction left-aligns the panel, places all four
-quantity fields left and estimate/payment right, reorders play choice above
-Your Group and separates age help from quantity labels. It passed 41 affected
+quantity fields left and estimate/payment right, places Your Group above the
+play choices and separates age help from quantity labels. The latest owner
+correction removes Start again only from Session Details and widens the desktop
+gap before the outside play cards to 120px. It passed 41 affected
 tests and refreshed 1440/390px captures plus 320px checks; the existing full-suite
 result above precedes that presentation follow-up. GitHub rechecks the new head.
 

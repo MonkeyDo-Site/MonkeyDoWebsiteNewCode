@@ -1,6 +1,6 @@
-<fieldset class="public-play-choice"><legend>Choose play type</legend>{{ form.play_type.errors }}{{ form.play_type }}</fieldset>
 {{ form.non_field_errors }}
 <h2 class="public-group-heading">Your Group</h2>
+<fieldset class="public-play-choice"><legend>Choose play type</legend>{{ form.play_type.errors }}{{ form.play_type }}</fieldset>
 <div class="public-quantities">
 {% include 'core/partials/public_field.html' with field=form.children %}
 {% include 'core/partials/public_field.html' with field=form.adults %}

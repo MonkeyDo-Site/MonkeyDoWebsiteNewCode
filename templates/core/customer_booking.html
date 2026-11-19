@@ -35,7 +35,7 @@
 {% if flow.stage == 'retry_phone' %}<button class="text-button" name="continue_new" value="1">Continue as a new customer</button>{% endif %}
 {% endif %}</form>{% endif %}
 {% if flow.stage == 'review' %}<form method="post" action="{% url 'customer_booking_revise' %}">{% csrf_token %}<input type="hidden" name="flow_key" value="{{ flow.key }}"><button class="text-button">Change your session details or your payment method</button></form>{% endif %}
-{% if flow.stage != 'contact' and flow.stage != 'retry_phone' and flow.stage != 'conflict_stop' %}
+{% if flow.stage != 'contact' and flow.stage != 'retry_phone' and flow.stage != 'conflict_stop' and flow.stage != 'details' %}
 {% if session %}<form method="post" action="{% url 'customer_booking_start' session.pk %}">{% csrf_token %}<button class="text-button">Start again / try another phone number</button></form>{% endif %}
 {% if flow.stage == 'name' and flow.verification_entry != 'returning_current' %}<form method="post" action="{% url 'customer_email_recovery' %}">{% csrf_token %}<button class="text-button">Find my customer details by email</button></form>{% endif %}
 {% endif %}

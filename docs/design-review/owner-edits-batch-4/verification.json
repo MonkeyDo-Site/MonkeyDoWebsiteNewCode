@@ -51,54 +51,55 @@
   "powershell_handoff": "Passed portable PowerShell with mocked transport; routine browser ZIP handoff has no schema flag.",
   "review_followup": {
     "green_panel_left_aligned": true,
-    "outside_card_gap_px": 56,
+    "outside_card_gap_px": 120,
     "all_four_quantity_fields_left": true,
     "estimate_above_payment_on_right": true,
     "age_guidance_separate_from_quantity_labels": true,
-    "family_play_group_order": true
+    "family_group_play_order": true,
+    "restart_absent_only_from_session_details": true
   },
+  "full_suite_before_layout_followup_passed": 428,
+  "layout_followup_affected_tests_passed": 41,
   "images": [
     {
       "file": "01-booking-open-play-desktop.jpg",
-      "sha256": "8514840d518b4ed5ef53d39b7c04602043da12af132ad5fb54def62c764679b7",
-      "bytes": 202696
+      "sha256": "b0a8762ab43525010e3b1cbf31c4caed43fe3029f5b61fa4da744b9ab5105fd4",
+      "bytes": 196955
     },
     {
       "file": "01-booking-open-play-phone.jpg",
-      "sha256": "851ec08876d5ec8300c6c1b29627dc2ed2fbb9ce1cd69c82257e3b24306ed349",
-      "bytes": 181028
+      "sha256": "eb4e200d7619012a38425d60d1bb41bd870192feaedb348f710f6155b70e0c2a",
+      "bytes": 177092
     },
     {
       "file": "02-booking-supervised-play-desktop.jpg",
-      "sha256": "0a30a81c526b7640b2c56ade9159b9f3b334d07f54ee9423b5dc1080f398f5d9",
-      "bytes": 200938
+      "sha256": "495474ff9f81bc83d5381549deffa2a2933543963d50b7ab734922438e6562c3",
+      "bytes": 195140
     },
     {
       "file": "02-booking-supervised-play-phone.jpg",
-      "sha256": "e2a823a14ff4b9aaf6623e2fc5903ecc90ba495820102166e35b2ae464b92211",
-      "bytes": 178283
+      "sha256": "d52c8658d8f6447d4272d3ffafaa18b143ef0ced8190c8803aeff51a256e84b7",
+      "bytes": 174615
     },
     {
       "file": "03-booking-open-only-session-desktop.jpg",
-      "sha256": "e3cc54c1cfb48e5dff8e9d4655a989411e04ab49273ca826b199b4356f3f1ef5",
-      "bytes": 198957
+      "sha256": "df75fd4bb4b95eb7c5a35f6b81dadf4a49d535ed4570a9416e2500ceff423a68",
+      "bytes": 193019
     },
     {
       "file": "03-booking-open-only-session-phone.jpg",
-      "sha256": "05fee2eacb892479d51f48d3f35e71356e74f83fedda0b82d76a64c09498ea45",
-      "bytes": 176268
+      "sha256": "c432229d1059fb1a40fe1003bfc2a1f201a95ff5b7f3749970e9145cc06cb709",
+      "bytes": 172869
     },
     {
       "file": "04-booking-supervised-only-session-desktop.jpg",
-      "sha256": "8693948eb6c488e58c32322fdaa66906cd25ce6cf36d4d639f5f032377585445",
-      "bytes": 199780
+      "sha256": "b73631d71556c41785651d21891a096e8b8e73b12fec7020d9992506baadd22b",
+      "bytes": 193791
     },
     {
       "file": "04-booking-supervised-only-session-phone.jpg",
-      "sha256": "e683f56c1280b67749bc59254eb61d4691302387649dec3c5e076a306686cd04",
-      "bytes": 177713
+      "sha256": "f0f5c32d4f1fdd39da356df51c5fabbe22bb40df892e49248b6cb6920f9a77bd",
+      "bytes": 174148
     }
-  ],
-  "full_suite_before_layout_followup_passed": 428,
-  "layout_followup_affected_tests_passed": 41
+  ]
 }

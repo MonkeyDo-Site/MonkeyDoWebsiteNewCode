@@ -923,7 +923,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .table-filters .clear-dates { position:absolute; right:6px; top:4px }
 
 /* Fourth owner-feedback batch: public group layout and compact staff lists. */
-.customer-booking-layout.with-play-info { grid-template-columns:minmax(0,740px) 260px; gap:56px; max-width:1056px; margin-inline:0 }
+.customer-booking-layout.with-play-info { grid-template-columns:minmax(0,740px) 260px; gap:120px; max-width:1120px; margin-inline:0 }
 .public-details-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; align-items:start }
 .public-play-choice { grid-column:1 / -1; padding:0; border:0; margin:0 }
 .public-play-choice legend { font-weight:700; margin-bottom:10px }

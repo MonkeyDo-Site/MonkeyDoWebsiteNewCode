@@ -507,3 +507,14 @@ estimate upper right and payment/Continue bottom right. Explicit quantity labels
 and separate age help remove ambiguity about entering ages. Keep the same draft
 PR and refresh booking-page screenshots only. Matching, calculation, permissions
 and the deployment review boundary are unchanged.
+
+
+## Fourth-batch booking-page second image revision
+
+Owner approved the clearer quantity/age separation and requested three changes:
+omit Start again only from Session Details, restore Your Group above Choose play
+type, and move outside Open/Supervised information cards farther right. Keep the
+740px desktop panel and four left-side quantity fields; increase its desktop gap
+to the cards to 120px, with existing narrower-screen stacking. Lookup/recovery
+restart actions, matching, pricing and validation remain unchanged. Refresh the
+same eight booking-page images in draft PR #28; deployment awaits owner approval.
