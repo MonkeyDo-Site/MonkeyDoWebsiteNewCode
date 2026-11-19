@@ -16,9 +16,11 @@ from core import (
     views,
     website_settings,
 )
+from core.payments.webhooks import endpoint as payment_webhook
 from core.security import ProtectedLoginView
 
 urlpatterns = [
+    path("integrations/banquest/webhook/", payment_webhook, name="banquest_webhook"),
     path("staff/", ProtectedLoginView.as_view(), name="staff_login"),
     path("staff/website-settings/", website_settings.website_settings, name="website_settings"),
     path("staff/scheduling/weekly/", recurring_views.recurring_settings, name="recurring_settings"),

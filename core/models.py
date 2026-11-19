@@ -141,6 +141,15 @@ class Session(models.Model):
 
 
 class Booking(models.Model):
+    workflow = models.CharField(
+        max_length=20,
+        default="legacy_test",
+        choices=[
+            ("legacy_test", "Earlier test booking"),
+            ("integrated_v1", "Integrated sandbox booking"),
+        ],
+        editable=False,
+    )
     source = models.CharField(
         max_length=20,
         default="staff",
@@ -601,3 +610,17 @@ class SessionReservationBlock(models.Model):
                 fields=["session", "booking"], name="session_booking_block_unique"
             ),
         ]
+
+
+# Registered with the existing core app; strings in FKs avoid import cycles.
+from .payments.models import (  # noqa: E402,F401
+    DurableJob,
+    FinancialLine,
+    FinancialPosting,
+    FinancialSale,
+    PaymentEvent,
+    PaymentMethod,
+    PaymentOperation,
+    ProviderEvent,
+    ProviderObservation,
+)

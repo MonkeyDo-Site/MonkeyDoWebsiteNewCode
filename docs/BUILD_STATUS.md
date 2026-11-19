@@ -1,5 +1,15 @@
 # Staging build status
 
+## Booking completion stage — authorized, increment 1 in development
+
+The owner authorized the next ordinary/supervised booking stage. Local financial
+foundation, sandbox adapter, callback and durable-job work has begun; it is not
+deployed or provider-verified. The integration defaults off. Follow
+[implementation status](BOOKING_COMPLETION_DEVELOPMENT.md) for completed versus
+remaining work. Owner review follows staging deployment; the owner test guide
+will be prepared after the stage is actually built and tested.
+
+
 ## Subsequent planning: accountant tax clarification and future reports
 
 Owner supplied the retained-processing-fee tax answer; payment/membership rules

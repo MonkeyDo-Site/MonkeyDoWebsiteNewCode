@@ -164,3 +164,13 @@ if TRUST_LOCAL_CLIENT_IP and os.environ.get("DJANGO_TRUST_PROXY") != "1":
 
 # Friendly recovery keeps the standard CSRF validation and HTTP 403 status.
 CSRF_FAILURE_VIEW = "core.views.csrf_failure"
+
+# Independent opt-in: existing pending-test booking routes remain unchanged.
+# Production APP_ENV is rejected above; the adapter additionally pins its sandbox host.
+PAYMENT_SANDBOX_ENABLED = os.environ.get("MONKEYDO_PAYMENT_SANDBOX") == "1"
+if PAYMENT_SANDBOX_ENABLED and DESIGN_REVIEW_ONLY:
+    raise ImproperlyConfigured("Payment integration is unavailable in frozen design review.")
+BANQUEST_API_SOURCE_KEY = os.environ.get("BANQUEST_API_SOURCE_KEY", "")
+BANQUEST_API_PIN = os.environ.get("BANQUEST_API_PIN", "")
+BANQUEST_TOKENIZATION_PUBLIC_KEY = os.environ.get("BANQUEST_TOKENIZATION_PUBLIC_KEY", "")
+BANQUEST_WEBHOOK_KEY = os.environ.get("BANQUEST_WEBHOOK_KEY", "")

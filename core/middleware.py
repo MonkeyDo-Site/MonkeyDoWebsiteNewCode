@@ -27,6 +27,11 @@ class StagingAccessMiddleware:
                 "/staging/access/",
                 "/static/",
             )
+            signed_callback = (
+                settings.PAYMENT_SANDBOX_ENABLED
+                and request.method == "POST"
+                and request.path == "/integrations/banquest/webhook/"
+            )
             owner_setup = (
                 request.path == "/staff/staging-access/"
                 and request.user.is_authenticated
@@ -36,6 +41,7 @@ class StagingAccessMiddleware:
                 request.path != "/staff/"
                 and not request.path.startswith(public_auth)
                 and not owner_setup
+                and not signed_callback
             ):
                 if not access_valid(request, SiteSettings.objects.filter(pk=1).first()):
                     response = redirect("staging_access")
@@ -61,6 +67,12 @@ class AccountAccessMiddleware:
 
         from .models import AccountSecurity
 
+        if (
+            settings.PAYMENT_SANDBOX_ENABLED
+            and request.method == "POST"
+            and request.path == "/integrations/banquest/webhook/"
+        ):
+            return self.get_response(request)
         if request.user.is_authenticated:
             profile, _ = AccountSecurity.objects.get_or_create(user=request.user)
             now = timezone.now().timestamp()
