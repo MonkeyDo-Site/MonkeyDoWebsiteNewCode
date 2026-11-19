@@ -276,7 +276,8 @@ after approved deployment, per this batch's explicit review instruction.
 - B4-LAYOUT: left-aligned narrow panel with wider outside-card separation; Family/contact,
   Your Group and Choose play type order. No Start again action on Session Details;
   lookup/recovery restart actions remain. Four quantity fields stack left, estimate
-  upper right and Payment/Continue bottom right. Quantity labels and separate age
+  upper right and Payment/Continue bottom right, with Continue right-aligned.
+  Extra space surrounds the play choices; quantities and estimate move down together. Quantity labels and separate age
   help, phone stacking and 320px no overflow.
   Check only booking card omits Check the booking page; homepage/About unchanged.
 - B4-PLAY: both radios visible, unavailable disabled, Open default/supervised-only

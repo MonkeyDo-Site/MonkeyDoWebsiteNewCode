@@ -140,8 +140,9 @@ The narrower public panel aligns left with a wider desktop gap before the outsid
 Its order is Family/contact links, Your Group, then Choose play type. Session
 Details omits Start again; lookup/recovery screens retain their restart actions. All four
 quantity inputs stack on the left, with the estimate upper right and Payment
-method/Continue bottom right. Quantity labels are explicit and age guidance is
-separate; this supersedes the initial fourth-batch layout after image review. Always show both play
+method/Continue bottom right, with Continue right-aligned. Add more space above
+and below the play choices while keeping the estimate level with the quantities.
+Quantity labels are explicit and age guidance is separate; this supersedes the initial fourth-batch layout after image review. Always show both play
 choices, disabling unavailable ones. Open defaults when possible; supervised-only
 uses Supervised. Public Supervised sets/locks adults/babies to zero, reports an
 attempted edit with the approved popup and recalculates the estimate. Switching

@@ -56,50 +56,53 @@
     "estimate_above_payment_on_right": true,
     "age_guidance_separate_from_quantity_labels": true,
     "family_group_play_order": true,
-    "restart_absent_only_from_session_details": true
+    "restart_absent_only_from_session_details": true,
+    "continue_right_aligned": true,
+    "play_choice_spacing_above_below_px": 34,
+    "estimate_top_aligned_with_quantities": true
   },
   "full_suite_before_layout_followup_passed": 428,
   "layout_followup_affected_tests_passed": 41,
   "images": [
     {
       "file": "01-booking-open-play-desktop.jpg",
-      "sha256": "b0a8762ab43525010e3b1cbf31c4caed43fe3029f5b61fa4da744b9ab5105fd4",
-      "bytes": 196955
+      "sha256": "aad5ded255ef805ca23ac999b172a4955c8dd177906193623dca33aa02cd66ce",
+      "bytes": 197886
     },
     {
       "file": "01-booking-open-play-phone.jpg",
-      "sha256": "eb4e200d7619012a38425d60d1bb41bd870192feaedb348f710f6155b70e0c2a",
-      "bytes": 177092
+      "sha256": "c0be72ea48637a930667adad10d5aa65d9d3a330ffe1ba8d63297b3791240542",
+      "bytes": 178259
     },
     {
       "file": "02-booking-supervised-play-desktop.jpg",
-      "sha256": "495474ff9f81bc83d5381549deffa2a2933543963d50b7ab734922438e6562c3",
-      "bytes": 195140
+      "sha256": "3f2548e867fbd2973a5760dc95aa30234bd74530f56ac23fa492a97f42624e75",
+      "bytes": 196095
     },
     {
       "file": "02-booking-supervised-play-phone.jpg",
-      "sha256": "d52c8658d8f6447d4272d3ffafaa18b143ef0ced8190c8803aeff51a256e84b7",
-      "bytes": 174615
+      "sha256": "3d4fb91d190ba0b0126e64eea11cb302edd84987ed385fb2704fcb7010faf9c6",
+      "bytes": 175322
     },
     {
       "file": "03-booking-open-only-session-desktop.jpg",
-      "sha256": "df75fd4bb4b95eb7c5a35f6b81dadf4a49d535ed4570a9416e2500ceff423a68",
-      "bytes": 193019
+      "sha256": "dd4ab1cfd754d09bd13dd6d40c26f4535aa2adb5b52b8ecdcae68072ae4dfb5d",
+      "bytes": 194029
     },
     {
       "file": "03-booking-open-only-session-phone.jpg",
-      "sha256": "c432229d1059fb1a40fe1003bfc2a1f201a95ff5b7f3749970e9145cc06cb709",
-      "bytes": 172869
+      "sha256": "80d45bd3b90534f37bb4c58b49cb7524add12f9e9d1002c07b834d19c7747e42",
+      "bytes": 171745
     },
     {
       "file": "04-booking-supervised-only-session-desktop.jpg",
-      "sha256": "b73631d71556c41785651d21891a096e8b8e73b12fec7020d9992506baadd22b",
-      "bytes": 193791
+      "sha256": "73de9dce1c59c85bf307cc694579d66b55781a119912f3af23717c2fd23365d2",
+      "bytes": 194829
     },
     {
       "file": "04-booking-supervised-only-session-phone.jpg",
-      "sha256": "f0f5c32d4f1fdd39da356df51c5fabbe22bb40df892e49248b6cb6920f9a77bd",
-      "bytes": 174148
+      "sha256": "4985d604523c74777f9bcd2e6b2126cd8d1f18a55a8284ab490ea25841b34eaf",
+      "bytes": 174572
     }
   ]
 }

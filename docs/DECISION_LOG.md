@@ -518,3 +518,12 @@ type, and move outside Open/Supervised information cards farther right. Keep the
 to the cards to 120px, with existing narrower-screen stacking. Lookup/recovery
 restart actions, matching, pricing and validation remain unchanged. Refresh the
 same eight booking-page images in draft PR #28; deployment awaits owner approval.
+
+
+## Fourth-batch booking-page spacing refinement
+
+Owner requested Continue aligned to the right, more space between Your Group and
+play choices and between choices and quantities. Add vertical selector margins
+without separating the shared quantities/estimate grid row, so their tops remain
+parallel. Preserve narrow fields, separate age guidance and wider outside-card
+gap. Update the same draft PR and eight booking-page images before deployment.

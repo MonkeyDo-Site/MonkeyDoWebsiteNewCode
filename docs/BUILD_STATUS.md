@@ -15,9 +15,12 @@ The subsequent booking-image correction left-aligns the panel, places all four
 quantity fields left and estimate/payment right, places Your Group above the
 play choices and separates age help from quantity labels. The latest owner
 correction removes Start again only from Session Details and widens the desktop
-gap before the outside play cards to 120px. It passed 41 affected
-tests and refreshed 1440/390px captures plus 320px checks; the existing full-suite
-result above precedes that presentation follow-up. GitHub rechecks the new head.
+gap before the outside play cards to 120px. A further CSS-only revision
+right-aligns Continue and adds space above/below the play choices, moving
+quantities and estimate down together. Refreshed browser checks and 1440/390px
+captures plus 320px checks cover this CSS-only revision. The prior template
+follow-up passed 41 affected tests; the existing full-suite result above precedes
+these presentation revisions. GitHub rechecks the new head.
 
 The owner requested one draft PR, updated with booking-page image comments before
 marking ready. No hosted deployment or schema change occurred for this batch;
