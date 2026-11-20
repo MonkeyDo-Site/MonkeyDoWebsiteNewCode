@@ -63,9 +63,12 @@ handoff. Migrations 0027 onward are not allowed by the older closed 0026 helper.
 Keep the PR draft until the complete stage and reviewed deployment are ready.
 Existing staging configuration has not changed.
 
-Validation checkpoint: 496 tests passed locally on PostgreSQL, covering the
-payment/card setup, staff screens and waiver foundation. New outbox checks are
-being added separately. No real provider credentials, signed R2 upload, delivered
+Validation checkpoint: all 504 tests passed locally on PostgreSQL, including
+63 targeted payment/card/staff/waiver/outbox checks. Twelve browser checks across
+1440px and 390px passed for payment/waiver lists/details and public/shared signing
+forms, including no page overflow, unchecked consent and shared-page privacy.
+Ruff check/format and migration drift checks pass. CI formatting caught two new
+migration files; those were formatted and are being rechecked on GitHub. No real provider credentials, signed R2 upload, delivered
 email, hosted worker or deployment is claimed. Features default off.
 
 ## Increment 2 — waivers and private evidence (in progress)

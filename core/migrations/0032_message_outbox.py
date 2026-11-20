@@ -8,48 +8,119 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0031_waiver_optional_metadata'),
+        ("core", "0031_waiver_optional_metadata"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MessageDelivery',
+            name="MessageDelivery",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('dedupe_key', models.CharField(max_length=200, unique=True)),
-                ('fingerprint', models.CharField(max_length=64)),
-                ('kind', models.CharField(choices=[('booking_confirmation', 'Booking Confirmation'), ('booking_waiver', 'Booking Confirmation with Waiver Link'), ('waiver_completed', 'Waiver Completed Notification'), ('payment_issue', 'Owner Payment Alert')], max_length=40)),
-                ('template_version', models.CharField(max_length=60)),
-                ('recipient', models.EmailField(max_length=254)),
-                ('subject', models.CharField(max_length=200)),
-                ('text_body', models.TextField()),
-                ('unsigned_waiver', models.BooleanField(default=False)),
-                ('state', models.CharField(choices=[('queued', 'Queued'), ('sending', 'Sending'), ('sent', 'Sent to email provider'), ('unknown', 'Delivery outcome unknown'), ('failed', 'Sending failed'), ('cancelled', 'Superseded before sending')], default='queued', max_length=12)),
-                ('provider_reference', models.CharField(blank=True, max_length=80)),
-                ('code', models.CharField(blank=True, max_length=40)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('dispatched_at', models.DateTimeField(null=True)),
-                ('sent_at', models.DateTimeField(null=True)),
-                ('actor', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
-                ('booking', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, related_name='messages', to='core.booking')),
-                ('customer', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, related_name='messages', to='core.customer')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                ("dedupe_key", models.CharField(max_length=200, unique=True)),
+                ("fingerprint", models.CharField(max_length=64)),
+                (
+                    "kind",
+                    models.CharField(
+                        choices=[
+                            ("booking_confirmation", "Booking Confirmation"),
+                            ("booking_waiver", "Booking Confirmation with Waiver Link"),
+                            ("waiver_completed", "Waiver Completed Notification"),
+                            ("payment_issue", "Owner Payment Alert"),
+                        ],
+                        max_length=40,
+                    ),
+                ),
+                ("template_version", models.CharField(max_length=60)),
+                ("recipient", models.EmailField(max_length=254)),
+                ("subject", models.CharField(max_length=200)),
+                ("text_body", models.TextField()),
+                ("unsigned_waiver", models.BooleanField(default=False)),
+                (
+                    "state",
+                    models.CharField(
+                        choices=[
+                            ("queued", "Queued"),
+                            ("sending", "Sending"),
+                            ("sent", "Sent to email provider"),
+                            ("unknown", "Delivery outcome unknown"),
+                            ("failed", "Sending failed"),
+                            ("cancelled", "Superseded before sending"),
+                        ],
+                        default="queued",
+                        max_length=12,
+                    ),
+                ),
+                ("provider_reference", models.CharField(blank=True, max_length=80)),
+                ("code", models.CharField(blank=True, max_length=40)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("dispatched_at", models.DateTimeField(null=True)),
+                ("sent_at", models.DateTimeField(null=True)),
+                (
+                    "actor",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "booking",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="messages",
+                        to="core.booking",
+                    ),
+                ),
+                (
+                    "customer",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="messages",
+                        to="core.customer",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MessageEvent',
+            name="MessageEvent",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('state', models.CharField(max_length=12)),
-                ('code', models.CharField(blank=True, max_length=40)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('actor', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
-                ('delivery', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='events', to='core.messagedelivery')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("state", models.CharField(max_length=12)),
+                ("code", models.CharField(blank=True, max_length=40)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "actor",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "delivery",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="events",
+                        to="core.messagedelivery",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

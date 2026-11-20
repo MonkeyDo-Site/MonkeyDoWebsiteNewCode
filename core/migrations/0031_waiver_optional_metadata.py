@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0030_waiver_evidence_guards'),
+        ("core", "0030_waiver_evidence_guards"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='waiversignature',
-            name='deleted_at',
+            model_name="waiversignature",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='waiversignature',
-            name='ip_address',
+            model_name="waiversignature",
+            name="ip_address",
             field=models.GenericIPAddressField(blank=True, null=True),
         ),
     ]
