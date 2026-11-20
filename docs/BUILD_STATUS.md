@@ -1,5 +1,25 @@
 # Staging build status
 
+## November 20 staging collection fix
+
+The operator reported PR #30 deployed from reviewed commit
+`cd9bbfe2f3070e712cd7bde518c98924a34b3787` (merge
+`6168d98fe0dae64b6928e936be06a168a420b126`). Sandbox card/waiver/booking-mail
+configuration and signed callback routes were activated; backups remain disabled.
+A new integrated booking and TEST confirmation succeeded, and the message showed
+delivery reported by the provider. This is user-reported hosted evidence, not an
+independent server inspection or blanket provider acceptance.
+
+Final arrival confirmation then returned HTTP 500. The read-only diagnostic
+showed no saved checkout, sale or payment operation for the reported booking.
+A local non-admin role with the reviewed grants reproduced
+`permission denied for table core_financialsale`: PostgreSQL row locking required
+UPDATE permission on an append-only sale. The code-only patch replaces that lock
+with a transaction-scoped per-sale advisory lock, retains booking-first ordering,
+and limits correction row locks to the mutable operation. Financial facts retain
+their existing UPDATE/DELETE prohibitions. No migration, grant, credential or
+manual data cleanup is needed. See [fix details](PAYMENT_CONFIRMATION_FIX.md).
+
 ## Booking completion stage — implemented in PR #30
 
 The local stage is complete: public/staff card/waiver/confirmation flows, held

@@ -8,7 +8,7 @@ from core.permissions import require_actor
 from core.pricing import money
 
 from .amounts import COMPONENTS, ZERO, allocate
-from .models import FinancialLineAdjustment, FinancialSale
+from .models import FinancialLineAdjustment
 
 
 def effective_components(sale):
@@ -80,12 +80,12 @@ def noncard_components(sale):
 @transaction.atomic
 def remove_unpaid_card_fee(*, actor, sale_id, request_key):
     """After a definitive failed card portion, changing to noncard removes only unused fees."""
-    from .ledger import enabled, lock_request
+    from .ledger import enabled, lock_request, lock_sale
 
     enabled()
     require_actor(actor, "core.collect_payment")
     key = lock_request(request_key)
-    sale = FinancialSale.objects.select_for_update().get(pk=sale_id)
+    sale = lock_sale(sale_id)
     if FinancialLineAdjustment.objects.filter(request_key=key, line__sale=sale).exists():
         return sale
     if FinancialLineAdjustment.objects.filter(request_key=key).exists():

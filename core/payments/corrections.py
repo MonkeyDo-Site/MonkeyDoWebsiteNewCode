@@ -11,7 +11,14 @@ from core.permissions import require_actor
 
 from .amounts import COMPONENTS, ZERO, amount
 from .gateway import Gateway, reference
-from .ledger import checked_allocation, enabled, lock_request, record_result, request_operation
+from .ledger import (
+    checked_allocation,
+    enabled,
+    lock_request,
+    lock_sale,
+    record_result,
+    request_operation,
+)
 from .models import PaymentOperation
 from .operations import observe, verify_transaction
 
@@ -36,8 +43,12 @@ def record_correction(
             "Explicitly confirm the correction already completed outside this website."
         )
     key = lock_request(request_key)
+    original_sale = PaymentOperation.objects.only("sale_id").get(
+        pk=original_id, state="succeeded", kind="receipt"
+    )
+    lock_sale(original_sale.sale_id)
     original = (
-        PaymentOperation.objects.select_for_update()
+        PaymentOperation.objects.select_for_update(of=("self",))
         .select_related("sale")
         .get(
             pk=original_id,
