@@ -138,8 +138,26 @@ def preview(*, actor, booking_id, kind, data):
         validate_attendees(**counts, supervised=booking.supervised)
         check_arrival_capacity(booking, counts, override, actor)
         verify_coverage(booking, counts, data.get("waiver_confirmed"))
-        units = max(0, state.pending_fee_units + booking.children - counts["children"])
-        lines = visit_lines(saved.policy, **counts, supervised=booking.supervised, fee_units=units)
+        special = state.special_subtotal
+        if data.get("special_admissions") is not None:
+            require_actor(actor, "core.change_booking", owner=True)
+            if special is None or state.comped:
+                raise ValidationError(
+                    "Apply a special price in owner pricing settings before adjusting it here."
+                )
+            special = amount(data["special_admissions"])
+        units = (
+            0
+            if special is not None or state.comped
+            else max(0, state.pending_fee_units + booking.children - counts["children"])
+        )
+        lines = visit_lines(
+            saved.policy,
+            **counts,
+            supervised=booking.supervised,
+            fee_units=units,
+            special_admissions=special,
+        )
     else:
         units = state.pending_fee_units + (booking.children if booking.children else 1)
         lines = [Line("Cancellation fee", units, Decimal("3.00"), False)]
@@ -189,6 +207,9 @@ def preview(*, actor, booking_id, kind, data):
         "fee_units": units,
         "waiver_confirmed": data.get("waiver_confirmed") is True,
         "comped": state.comped,
+        "owner_special_admissions": str(special)
+        if kind == "arrival" and special is not None
+        else None,
         "charge_fee": data.get("charge_fee"),
         "quote": quote,
         "plan": [{"tender": p["tender"], "amount": p["amount"]} for p in plan],
@@ -229,6 +250,7 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
             "Resolve earlier payment operations before confirming another action."
         )
     before = snapshot(booking)
+    previous_special = state.special_subtotal
     if kind == "arrival":
         for field, value in facts["counts"].items():
             setattr(booking, field, value)
@@ -244,9 +266,30 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         reopen_for_booking(actor, booking, booking.session)
     if state.pk is None:
         state.booking = booking
+    if kind == "arrival" and facts["owner_special_admissions"] is not None:
+        state.special_subtotal = amount(facts["owner_special_admissions"])
     state.pending_fee_units = facts["fee_units"] if kind == "arrival" else 0
     state.revision += 1
     state.save()
+    if kind == "arrival":
+        from .comped import notify_count_change
+
+        notify_count_change(
+            actor=actor, booking=booking, before=before, special=state.special_subtotal
+        )
+        if previous_special != state.special_subtotal:
+            AuditEvent.objects.create(
+                actor=actor,
+                action="booking.owner_price_changed",
+                record_type="booking",
+                record_id=str(booking.reference),
+                changes={
+                    "special_admissions": {
+                        "before": str(previous_special),
+                        "after": str(state.special_subtotal),
+                    }
+                },
+            )
     if kind == "arrival":
         review, _ = BookingWaiverReview.objects.get_or_create(booking=booking)
         review.coverage_confirmed = True

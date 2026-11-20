@@ -108,6 +108,8 @@ def calculate_quote(booking, policy, values=None):
     fields = ("children", "adults", "babies", "socks", "supervised", "expected_method")
     editing = values is not None
     values = values or {key: getattr(booking, key) for key in fields}
+    special_choice = values.get("special_admissions")
+    values = {key: values[key] for key in fields}
     data = booking_quote(policy, **values)
     if booking.workflow == "integrated_v1":
         from decimal import Decimal
@@ -123,11 +125,20 @@ def calculate_quote(booking, policy, values=None):
             + (booking.children - values["children"] if editing else 0),
         )
         comped = bool(state and state.comped)
-        if units or comped:
+        special = (
+            special_choice
+            if special_choice is not None
+            else state.special_subtotal
+            if state
+            else None
+        )
+        if units or comped or special is not None:
+            standard_lines = list(data["lines"])
             lines = visit_lines(
                 policy,
                 **{key: values[key] for key in fields if key != "expected_method"},
-                fee_units=units,
+                fee_units=0 if special is not None else units,
+                special_admissions=special,
             )
             if comped:
                 lines = [
@@ -144,6 +155,12 @@ def calculate_quote(booking, policy, values=None):
                 expected_method=values["expected_method"],
                 membership_benefits_applied=False,
                 owner_comped=comped,
+                owner_special_admissions=str(special) if special is not None else None,
+                standard_admission_lines=[
+                    row
+                    for row in standard_lines
+                    if row["label"] != "Grip socks — pick up upon arrival"
+                ],
             )
     return data
 
@@ -299,6 +316,7 @@ def edit_test_booking(
     close_session=False,
     reopen_affected_sessions=False,
     zelle_sender=None,
+    special_admissions=None,
 ):
     lock_calendar(exclusive=close_session or reopen_affected_sessions)
     if close_session or reopen_affected_sessions:
@@ -362,11 +380,41 @@ def edit_test_booking(
         from .waivers.models import BookingWaiverReview
 
         state, _ = BookingChargeState.objects.get_or_create(booking=booking)
-        state.pending_fee_units = max(
-            0, state.pending_fee_units + before["children"] - booking.children
+        old_special = state.special_subtotal
+        if special_admissions is not None:
+            from .payments.amounts import amount
+
+            require_actor(actor, "core.change_booking", owner=True)
+            if state.special_subtotal is None or state.comped:
+                raise ValidationError(
+                    "Use owner pricing settings to apply a special admissions price first."
+                )
+            state.special_subtotal = amount(special_admissions)
+        state.pending_fee_units = (
+            0
+            if state.special_subtotal is not None or state.comped
+            else max(0, state.pending_fee_units + before["children"] - booking.children)
         )
         state.revision += 1
-        state.save(update_fields=["pending_fee_units", "revision"])
+        state.save(update_fields=["pending_fee_units", "revision", "special_subtotal"])
+        from .payments.comped import notify_count_change
+
+        notify_count_change(
+            actor=actor, booking=booking, before=before, special=state.special_subtotal
+        )
+        if old_special != state.special_subtotal:
+            AuditEvent.objects.create(
+                actor=actor,
+                action="booking.owner_price_changed",
+                record_type="booking",
+                record_id=str(booking.reference),
+                changes={
+                    "special_admissions": {
+                        "before": str(old_special),
+                        "after": str(state.special_subtotal),
+                    }
+                },
+            )
         if booking.children > before["children"] or booking.babies > before["babies"]:
             review = BookingWaiverReview.objects.filter(booking=booking).first()
             if review:
@@ -380,6 +428,8 @@ def edit_test_booking(
         before[field] != getattr(booking, field)
         for field in ("children", "adults", "babies", "socks", "supervised", "expected_method")
     )
+    if booking.workflow == "integrated_v1" and special_admissions is not None:
+        price_changed = price_changed or old_special != state.special_subtotal
     quote = write_quote(booking, current.policy, actor) if price_changed else current
     AuditEvent.objects.create(
         actor=actor,

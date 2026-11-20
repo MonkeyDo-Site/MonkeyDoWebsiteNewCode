@@ -144,6 +144,7 @@ class Booking(models.Model):
     workflow = models.CharField(
         max_length=20,
         default="legacy_test",
+        db_default="legacy_test",
         choices=[
             ("legacy_test", "Earlier test booking"),
             ("integrated_v1", "Integrated sandbox booking"),
@@ -171,7 +172,7 @@ class Booking(models.Model):
     )
     edit_version = models.PositiveIntegerField(default=1)
     socks = models.PositiveIntegerField(default=0)
-    zelle_sender = models.CharField(max_length=160, blank=True)
+    zelle_sender = models.CharField(max_length=160, blank=True, db_default="")
     expected_method = models.CharField(
         max_length=12,
         choices=[
@@ -216,7 +217,7 @@ class Booking(models.Model):
             return (
                 "Upcoming — waiver complete"
                 if booking_coverage(self)
-                else "Upcoming — waiver required"
+                else "Upcoming — Waiver pending"
             )
         if self.setup_pending and self.attendance == self.Attendance.CANCELLED:
             return "Cancelled"

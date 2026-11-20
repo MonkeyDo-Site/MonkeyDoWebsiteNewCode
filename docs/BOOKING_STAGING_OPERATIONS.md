@@ -1,9 +1,45 @@
 # Booking-stage technical setup and recovery
 
 This is an operator configuration document, not the owner's final as-built test
-guide. The PR remains draft while the remaining business branches and release
-checks are completed. Nothing below means these services, credentials or offsite
-recovery points have already been installed on the existing Droplet.
+guide. The PR remains draft during final release checks. The setup checkpoint
+below distinguishes installed credentials and connection checks from service
+activation; the later operating instructions do not claim offsite recovery points
+or worker installation.
+
+## Operator-executed credential setup checkpoint
+
+During the November 19 setup conversation, the setup operator ran the protected-console
+commands and supplied the following nonsecret results. No credential values were
+sent to chat or stored here.
+
+- Banquest sandbox Source Key/PIN and public tokenization key were saved in the
+  existing protected functional configuration. The sandbox customer-list GET
+  returned HTTP 200. This verifies that read-only API authentication, not browser
+  tokenization, charging, webhooks, refunds or method deletion.
+- Two separate private staging buckets were created: `monkeydo-staging-waivers`
+  and `monkeydo-staging-backups`. The existing `monkeydowaivers` bucket was left
+  unchanged; its intended live use was not established from its name.
+- Waiver read/write and separate backup read/write/read-only credentials were
+  saved in their protected files. Temporary-file upload/read-back/deletion passed
+  for both staging buckets. Backup read-only download passed, and a write using
+  that read-only credential was correctly denied. Cleanup checks passed.
+- `/etc/monkeydo/backup.env` was created root:root 0600 with a distinct command
+  secret and **MONKEYDO_BACKUPS=0**. The web configuration receives only the
+  backup read-only credential. No backup schedule or encrypted recovery point is
+  established by these connection tests.
+- A Resend API key was already present, and the user confirmed the sending
+  domain `monkeydoplay.com` is Verified in Resend. New booking delivery/webhook
+  acceptance remains pending. Register/enable provider callbacks only when the new routes
+  and signature validation are deployed and configured.
+- The person performing setup does not currently have access to the owner's
+  computer. No recovery key was created on their computer. The OpenSSL check
+  did not create a key. Recovery-key creation, two protected owner-controlled
+  copies, public-certificate installation and backup/restore acceptance remain
+  pending; leave backups disabled until they are ready.
+
+These are user-supplied console results, not an independent server inspection.
+The application release, database and website services were not changed by the
+credential-entry and connection-check commands.
 
 ## Existing site and release boundary
 

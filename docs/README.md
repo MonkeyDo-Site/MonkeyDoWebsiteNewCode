@@ -6,9 +6,9 @@ Current development authorization and implementation evidence are in [DEVELOPMEN
 
 Private preview timing, estimated costs and deployment approval steps are in [STAGING_DEPLOYMENT_PROPOSAL.md](STAGING_DEPLOYMENT_PROPOSAL.md). The example configurations under `deploy/` are preparation only, not a deployment.
 
-The customer-management increment, staff group setup and login protection are described in [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md). Pending customer self-booking is now documented in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md); payment/waiver/confirmation integration remains unfinished.
+The customer-management increment, staff group setup and login protection are described in [CUSTOMER_DEVELOPMENT.md](CUSTOMER_DEVELOPMENT.md). Pending customer self-booking is now documented in [CUSTOMER_BOOKING_DEVELOPMENT.md](CUSTOMER_BOOKING_DEVELOPMENT.md); the new completed workflow is built in PR #30 and awaits hosted activation/acceptance.
 
-Owner MFA/recovery, staff accounts, session invalidation and shared staging access are documented in [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). Email defaults to in-memory; the new opt-in allowlisted Resend staging transport still needs private configuration and real delivery verification.
+Owner MFA/recovery, staff accounts, session invalidation and shared staging access are documented in [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). The owner previously confirmed Resend account-email delivery. New booking transport/callback acceptance is separate; default-off flags do not mean delivery has passed.
 
 Owner scheduling controls and their current limits are documented in [SCHEDULING_DEVELOPMENT.md](SCHEDULING_DEVELOPMENT.md).
 
@@ -36,9 +36,19 @@ The frozen V1 [design gallery](design-review/v1/README.md), [feedback log](DESIG
 
 The guided server setup and restricted hosted-review release are documented in [HOSTED_DESIGN_PREVIEW.md](HOSTED_DESIGN_PREVIEW.md).
 
-The [single staging site cutover guide](SHARED_STAGING_CUTOVER.md) supersedes the earlier two-URL proposal. No functional cutover has been performed.
+The [single staging site cutover guide](SHARED_STAGING_CUTOVER.md) supersedes the earlier two-URL proposal. The owner subsequently reported the shared functional site deployed; see BUILD_STATUS.md for the current baseline and later integration boundary.
 
 The [deployment command and rollback guide](DEPLOYMENT_COMMAND.md) describes one-time installation, routine preview updates and the database-migration boundary.
+
+## Booking-completion stage
+
+PR #30 contains the locally built ordinary/supervised card, waiver, email, arrival,
+payment and recovery stage. Use the [as-built testing guide](BOOKING_COMPLETION_TEST_GUIDE.md),
+[Word copy](BOOKING_COMPLETION_TEST_GUIDE.docx), [implementation evidence](BOOKING_COMPLETION_DEVELOPMENT.md)
+and [browser ZIP / one-block handoff](BOOKING_COMPLETION_RELEASE.md).
+Provider callbacks and sandbox activation follow code deployment. Backups remain
+disabled until the owner recovery key and hosted restore acceptance are ready.
+Actual private setup evidence is in [operator setup](BOOKING_STAGING_OPERATIONS.md).
 
 ## Reading order and authority
 

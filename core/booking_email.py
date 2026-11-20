@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
 
-from .booking_completion import enabled
+from .booking_completion import confirmation_payload, enabled
 from .communications.content import booking_confirmation
 from .communications.models import MessageDelivery
 from .communications.services import enqueue
@@ -75,12 +75,16 @@ def correct_email(*, flow, email, version, request_key):
                 details={"email": email, "previous_customer_ids": historical},
             )
     booking.customer = customer
+    payload = confirmation_payload(booking, flow=flow)
     return enqueue(
         key=dedupe,
-        kind="booking_confirmation",
+        kind=payload["kind"],
         recipient=email,
         subject="Your Monkey Do adventure is booked!",
-        text=booking_confirmation(booking),
+        text=booking_confirmation(
+            booking, waiver_url=payload["waiver_url"], waiver_type=payload["waiver_type"]
+        ),
+        unsigned_waiver=payload["unsigned_waiver"],
         booking=booking,
         customer=customer,
     )

@@ -143,6 +143,14 @@ class BookingUpgradeTests(TransactionTestCase):
                 after = Booking.objects.get(pk=booking.pk)
                 self.assertEqual({field: getattr(after, field) for field in fields}, before)
                 self.assertEqual(after.workflow, "legacy_test")
+                # The previous release is restarted after additive schema preparation.
+                # Its historical ORM omits both newly added NOT NULL columns.
+                legacy_insert = historical.get_model("core", "Booking").objects.create(
+                    customer=customer, session=session, children=1, adults=1
+                )
+                compatible = Booking.objects.get(pk=legacy_insert.pk)
+                self.assertEqual(compatible.workflow, "legacy_test")
+                self.assertEqual(compatible.zelle_sender, "")
                 call_command("reviewed_booking_completion_schema", apply=True, stdout=io.StringIO())
                 with connection.cursor() as cursor:
                     cursor.execute(

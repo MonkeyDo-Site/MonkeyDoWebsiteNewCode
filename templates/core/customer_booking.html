@@ -23,7 +23,7 @@
 {% if flow.stage == 'email' %}<h2>Add your email address</h2><p>Your customer record doesn’t have an email address yet. Please enter one to continue.</p>{% endif %}
 {% if flow.contact_email %}<p>Email for this booking: {{ flow.contact_email }}</p>{% endif %}
 {% if flow.stage == 'contact' %}<h2>Your details</h2><p>Phone: {{ flow.phone }}</p>{% endif %}
-{% if flow.stage == 'review' %}<h2>Payment Details</h2>
+{% if flow.stage == 'review' %}<h2>Payment Details</h2>{% if flow.waiver_share_requested %}<p class="notice">After you confirm, your places will be reserved and the shared waiver link will be emailed to you. Waiver coverage remains pending until it is reviewed for everyone.</p>{% endif %}
 <p>{% if flow.details.supervised %}Supervised Play{% else %}Open Play{% endif %} · {{ flow.details.children }} children · {{ flow.details.adults }} adults · {{ flow.details.babies }} babies · {{ flow.details.socks }} pairs of socks</p>
 {% include 'core/quote_items.html' with data=quote %}
 <p>Amounts use the staging tax rate. This estimate does not mean money was received.</p>{% endif %}

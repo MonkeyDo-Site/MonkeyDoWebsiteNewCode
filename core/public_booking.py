@@ -247,5 +247,5 @@ def submit_booking(flow):
                 details={"previous_customer_ids": previous_ids, "email": email},
             )
     if completing:
-        booking_completion.confirmation(booking)
+        booking_completion.confirmation(booking, flow=flow)
     return booking

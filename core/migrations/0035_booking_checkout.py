@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="booking",
             name="zelle_sender",
-            field=models.CharField(blank=True, max_length=160),
+            field=models.CharField(blank=True, db_default="", max_length=160),
         ),
         migrations.CreateModel(
             name="BookingChargeState",

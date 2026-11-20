@@ -28,6 +28,7 @@ from .models import (
 
 CATEGORIES = {
     "Child admissions": "open_child",
+    "Owner-priced admissions": "owner_priced_admissions",
     "Supervised child admissions": "supervised_child",
     "Required baby admission": "minimum_baby",
     "Required adult admission": "minimum_adult",

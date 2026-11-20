@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST, require_safe
 from .backups.models import BackupDownload, BackupRestoreCheck, BackupRun
 from .models import (
     AuditEvent,
+    Booking,
     DurableJob,
     MessageDelivery,
     OwnerNotice,
@@ -31,6 +32,20 @@ def dashboard(request):
         "core/dashboard.html",
         {
             "alerts": alerts,
+            "waiver_pending_bookings": Booking.objects.filter(
+                workflow="integrated_v1",
+                setup_pending=False,
+                attendance="",
+                session__ends_at__gt=timezone.now(),
+                waiver_review__paper_signed=False,
+                waiver_review__coverage_confirmed=False,
+            )
+            .select_related("customer", "session")
+            .order_by("session__starts_at")[:20]
+            if settings.WAIVER_ENABLED
+            and request.user.has_perm("core.view_waiversignature")
+            and request.user.has_perm("core.view_customer")
+            else [],
             "backup_issues": BackupRun.objects.filter(
                 state__in=["failed", "retention_failed"]
             ).order_by("-started_at")[:10]
@@ -113,15 +128,21 @@ def review_notice(request, pk):
         notice.save(update_fields=["reviewed_at", "reviewed_by"])
         AuditEvent.objects.create(
             actor=request.user,
-            action="payment.correction_notice_reviewed"
+            action="booking.special_price_notice_reviewed"
+            if notice.details.get("kind") == "special_price_headcount"
+            else "payment.correction_notice_reviewed"
             if notice.details.get("kind") == "payment_correction"
             else "customer.profile_conflict_reviewed"
             if notice.details.get("kind") == "booking_profile_conflict"
             else "customer.email_notice_reviewed",
-            record_type="payment"
+            record_type="booking"
+            if notice.details.get("kind") == "special_price_headcount"
+            else "payment"
             if notice.details.get("kind") == "payment_correction"
             else "customer",
-            record_id=str(notice.details.get("operation_id"))
+            record_id=str(notice.details.get("booking_reference"))
+            if notice.details.get("kind") == "special_price_headcount"
+            else str(notice.details.get("operation_id"))
             if notice.details.get("kind") == "payment_correction"
             else str(notice.customer_id),
             changes={"notice_id": notice.pk},

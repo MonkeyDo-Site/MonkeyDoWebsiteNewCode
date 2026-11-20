@@ -163,3 +163,30 @@ unknown outcomes and credit applications are not cash received. Accountant
 reporting UI may follow launch, but its source facts must be collected from the
 first live payment, within existing permissions/retention and without adding
 raw card data or an unapproved gift-card balance ledger.
+
+
+## Completed-booking additions carried forward
+
+This stage implements the shared financial, waiver, mail and recovery foundation
+locally; see [implementation status](BOOKING_COMPLETION_DEVELOPMENT.md) for tests
+and the separate hosted configuration boundary. The owner authorized acceptance
+after staging deployment, without an owner screenshot review for this stage.
+
+- Preserve five public steps when integrated signing is enabled (insert Waiver
+  before Payment Details); the final review stays in Payment Details.
+- Online groups can reserve places on final save with Waiver pending, an emailed
+  shared parent link and unsigned PDF. Everyone needs coverage before play;
+  incomplete coverage does not automatically release their places. Keep public
+  parent signing independent and private; an individual signature is not an
+  assertion that every group participant is covered.
+- Owner special prices apply to admissions only, with socks separate. Count
+  changes retain the agreed total unless the owner adjusts it, with no automatic
+  partial-cancellation fee. Staff count changes notify the owner Dashboard.
+  Membership benefits must not silently reset an accepted special price; review
+  the applicable financial/benefit impact in the active-membership stage.
+- Reuse immutable financial components, actual tender/receipt dates and linked
+  corrections, durable jobs, current-contact message delivery histories and
+  private waiver evidence. An estimate, manual follow-up promise, sent email or
+  checkbox is not proof of payment, delivery or a saved electronic signature.
+- Earlier test bookings remain identified by stored workflow, with stable IDs and
+  history, and are never automatically charged, signed, emailed or upgraded.

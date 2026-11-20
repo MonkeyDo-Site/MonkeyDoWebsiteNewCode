@@ -11,7 +11,9 @@ from .amounts import COMPONENTS, ZERO, allocate, amount
 NONCARD = ("cash", "check", "zelle", "gift_card")
 
 
-def visit_lines(policy, *, children, adults, babies, socks, supervised, fee_units=0):
+def visit_lines(
+    policy, *, children, adults, babies, socks, supervised, fee_units=0, special_admissions=None
+):
     quote = booking_quote(
         policy,
         children=children,
@@ -25,6 +27,11 @@ def visit_lines(policy, *, children, adults, babies, socks, supervised, fee_unit
         Line(row["label"], row["quantity"], Decimal(row["unit_price"]), row["taxable"])
         for row in quote["lines"]
     ]
+    if special_admissions is not None:
+        lines = [Line("Owner-priced admissions", 1, amount(special_admissions), True)]
+        if socks:
+            lines.append(Line("Grip socks — pick up upon arrival", socks, policy.sock_price, True))
+        fee_units = 0
     if type(fee_units) is not int or fee_units < 0:
         raise ValidationError("Cancellation units must be nonnegative integers.")
     if fee_units:

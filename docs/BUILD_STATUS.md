@@ -1,18 +1,29 @@
 # Staging build status
 
-## Booking completion stage — authorized, draft PR #30
+## Booking completion stage — implemented in PR #30
 
-Local implementation now covers public/staff card/waiver/confirmation flows,
-arrival/split and balance-only payment review, linked owner corrections, immutable
-financial source facts, private evidence retention, mail delivery/bounce history,
-encrypted backup/isolated restore tooling and closed reviewed deployment. It is
-not deployed or provider-verified. Features default off. Two material business
-branches remain unanswered; the PR is not ready to merge/deploy.
+The local stage is complete: public/staff card/waiver/confirmation flows, held
+online groups with Waiver pending, arrival/split and balance-only payment review,
+owner special admissions/complimentary pricing, linked corrections, immutable
+financial facts, private evidence retention, mail delivery/bounce history,
+encrypted backup/isolated restore tooling and closed reviewed deployment.
+**588 local PostgreSQL tests pass**, including actual upgrade, legacy-code insert
+compatibility, rollback-on-grant-failure and permission/concurrency checks.
+Desktop/phone synthetic-provider browser flows and isolated encrypted restore
+checks pass. Final GitHub PostgreSQL 17/native Windows checks precede merge.
 
-The latest full local run passed 578 tests. Follow [implementation status](BOOKING_COMPLETION_DEVELOPMENT.md)
-for exact evidence and remaining work, and [operator setup](BOOKING_STAGING_OPERATIONS.md)
-for private configuration. Owner acceptance follows staging deployment. The owner
-as-built test guide is prepared after the full stage is actually built/tested.
+The operator reported successful Banquest sandbox read-only authentication and
+R2 temporary-file/read-only restriction checks; the Resend domain is Verified.
+No end-to-end hosted card, signature, collection or booking-delivery acceptance is
+claimed. New integration flags remain disabled until callback/activation setup.
+Backups remain disabled pending owner recovery-key setup and hosted restore
+acceptance. No hosted schema or worker activation has been performed by the agent.
+
+[As-built owner guide](BOOKING_COMPLETION_TEST_GUIDE.md) ·
+[Word guide](BOOKING_COMPLETION_TEST_GUIDE.docx) ·
+[Browser ZIP / one-block release](BOOKING_COMPLETION_RELEASE.md) ·
+[Implementation evidence](BOOKING_COMPLETION_DEVELOPMENT.md) ·
+[Private operator setup](BOOKING_STAGING_OPERATIONS.md).
 
 ## Subsequent planning: accountant tax clarification and future reports
 

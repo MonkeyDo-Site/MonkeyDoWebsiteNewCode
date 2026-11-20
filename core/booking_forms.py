@@ -74,6 +74,14 @@ class TestBookingForm(forms.Form):
     expected_method = forms.ChoiceField(
         choices=Booking._meta.get_field("expected_method").choices, label="Expected payment method"
     )
+    special_admissions = forms.DecimalField(
+        required=False,
+        min_value=0,
+        max_digits=14,
+        decimal_places=2,
+        label="Owner: adjust admissions price (optional)",
+        help_text="Keep the agreed admissions total or adjust it here. Socks remain separate; attendee changes do not add an automatic cancellation fee.",
+    )
     zelle_sender = forms.CharField(
         required=False, max_length=160, label="Zelle sender name/account"
     )
@@ -141,6 +149,13 @@ class TestBookingForm(forms.Form):
             not booking and not settings.BOOKING_COMPLETION_ENABLED
         ):
             self.fields.pop("zelle_sender")
+        from .payments.models import BookingChargeState
+
+        special = BookingChargeState.objects.filter(booking=booking).first() if booking else None
+        if not owner or not special or special.special_subtotal is None or special.comped:
+            self.fields.pop("special_admissions")
+        else:
+            self.initial["special_admissions"] = special.special_subtotal
         session_date_picker(self, booking)
         customer_picker(self)
 

@@ -71,11 +71,19 @@ conversion-tax question; it does not resolve the production tax rate or change
 the existing credit/refund permissions. See [PAYMENTS.md](PAYMENTS.md).
 
 
-## Booking-stage questions awaiting response — November 20, 2026
+## Booking-stage clarifications resolved — November 19, 2026
 
-Two questions were sent in chat during authorized implementation: online group
-waiver timing (all coverage before confirmation versus Waiver pending/link first),
-and positive owner special-price scope (admissions versus subtotal including socks).
-Do not assume answers. The unrelated full owner-comped $0 rule is implemented.
+The owner approved reserving an online group's places immediately on final save,
+emailing the shared parent-waiver link and unsigned PDF, and showing **Waiver
+pending** until coverage is reviewed. Everyone needs coverage before play; pending
+waivers do not automatically release places.
+
+An owner-entered special price covers **admissions only**, with socks separate.
+When attendee counts change, retain that agreed admissions total and prompt the
+owner to adjust it optionally. Do not add an automatic partial-cancellation fee
+for those changes. Staff cannot change the special price; staff count changes
+create an owner Dashboard notice. Full cancellation/no-show retains its separate
+explicit charge/no-charge review. The unrelated fully owner-comped $0 rule remains.
+
 Private provider/backup setup remains a technical input, never a request to post
-keys in chat. These questions do not reopen the other agreed booking decisions.
+keys in chat. There are no remaining business questions for this booking stage.

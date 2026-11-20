@@ -90,11 +90,23 @@ def share_for_token(token):
 
 
 @transaction.atomic
-def create_share(*, actor, booking_id):
+def create_share(*, actor, booking_id, flow=None):
     enabled()
-    require_actor(actor, "core.change_booking")
-    require_actor(actor, "core.view_booking")
     booking = Booking.objects.get(pk=booking_id, workflow="integrated_v1")
+    if actor is None:
+        from core.public_booking import assert_flow
+
+        assert_flow(flow)
+        if (
+            flow.get("workflow") != "integrated_v1"
+            or flow.get("stage") not in {"review", "done"}
+            or booking.source != "customer_test"
+            or str(booking.creation_key) != flow.get("key")
+        ):
+            raise ValidationError("Use your current completed booking to request its parent link.")
+    else:
+        require_actor(actor, "core.change_booking")
+        require_actor(actor, "core.view_booking")
     token = secrets.token_urlsafe(32)
     link = WaiverShareLink.objects.create(
         booking=booking, token_hash=hashlib.sha256(token.encode()).hexdigest(), actor=actor
@@ -287,10 +299,14 @@ def bind_booking(*, flow, booking):
     if (
         not isinstance(ids, list)
         or len(ids) > 100
-        or not ids
-        or flow.get("waiver_coverage") is not True
+        or (
+            not flow.get("waiver_share_requested")
+            and (not ids or flow.get("waiver_coverage") is not True)
+        )
     ):
         raise ValidationError("Complete waiver coverage before confirming this booking.")
+    if flow.get("waiver_share_requested") and booking.children + booking.babies == 0:
+        raise ValidationError("Shared parent signing requires a booking that includes minors.")
     for signature_id in ids:
         signature = WaiverSignature.objects.get(
             pk=signature_id,
@@ -310,7 +326,7 @@ def bind_booking(*, flow, booking):
     BookingWaiverReview.objects.get_or_create(
         booking=booking,
         defaults={
-            "coverage_confirmed": True,
+            "coverage_confirmed": not bool(flow.get("waiver_share_requested")),
             "share_requested": bool(flow.get("waiver_share_requested")),
         },
     )

@@ -51,7 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
-    "0027_payment_foundation.py": "fb64c21c73a97ce33b816c5d358e4f26c102b957c3ee82b3f57de309363e21ec",
+    "0027_payment_foundation.py": "d9ddf42e75cb21d1549a403556e4c16073c9cbc3cd4102317f7f155cbcd455e8",
     "0028_financial_record_guards.py": "e3b182b45f60e0e21c11aec5240af42fb883af5dc2b8572043c84cb182f21ea4",
     "0029_waiver_evidence.py": "59436757945de6ac2564d22b36b192152140ed45192e366f9596acb03493068f",
     "0030_waiver_evidence_guards.py": "f0830e0c16b56df506d9c6608afd471624aa850f8505146a2db357d59a36df1c",
@@ -59,7 +59,7 @@ BOOKING_MIGRATIONS = {
     "0032_message_outbox.py": "d77253f92b62676215bb020d268962186f46b43d829f822384e7719b35bfe0b8",
     "0033_message_history_guards.py": "1f0b02d741794d6e46c43dd4bf5358989b7ac5ced8856368cd984b20b218789f",
     "0034_waiver_review_revision.py": "da70678c34fce18a38072cf7c7c8863beddad383556d70cdb7a8f3515467ad40",
-    "0035_booking_checkout.py": "5629859f68ad0e6ca96f40810caa990d9458356996085ecdb75a52a472906f8a",
+    "0035_booking_checkout.py": "054811e087d2bfd3e8184847b6337549efb278353e19106a598fad81023acd3b",
     "0036_checkout_record_guards.py": "d8d246b8a5cd6474b27b0a922b5ac014f35782c80f314f281d5ed50cb266d5a2",
     "0037_payment_followup_actions.py": "d196f960fac3ae1eae0d1e4d09f006171f45794de61bba8fe638b3697613820a",
     "0038_remaining_payment_checkout.py": "859cab7bd8003ea7e7af581f63968b064b333364dc4331585841f2430adff78f",

@@ -4,7 +4,8 @@ Initial review: November 16, 2026. Updated after the owner-reported PR #27
 deployment and the owner’s responses to this plan.
 
 **Current status: the owner authorized the complete ordinary/supervised booking
-stage on November 19, 2026. Implementation is in progress in draft PR #30.** See
+stage on November 19, 2026. Implementation and developer checks are in PR #30;
+private configuration and hosted acceptance remain separate.** See
 [the implementation boundary](BOOKING_COMPLETION_DEVELOPMENT.md) for what exists,
 what remains and actual test evidence. Earlier planning/baseline statements below
 are historical and do not describe the newly developed code as deployed.

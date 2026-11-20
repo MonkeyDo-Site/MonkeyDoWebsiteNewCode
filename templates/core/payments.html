@@ -1,4 +1,4 @@
-{% extends 'core/staff_base.html' %}{% block title %}Payments · MonkeyDo Staff{% if user.is_superuser %}{% for method in removing_methods %}<p><a href="{% url 'card_removal_review' method.pk %}">Check card removal · ending in {{ method.last_four }}</a></p>{% endfor %}{% endif %}{% endblock %}{% block staff_content %}
+{% extends 'core/staff_base.html' %}{% block title %}Payments · MonkeyDo Staff{% endblock %}{% block staff_content %}
 <h1>Payments</h1><p class="caption">Sandbox payment history. Estimates and saved cards are not money received.</p>
 <form method="get" class="panel table-filters" data-auto-date>{% include 'core/partials/form_fields.html' %}<button class="button small">Apply filters</button> <a href="{% url 'payments' %}">Clear all filters</a></form>
 <div class="staff-table-scroll" tabindex="0" role="region" aria-label="Payments"><table class="staff-table"><thead><tr><th>Payment ID</th><th>Family</th><th>Booking</th><th>Requested</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead><tbody>

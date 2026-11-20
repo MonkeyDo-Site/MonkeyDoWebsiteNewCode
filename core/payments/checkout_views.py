@@ -78,9 +78,23 @@ class ArrivalForm(ReceiptForm):
         label="Allow these unexpected attendees at arrival even if the configured capacity is exceeded.",
     )
 
-    def __init__(self, *args, booking, **kwargs):
+    special_admissions = forms.DecimalField(
+        required=False,
+        min_value=0,
+        max_digits=14,
+        decimal_places=2,
+        label="Owner: adjust admissions price (optional)",
+        help_text="Attendee counts changed? Keep or adjust the agreed total. Socks stay separate; no automatic partial cancellation fee is added.",
+    )
+
+    def __init__(self, *args, booking, owner=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.booking = booking
+        special = charge_state(booking)
+        if not owner or special.special_subtotal is None or special.comped:
+            self.fields.pop("special_admissions")
+        else:
+            self.initial["special_admissions"] = special.special_subtotal
         self.fields["method"].choices = [
             (
                 "card",
@@ -227,7 +241,7 @@ def checkout(request, pk, kind="arrival"):
         )
     else:
         initial["method"] = "card"
-    args = {"booking": booking}
+    args = {"booking": booking, "owner": request.user.is_superuser}
     if kind != "arrival":
         args["kind"] = kind
         args["owner"] = request.user.is_superuser
@@ -400,18 +414,26 @@ def remaining_payment(request, pk):
 
 
 class CompedForm(forms.Form):
+    special_admissions = forms.DecimalField(
+        required=False,
+        min_value=0,
+        max_digits=14,
+        decimal_places=2,
+        label="Special admissions total (optional)",
+        help_text="Leave blank for standard pricing. This covers admissions only; grip socks, tax and applicable processing fees stay separate.",
+    )
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     comped = forms.BooleanField(
         required=False, label="Complimentary booking — all charges and cancellation fees are $0"
     )
-    confirm = forms.BooleanField(label="Apply this choice and require a fresh staff setup review.")
+    confirm = forms.BooleanField(label="Apply these owner pricing choices.")
 
 
 @staff_permission("core.view_booking")
 @guarded
 @require_http_methods(["GET", "POST"])
 def complimentary(request, pk):
-    from .comped import set_comped
+    from .comped import set_price
 
     if not request.user.is_superuser:
         raise PermissionDenied
@@ -420,19 +442,24 @@ def complimentary(request, pk):
     )
     form = CompedForm(
         request.POST if request.method == "POST" else None,
-        initial={"version": booking.edit_version, "comped": charge_state(booking).comped},
+        initial={
+            "version": booking.edit_version,
+            "comped": charge_state(booking).comped,
+            "special_admissions": charge_state(booking).special_subtotal,
+        },
     )
     if request.method == "POST" and form.is_valid():
         try:
-            set_comped(
+            set_price(
                 actor=request.user,
                 booking_id=pk,
                 version=form.cleaned_data["version"],
                 comped=form.cleaned_data["comped"],
+                special_admissions=form.cleaned_data["special_admissions"],
             )
             messages.success(
                 request,
-                "Complimentary status saved. Review and confirm the booking setup; waiver coverage is still required.",
+                "Owner pricing saved. Review the booking details and any required setup; waiver coverage is still required.",
             )
             return redirect("booking_detail", pk=pk)
         except ValidationError as error:

@@ -43,6 +43,7 @@ class BookingFilters(forms.Form):
         choices=[
             ("pending", "Setup pending"),
             ("upcoming", "Upcoming"),
+            ("waiver_pending", "Waiver pending"),
             ("cancelled", "Cancelled"),
             ("arrived", "Arrived"),
             ("no_show", "No show"),
@@ -171,12 +172,24 @@ def booking_context(request, *, today_only=False):
             rows = rows.filter(supervised=filters["play"][0] == "supervised")
         if filters["status"]:
             status = Q(
-                attendance__in=[s for s in filters["status"] if s not in {"pending", "upcoming"}]
+                attendance__in=[
+                    s
+                    for s in filters["status"]
+                    if s not in {"pending", "upcoming", "waiver_pending"}
+                ]
             )
             if "pending" in filters["status"]:
                 status |= Q(attendance="", setup_pending=True)
             if "upcoming" in filters["status"]:
                 status |= Q(attendance="", setup_pending=False)
+            if "waiver_pending" in filters["status"]:
+                status |= Q(
+                    workflow="integrated_v1",
+                    attendance="",
+                    setup_pending=False,
+                    waiver_review__paper_signed=False,
+                    waiver_review__coverage_confirmed=False,
+                )
             rows = rows.filter(status)
         order = ["session__starts_at", "created_at", "pk"]
         if query:

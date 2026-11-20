@@ -17,6 +17,7 @@ LABELS = {
     "expected_method": "Expected payment method",
     "zelle_sender": "Zelle sender name/account",
     "comped": "Complimentary booking",
+    "special_admissions": "Owner admissions price",
     "last_four": "Card ending in",
     "future_use": "Keep for future visits",
     "attendance": "Status",

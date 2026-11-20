@@ -358,3 +358,35 @@ for (const form of document.querySelectorAll('[data-reviewed-checkout]')) {
   method.addEventListener('change', sync);
   sync();
 }
+
+/* A group may reserve places and request the shared link before all parents sign. */
+for (const form of document.querySelectorAll('.waiver-coverage')) {
+  const shared = form.elements.share_requested;
+  if (!shared) continue;
+  const sync = () => {
+    for (const name of ['additional_minors', 'coverage_confirmed']) {
+      const row = form.querySelector(`[data-field="${name}"]`);
+      if (!row) continue;
+      row.hidden = shared.checked;
+      for (const input of row.querySelectorAll('input')) {
+        input.disabled = shared.checked;
+        if (name !== 'signatures') input.required = !shared.checked;
+      }
+    }
+  };
+  shared.addEventListener('change', sync);
+  sync();
+}
+
+for (const notice of document.querySelectorAll('[data-special-price-notice]')) {
+  const form = notice.closest('form');
+  if (!form) continue;
+  const changed = () => {
+    const counts = ['children', 'adults', 'babies'].some(name => form.elements[name] && form.elements[name].value !== notice.dataset[`original${name[0].toUpperCase()+name.slice(1)}`]);
+    const mode = form.elements.supervised;
+    notice.hidden = !counts && (!mode || String(Number(mode.checked)) === notice.dataset.originalSupervised);
+  };
+  form.addEventListener('input', changed);
+  form.addEventListener('change', changed);
+  changed();
+}

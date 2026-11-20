@@ -84,7 +84,9 @@ Online option text:
 
 > I am bringing along additional minors and would like to receive the waiver link in my confirmation email so that I can send it to a parent of the minors I will be bringing.
 
-When selected, attach unsigned PDF and include:
+When selected, final save reserves places immediately and the booking remains
+Waiver pending until staff review. Incomplete waivers do not automatically release
+places; everyone needs coverage before play. Attach the unsigned PDF and include:
 
 > Please see below the waiver link that you requested to send to parents of other minors included in your booking. Alternatively, we've attached a PDF waiver file that you can print, have them sign and bring along when you come.
 >

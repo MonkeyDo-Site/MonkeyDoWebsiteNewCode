@@ -4,19 +4,19 @@ This is the living acceptance document requested by the owner. Use artificial fa
 
 ## Current stage and inheritance
 
-The owner reports PR #27 deployed. Customer/staff pending-test booking, improved
-search/filter/layout, scheduling restrictions and editable membership drafts are
-available for owner testing. This does not mean every scenario below passed:
-full card/waiver/arrival/payment/booking-email cases remain blocked by their
-unfinished integration, and active memberships follow that stage. Historical
-local test counts and hosted deployment evidence are in BUILD_STATUS.md.
+The owner reports PR #29 deployed. The next ordinary/supervised booking stage
+is built in PR #30 with 588 passing local PostgreSQL tests and desktop/phone
+synthetic-provider browser checks. Owner acceptance begins after staging deploy
+and one-time provider callback/activation setup. New integration flags remain
+disabled until then; active memberships follow this stage.
 
-Apply [SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md) at each new
-module, with the approved sequence in [NEXT_PHASE_REVIEW.md](NEXT_PHASE_REVIEW.md).
-Both credit-card payment and alternate-payment-plus-backup-card paths are required.
-Use new reservations for integrated-workflow testing; the proposed Old test
-booking badge/filter preserves existing test records. No such relabelling has
-been applied by this documentation update.
+Use the [as-built owner guide](BOOKING_COMPLETION_TEST_GUIDE.md) or
+[Word copy](BOOKING_COMPLETION_TEST_GUIDE.docx) for the current stage, with
+[workflow standards](SHARED_WORKFLOW_STANDARDS.md) and the
+[remaining-stage order](NEXT_PHASE_REVIEW.md). This larger acceptance matrix also
+contains future membership/program/launch scenarios; their presence does not
+claim those features are built. Earlier test bookings retain their IDs/history
+and stable workflow provenance; new integrated testing uses new reservations.
 
 ## Recording results
 
@@ -28,7 +28,7 @@ Example result entry:
 | --- | --- | --- | --- | --- | --- |
 | BOOK-01 | To complete | To complete | Not yet performed | Not run | — |
 
-Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The deployed suite covers the implemented pending-booking/customer/scheduling/draft workflows, including concurrency and permissions. It does not establish unfinished provider integration or blanket owner acceptance. Owner scenarios without a recorded result remain **Not run**. Cases needing unfinished features are **Blocked by implementation**, not failures attributed to the owner. The production tax rate and retained-fee-tax decision must remain explicitly pending where relevant.
+Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The deployed suite covers the implemented pending-booking/customer/scheduling/draft workflows, including concurrency and permissions. It does not establish unfinished provider integration or blanket owner acceptance. Owner scenarios without a recorded result remain **Not run**. Cases needing unfinished features are **Blocked by implementation**, not failures attributed to the owner. The production tax rate remains pending. The accountant resolved retained-fee tax: reverse it when admission is applied to membership, retain it otherwise; conversion implementation is a later stage.
 
 ## Public website and availability
 
@@ -67,6 +67,8 @@ Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The deployed suite cove
 | BOOK-08 | Owner | Start arrival, edit attendees/socks, go back during waiver/payment review | No immediate arrival/charge; selections preserved; final reviewed values determine explicit action |
 | BOOK-09 | Owner | Partial arrival, absent child, extra adult, cancel/no-show | Correct $3 applicable-child fee/waiver handling and benefit release; no extra-adult cancellation fee |
 | BOOK-10 | Developer | Change future settings/prices after accepted booking | Immutable original quote/policy retained; authorized edits create revisions and audit |
+| BOOK-11 | Owner + developer | Online group requests shared parent link before all coverage | Final save reserves places immediately, shows Waiver pending and emails shared link/unsigned PDF. Independent signatures preserve capacity/privacy; everyone needs coverage before play, with no automatic pending-waiver expiry. |
+| BOOK-12 | Owner + developer | Owner special admissions total, then count/sock edits and arrival | Socks separate; retain agreed admissions total unless owner optionally adjusts; no automatic partial-cancellation fee for count changes. Staff cannot adjust price; staff saved count changes create owner notice. Whole cancellation/no-show remains an explicit fee choice. |
 
 ## Waivers
 
@@ -97,7 +99,7 @@ Current status is in [BUILD_STATUS.md](BUILD_STATUS.md). The deployed suite cove
 | MEMBER-10 | Owner | Complimentary membership, additional memberships, owner cancellation/refund | Correct permissions, independent dates, opt-in complimentary email and one cancellation message |
 | CREDIT-01 | Owner + developer | Unpaid visit conversion: two children/two Subscriptions; three children; five children | Pretax $35.98/$50.98/$80.98 respectively; no credit for uncollected admission |
 | CREDIT-02 | Owner + developer | Already-paid cash/card admission converted to membership | Reverse eligible admission/tax, retain original fee; new fee only on new card charge; correct real credit |
-| CREDIT-03 | Owner + developer | Retained-fee tax on converted card admission | **Blocked pending accountant decision** on original fee tax; no silent default |
+| CREDIT-03 | Owner + developer | Retained-fee tax on converted card admission | Accountant decision resolved: reverse fee tax if admission is applied to membership, retain it otherwise; original processing fee remains nonrefundable. $16.47 example makes $16.02 available. Conversion implementation remains later-stage work. |
 | CREDIT-04 | Owner | Spend credit on each allowed purchase; owner adjust/remove; prepaid membership expires with balance | Audited eligible use, no expiry, owner expiration alert; physical gift-card ledger remains separate |
 | CREDIT-05 | Developer | Concurrent credit redemption and next-installment credit application | No double spend; unused credit applied to next installment before actual new charge |
 

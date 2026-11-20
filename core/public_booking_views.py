@@ -574,7 +574,10 @@ def wizard(request):
                 flow["stage"] = "waiver" if completing else "review"
             elif stage == "waiver":
                 flow["waiver_signatures"] = [str(item.pk) for item in data["signatures"]]
-                flow["waiver_coverage"] = True
+                flow["waiver_share_requested"] = data.get("share_requested") is True
+                flow["waiver_coverage"] = (
+                    not flow["waiver_share_requested"] and data.get("coverage_confirmed") is True
+                )
                 flow["stage"] = "review"
             elif stage == "review":
                 if completing and str(data["payment_consent"]) != flow.get("payment_consent"):

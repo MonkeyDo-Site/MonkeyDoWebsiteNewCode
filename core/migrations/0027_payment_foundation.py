@@ -57,6 +57,7 @@ class Migration(migrations.Migration):
                     ("integrated_v1", "Integrated sandbox booking"),
                 ],
                 default="legacy_test",
+                db_default="legacy_test",
                 editable=False,
                 max_length=20,
             ),

@@ -1,6 +1,6 @@
 # Customer mail delivery contract review
 
-Reviewed November 20, 2026 against the official SDK source:
+Reviewed November 19, 2026 against the official SDK source:
 
 - [Resend webhook event types and payloads](https://github.com/resend/resend-node/blob/main/src/webhooks/interfaces/webhook-event.interface.ts)
 - [Svix Python header adaptation](https://github.com/svix/svix-webhooks/blob/main/python/svix/webhooks.py)

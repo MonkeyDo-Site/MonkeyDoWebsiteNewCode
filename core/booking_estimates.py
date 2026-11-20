@@ -22,9 +22,14 @@ def edit_estimate(booking, data):
         key: data[key]
         for key in ("children", "adults", "babies", "socks", "supervised", "expected_method")
     }
+    if data.get("special_admissions") is not None:
+        values["special_admissions"] = data["special_admissions"]
     quote = calculate_quote(booking, saved.policy, values)
     payload = {
-        **values,
+        **{
+            key: str(value) if key == "special_admissions" else value
+            for key, value in values.items()
+        },
         "session": data["session"].pk,
         "version": data["version"],
         "booking": booking.pk,
