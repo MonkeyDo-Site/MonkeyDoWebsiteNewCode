@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
@@ -9,7 +10,7 @@ from django.views.decorators.http import require_http_methods, require_safe
 from .customers import correct_previous_phone, create_customer, save_comment, update_customer
 from .forms import CommentForm, CustomerForm, PreviousPhoneForm, phone_search_digits
 from .memberships import current_draft
-from .models import AuditEvent, Customer, CustomerComment
+from .models import AuditEvent, Customer, CustomerComment, PaymentOperation
 from .name_matching import match_rank, name_candidates
 from .pagination import paginate
 from .permissions import staff_permission
@@ -112,6 +113,12 @@ def customer_detail(request, pk):
         "core/customer_detail.html",
         {
             "customer": customer,
+            "payment_operations": PaymentOperation.objects.filter(sale__customer=customer).order_by(
+                "-requested_at"
+            )[:5]
+            if settings.PAYMENT_SANDBOX_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else [],
             "comments": comments,
             "membership_drafts": [
                 current_draft(root)

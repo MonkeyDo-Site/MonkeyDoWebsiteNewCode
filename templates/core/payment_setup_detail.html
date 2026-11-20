@@ -1,0 +1,7 @@
+{% extends 'core/staff_base.html' %}{% block title %}Card setup review · MonkeyDo Staff{% endblock %}{% block staff_content %}
+<h1>Card setup review</h1><section class="panel"><p>Setup reference: {{ setup.pk }}</p><p>Status: {{ setup.get_state_display }}</p>
+{% if setup.customer %}<p><a href="{% url 'customer_detail' setup.customer_id %}">{{ setup.customer.last_name }}</a></p>{% endif %}{% if setup.method %}<p>Saved payment method ending in {{ setup.method.last_four }}.</p>{% endif %}
+{% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
+{% if setup.state != 'succeeded' %}<form method="post">{% csrf_token %}<button class="button">Check saved-card result</button><p class="caption">This looks for the existing provider record. It does not repeat card entry or charge a payment.</p></form>{% endif %}
+</section><a href="{% url 'payments' %}">Back to payments</a>
+{% endblock %}

@@ -34,9 +34,14 @@ Implemented locally so far:
   financial postings/events/observations, with PostgreSQL/SQLite guards. Quote
   acceptance alone is not a receipt. Preserve actual receipt/settlement dates,
   historical customer label, stable product categories and allocated item/fee tax.
-- PaymentMethod stores private provider references and safe brand/last-four
-  metadata, not PAN/CVV or expiry. Public hosted-card setup/lifecycle is still
-  being connected; model existence is not completed consent/tokenization.
+- Provider-hosted card setup now exchanges a transient nonce, verifies method
+  ownership/safe metadata, persists exact consent text/version, binds to the
+  verified booking flow, supports retained versus booking-only methods and
+  discards abandoned setup methods. Public endpoints and an SDK component exist;
+  they are not yet attached to the final completed-booking path.
+- Staff payment lists/detail, customer history and Dashboard attention use linked
+  IDs, safe last-four metadata, existing search/paging and owner-only read-only
+  provider reconciliation. Queued operations recheck booking/method eligibility.
 - Backend service boundaries for actual tender confirmation, linked refunds/voids,
   remaining-amount reservation, verified provider evidence and uncertain outcomes.
   Original/test bookings have a stable legacy workflow marker; new integration
@@ -51,31 +56,42 @@ Implemented locally so far:
 - Durable leased DB jobs. Recovering a sending job marks its outcome unknown;
   it does not replay the financial POST. Blocked jobs require explicit review.
 
-Remaining in this increment: public/staff secure card-setup binding/consent and
-method lifecycle, attention/history screens and alerts, operator/worker setup,
-reviewed schema/grants/compatibility/recovery handoff and acceptance tests.
-Migrations 0027/0028 are newly introduced and not authorized by the older closed
-0026 deployment option. Keep the PR draft until its reviewed deployment plan is
-complete. Existing staging configuration is not changed by local implementation.
+Remaining in this increment: complete customer/staff integration and card
+replacement/recovery UI; finalize resolved-obligation disposal, attention
+resolution/alerts, operator/worker setup and reviewed schema/grants/compatibility
+handoff. Migrations 0027 onward are not allowed by the older closed 0026 helper.
+Keep the PR draft until the complete stage and reviewed deployment are ready.
+Existing staging configuration has not changed.
 
-Validation: 45 targeted payment/adapter/callback/historical-upgrade checks passed,
-including provider timestamps, actor revocation and malformed signed events.
-An earlier full run reached 470 tests and exposed two historical-upgrade test
-assumptions about the old schema; tests now use their frozen release graphs
-without weakening the production migration guards. A full rerun is next. Record final counts and
-GitHub results in the PR. No real provider credential/transaction or hosted worker
-claim is made. Do not enable the flag until its setup/acceptance is ready.
+Validation checkpoint: 496 tests passed locally on PostgreSQL, covering the
+payment/card setup, staff screens and waiver foundation. New outbox checks are
+being added separately. No real provider credentials, signed R2 upload, delivered
+email, hosted worker or deployment is claimed. Features default off.
 
-## Increment 2 — waivers and private evidence (not started)
+## Increment 2 — waivers and private evidence (in progress)
 
-Faithful approved/versioned text and electronic consent, signer/minor evidence,
-coverage/expiry and shared/arrival links, private R2 storage/access, paper fallback,
-signing notifications, retention and corresponding failure/recovery checks.
-No signed file in Git, application database, public folder or duplicate DO store.
+Implemented locally: faithful approved full text and explicit acknowledgments,
+version hashes, typed signer/relationship/minor metadata, one-year New York
+anniversaries including leap years, conditional private R2 object creation and
+byte-hash verification, metadata-only database storage, shared-parent privacy and
+rescheduling-aware next-day expiry, staff search/paging/detail/evidence access,
+and two-year file deletion with retained metadata/audit. SQL guards protect
+signed facts and earlier versions. Storage/transport checks use synthetic mocks.
 
-## Increment 3 — complete end-to-end booking (not started)
+Remaining: connect public coverage/reuse/new-minor decisions, staff paper fallback,
+arrival controls, notifications, pending-evidence recovery and real configured-R2
+acceptance. An online group-booking clarification is pending: all coverage before
+confirmation versus a pending booking/link before all parents finish.
 
-Connect customer/staff card and waiver setup to completion, actual confirmation
+## Increment 3 — complete end-to-end booking (in progress)
+
+Implemented locally: a durable message snapshot/outbox, separate TEST-marked
+Resend customer transport supporting approved test recipients and the unsigned
+source PDF, current-contact refresh before sending, explicit sent/failed/unknown
+states, no blind interrupted-send replay, and approved booking/waiver/owner-alert
+content. These services are being tested and wired, not a completed booking flow.
+
+Remaining: connect customer/staff card and waiver setup to completion, actual confirmation
 emails and current-email correction/resend, arrival review/collection and split
 payments, actual attendance versus payment state, cancellation/no-show/partial
 arrival and approved comped/override behavior. Carry worker/backups/resource and

@@ -9,5 +9,10 @@
 <form method="post" action="{% url 'resolve_alert' alert.pk %}">{% csrf_token %}<button class="button small" type="submit">Mark reviewed</button></form></article>
 {% empty %}<p>No unresolved security alerts.</p>{% endfor %}
 {% endif %}
-<p class="notice">Payment and email monitoring are not yet connected in this test workspace.</p>
+{% if payment_sandbox_enabled and perms.core.view_paymentoperation and perms.core.view_customer %}
+<h2>Payments needing attention</h2>{% for operation in payment_issues %}<p><a href="{% url 'payment_detail' operation.pk %}">{{ operation.sale.customer.last_name }} · ${{ operation.amount|floatformat:2 }}</a> · {{ operation.get_state_display }}</p>{% empty %}<p>No uncertain payment outcomes are recorded.</p>{% endfor %}
+{% if user.is_superuser %}{% for setup in setup_issues %}<p><a href="{% url 'card_setup_detail' setup.pk %}">Card setup needing review</a> · {{ setup.created_at|date:'M j, Y g:i A' }}</p>{% endfor %}{% if blocked_jobs %}<p class="notice">{{ blocked_jobs|length }} background job{{ blocked_jobs|length|pluralize }} need owner review. No uncertain payment is automatically retried.</p>{% endif %}{% endif %}
+<p><a href="{% url 'payments' %}">View payment history</a></p>
+{% endif %}
+<p class="caption">Booking email monitoring will be connected with booking completion.</p>
 {% endblock %}

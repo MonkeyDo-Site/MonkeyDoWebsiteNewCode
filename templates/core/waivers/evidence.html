@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>MONKEYDO LLC signed liability waiver</title>
+<style>body{font:16px/1.6 sans-serif;max-width:65rem;margin:2rem auto;padding:1rem}dt{font-weight:bold}dd{margin-bottom:.7rem}@media print{body{margin:0}}</style>
+<h1>MONKEYDO LLC Liability Waiver</h1><p>Version {{ signature.version_id }} · Evidence {{ signature.pk }}</p>
+{{ legal_html|safe }}
+<h2>Electronic signature</h2><dl><dt>Signer’s full legal name</dt><dd>{{ signature.signer_name }}</dd><dt>Relationship</dt><dd>{{ signature.relationship }}</dd><dt>Email</dt><dd>{{ signature.signer_email }}</dd><dt>Phone</dt><dd>{{ signature.signer_phone|default:'Not provided' }}</dd><dt>Minors covered</dt><dd>{% for name in signature.minors %}{{ name }}{% if not forloop.last %}<br>{% endif %}{% empty %}Signing for self only{% endfor %}</dd><dt>Signed</dt><dd>{{ signed_iso }}</dd><dt>Valid until</dt><dd>{{ valid_iso }}</dd><dt>Signature method</dt><dd>Typed full legal name and explicit Sign waiver action</dd></dl>
+<h2>Accepted acknowledgments</h2><p>{{ adult_text }}</p><p>{{ agreement_text }}</p><p>{{ electronic_text }}</p>
+<p>Approved source SHA-256: {{ signature.version.source_hash }}<br>Legal-text SHA-256: {{ signature.version.text_hash }}</p>
+</html>

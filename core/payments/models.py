@@ -69,7 +69,16 @@ class FinancialSale(FinancialFact):
     fingerprint = models.CharField(max_length=64)
     customer = models.ForeignKey("core.Customer", on_delete=models.PROTECT)
     booking = models.ForeignKey("core.Booking", null=True, on_delete=models.PROTECT)
-    quote = models.OneToOneField("core.BookingQuote", null=True, on_delete=models.PROTECT)
+    quote = models.ForeignKey("core.BookingQuote", null=True, on_delete=models.PROTECT)
+    kind = models.CharField(
+        max_length=20,
+        default="visit",
+        choices=[
+            (x, x.replace("_", " ").title())
+            for x in ("visit", "cancellation", "partial_fee", "adjustment")
+        ],
+    )
+    booking_version = models.PositiveIntegerField(default=1)
     environment = models.CharField(max_length=8, default="sandbox", editable=False)
     currency = models.CharField(max_length=3, default="USD", editable=False)
     customer_label = models.CharField(max_length=120)
@@ -141,6 +150,7 @@ class PaymentOperation(models.Model):
         SUCCEEDED = "succeeded", "Succeeded"
         DECLINED = "declined", "Declined"
         ACTION = "action", "Authentication or review required"
+        CANCELLED = "cancelled", "Cancelled before sending"
 
     class Kind(models.TextChoices):
         RECEIPT = "receipt", "Payment"
@@ -160,6 +170,8 @@ class PaymentOperation(models.Model):
         max_length=12,
         choices=[(x, x.title()) for x in ("card", "cash", "check", "zelle", "gift_card")],
     )
+    brand = models.CharField(max_length=30, blank=True)
+    last_four = models.CharField(max_length=4, blank=True)
     purpose = models.CharField(
         max_length=20,
         default="arrival",
@@ -230,6 +242,10 @@ class PaymentEvent(FinancialFact):
     created_at = models.DateTimeField(auto_now_add=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
 
+    @property
+    def state_label(self):
+        return dict(PaymentOperation.State.choices).get(self.state, "Review required")
+
 
 class ProviderEvent(FinancialFact):
     event_id = models.CharField(max_length=200, unique=True)
@@ -274,6 +290,8 @@ class ProviderObservation(FinancialFact):
     occurred_at = models.DateTimeField(null=True)
     settled_date = models.DateField(null=True)
     batch_reference = models.CharField(max_length=40, blank=True)
+    brand = models.CharField(max_length=30, blank=True)
+    last_four = models.CharField(max_length=4, blank=True)
     observed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -282,3 +300,78 @@ class ProviderObservation(FinancialFact):
                 fields=["operation", "fingerprint"], name="provider_observation_unique"
             )
         ]
+
+
+class PaymentSetup(models.Model):
+    """One durable claim for a transient nonce exchange; the nonce is never saved."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    flow_hash = models.CharField(max_length=64, db_index=True)
+    nonce_hash = models.CharField(max_length=64)
+    customer = models.ForeignKey("core.Customer", null=True, on_delete=models.PROTECT)
+    customer_revision = models.PositiveIntegerField(null=True)
+    provider_customer = models.CharField(max_length=40, blank=True)
+    method = models.OneToOneField(PaymentMethod, null=True, on_delete=models.PROTECT)
+    consent = models.OneToOneField(
+        "core.PaymentConsent", null=True, on_delete=models.PROTECT, related_name="+"
+    )
+    reusable = models.BooleanField(default=False)
+    state = models.CharField(
+        max_length=20,
+        default="prepared",
+        choices=[
+            (x, x.replace("_", " ").title())
+            for x in (
+                "prepared",
+                "customer_sending",
+                "method_sending",
+                "succeeded",
+                "unknown",
+                "failed",
+            )
+        ],
+    )
+    code = models.CharField(max_length=40, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+
+
+class PaymentPolicyVersion(FinancialFact):
+    version = models.CharField(max_length=60, primary_key=True)
+    content_hash = models.CharField(max_length=64)
+    text = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PaymentConsent(FinancialFact):
+    policy = models.ForeignKey(PaymentPolicyVersion, on_delete=models.PROTECT)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT, related_name="consents")
+    flow_hash = models.CharField(max_length=64, db_index=True)
+    version = models.CharField(max_length=60)
+    policy_hash = models.CharField(max_length=64)
+    payment_accepted = models.BooleanField()
+    cancellation_accepted = models.BooleanField()
+    future_use_accepted = models.BooleanField(default=False)
+    source = models.CharField(max_length=8, choices=[("public", "Public"), ("staff", "Staff")])
+    accepted_at = models.DateTimeField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(payment_accepted=True, cancellation_accepted=True),
+                name="payment_consents_required",
+            )
+        ]
+
+
+class BookingCardAgreement(models.Model):
+    booking = models.OneToOneField(
+        "core.Booking", on_delete=models.PROTECT, related_name="card_agreement"
+    )
+    method = models.ForeignKey(PaymentMethod, on_delete=models.PROTECT, related_name="agreements")
+    consent = models.OneToOneField(PaymentConsent, on_delete=models.PROTECT)
+    resolved_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -7,10 +7,12 @@ import urllib.error
 import urllib.request
 import uuid
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.views.decorators.debug import sensitive_variables
 
 from .amounts import amount
 from .ledger import enabled
@@ -48,6 +50,20 @@ def reference(value):
     return str(value)
 
 
+def validate_nonce(nonce, expiry_month, expiry_year):
+    if not isinstance(nonce, str) or not re.fullmatch(r"nonce-[A-Za-z0-9]{1,20}", nonce):
+        raise ValidationError("Use the secure provider card-entry form.")
+    now = timezone.localtime()
+    if (
+        type(expiry_month) is not int
+        or type(expiry_year) is not int
+        or not 1 <= expiry_month <= 12
+        or not now.year <= expiry_year <= now.year + 30
+        or (expiry_year, expiry_month) < (now.year, now.month)
+    ):
+        raise ValidationError("The entered card has expired or has an invalid expiry.")
+
+
 class Gateway:
     def __init__(self):
         enabled()
@@ -55,17 +71,24 @@ class Gateway:
             raise ProviderFailure("sandbox_credentials_missing")
         self.opener = urllib.request.build_opener(NoRedirect())
 
-    def request(self, method, path, payload=None):
+    @sensitive_variables()
+    def request(self, method, path, payload=None, query=None):
         if not re.fullmatch(
             r"(transactions/(charge|refund|void|[1-9][0-9]*)|customers(/[1-9][0-9]*/payment-methods)?|payment-methods/[1-9][0-9]*)",
             path,
         ):
             raise ProviderFailure("unsupported_provider_path")
+        query = query or {}
+        if set(query) - {"customer_number", "limit", "type"} or any(
+            len(str(v)) > 255 for v in query.values()
+        ):
+            raise ProviderFailure("unsupported_provider_query")
+        suffix = "?" + urlencode(query) if query else ""
         credentials = base64.b64encode(
             (settings.BANQUEST_API_SOURCE_KEY + ":" + settings.BANQUEST_API_PIN).encode()
         ).decode()
         request = urllib.request.Request(
-            BASE + path,
+            BASE + path + suffix,
             data=exact_json(payload).encode() if payload is not None else None,
             method=method,
             headers={
@@ -79,6 +102,8 @@ class Gateway:
             with self.opener.open(request, timeout=20) as response:
                 if not 200 <= response.status < 300:
                     raise ProviderFailure()
+                if method == "DELETE" and response.status == 204:
+                    return {}
                 raw = response.read(MAX_RESPONSE + 1)
                 if len(raw) > MAX_RESPONSE:
                     raise ProviderFailure("provider_response_too_large")
@@ -88,6 +113,10 @@ class Gateway:
                 return data
         except ProviderFailure:
             raise
+        except urllib.error.HTTPError as error:
+            if error.code == 404 and method in {"GET", "DELETE"}:
+                raise ProviderFailure("provider_not_found") from None
+            raise ProviderFailure() from None
         except (OSError, urllib.error.URLError, ValueError, TypeError):
             # HTTP errors can contain request/card data. Never propagate bodies,
             # credentials, URLs or provider text to logs, audit or user errors.
@@ -153,18 +182,9 @@ class Gateway:
             {"identifier": "MonkeyDo sandbox " + identity, "customer_number": identity},
         )
 
+    @sensitive_variables()
     def save_card(self, provider_customer, nonce, expiry_month, expiry_year):
-        if not isinstance(nonce, str) or not re.fullmatch(r"nonce-[A-Za-z0-9]{1,20}", nonce):
-            raise ValidationError("Use the secure provider card-entry form.")
-        now = timezone.localtime()
-        if (
-            type(expiry_month) is not int
-            or type(expiry_year) is not int
-            or not 1 <= expiry_month <= 12
-            or not now.year <= expiry_year <= now.year + 30
-            or (expiry_year, expiry_month) < (now.year, now.month)
-        ):
-            raise ValidationError("The entered card has expired or has an invalid expiry.")
+        validate_nonce(nonce, expiry_month, expiry_year)
         # Expiry is used transiently for the provider exchange, never stored.
         return self.request(
             "POST",
@@ -182,3 +202,19 @@ class Gateway:
 
     def delete_method(self, method_id):
         return self.request("DELETE", "payment-methods/" + reference(method_id))
+
+    def setup_customer(self, setup_id):
+        identity = "md-" + str(uuid.UUID(str(setup_id)))
+        results = self.request("GET", "customers", query={"customer_number": identity, "limit": 2})
+        if (
+            not isinstance(results, list)
+            or len(results) != 1
+            or results[0].get("customer_number") != identity
+        ):
+            raise ProviderFailure("setup_customer_not_identified")
+        return results[0]
+
+    def methods(self, customer_id):
+        return self.request(
+            "GET", f"customers/{reference(customer_id)}/payment-methods", query={"type": "card"}
+        )

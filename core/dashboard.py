@@ -1,10 +1,18 @@
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_safe
 
-from .models import AuditEvent, OwnerNotice, SecurityAlert
+from .models import (
+    AuditEvent,
+    DurableJob,
+    OwnerNotice,
+    PaymentOperation,
+    PaymentSetup,
+    SecurityAlert,
+)
 from .permissions import staff_permission
 
 
@@ -19,6 +27,23 @@ def dashboard(request):
         "core/dashboard.html",
         {
             "alerts": alerts,
+            "payment_issues": PaymentOperation.objects.filter(
+                state__in=["unknown", "action", "sending"]
+            )
+            .select_related("sale__customer")
+            .order_by("requested_at")[:20]
+            if settings.PAYMENT_SANDBOX_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            and request.user.has_perm("core.view_customer")
+            else [],
+            "setup_issues": PaymentSetup.objects.filter(
+                state__in=["unknown", "customer_sending", "method_sending"]
+            ).order_by("created_at")[:20]
+            if settings.PAYMENT_SANDBOX_ENABLED and request.user.is_superuser
+            else [],
+            "blocked_jobs": DurableJob.objects.filter(state="blocked").order_by("created_at")[:20]
+            if settings.PAYMENT_SANDBOX_ENABLED and request.user.is_superuser
+            else [],
             "notices": OwnerNotice.objects.filter(reviewed_at__isnull=True).select_related(
                 "customer"
             )

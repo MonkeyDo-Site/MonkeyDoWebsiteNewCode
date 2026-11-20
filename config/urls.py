@@ -16,10 +16,29 @@ from core import (
     views,
     website_settings,
 )
+from core.payments import views as payment_views
+from core.payments.setup_views import setup_card, setup_status
 from core.payments.webhooks import endpoint as payment_webhook
 from core.security import ProtectedLoginView
+from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path("waiver/unsigned.pdf", waiver_views.unsigned_pdf, name="unsigned_waiver"),
+    path("waiver/shared/<str:token>/", waiver_views.shared_sign, name="shared_waiver"),
+    path("book/waiver/", waiver_views.public_sign, name="customer_waiver"),
+    path("staff/waivers/", waiver_views.waivers, name="waivers"),
+    path("staff/waivers/<uuid:pk>/", waiver_views.waiver_detail, name="waiver_detail"),
+    path("staff/waivers/<uuid:pk>/evidence/", waiver_views.evidence, name="waiver_evidence"),
+    path(
+        "staff/bookings/<int:booking_id>/waiver/share/",
+        waiver_views.share_create,
+        name="waiver_share_create",
+    ),
+    path("staff/payments/", payment_views.payments, name="payments"),
+    path("staff/payments/<uuid:pk>/", payment_views.payment_detail, name="payment_detail"),
+    path("staff/card-setups/<uuid:pk>/", payment_views.card_setup_detail, name="card_setup_detail"),
+    path("book/card/setup/", setup_card, name="customer_card_setup"),
+    path("book/card/setup/<uuid:setup_id>/", setup_status, name="customer_card_status"),
     path("integrations/banquest/webhook/", payment_webhook, name="banquest_webhook"),
     path("staff/", ProtectedLoginView.as_view(), name="staff_login"),
     path("staff/website-settings/", website_settings.website_settings, name="website_settings"),

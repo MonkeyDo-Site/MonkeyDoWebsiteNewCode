@@ -174,3 +174,18 @@ BANQUEST_API_SOURCE_KEY = os.environ.get("BANQUEST_API_SOURCE_KEY", "")
 BANQUEST_API_PIN = os.environ.get("BANQUEST_API_PIN", "")
 BANQUEST_TOKENIZATION_PUBLIC_KEY = os.environ.get("BANQUEST_TOKENIZATION_PUBLIC_KEY", "")
 BANQUEST_WEBHOOK_KEY = os.environ.get("BANQUEST_WEBHOOK_KEY", "")
+
+# Separate opt-in; credentials are supplied only via the protected host environment.
+WAIVER_ENABLED = os.environ.get("MONKEYDO_WAIVERS") == "1"
+if WAIVER_ENABLED and DESIGN_REVIEW_ONLY:
+    raise ImproperlyConfigured("Signed waivers are unavailable in frozen design review.")
+R2_ACCOUNT_ID = os.environ.get("MONKEYDO_R2_ACCOUNT_ID", "")
+R2_WAIVER_BUCKET = os.environ.get("MONKEYDO_R2_WAIVER_BUCKET", "")
+R2_WAIVER_ACCESS_KEY = os.environ.get("MONKEYDO_R2_WAIVER_ACCESS_KEY", "")
+R2_WAIVER_SECRET_KEY = os.environ.get("MONKEYDO_R2_WAIVER_SECRET_KEY", "")
+
+BOOKING_EMAIL_ENABLED = os.environ.get("MONKEYDO_BOOKING_EMAIL") == "1"
+if BOOKING_EMAIL_ENABLED and DESIGN_REVIEW_ONLY:
+    raise ImproperlyConfigured("Customer booking mail is unavailable in frozen design review.")
+BOOKING_STAGING_ORIGIN = "https://staging.monkeydoplay.com"
+BOOKING_REPLY_TO = "monkeydoplay@gmail.com"

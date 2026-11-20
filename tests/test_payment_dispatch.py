@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
-from core.models import DurableJob, FinancialPosting, PaymentOperation, ProviderEvent
+from core.models import Booking, DurableJob, FinancialPosting, PaymentOperation, ProviderEvent
 from core.payments.gateway import ProviderFailure
 from core.payments.jobs import claim, enqueue, finish, run_one
 from core.payments.operations import execute, reconcile
@@ -50,6 +50,15 @@ class DispatchTests(TestCase):
             self.assertEqual(execute(operation.pk).state, "succeeded")
             self.assertEqual(gateway.return_value.charge.call_count, 1)
         self.assertEqual(FinancialPosting.objects.count(), 1)
+
+    def test_changed_booking_cancels_queued_payment_before_any_provider_post(self):
+        operation = self.operation(self.sale())
+        Booking.objects.filter(pk=self.booking.pk).update(edit_version=2)
+        with patch("core.payments.operations.Gateway") as gateway:
+            result = execute(operation.pk)
+        self.assertEqual(result.state, "cancelled")
+        gateway.return_value.charge.assert_not_called()
+        self.assertFalse(FinancialPosting.objects.exists())
 
     def test_timeout_and_worker_restart_never_resend_financial_post(self):
         operation = self.operation(self.sale())

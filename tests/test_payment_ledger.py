@@ -183,6 +183,7 @@ class PaymentLedgerTests(TestCase):
 
     def test_staff_payment_and_owner_refund_permissions_are_distinct(self):
         sale = self.sale("cash")
+        self.staff.groups.clear()
         with self.assertRaises(PermissionDenied):
             self.operation(sale, actor=self.staff, tender="cash", method_id=None)
         self.staff.user_permissions.add(Permission.objects.get(codename="collect_payment"))
@@ -206,10 +207,16 @@ class PaymentLedgerTests(TestCase):
 
     def test_cross_customer_or_booking_method_and_foreign_line_are_rejected(self):
         sale = self.sale()
-        self.method.customer = None
-        self.method.save()
+        other = PaymentMethod.objects.create(
+            provider_customer="13",
+            provider_method="999",
+            brand="Visa",
+            last_four="5678",
+            consent_version="MD-PAYMENT-2026-01",
+            consent_at=timezone.now(),
+        )
         with self.assertRaises(PaymentMethod.DoesNotExist):
-            self.operation(sale)
+            self.operation(sale, method_id=other.pk)
         bad = full_allocation(sale)
         bad[0]["line"] = str(uuid.uuid4())
         with self.assertRaises(ValidationError):

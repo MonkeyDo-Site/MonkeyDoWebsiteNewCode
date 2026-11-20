@@ -14,7 +14,13 @@ from .models import DurableJob, PaymentOperation
 
 @transaction.atomic
 def enqueue(*, kind, reference, key):
-    if kind not in {"payment_dispatch", "payment_reconcile", "provider_event"}:
+    if kind not in {
+        "payment_dispatch",
+        "payment_reconcile",
+        "provider_event",
+        "method_remove",
+        "customer_email",
+    }:
         raise ValidationError("Unsupported worker operation.")
     job, created = DurableJob.objects.get_or_create(
         key=key,
@@ -69,6 +75,18 @@ def run_one():
             from .webhooks import process_event
 
             process_event(job.reference)
+        elif job.kind == "customer_email":
+            from core.communications.services import deliver
+
+            message = deliver(job.reference)
+            if message.state in {"sending", "unknown", "failed", "queued"}:
+                raise ValidationError("Email requires review before another attempt.")
+        elif job.kind == "method_remove":
+            from .methods import remove_unused
+
+            method = remove_unused(job.reference)
+            if method.state != "removed":
+                raise ValidationError("Card removal needs review.")
         else:
             from .ledger import record_result
             from .operations import execute, reconcile

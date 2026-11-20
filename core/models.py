@@ -613,14 +613,27 @@ class SessionReservationBlock(models.Model):
 
 
 # Registered with the existing core app; strings in FKs avoid import cycles.
+from .communications.models import MessageDelivery, MessageEvent  # noqa: E402,F401
 from .payments.models import (  # noqa: E402,F401
+    BookingCardAgreement,
     DurableJob,
     FinancialLine,
     FinancialPosting,
     FinancialSale,
+    PaymentConsent,
     PaymentEvent,
     PaymentMethod,
     PaymentOperation,
+    PaymentPolicyVersion,
+    PaymentSetup,
     ProviderEvent,
     ProviderObservation,
+)
+from .waivers.models import (  # noqa: E402,F401
+    BookingWaiverReview,
+    WaiverBookingLink,
+    WaiverCustomerLink,
+    WaiverShareLink,
+    WaiverSignature,
+    WaiverVersion,
 )

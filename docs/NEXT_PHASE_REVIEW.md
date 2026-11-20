@@ -3,11 +3,11 @@
 Initial review: November 16, 2026. Updated after the owner-reported PR #27
 deployment and the owner’s responses to this plan.
 
-**Status: sequence and planning clarifications accepted; next-phase application
-development has not started.** This update reconciles documentation only. No
-provider configuration, database records, application code or hosted service was
-changed. The owner wants ordinary/supervised booking completed first, active
-memberships next, and the remaining business workflows afterward.
+**Current status: the owner authorized the complete ordinary/supervised booking
+stage on November 19, 2026. Implementation is in progress in draft PR #30.** See
+[the implementation boundary](BOOKING_COMPLETION_DEVELOPMENT.md) for what exists,
+what remains and actual test evidence. Earlier planning/baseline statements below
+are historical and do not describe the newly developed code as deployed.
 
 ## Baseline and evidence
 

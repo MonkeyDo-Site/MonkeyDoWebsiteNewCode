@@ -100,7 +100,7 @@ def accept_booking_sale(*, actor, booking_id, quote_id, creation_key):
         if prior.fingerprint != identity:
             raise ValidationError("This payment request key has already been used.")
         return prior
-    prior = FinancialSale.objects.filter(quote=quote).first()
+    prior = FinancialSale.objects.filter(quote=quote, kind="visit").first()
     if prior:
         return prior
     # One order revision may be replaced only before any operation reserves money.
@@ -138,6 +138,7 @@ def accept_booking_sale(*, actor, booking_id, quote_id, creation_key):
         customer_label=booking.customer.last_name,
         booking=booking,
         quote=quote,
+        booking_version=booking.edit_version,
         subtotal=subtotal,
         processing_fee=fee,
         sales_tax=tax,
@@ -238,7 +239,11 @@ def request_operation(
         purpose = "correction"
     if sale.booking_id:
         booking = Booking.objects.select_for_update().get(pk=sale.booking_id)
-        if booking.workflow != "integrated_v1" or sale.quote.revision != booking.edit_version:
+        if booking.workflow != "integrated_v1" or (
+            kind == "receipt"
+            and sale.kind == "visit"
+            and sale.quote.revision != booking.edit_version
+        ):
             raise ValidationError("Review the current integrated booking before collection.")
     cleaned = checked_allocation(sale, allocation)
     value = sum((amount(part[k]) for part in cleaned for k in COMPONENTS), ZERO)
@@ -269,7 +274,13 @@ def request_operation(
         )
         if kind == "receipt" and (method.state != "active" or not method.provider_method):
             raise ValidationError("This saved payment method is not available for charging.")
-        if not method.reusable and method.booking_id != sale.booking_id:
+        if (
+            not method.reusable
+            and method.booking_id != sale.booking_id
+            and not method.agreements.filter(
+                booking_id=sale.booking_id, resolved_at__isnull=True
+            ).exists()
+        ):
             raise ValidationError("This saved payment method belongs to another booking.")
     original = None
     if kind == "receipt":
@@ -303,6 +314,8 @@ def request_operation(
         method=method,
         kind=kind,
         purpose=purpose,
+        brand=method.brand if method else "",
+        last_four=method.last_four if method else "",
         tender=tender,
         amount=value,
         allocation=cleaned,
@@ -327,7 +340,7 @@ def record_result(
         raise ValidationError("Invalid provider transaction reference.")
     if occurred_at is not None and timezone.is_naive(occurred_at):
         raise ValidationError("Use a timezone-aware payment timestamp.")
-    if operation.state in {"succeeded", "declined"}:
+    if operation.state in {"succeeded", "declined", "cancelled"}:
         if operation.state != state or (
             provider_reference and operation.provider_reference != provider_reference
         ):
@@ -364,6 +377,22 @@ def record_result(
         operation=operation, state=state, source=source, code=code, actor=actor
     )
     audit(actor, "payment.result_recorded", operation)
+    if state in {"unknown", "action", "declined"} and settings.BOOKING_EMAIL_ENABLED:
+        from core.communications.content import owner_payment_issue
+        from core.communications.models import MessageDelivery
+        from core.communications.services import enqueue
+
+        key = f"payment-issue:{operation.pk}"
+        if not MessageDelivery.objects.filter(dedupe_key=key).exists():
+            enqueue(
+                key=key,
+                kind="payment_issue",
+                recipient=settings.BOOKING_REPLY_TO,
+                subject="MonkeyDo payment requires review",
+                text=owner_payment_issue(operation),
+                customer=operation.sale.customer,
+                booking=operation.sale.booking,
+            )
     return operation
 
 

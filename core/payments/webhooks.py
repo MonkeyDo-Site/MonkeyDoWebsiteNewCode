@@ -99,13 +99,13 @@ def process_event(event_id):
             list(
                 PaymentOperation.objects.filter(
                     provider_reference=event.provider_reference, tender="card"
-                ).exclude(state__in=["ready", "succeeded", "declined"])[:2]
+                ).exclude(state__in=["ready", "succeeded", "declined", "cancelled"])[:2]
             )
             if event.provider_reference
             else []
         )
         operation = candidates[0] if len(candidates) == 1 else None
-    if operation is None or operation.state in {"ready", "succeeded", "declined"}:
+    if operation is None or operation.state in {"ready", "succeeded", "declined", "cancelled"}:
         return
     # Signed payloads only trigger read-only reconciliation. They do not bypass
     # immutable amount/identity checks or directly post a financial result.
@@ -114,17 +114,17 @@ def process_event(event_id):
     elif event.provider_reference and not operation.provider_reference and operation_id:
         from .gateway import Gateway
         from .ledger import record_result
-        from .operations import verify_transaction
+        from .operations import observe
 
         data = Gateway().transaction(event.provider_reference)
-        verified = verify_transaction(operation, data)
+        verified, occurred_at = observe(operation, data)
         record_result(
             operation_id=operation.pk,
             state="succeeded",
             source="webhook",
             provider_reference=verified,
             code="captured",
-            occurred_at=event.occurred_at,
+            occurred_at=occurred_at,
         )
 
 
