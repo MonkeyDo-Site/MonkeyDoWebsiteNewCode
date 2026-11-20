@@ -16,7 +16,7 @@ from core.permissions import require_actor
 from core.public_booking import assert_flow, customer_from_flow
 
 from .gateway import Gateway, ProviderFailure, reference
-from .ledger import enabled, lock_request
+from .ledger import enabled, lock_request, writes_allowed
 from .models import (
     BookingCardAgreement,
     PaymentConsent,
@@ -120,6 +120,7 @@ def prepare(
     *, flow, request_key, nonce, retain, payment_accepted, cancellation_accepted, actor=None
 ):
     enabled()
+    writes_allowed()
     authorize_actor(flow, actor)
     digest, customer = flow_identity(flow)
     # Different request keys in this flow must not exchange a nonce concurrently.
@@ -288,6 +289,7 @@ def exchange(
 @sensitive_variables()
 def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted, actor=None):
     enabled()
+    writes_allowed()
     authorize_actor(flow, actor)
     digest, customer = flow_identity(flow)
     if customer is None or payment_accepted is not True or cancellation_accepted is not True:
@@ -453,6 +455,7 @@ def replace_booking_card(*, actor, flow, booking_id):
     from .models import PaymentOperation
 
     enabled()
+    writes_allowed()
     authorize_actor(flow, actor)
     booking = Booking.objects.select_for_update().get(pk=booking_id, workflow="integrated_v1")
     if flow.get("staff_booking") != booking.pk or flow.get("staff_action") != "replace":

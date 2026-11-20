@@ -60,6 +60,18 @@ try {
         if (-not $failed -or $global:Calls.Count -ne 0) { throw 'Invalid third-batch schema options must fail before transport.' }
     }
     $global:Calls.Clear()
+    & $wrapper -Target Functional -ApplyReviewedBooking -Archive $archive -Commit $commit
+    if ($global:Calls[1].arguments -notcontains '--apply-reviewed-booking') { throw 'Booking-stage schema flag was not forwarded.' }
+    foreach ($bad in @('design','two','three')) {
+        $global:Calls.Clear(); $failed = $false
+        try {
+            if ($bad -eq 'design') { & $wrapper -ApplyReviewedBooking -Archive $archive -Commit $commit }
+            elseif ($bad -eq 'two') { & $wrapper -Target Functional -ApplyReviewedBooking -ApplyReviewedBatchTwo -Archive $archive -Commit $commit }
+            else { & $wrapper -Target Functional -ApplyReviewedBooking -ApplyReviewedBatchThree -Archive $archive -Commit $commit }
+        } catch { $failed = $true }
+        if (-not $failed -or $global:Calls.Count -ne 0) { throw 'Invalid booking-stage options reached transport.' }
+    }
+    $global:Calls.Clear()
     & $wrapper -Target Functional -Install -Archive $archive -Commit $commit
     if ($global:Calls[1].stdin -notmatch '/etc/monkeydo/functional.env' -or $global:Calls[1].stdin -notmatch '/var/lib/monkeydo-functional-deploy') { throw 'Functional installer used the design environment.' }
     $global:Calls.Clear()

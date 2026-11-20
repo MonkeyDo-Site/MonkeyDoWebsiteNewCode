@@ -162,7 +162,7 @@ def confirm(
         allocation=facts["allocation"],
         method_id=facts["method_id"],
         purpose=facts["purpose"],
-        received_on=received_on,
+        received_on=received_on if method != "card" else None,
     )
     if method == "card":
         enqueue(

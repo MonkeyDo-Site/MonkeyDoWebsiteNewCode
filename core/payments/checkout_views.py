@@ -144,8 +144,16 @@ class ClosureForm(ReceiptForm):
         required=False, label="The physical gift card has been presented and verified."
     )
 
-    def __init__(self, *args, booking, kind, **kwargs):
+    reopen_affected_sessions = forms.BooleanField(
+        required=False,
+        label="Reopen affected sessions",
+        help_text="Removes only this booking/custom session’s blocks. Independent closures remain.",
+    )
+
+    def __init__(self, *args, booking, kind, owner=False, **kwargs):
         super().__init__(*args, **kwargs)
+        if not owner or kind != "cancellation":
+            self.fields.pop("reopen_affected_sessions")
         if kind == "no_show":
             self.fields["method"].choices = [("card", "Charge card on file")]
         if charge_state(booking).comped:
@@ -222,6 +230,7 @@ def checkout(request, pk, kind="arrival"):
     args = {"booking": booking}
     if kind != "arrival":
         args["kind"] = kind
+        args["owner"] = request.user.is_superuser
     form = form_type(request.POST if request.method == "POST" else None, initial=initial, **args)
     reviewed = None
     label = None

@@ -8,7 +8,7 @@ from core.models import AuditEvent
 from core.permissions import require_actor
 
 from .gateway import Gateway, ProviderFailure, reference
-from .ledger import enabled
+from .ledger import enabled, writes_allowed
 from .models import PaymentMethod, PaymentOperation
 
 
@@ -90,6 +90,7 @@ def begin_removal(method_id):
 
 def remove_unused(method_id):
     enabled()
+    writes_allowed()
     gateway = Gateway()
     method = begin_removal(method_id)
     if method is None:

@@ -218,3 +218,44 @@ class CheckoutTests(TestCase):
         self.assertEqual(booking.session.child_capacity, 35)
         booking.refresh_from_db()
         self.assertEqual(booking.children, 36)
+
+    def test_owner_can_reopen_only_booking_blocks_while_cancelling_without_erasing_manual_closure(
+        self,
+    ):
+        from core.models import Session
+        from core.session_blocks import close_for_booking
+
+        booking = self.booking()
+        close_for_booking(self.owner, booking)
+        Session.objects.filter(pk=booking.session_id).update(closed=True)
+        data = {"charge_fee": False, "reopen_affected_sessions": True}
+        checked = preview(actor=self.owner, booking_id=booking.pk, kind="cancellation", data=data)
+        confirm(
+            actor=self.owner,
+            booking_id=booking.pk,
+            kind="cancellation",
+            data=data,
+            request_key=uuid.uuid4(),
+            reviewed_hash=checked[-1],
+            confirmed=True,
+        )
+        booking.refresh_from_db()
+        booking.session.refresh_from_db()
+        self.assertEqual(booking.attendance, "cancelled")
+        self.assertFalse(booking.session_blocks.filter(active=True).exists())
+        self.assertTrue(booking.session.closed)
+        self.assertFalse(FinancialPosting.objects.exists())
+
+    def test_staff_cannot_forge_reopening_choice(self):
+        from django.core.exceptions import PermissionDenied
+
+        booking = self.booking()
+        with self.assertRaises(PermissionDenied):
+            preview(
+                actor=self.staff,
+                booking_id=booking.pk,
+                kind="cancellation",
+                data={"charge_fee": False, "reopen_affected_sessions": True},
+            )
+        booking.refresh_from_db()
+        self.assertEqual(booking.attendance, "")

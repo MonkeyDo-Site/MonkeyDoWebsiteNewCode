@@ -37,6 +37,8 @@ def enabled(view):
     def wrapped(request, *args, **kwargs):
         if not settings.CUSTOMER_TEST_BOOKING or settings.DESIGN_REVIEW_ONLY:
             raise Http404
+        if settings.RECOVERY_HOLD:
+            return render(request, "core/booking_paused.html", status=503)
         return view(request, *args, **kwargs)
 
     return wrapped

@@ -77,6 +77,8 @@ def message_list(request):
             matches = (
                 Q(customer__last_name__icontains=q)
                 | Q(recipient__icontains=q)
+                | Q(customer__email__icontains=q)
+                | Q(customer__previous_email__icontains=q)
                 | Q(customer_id__in=exact + possible)
             )
             if digits:

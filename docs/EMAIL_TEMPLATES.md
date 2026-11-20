@@ -3,15 +3,14 @@
 Consolidated November 5, 2026. This preserves owner-edited wording and the surrounding drafts for documentation-PR review. It is not executable email code and does not send messages. Bracketed fields/conditions are template instructions, never literal customer text. Escape user input, pluralize counts/verbs and render only applicable sections.
 
 Current implementation boundary: account MFA/reset transport is configured and
-owner-confirmed; the booking/member/waiver delivery workflows below remain
-requirements. Ordinary/supervised confirmations and waiver notifications are
-built with the next booking stage; membership notices follow with active
-memberships. Reuse New York/Motzei Shabbos date formatting, IDs, current customer
-contacts and actual amount/setup/delivery states from the deployed foundation.
-No historical test booking is emailed merely because the new workflow is
-released. The shared [workflow standards](SHARED_WORKFLOW_STANDARDS.md) and
-[remaining plan](NEXT_PHASE_REVIEW.md) apply. Existing approved message wording
-and prohibited reminders/receipts remain unchanged.
+owner-confirmed. The authorized booking-stage draft PR now implements ordinary
+confirmation/waiver/owner-alert outboxes, protected history/resend/correction and
+signed delivery/bounce callbacks locally. They are not hosted/provider-verified;
+see [implementation status](BOOKING_COMPLETION_DEVELOPMENT.md). Membership notices
+follow with active memberships. Preserve New York/Motzei Shabbos formatting,
+current contacts and actual money/delivery states. Old test bookings are not
+emailed on upgrade. The shared [workflow standards](SHARED_WORKFLOW_STANDARDS.md)
+apply; approved wording and prohibited reminders/receipts remain unchanged.
 
 ## 1. Delivery rules
 

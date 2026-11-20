@@ -113,6 +113,11 @@ def preview(*, actor, booking_id, kind, data):
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
     require_current(booking, kind)
     state = charge_state(booking)
+    reopen = data.get("reopen_affected_sessions", False)
+    if type(reopen) is not bool or (reopen and kind != "cancellation"):
+        raise ValidationError("Review the cancellation reopening choice.")
+    if reopen:
+        require_actor(actor, "core.change_session", owner=True)
     saved = booking.quotes.first()
     if saved is None:
         raise ValidationError("No accepted pricing policy exists for this booking.")
@@ -126,8 +131,10 @@ def preview(*, actor, booking_id, kind, data):
     if type(override) is not bool:
         raise ValidationError("Review the arrival capacity choice.")
     if kind == "arrival":
-        if booking.setup_pending and not state.comped:
-            raise ValidationError("Complete the booking’s secure card setup before arrival.")
+        if booking.setup_pending:
+            raise ValidationError(
+                "Complete booking setup before arrival. Complimentary bookings require no card."
+            )
         validate_attendees(**counts, supervised=booking.supervised)
         check_arrival_capacity(booking, counts, override, actor)
         verify_coverage(booking, counts, data.get("waiver_confirmed"))
@@ -175,6 +182,7 @@ def preview(*, actor, booking_id, kind, data):
         "version": booking.edit_version,
         "billing_revision": state.revision,
         "kind": kind,
+        "reopen_affected_sessions": reopen,
         "method_id": card_identity,
         "counts": counts,
         "override_capacity": override,
@@ -204,7 +212,7 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         ):
             raise ValidationError("This confirmation has already been used for a different action.")
         return previous
-    lock_calendar()
+    lock_calendar(exclusive=data.get("reopen_affected_sessions") is True)
     booking = Booking.objects.select_for_update().get(pk=booking_id)
     Session.objects.select_for_update().get(pk=booking.session_id)
     booking, state, quote, plan, facts, digest = preview(
@@ -230,6 +238,10 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         booking.attendance = "cancelled" if kind == "cancellation" else "no_show"
     booking.edit_version += 1
     booking.save()
+    if facts["reopen_affected_sessions"]:
+        from core.session_blocks import reopen_for_booking
+
+        reopen_for_booking(actor, booking, booking.session)
     if state.pk is None:
         state.booking = booking
     state.pending_fee_units = facts["fee_units"] if kind == "arrival" else 0

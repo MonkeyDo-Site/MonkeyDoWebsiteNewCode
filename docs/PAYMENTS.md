@@ -1,6 +1,6 @@
 # Payments, tax, card lifecycle, and Banquest evidence
 
-Consolidated November 5, 2026. Business rules are owner decisions; provider findings below are public documentation observations, not authenticated account tests. No integration, credential installation, verification or charge is performed by this checkpoint.
+Consolidated November 5, 2026. Business rules are owner decisions; provider findings below are public documentation observations, not authenticated account tests. The original checkpoint was documentation-only. Authorized local integration work now exists in draft PR #30; see [implementation status](BOOKING_COMPLETION_DEVELOPMENT.md). No hosted credential installation, real provider verification or charge is claimed.
 
 ## 1. Payment timing, consent, and arrival
 

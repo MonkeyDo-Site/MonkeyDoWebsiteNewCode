@@ -1,14 +1,18 @@
 # Staging build status
 
-## Booking completion stage — authorized, increment 1 in development
+## Booking completion stage — authorized, draft PR #30
 
-The owner authorized the next ordinary/supervised booking stage. Local financial
-foundation, sandbox adapter, callback and durable-job work has begun; it is not
-deployed or provider-verified. The integration defaults off. Follow
-[implementation status](BOOKING_COMPLETION_DEVELOPMENT.md) for completed versus
-remaining work. Owner review follows staging deployment; the owner test guide
-will be prepared after the stage is actually built and tested.
+Local implementation now covers public/staff card/waiver/confirmation flows,
+arrival/split and balance-only payment review, linked owner corrections, immutable
+financial source facts, private evidence retention, mail delivery/bounce history,
+encrypted backup/isolated restore tooling and closed reviewed deployment. It is
+not deployed or provider-verified. Features default off. Two material business
+branches remain unanswered; the PR is not ready to merge/deploy.
 
+The latest full local run passed 578 tests. Follow [implementation status](BOOKING_COMPLETION_DEVELOPMENT.md)
+for exact evidence and remaining work, and [operator setup](BOOKING_STAGING_OPERATIONS.md)
+for private configuration. Owner acceptance follows staging deployment. The owner
+as-built test guide is prepared after the full stage is actually built/tested.
 
 ## Subsequent planning: accountant tax clarification and future reports
 

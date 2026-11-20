@@ -1,169 +1,162 @@
-# Ordinary and supervised booking completion — authorized implementation
+# Ordinary and supervised booking completion — implementation status
 
-The owner authorized the whole next booking stage on November 19, 2026, including
-all accepted planning/accountant/reporting clarifications. Build and update draft
-PRs alongside implementation; continue unblocked work without repeated go-ahead.
-No email-question bridge exists: collect material questions in the chat. Provider
-keys are entered privately at integration-testing setup, never chat or Git.
+Updated November 20, 2026. The owner authorized this entire stage and parallel
+draft-PR work on November 19. Continue all independent development without
+repeated go-ahead requests. PR #30 is **draft, not ready to merge/deploy** while
+the two business branches below are unresolved. No email-question bridge exists;
+questions stay in the chat. Never request actual provider/recovery secrets in
+chat, documents or Git.
 
-Owner review occurs after deployment to staging. Developer automated and browser
-checks still precede each ready PR. Prepare the owner-facing as-built test guide
-**after the stage is actually built/tested**, with the final PR/ZIP/single-command
-handoff; do not prepare a planned-feature guide or imply planned features exist.
+Owner acceptance is after staging deployment. Developer checks precede the ready
+PR. Prepare the owner's **as-built test guide only after the stage is actually
+built/tested**, followed by the final pinned browser ZIP/one PowerShell command.
+This implementation log is not that guide.
 
-## Baseline and retained decisions
+## Baseline and retained rules
 
-Start from owner-reported deployed PR #29 (reviewed ff8a7ce0e366bd8757afb5e81670eefab7f97128,
-merge 7a475101808ba66d522f144ded6b5d5a7472fb29), carrying the subsequent accountant
-and financial-reporting planning commits. No independent hosted verification is
-claimed by that owner report. Existing improved customer matching, layouts,
-filters, IDs/history, privacy, scheduling and Motzei Shabbos wording remain.
-No homepage design changes, active memberships, later business workflows or
-accountant reporting UI are included in this booking stage.
+Owner-reported deployed PR #29: reviewed
+`ff8a7ce0e366bd8757afb5e81670eefab7f97128`, merge
+`7a475101808ba66d522f144ded6b5d5a7472fb29`. Retain the subsequent accountant/reporting
+planning commits and all approved matching, filters, layouts, IDs/history,
+permissions, scheduling and Motzei Shabbos behavior. The deferred homepage design
+has not been reopened. No independent verification of the hosted deployment is
+claimed here.
 
-[Remaining scope](NEXT_PHASE_REVIEW.md), [shared standards](SHARED_WORKFLOW_STANDARDS.md),
-[payments](PAYMENTS.md), [reportable financial facts](ACCOUNTANT_REPORTING_FOUNDATION.md)
-and [waivers](waivers/README.md) remain the acceptance sources. No ordinary booking
-charge online, issuer verification holds or automatic financial retries. Both
-credit-card and alternate-tender/backup-card flows are required.
+No ordinary admission/socks collection online and no issuer holds. A card is for
+reviewed arrival collection or alternate-tender backup. Staff explicitly review
+attendees, waivers and actual tender before collection. Unknown is not declined;
+never automatically replay an uncertain financial POST. Production/DNS/live-payment
+activation remains separately gated.
 
-## Increment 1 — payment foundation (in progress, draft only)
+## Implemented locally
 
-Implemented locally so far:
-- Sandbox-only frozen sale/line records, operation identities and append-only
-  financial postings/events/observations, with PostgreSQL/SQLite guards. Quote
-  acceptance alone is not a receipt. Preserve actual receipt/settlement dates,
-  historical customer label, stable product categories and allocated item/fee tax.
-- Provider-hosted card setup now exchanges a transient nonce, verifies method
-  ownership/safe metadata, persists exact consent text/version, binds to the
-  verified booking flow, supports retained versus booking-only methods and
-  discards abandoned setup methods. Public endpoints and an SDK component exist;
-  they are not yet attached to the final completed-booking path.
-- Staff payment lists/detail, customer history and Dashboard attention use linked
-  IDs, safe last-four metadata, existing search/paging and owner-only read-only
-  provider reconciliation. Queued operations recheck booking/method eligibility.
-- Backend service boundaries for actual tender confirmation, linked refunds/voids,
-  remaining-amount reservation, verified provider evidence and uncertain outcomes.
-  Original/test bookings have a stable legacy workflow marker; new integration
-  must not charge them or manufacture their completion/signatures/emails.
-- Banquest sandbox v2 transport: fixed TLS host, exact-decimal JSON, bounded
-  responses, no redirects or automatic retries, saved-source charges and separate
-  read-only reconciliation. Contract tests use mocked responses only.
-- Signed bounded webhook inbox with immutable hashed/allowlisted facts and event
-  deduplication; callbacks trigger read-only reconciliation. Only the exact
-  enabled POST callback bypasses the private staging gate; signature verification
-  remains mandatory and staff routes remain protected.
-- Durable leased DB jobs. Recovering a sending job marks its outcome unknown;
-  it does not replay the financial POST. Blocked jobs require explicit review.
+### Financial facts and secure card lifecycle
 
-Remaining in this increment: complete customer/staff integration and card
-replacement/recovery UI; finalize resolved-obligation disposal, attention
-resolution/alerts, operator/worker setup and reviewed schema/grants/compatibility
-handoff. Migrations 0027 onward are not allowed by the older closed 0026 helper.
-Keep the PR draft until the complete stage and reviewed deployment are ready.
-Existing staging configuration has not changed.
+Exact-cent sale/line snapshots; operation identities; immutable postings/events,
+provider observations and SQL guards; separate actual receipt/provider/settlement
+and record dates; sandbox-only constraints and stable product/tax categories.
+Estimates and invoice adjustments are not receipts. Retain actual partial receipts
+when a card balance fails. Proportional split tender inputs are actual inclusive
+amounts, with deterministic fee/tax allocation and no fee on non-card funds.
 
-Validation checkpoint: all 514 tests passed locally on PostgreSQL, including the new public booking, paper-mark and message controls.
-Sixteen focused card/setup/public checks also passed after adding read-only saved-card
-ownership/expiry validation; malformed metadata is not mislabeled as expiry. Twelve browser checks across
-1440px and 390px passed for payment/waiver lists/details and public/shared signing
-forms, including no page overflow, unchecked consent and shared-page privacy.
-Ruff check/format and migration drift checks pass. CI formatting caught two new
-migration files; those were formatted and are being rechecked on GitHub. No real provider credentials, signed R2 upload, delivered
-email, hosted worker or deployment is claimed. Features default off.
+Provider-hosted SDK entry, transient nonce/expiry exchange, method ownership/safe
+metadata verification, exact consent versions, stale-tab/flow isolation, retained
+versus booking-only sources, replacement and eventual disposal. No PAN/CVV/expiry
+stored by the application. A booking-only replacement preserves a prior future-use
+choice. Existing obligations prevent premature deletion or charging a stale source.
 
-## Increment 2 — waivers and private evidence (in progress)
+Owner-only verification/import of an already completed provider refund/void, exact
+original-payment/component limits and no second refund POST. Settlement refresh
+adds observations without reposting money. External credits/reversals raise owner
+attention instead of inventing tax allocations. No false new debt is inferred
+from a recorded refund.
 
-Implemented locally: faithful approved full text and explicit acknowledgments,
-version hashes, typed signer/relationship/minor metadata, one-year New York
-anniversaries including leap years, conditional private R2 object creation and
-byte-hash verification, metadata-only database storage, shared-parent privacy and
-rescheduling-aware next-day expiry, staff search/paging/detail/evidence access,
-and two-year file deletion with retained metadata/audit. SQL guards protect
-signed facts and earlier versions. Storage/transport checks use synthetic mocks.
+### Complete public/staff visit paths
 
-Public coverage/reuse/new-minor decisions, audited/stale-protected staff paper
-marking, linked booking/customer records, shared completion notifications and
-owner read-only pending-evidence recovery are now implemented locally. Remaining:
-arrival integration and real configured-R2 acceptance. An online group-booking clarification is pending: all coverage before
-confirmation versus a pending booking/link before all parents finish.
+Public family booking binds card/waiver consent atomically, uses a Waiver progress
+step, queues one confirmation and shows its actual delivery state. Both selected
+card and alternate-tender/backup paths save without collecting admission online.
+Zelle selection collects sender information. Final totals include applicable fee
+and tax; the live Session Details estimate excludes them as approved.
 
-## Increment 3 — complete end-to-end booking (in progress)
+Staff setup/final confirmation, current-waiver selection, pending Single/Multiple
+signing instructions, source replacement, actual arrival counts, waiver Yes/No,
+capacity review and explicit price/tender confirmation. Cancellation/no-show fee
+choice, pending partial-child $3 fees, no extra-adult cancellation fee, no double
+partial/whole cancellation collection, owner-only complimentary $0 status and
+waiver handling. Owner cancellation can reopen only its own blocks while
+preserving independent closures. Today/customer arrival shortcuts are connected.
 
-Implemented locally: completed public self/family booking now binds secure card
-consent and waiver coverage atomically, adds the approved Waiver progress step,
-queues one confirmation and displays actual queued/sent/unknown delivery state.
-Both public card-payment and alternate-tender/backup-card paths save the method
-without charging admission. Browser checks completed Open Play/cash and
-Supervised Play/card flows through signing and receipt at 1440px/390px, using
-synthetic external SDK/API/R2 adapters only, with no browser errors.
+Actual cash/check/verified Zelle/physical gift-card recording and card fallback;
+split failures preserve received funds; explicit balance-only recovery never
+recharges the earlier cash portion. Follow-up plans are distinct from money and
+attendance. Card balance forms do not treat manual receipt dates as provider dates.
 
-Also implemented: a durable message snapshot/outbox, separate TEST-marked
-Resend customer transport supporting approved test recipients and the unsigned
-source PDF, current-contact refresh before sending, explicit sent/failed/unknown
-states, no blind interrupted-send replay, and approved booking/waiver/owner-alert
-content. Staff message tables/history/resend, current-contact snapshots, explicit duplicate-safe
-booking-only resends and Dashboard failure visibility are connected.
+Old bookings retain stable IDs/history and an Old test booking marker/filter; they
+are not automatically upgraded, signed, charged or emailed. Memberships remain
+saved test drafts; active benefits/purchases are the following stage.
 
-Remaining: staff secure card/setup and final confirmation; actual provider-backed
-confirmation delivery and public email-correction controls; arrival review/collection,
-split payments and actual attendance versus payment state; cancellation/no-show/partial
-arrival and approved comped/override behavior. The separate completed-booking flag
-defaults off, as do its integration dependencies. Carry worker/backups/resource and
-safe deployment checks throughout. Preserve all older booking records/history.
+### Waivers and customer mail
 
-Only after the stage and developer checks are complete, prepare the as-built owner
-guide and final handoff. Provider-backed sandbox tests require private Banquest/R2
-configuration at that point; mocks are not presented as successful integration.
+Faithful full approved legal text, unchecked acknowledgments, typed signer/legal
+relationship/minors, version/hash, New York anniversaries/leap-year handling and
+private R2 evidence verification. Signed files stay outside PG/DO/Git. Shared
+parent pages expose only appointment context; signing/expiry follow rescheduling.
+Staff search/paging/coverage/history/private retrieval and audited paper marking
+are connected. Staff family typo/partial-phone search reuses the shared matching
+rules. Two-year verified evidence deletion purges contact/IP/browser details and
+keeps minimal legal signing/history facts.
 
-## Current implementation checkpoint — November 20, 2026
+Durable immutable message snapshots and separate TEST-marked Resend transport;
+unsigned source PDF only when applicable; current-contact refresh, one-booking
+explicit resends and no blind unknown-send replay. Completion-page email correction
+is limited to the current completed booking session, preserves uniqueness/history
+and avoids two queued confirmations to the corrected address. Resends reflect
+actual payments/corrections and complimentary status rather than claiming no
+payment was ever received.
 
-The earlier remaining-work lists above are historical checkpoints, not a claim
-that those screens are still absent. Since then, local development adds:
+Signed/deduplicated Resend/Svix delivery/bounce/complaint/failure facts, tagged
+unknown-send reconciliation, owner alerts and protected message histories. Account
+MFA/reset recipient restrictions are unchanged. No appointment reminders or
+installment receipts are introduced. Actual provider integration remains to test.
 
-- Booking-bound staff card setup/final confirmation, pending waiver instructions,
-  explicit source replacement and future-use removal. Replacements preserve a
-  previous retained source when the new choice is booking-only.
-- Staff arrival, cancellation and no-show review/confirm flows. Preview does not
-  record attendance or money. Actual receipt confirmation, proportional split
-  tender allocation and remaining-balance collection preserve received cash if a
-  card balance fails. Uncertain requests cannot be automatically replayed.
-- Pending $3 partial-child cancellation fees, actual counts/capacity review,
-  owner-only complimentary $0 status and required waiver handling. Positive
-  special-price allocation awaits the separately asked scope clarification.
-- Actual Zelle sender information and manual receipt dates, separate from visit,
-  entry, provider charge and settlement dates. Missing provider timestamps stay
-  unknown. Invoice fee adjustments do not masquerade as receipts.
-- Owner-only verification/import of an already completed provider refund/void,
-  with original-payment/component checks and no financial POST. Settlement
-  refresh appends observations without reposting a receipt; external corrections
-  raise an owner review rather than inventing refund/tax allocations.
-- Completion-page email correction scoped to the current completed booking
-  session, existing email uniqueness/history rules and one booking confirmation.
-  A queued older-address attempt is superseded without sending two current copies.
-- Signed Resend/Svix delivery/bounce events, message history and owner alerts,
-  including tagged reconciliation of a lost send response. Only bounded delivery
-  facts are stored. Authentication email recipient restrictions are unchanged.
-- Private authenticated CMS AES-256-GCM encryption of a streaming PostgreSQL
-  dump before R2 upload; separate backup bucket/read credentials, verified
-  ciphertext hash/size, seven nightly/twelve distinct monthly retention, owner
-  downloads/restore-report UI and a protected isolated-workstation verification
-  script. No recovery private key is configured on DigitalOcean or R2. An owner
-  restore report is labeled as such, not an automatic successful restore.
-- Two-year waiver-file removal now purges contact/IP/browser details only after
-  remote deletion is verified; minimal legal signing/history facts remain.
+### Jobs, backup and reviewed deployment
 
-Validation: 557 tests passed in the latest complete local PostgreSQL run. Subsequent
-focused tests cover signed mail events and completion email correction (7), card
-replacement (3), and external corrections/encryption/retention (20). The encryption
-check actually decrypts local synthetic bytes and rejects a wrong key/tampering;
-it is not a real R2 upload or full PostgreSQL restoration claim. Ruff and migration
-checks are repeated as implementation continues.
+Leased bounded jobs, interrupted-operation classification, owner-reviewed safe
+queue recovery and read-only provider removal checks. Unknown financial requests
+cannot be replayed. Separate reviewed jobs/retention/backup service/timer units,
+resource preflight and a dedicated backup OS/DB identity. Web configuration gets
+Get-only backup access; backup write/delete credentials stay with its separate UID.
 
-Still required before a ready-to-merge/deploy claim: remaining business-branch
-answers, integrated browser/regression checks, staff permission/deployment grants,
-worker/retention installation and resource preflight, closed checksummed schema
-upgrade/rollback compatibility, private provider configuration/acceptance and the
-final owner guide (prepared only after development completes). The PR stays draft.
-No hosted migration, source charge, email delivery or offsite recovery point has
-been made by these local checks.
+Streaming PostgreSQL dump directly into authenticated CMS AES-256-GCM encryption;
+no plaintext archive on the app server; no private recovery key on DO/R2. Conditional
+random-key upload, full read-back hash/size verification before retention, seven
+nightly/twelve distinct monthly points, private owner downloads/integrity files,
+monthly desktop reminder, failure/issue-review history and owner-reported isolated
+restore checks. An unattended monthly restore runner/key-access arrangement has
+**not** been configured. The isolated verifier never starts app workers or replaces
+a real database. Recovery hold prevents a restored Ready job from being treated
+as proof its charge/email was never sent.
+
+Closed 0027–0047 upgrade after 0026, pinned migration/unit hashes, private checkpoint,
+transactional additive changes/grants, HTTPS checks, default-off flags and
+compatibility refusal for older code once integrated records exist. Preserve the
+approved browser ZIP plus one PowerShell command path. Configuration and operating
+boundaries are in [BOOKING_STAGING_OPERATIONS.md](BOOKING_STAGING_OPERATIONS.md).
+
+## Current evidence
+
+- Latest complete local PostgreSQL run: **578 tests passed**. Focused checks also
+  cover real upgrade/rollback-on-grant-failure and permission/concurrency isolation.
+- Desktop Open Play/cash and phone Supervised/card browser paths completed signup,
+  waiver, SDK setup, confirmation and email correction with **synthetic external
+  adapters only**, no browser errors. Twenty-two staff page checks at 1440/390px
+  passed without horizontal page overflow or JavaScript errors.
+- Real local authenticated-encryption round trip rejects wrong keys/tampering.
+  A real encrypted dump of fictional PostgreSQL fixtures, including a recorded
+  fictional cash receipt, restored under an isolated non-superuser CREATEDB role:
+  **62 tables, migration 0047**, payment/posting integrity checks passed; temporary
+  database, local role and test private key were removed.
+- Previous pushed checkpoint passed GitHub PostgreSQL 17 and native Windows
+  PowerShell wrapper checks. Latest operator changes are being checked separately.
+- Ruff, formatting, migration drift and whitespace checks pass.
+
+These are local developer results. No real Banquest charge, R2 upload, delivered
+email, hosted schema change, installed worker/offsite backup or owner recovery-key
+setup is claimed. Default-off configuration is not successful integration.
+
+## Two pending business branches
+
+1. Online bookings involving other parents: all coverage before confirmation,
+   versus saving Waiver pending/sending the link and confirming after coverage.
+   Existing requirements contain both directions; the question was sent in chat.
+2. Positive owner ordinary/group special price: admissions-only with socks separate,
+   versus the entire pretax booking subtotal including socks. This determines later
+   sock edits and taxable allocations. The separate fully complimentary $0 rule is
+   clear and implemented.
+
+Do not infer answers or label those branches complete. After clarification,
+finish them, verify the full stage, update the ready PR and only then create the
+owner test guide/release ZIP/command. Private sandbox/provider configuration and
+actual hosted acceptance are still needed; never replace missing inputs with
+real customer records, invented email delivery or claims of production readiness.

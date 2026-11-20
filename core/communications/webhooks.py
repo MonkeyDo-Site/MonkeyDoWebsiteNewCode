@@ -22,7 +22,14 @@ from core.payments.jobs import enqueue
 from .models import MailProviderEvent, MessageDelivery, MessageEvent
 from .transport import enabled
 
-KINDS = {"email.sent", "email.delivered", "email.bounced", "email.complained", "email.failed"}
+KINDS = {
+    "email.sent",
+    "email.delivered",
+    "email.bounced",
+    "email.complained",
+    "email.failed",
+    "email.suppressed",
+}
 
 
 def verify(body, headers):
@@ -126,7 +133,12 @@ def process_event(event_id):
         raise ValidationError("The provider message reference needs owner review.")
     if message.events.filter(code="provider_event_" + str(event.pk)).exists():
         return
-    if event.event_type in {"email.bounced", "email.complained", "email.failed"}:
+    if event.event_type in {
+        "email.bounced",
+        "email.complained",
+        "email.failed",
+        "email.suppressed",
+    }:
         state = "bounced"
     elif event.event_type == "email.delivered":
         state = "delivered"

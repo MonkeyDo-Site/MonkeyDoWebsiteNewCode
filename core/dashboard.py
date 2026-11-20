@@ -113,11 +113,17 @@ def review_notice(request, pk):
         notice.save(update_fields=["reviewed_at", "reviewed_by"])
         AuditEvent.objects.create(
             actor=request.user,
-            action="customer.profile_conflict_reviewed"
+            action="payment.correction_notice_reviewed"
+            if notice.details.get("kind") == "payment_correction"
+            else "customer.profile_conflict_reviewed"
             if notice.details.get("kind") == "booking_profile_conflict"
             else "customer.email_notice_reviewed",
-            record_type="customer",
-            record_id=str(notice.customer_id),
+            record_type="payment"
+            if notice.details.get("kind") == "payment_correction"
+            else "customer",
+            record_id=str(notice.details.get("operation_id"))
+            if notice.details.get("kind") == "payment_correction"
+            else str(notice.customer_id),
             changes={"notice_id": notice.pk},
         )
     return redirect("dashboard")

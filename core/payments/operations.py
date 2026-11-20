@@ -10,7 +10,7 @@ from core.permissions import require_actor
 
 from .amounts import amount
 from .gateway import Gateway, ProviderFailure, reference
-from .ledger import enabled, fingerprint, record_result
+from .ledger import enabled, fingerprint, record_result, writes_allowed
 from .models import PaymentEvent, PaymentMethod, PaymentOperation, ProviderObservation
 
 
@@ -190,6 +190,7 @@ def begin_dispatch(operation_id):
 
 def execute(operation_id):
     enabled()
+    writes_allowed()
     gateway = Gateway()  # Fail before reserving/sending if configuration is absent.
     operation = begin_dispatch(operation_id)
     if operation is None:

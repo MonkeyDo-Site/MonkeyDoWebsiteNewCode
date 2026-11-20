@@ -208,3 +208,6 @@ R2_BACKUP_READ_SECRET_KEY = os.environ.get("R2_BACKUP_READ_SECRET_KEY", "")
 BACKUP_ENCRYPTION_CERTIFICATE = os.environ.get("MONKEYDO_BACKUP_PUBLIC_CERTIFICATE", "")
 
 RESEND_WEBHOOK_SECRET = os.environ.get("RESEND_WEBHOOK_SECRET", "")
+
+# Required before connecting a recovered database to application workers.
+RECOVERY_HOLD = os.environ.get("MONKEYDO_RECOVERY_HOLD") == "1"

@@ -1,0 +1,23 @@
+[Unit]
+Description=MonkeyDo expired private waiver evidence retention
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=monkeydo-functional
+Group=monkeydo-functional
+WorkingDirectory=/srv/monkeydo-functional/staging/current
+EnvironmentFile=/etc/monkeydo/functional.env
+Environment=APP_ENV=staging
+Environment=MONKEYDO_DESIGN_ONLY=0
+ExecCondition=/usr/bin/test ${MONKEYDO_WAIVERS} = 1
+ExecStart=/srv/monkeydo-functional/staging/current/.venv/bin/python manage.py expire_waiver_evidence --limit 10
+TimeoutStartSec=600
+MemoryMax=384M
+Nice=15
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

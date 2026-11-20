@@ -1,0 +1,11 @@
+[Unit]
+Description=Process queued sandbox booking tasks
+
+[Timer]
+OnBootSec=45s
+OnUnitInactiveSec=5s
+AccuracySec=1s
+Unit=monkeydo-functional-jobs.service
+
+[Install]
+WantedBy=timers.target

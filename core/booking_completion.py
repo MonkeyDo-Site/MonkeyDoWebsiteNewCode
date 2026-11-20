@@ -6,7 +6,8 @@ from django.core.exceptions import ValidationError
 
 def enabled():
     if (
-        not settings.BOOKING_COMPLETION_ENABLED
+        settings.RECOVERY_HOLD
+        or not settings.BOOKING_COMPLETION_ENABLED
         or not all(
             (
                 settings.PAYMENT_SANDBOX_ENABLED,

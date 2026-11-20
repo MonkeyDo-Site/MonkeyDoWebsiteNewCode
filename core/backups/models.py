@@ -32,6 +32,10 @@ class BackupRun(models.Model):
     verified_at = models.DateTimeField(null=True)
     removed_at = models.DateTimeField(null=True)
     code = models.CharField(max_length=40, blank=True)
+    issue_reviewed_at = models.DateTimeField(null=True)
+    issue_reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT
+    )
 
 
 class BackupDownload(models.Model):

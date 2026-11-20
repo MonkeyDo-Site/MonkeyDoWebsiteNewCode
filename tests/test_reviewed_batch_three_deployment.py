@@ -122,7 +122,7 @@ class ThirdBatchDeploymentTests(TestCase):
                 (["t", "t"], False),
                 (["unknown"], False),
             ):
-                with patch.object(host, "command", side_effect=answers):
+                with patch.object(host, "command", side_effect=["f"] + answers):
                     if accepted:
                         host.ensure_compatible_release(root / "releases/old")
                     else:

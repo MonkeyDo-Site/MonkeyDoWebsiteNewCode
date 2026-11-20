@@ -12,7 +12,7 @@ The owner subsequently authorized staging website/database development and expli
 
 ### Current baseline and remaining-stage order
 
-The owner reports PR #28 deployed on the shared protected staging site, including
+The owner subsequently reports PR #29 deployed on the shared protected staging site, including
 public/staff pending test reservations, editable membership drafts and the latest
 customer/filter/layout/scheduling improvements. The proposed homepage redesign
 was excluded. Account email is configured and inbox receipt was owner-confirmed;
@@ -178,7 +178,7 @@ Customer and booking comments: searchable, newest-first, author/date/time/edit h
 
 ## 8. Waivers and signature evidence
 
-Owner-approved wording and electronic interaction are confirmed; **counsel review is not an owner-required gate**. Report insurance-broker approval accurately without claiming counsel review. The preserved prototype still says draft and does not save signatures; updating its code/UI is deferred to separately authorized development. See [source provenance](waivers/README.md).
+Owner-approved wording and electronic interaction are confirmed; **counsel review is not an owner-required gate**. Report insurance-broker approval accurately without claiming counsel review. The preserved static prototype still carries its historical draft/no-save labels. The separately authorized booking-stage draft PR implements new Django signing/evidence workflows locally; it does not alter that source prototype or claim hosted provider acceptance. See [source provenance](waivers/README.md).
 
 - Use complete accessible HTML text, printable/downloadable unsigned PDF, unselected acknowledgments, electronic-record/signature consent, typed full legal name, relationship and names of covered minors, and an explicit signing action. Never infer signature from booking submission or precheck consent.
 - Use MONKEYDO LLC consistently. Customer must not re-enter booking confirmation number; link customer/booking/version automatically.

@@ -103,6 +103,17 @@ def verify(
                         )
                     restored.execute("SELECT count(*) FROM core_booking").fetchone()
                     restored.execute("SELECT count(*) FROM core_financialposting").fetchone()
+                    inconsistent = restored.execute("""SELECT EXISTS (
+                        SELECT o.id FROM core_paymentoperation o
+                        LEFT JOIN core_financialposting p ON p.operation_id=o.id
+                        GROUP BY o.id, o.state, o.amount
+                        HAVING (o.state='succeeded' AND COALESCE(sum(p.net+p.fee+p.item_tax+p.fee_tax),0)<>o.amount)
+                            OR (o.state<>'succeeded' AND count(p.id)>0)
+                    )""").fetchone()[0]
+                    if inconsistent:
+                        raise ValueError(
+                            "Restored payment states and immutable received amounts do not reconcile."
+                        )
                 return {
                     "backup_id": facts["backup_id"],
                     "result": "isolated_restore_verified",

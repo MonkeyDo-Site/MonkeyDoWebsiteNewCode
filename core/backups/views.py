@@ -6,10 +6,11 @@ from datetime import timedelta
 from django import forms
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.models import AuditEvent
 from core.pagination import paginate
@@ -156,3 +157,23 @@ def record_restore(request, pk):
             )
             return redirect("backups")
     return render(request, "core/backup_restore.html", {"backup": run, "form": form})
+
+
+@staff_permission("core.view_booking")
+@require_POST
+@transaction.atomic
+def review_issue(request, pk):
+    owner(request)
+    run = get_object_or_404(
+        BackupRun.objects.select_for_update(), pk=pk, state__in=["failed", "retention_failed"]
+    )
+    if run.issue_reviewed_at is None:
+        run.issue_reviewed_at, run.issue_reviewed_by = timezone.now(), request.user
+        run.save(update_fields=["issue_reviewed_at", "issue_reviewed_by"])
+        AuditEvent.objects.create(
+            actor=request.user,
+            action="backup.issue_reviewed",
+            record_type="backup",
+            record_id=str(run.pk),
+        )
+    return redirect("backups")

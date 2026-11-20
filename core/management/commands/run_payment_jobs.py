@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from core.payments.jobs import run_one
@@ -11,6 +12,10 @@ class Command(BaseCommand):
         parser.add_argument("--limit", type=int, default=20)
 
     def handle(self, *args, **options):
+        if settings.RECOVERY_HOLD:
+            raise CommandError(
+                "Recovery review is active; no background financial, card or email work was started."
+            )
         limit = options["limit"]
         if not 1 <= limit <= 100:
             raise CommandError("Use a limit between 1 and 100.")

@@ -96,3 +96,42 @@ class CheckoutViewTests(TestCase):
         booking.refresh_from_db()
         self.assertEqual(booking.attendance, "cancelled")
         self.assertFalse(FinancialPosting.objects.exists())
+
+    def test_card_balance_confirmation_does_not_treat_hidden_manual_date_as_provider_date(self):
+        from core.payments.checkout import confirm, preview
+        from core.payments.ledger import record_result
+
+        booking = self.booking()
+        values = dict(
+            children=booking.children,
+            adults=booking.adults,
+            babies=booking.babies,
+            socks=booking.socks,
+            method="card",
+            waiver_confirmed=True,
+        )
+        reviewed = preview(actor=self.staff, booking_id=booking.pk, kind="arrival", data=values)
+        result = confirm(
+            actor=self.staff,
+            booking_id=booking.pk,
+            kind="arrival",
+            data=values,
+            request_key=uuid.uuid4(),
+            reviewed_hash=reviewed[-1],
+            confirmed=True,
+        )
+        operation = result.sale.operations.get()
+        record_result(
+            operation_id=operation.pk, state="declined", source="provider", code="synthetic_decline"
+        )
+        self.client.force_login(self.staff)
+        url = reverse("booking_payment", args=[booking.pk])
+        posted = {"request_key": str(uuid.uuid4()), "method": "card", "context": "arrival"}
+        response = self.client.post(url, posted)
+        self.assertEqual(response.status_code, 200)
+        digest = response.context["form"]["reviewed_hash"].value()
+        response = self.client.post(url, posted | {"reviewed_hash": digest, "confirm_review": "1"})
+        self.assertEqual(response.status_code, 302)
+        next_operation = result.sale.operations.exclude(pk=operation.pk).get()
+        self.assertEqual(next_operation.state, "ready")
+        self.assertIsNone(next_operation.manual_received_on)

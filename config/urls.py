@@ -30,6 +30,7 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path("staff/backups/<uuid:pk>/review/", backup_views.review_issue, name="backup_review_issue"),
     path("staff/background/<uuid:pk>/", payment_views.background_job, name="background_job"),
     path("staff/cards/<uuid:pk>/retire/", payment_views.retire_card, name="retire_card"),
     path(

@@ -55,7 +55,8 @@ booking badge/filter. Preserve/inherit the approved UX and shared functionality
 using [SHARED_WORKFLOW_STANDARDS.md](SHARED_WORKFLOW_STANDARDS.md). These choices
 need not be asked again. The production tax-rate input remains separate and does not block recording
 this plan. The retained-fee-tax question was subsequently answered below. Next-phase
-application work has not started.
+application work is now authorized and in progress in draft PR #30; see
+[implementation status](BOOKING_COMPLETION_DEVELOPMENT.md).
 
 
 ## Accountant clarification received — November 19, 2026
@@ -68,3 +69,13 @@ membership reverses $0.99 admission tax and $0.03 fee tax, retains $0.45, and
 makes $16.02 available toward the membership. This resolves the former open
 conversion-tax question; it does not resolve the production tax rate or change
 the existing credit/refund permissions. See [PAYMENTS.md](PAYMENTS.md).
+
+
+## Booking-stage questions awaiting response — November 20, 2026
+
+Two questions were sent in chat during authorized implementation: online group
+waiver timing (all coverage before confirmation versus Waiver pending/link first),
+and positive owner special-price scope (admissions versus subtotal including socks).
+Do not assume answers. The unrelated full owner-comped $0 rule is implemented.
+Private provider/backup setup remains a technical input, never a request to post
+keys in chat. These questions do not reopen the other agreed booking decisions.

@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -153,6 +154,11 @@ def run_backup():
             monthly=monthly,
             object_key=f"staging/backups/{month}-{key.hex}.cms",
         )
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_database_size(current_database())")
+            source_size = cursor.fetchone()[0]
+        if shutil.disk_usage(tempfile.gettempdir()).free < source_size * 2 + 512 * 1024 * 1024:
+            raise BackupUnavailable("insufficient_backup_workspace")
         store = BackupStore()
         # Only ciphertext touches temporary disk; plaintext streams from pg_dump into CMS.
         with tempfile.TemporaryFile(mode="w+b") as output:
@@ -163,7 +169,7 @@ def run_backup():
             )
             run.sha256, run.size, run.encryption_fingerprint = digest, size, cert
             run.save(update_fields=["sha256", "size", "encryption_fingerprint"])
-            store.put(run.object_key, output, digest, size)
+            store.put(run.object_key, output, digest, size, cert)
         run.state, run.sha256, run.size, run.encryption_fingerprint = "verified", digest, size, cert
         run.verified_at = timezone.now()
         run.save()
@@ -184,6 +190,7 @@ def run_backup():
             run.state, run.code = "retention_failed", "retention_review"
             run.save(update_fields=["state", "code"])
             notify_failure(run)
+        monthly_reminder(run)
         return run
     except Exception:
         if run is not None and run.state == "running":
@@ -194,3 +201,30 @@ def run_backup():
     finally:
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_unlock(%s, %s)", [73222, 1])
+
+
+def monthly_reminder(run):
+    from datetime import timedelta
+
+    from .models import BackupDownload
+
+    if (
+        settings.BOOKING_EMAIL_ENABLED
+        and not BackupDownload.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)
+        ).exists()
+    ):
+        from core.communications.services import enqueue
+
+        try:
+            enqueue(
+                key="backup-desktop-reminder:" + run.month,
+                kind="backup_alert",
+                recipient=settings.BOOKING_REPLY_TO,
+                subject="Download your monthly encrypted MonkeyDo backup",
+                text="Your monthly desktop backup copy is due. Download now: "
+                + settings.BOOKING_STAGING_ORIGIN
+                + "/staff/backups/ . Sign in as owner, download the newest verified encrypted archive and integrity file, and keep your two newest desktop copies. Keep the recovery private key in its separate protected locations. This reminder is not proof of a completed download or restore.",
+            )
+        except Exception:
+            pass

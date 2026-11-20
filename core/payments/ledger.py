@@ -39,6 +39,13 @@ CATEGORIES = {
 RESERVED = ("ready", "sending", "unknown", "succeeded", "action")
 
 
+def writes_allowed():
+    if settings.RECOVERY_HOLD:
+        raise ValidationError(
+            "Recovery review is active. New financial or card actions are paused."
+        )
+
+
 def enabled():
     if not settings.PAYMENT_SANDBOX_ENABLED or settings.APP_ENV not in {
         "test",
@@ -247,6 +254,8 @@ def request_operation(
         raise ValidationError("Choose a supported payment operation.")
     if purpose not in {"arrival", "cancellation", "no_show", "follow_up", "correction"}:
         raise ValidationError("Choose a supported payment purpose.")
+    if kind == "receipt":
+        writes_allowed()
     if kind != "receipt":
         purpose = "correction"
     if purpose == "correction":
@@ -444,6 +453,7 @@ def record_manual(*, actor, operation_id, received):
     enabled()
     operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
     require_actor(actor, "core.collect_payment", owner=operation.kind != "receipt")
+    writes_allowed()
     if operation.tender == "card" or received is not True:
         raise ValidationError("Explicit actual receipt is required for a non-card tender.")
     return record_result(operation_id=operation.pk, state="succeeded", source="staff", actor=actor)

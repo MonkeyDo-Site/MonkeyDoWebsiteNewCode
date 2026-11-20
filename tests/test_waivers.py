@@ -259,6 +259,20 @@ class WaiverTests(TestCase):
             self.client.get(reverse("waiver_evidence", args=[signature.pk])).status_code, 302
         )
 
+    def test_staff_family_typo_and_partial_phone_search_reuse_shared_matching(self):
+        self.customer.last_name = "Braun Customer"
+        self.customer.save(update_fields=["last_name"])
+        with patch("core.waivers.services.EvidenceStore", return_value=MemoryEvidence()):
+            signature = sign(data=self.signing_data(), flow=self.flow())
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("waivers"), {"q": "Brawn"})
+        self.assertEqual(response.context["signatures"].paginator.count, 1)
+        self.assertEqual(response.context["signatures"][0].pk, signature.pk)
+        self.assertContains(response, "Possible family-name match")
+        response = self.client.get(reverse("waivers"), {"q": self.customer.phone[-7:]})
+        self.assertEqual(response.context["signatures"].paginator.count, 1)
+        self.assertNotContains(response, "Possible family-name match")
+
 
 @override_settings(
     WAIVER_ENABLED=True,

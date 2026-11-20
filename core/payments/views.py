@@ -75,6 +75,7 @@ def payments(request):
             match = (
                 Q(sale__customer__last_name__icontains=query)
                 | Q(sale__customer__email__icontains=query)
+                | Q(sale__customer__previous_email__icontains=query)
                 | Q(sale__customer_id__in=exact + possible)
             )
             if digits:
@@ -358,6 +359,7 @@ def background_job(request, pk):
 
 
 @staff_permission("core.view_customer")
+@staff_permission("core.view_paymentoperation")
 @enabled_view
 @require_POST
 def retire_card(request, pk):

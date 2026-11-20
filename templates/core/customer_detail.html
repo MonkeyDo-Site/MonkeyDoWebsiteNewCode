@@ -24,6 +24,7 @@
     {% if can_view_bookings %}
     {% if first_today %}<h3>Today · {{ first_today.session.starts_at|date:'g:i A' }}</h3>
     <p>{{ first_today.children }} children · {{ first_today.adults }} adults · {{ first_today.babies }} babies · {{ first_today.status_label }}</p>
+    {% if booking_completion_enabled and first_today.workflow == 'integrated_v1' and not first_today.attendance and not first_today.setup_pending and perms.core.collect_payment and perms.core.change_booking %}<p><a class="button small" href="{% url 'booking_arrival' first_today.pk %}">Start arrival</a></p>{% endif %}
     {% else %}<p>No bookings today.</p>{% endif %}
     {% if more_today %}<details><summary>View {{ more_today|length }} more booking{{ more_today|length|pluralize }} today</summary>
     {% for booking in more_today %}<p>{{ booking.session.starts_at|date:'g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults</p>{% endfor %}</details>{% endif %}

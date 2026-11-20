@@ -280,9 +280,11 @@ class ConfigurationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             secret = "artificial-secret-value"
             log = Path(directory) / "log"
-            host = deploy.Host({"DJANGO_SECRET_KEY": secret}, log)
+            host = deploy.Host(
+                {"DJANGO_SECRET_KEY": secret, "MONKEYDO_BOOKING_COMPLETION": "1"}, log
+            )
             result = __import__("subprocess").CompletedProcess(
-                [], 1, "trace " + secret, "error " + secret
+                [], 1, "step 1 trace " + secret, "error " + secret
             )
             with (
                 patch("deploy.monkeydo_deploy.subprocess.run", return_value=result),
@@ -291,6 +293,7 @@ class ConfigurationTests(unittest.TestCase):
                 host.command(["false"], cwd=Path(directory))
             self.assertNotIn(secret, log.read_text())
             self.assertIn("[REDACTED]", log.read_text())
+            self.assertIn("step 1", log.read_text())
 
 
 class Handler(http.server.BaseHTTPRequestHandler):

@@ -14,6 +14,9 @@ def plural(count, singular, multiple):
 
 
 def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comped=False):
+    from core.payments.models import BookingChargeState
+
+    comped = comped or BookingChargeState.objects.filter(booking=booking, comped=True).exists()
     quote = dict(booking.quotes.first().snapshot)
     checkout = booking.checkouts.select_related("sale").order_by("-created_at").first()
     actual = None
@@ -49,7 +52,9 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
             ]
         ),
         "",
-        f"Your total is ${quote['total']}. You selected to pay via {booking.get_expected_method_display()}.",
+        "Your booking is complimentary. No payment or card is required."
+        if comped
+        else f"Your total is ${quote['total']}. You selected to pay via {booking.get_expected_method_display()}.",
     ]
     for item in quote["lines"]:
         lines.append(
@@ -78,14 +83,14 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
                 "No admission payment was collected online.",
             ]
         )
-    if booking.expected_method == "zelle":
+    if booking.expected_method == "zelle" and not comped:
         lines.extend(
             [
                 "",
                 "You selected Zelle as your form of payment. Please Zelle payment to monkeydoplay@gmail.com.",
             ]
         )
-    if booking.expected_method == "gift_card":
+    if booking.expected_method == "gift_card" and not comped:
         lines.extend(["", "Gift card must be presented upon arrival."])
     if booking.socks:
         lines.append("Grip socks: Pick up upon arrival.")

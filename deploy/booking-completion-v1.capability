@@ -1,0 +1,3 @@
+MonkeyDo ordinary and supervised sandbox booking completion v1
+Preserve integrated booking, card obligation, payment, waiver and message records.
+Rollback does not reverse external charges, emails or private evidence operations.

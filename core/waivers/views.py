@@ -7,7 +7,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Q
+from django.db.models import BooleanField, Case, Q, Value, When
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -16,8 +16,9 @@ from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from core.booking_progress import progress
-from core.forms import normalize_phone
+from core.forms import phone_search_digits
 from core.models import Booking
+from core.name_matching import name_candidates
 from core.pagination import paginate
 from core.permissions import staff_permission
 from core.public_booking_views import current, limit, save
@@ -46,6 +47,8 @@ def enabled_view(view):
 
 
 def signing_form(request, *, flow=None, share_token=None):
+    if settings.RECOVERY_HOLD:
+        return render(request, "core/booking_paused.html", status=503)
     version = approved_version()
     share = share_for_token(share_token) if share_token else None
     form = SignatureForm(
@@ -187,18 +190,43 @@ def waivers(request):
         data = form.cleaned_data
         if data["q"]:
             query = data["q"].strip()
-            matches = (
+            exact, possible = name_candidates(query)
+            direct = (
                 Q(signer_name__icontains=query)
                 | Q(signer_email__icontains=query)
                 | Q(minors__icontains=query)
-                | Q(customer_links__customer__last_name__icontains=query)
-                | Q(booking_links__booking__customer__last_name__icontains=query)
+                | Q(customer_links__customer_id__in=exact)
+                | Q(booking_links__booking__customer_id__in=exact)
+                | Q(customer_links__customer__email__icontains=query)
+                | Q(customer_links__customer__previous_email__icontains=query)
+                | Q(booking_links__booking__customer__email__icontains=query)
+                | Q(booking_links__booking__customer__previous_email__icontains=query)
             )
-            try:
-                matches |= Q(signer_phone=normalize_phone(query))
-            except ValidationError:
-                pass
-            records = records.filter(matches)
+            digits = phone_search_digits(query)
+            if digits:
+                direct |= (
+                    Q(signer_phone__contains=digits)
+                    | Q(customer_links__customer__phone__contains=digits)
+                    | Q(customer_links__customer__previous_phone__contains=digits)
+                    | Q(booking_links__booking__customer__phone__contains=digits)
+                    | Q(booking_links__booking__customer__previous_phone__contains=digits)
+                )
+            direct_ids = WaiverSignature.objects.filter(direct).values("pk")
+            possible_ids = WaiverSignature.objects.filter(
+                Q(customer_links__customer_id__in=possible)
+                | Q(booking_links__booking__customer_id__in=possible)
+            ).values("pk")
+            records = (
+                records.filter(Q(pk__in=direct_ids) | Q(pk__in=possible_ids))
+                .annotate(
+                    possible_name_match=Case(
+                        When(pk__in=direct_ids, then=Value(False)),
+                        default=Value(True),
+                        output_field=BooleanField(),
+                    )
+                )
+                .order_by("possible_name_match", "-signed_at", "-pk")
+            )
         if data["customer"]:
             records = records.filter(
                 Q(customer_links__customer_id=data["customer"])

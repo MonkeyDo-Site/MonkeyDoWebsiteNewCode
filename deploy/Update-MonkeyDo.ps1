@@ -18,14 +18,16 @@ param(
     [switch]$ApplyReviewedBatchTwo,
     [Parameter(ParameterSetName = 'Deploy')]
     [switch]$ApplyReviewedBatchThree,
+    [Parameter(ParameterSetName = 'Deploy')]
+    [switch]$ApplyReviewedBooking,
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9.-]*$')]
     [string]$Server = '107.170.1.143',
     [ValidateSet('Design','Functional')]
     [string]$Target = 'Design'
 )
 $ErrorActionPreference = 'Stop'
-if (($ApplyReviewedBatchTwo -or $ApplyReviewedBatchThree) -and $Target -ne 'Functional') { throw 'Reviewed updates require -Target Functional.' }
-if ($ApplyReviewedBatchTwo -and $ApplyReviewedBatchThree) { throw 'Choose only one reviewed schema batch.' }
+if (($ApplyReviewedBatchTwo -or $ApplyReviewedBatchThree -or $ApplyReviewedBooking) -and $Target -ne 'Functional') { throw 'Reviewed updates require -Target Functional.' }
+if ((@($ApplyReviewedBatchTwo, $ApplyReviewedBatchThree, $ApplyReviewedBooking) | Where-Object { $_ }).Count -gt 1) { throw 'Choose only one reviewed schema batch.' }
 
 function Invoke-CheckedNative {
     param([string]$Program, [string[]]$Arguments)
@@ -137,4 +139,5 @@ Invoke-CheckedNative 'scp' ($sshOptions + @($archivePath, "monkeydo-deploy@${Ser
 $deployArguments = @('deploy', '--archive', $remoteArchive, '--sha256', $digest, '--commit', $Commit)
 if ($ApplyReviewedBatchTwo) { $deployArguments += '--apply-reviewed-batch-two' }
 if ($ApplyReviewedBatchThree) { $deployArguments += '--apply-reviewed-batch-three' }
+if ($ApplyReviewedBooking) { $deployArguments += '--apply-reviewed-booking' }
 Invoke-CheckedNative 'ssh' ($sshOptions + (@("root@$Server", '/usr/local/sbin/monkeydo-deploy') + $targetArguments + $deployArguments))

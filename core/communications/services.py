@@ -110,6 +110,8 @@ def claim(message_id):
 
 def deliver(message_id):
     enabled()
+    if settings.RECOVERY_HOLD:
+        raise MailUnavailable("recovery_hold")
     message = claim(message_id)
     if message is None:
         return MessageDelivery.objects.get(pk=message_id)

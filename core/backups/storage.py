@@ -5,9 +5,10 @@ import re
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from django.conf import settings
 
-MAX_BACKUP = 8 * 1024 * 1024 * 1024
+MAX_BACKUP = 4 * 1024 * 1024 * 1024
 
 
 class BackupUnavailable(Exception):
@@ -72,7 +73,7 @@ class BackupStore:
         if count != size or hashed.hexdigest() != digest:
             raise BackupUnavailable("backup_integrity")
 
-    def put(self, key, source, digest, size):
+    def put(self, key, source, digest, size, certificate):
         if self.read_only or not 0 < size <= MAX_BACKUP:
             raise BackupUnavailable("backup_write")
         self.validate(key)
@@ -83,7 +84,11 @@ class BackupStore:
             ContentLength=size,
             IfNoneMatch="*",
             ContentType="application/pkcs7-mime",
-            Metadata={"sha256": digest},
+            Metadata={
+                "sha256": digest,
+                "certificate-sha256": certificate,
+                "format": "MonkeyDo-CMS-AES256-GCM-v1",
+            },
             CacheControl="private, no-store",
         )
         self.verify(key, digest, size)
@@ -95,7 +100,7 @@ class BackupStore:
         self.client.delete_object(Bucket=self.bucket, Key=key)
         try:
             self.client.head_object(Bucket=self.bucket, Key=key)
-        except self.client.exceptions.ClientError as error:
+        except ClientError as error:
             if error.response.get("Error", {}).get("Code") in {"404", "NoSuchKey"}:
                 return
             raise
