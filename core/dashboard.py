@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -5,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_safe
 
+from .backups.models import BackupDownload, BackupRestoreCheck, BackupRun
 from .models import (
     AuditEvent,
     DurableJob,
@@ -28,13 +31,31 @@ def dashboard(request):
         "core/dashboard.html",
         {
             "alerts": alerts,
-            "email_issues": MessageDelivery.objects.filter(state__in=["failed", "unknown"])
+            "backup_issues": BackupRun.objects.filter(
+                state__in=["failed", "retention_failed"]
+            ).order_by("-started_at")[:10]
+            if settings.BACKUP_ENABLED and request.user.is_superuser
+            else [],
+            "backup_download_due": settings.BACKUP_ENABLED
+            and request.user.is_superuser
+            and not BackupDownload.objects.filter(
+                created_at__gte=timezone.now() - timedelta(days=30)
+            ).exists(),
+            "backup_restore_due": settings.BACKUP_ENABLED
+            and request.user.is_superuser
+            and not BackupRestoreCheck.objects.filter(
+                restored_at__gte=timezone.now() - timedelta(days=30)
+            ).exists(),
+            "email_issues": MessageDelivery.objects.filter(
+                state__in=["failed", "unknown", "bounced"]
+            )
             .select_related("customer")
             .order_by("created_at")[:20]
             if settings.BOOKING_EMAIL_ENABLED and request.user.is_superuser
             else [],
             "payment_issues": PaymentOperation.objects.filter(
-                state__in=["unknown", "action", "sending"]
+                state__in=["unknown", "action", "sending", "declined"],
+                followup__resolved_at__isnull=True,
             )
             .select_related("sale__customer")
             .order_by("requested_at")[:20]

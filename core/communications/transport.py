@@ -45,6 +45,7 @@ def send(delivery):
     payload = {
         "from": settings.DEFAULT_FROM_EMAIL,
         "to": [delivery.recipient],
+        "tags": [{"name": "monkeydo_message", "value": str(delivery.pk)}],
         "reply_to": settings.BOOKING_REPLY_TO,
         "subject": "[MONKEYDO TEST] " + delivery.subject.removeprefix("[MONKEYDO TEST] "),
         "text": "MONKEYDO STAGING TEST — This is a test booking, not a real visit or payment.\n\n"

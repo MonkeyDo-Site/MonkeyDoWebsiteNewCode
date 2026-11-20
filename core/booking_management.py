@@ -28,6 +28,7 @@ def snapshot(booking):
                 "supervised",
                 "referral_source",
                 "expected_method",
+                "zelle_sender",
                 "attendance",
                 "edit_version",
             )
@@ -56,7 +57,9 @@ def assert_capacity(
         raise ValidationError("This session is blocked for ordinary reservations.")
     if now >= session.ends_at or (supervised and now >= session.starts_at):
         raise ValidationError("This session is no longer open for the selected play type.")
-    bookings = session.bookings.exclude(attendance=Booking.Attendance.CANCELLED)
+    bookings = session.bookings.exclude(
+        attendance__in=[Booking.Attendance.CANCELLED, Booking.Attendance.NO_SHOW]
+    )
     if booking_id:
         bookings = bookings.exclude(pk=booking_id)
     counts = list(bookings.values("children", "adults", "supervised"))
@@ -79,24 +82,79 @@ def check_editable(booking, version):
         raise ValidationError(
             "Booking changed while you were editing. Reload and review the latest record."
         )
+    if booking.workflow == "integrated_v1":
+        from .booking_completion import enabled
+        from .payments.models import PaymentOperation
+
+        enabled()
+        if (
+            booking.attendance
+            or PaymentOperation.objects.filter(
+                sale__booking=booking,
+                state__in=["ready", "sending", "unknown", "action", "succeeded"],
+            ).exists()
+        ):
+            raise ValidationError(
+                "Review the recorded attendance/payment before changing this booking."
+            )
+        return
     if not booking.setup_pending or booking.attendance:
         raise ValidationError(
             "Only a pending test reservation can be edited in this development increment."
         )
 
 
+def calculate_quote(booking, policy, values=None):
+    fields = ("children", "adults", "babies", "socks", "supervised", "expected_method")
+    editing = values is not None
+    values = values or {key: getattr(booking, key) for key in fields}
+    data = booking_quote(policy, **values)
+    if booking.workflow == "integrated_v1":
+        from decimal import Decimal
+
+        from .payments.checkout_pricing import visit_lines
+        from .payments.models import BookingChargeState
+        from .pricing import Line, quote_lines
+
+        state = BookingChargeState.objects.filter(booking=booking).first()
+        units = max(
+            0,
+            (state.pending_fee_units if state else 0)
+            + (booking.children - values["children"] if editing else 0),
+        )
+        comped = bool(state and state.comped)
+        if units or comped:
+            lines = visit_lines(
+                policy,
+                **{key: values[key] for key in fields if key != "expected_method"},
+                fee_units=units,
+            )
+            if comped:
+                lines = [
+                    Line(line.label, line.quantity, Decimal("0.00"), line.taxable) for line in lines
+                ]
+            data = quote_lines(
+                lines,
+                policy,
+                card_base=None
+                if values["expected_method"] == "card" and not comped
+                else Decimal("0.00"),
+            )
+            data.update(
+                expected_method=values["expected_method"],
+                membership_benefits_applied=False,
+                owner_comped=comped,
+            )
+    return data
+
+
 def write_quote(booking, policy, actor):
-    data = booking_quote(
-        policy,
-        children=booking.children,
-        adults=booking.adults,
-        babies=booking.babies,
-        socks=booking.socks,
-        supervised=booking.supervised,
-        expected_method=booking.expected_method,
-    )
     return BookingQuote.objects.create(
-        booking=booking, policy=policy, revision=booking.edit_version, snapshot=data, actor=actor
+        booking=booking,
+        policy=policy,
+        revision=booking.edit_version,
+        snapshot=calculate_quote(booking, policy),
+        actor=actor,
     )
 
 
@@ -116,7 +174,20 @@ def create_test_booking(
     override_capacity=False,
     referral_source="",
     close_session=False,
+    workflow="legacy_test",
+    zelle_sender="",
 ):
+    if workflow == "integrated_v1":
+        from .booking_completion import enabled
+
+        enabled()
+    elif workflow != "legacy_test":
+        raise ValidationError("Choose a supported booking workflow.")
+    from .payments.receipts import sender
+
+    zelle_sender = sender(
+        zelle_sender, required=workflow == "integrated_v1" and expected_method == "zelle"
+    )
     lock_calendar(exclusive=close_session)
     if close_session:
         require_actor(actor, "core.change_session", owner=True)
@@ -141,6 +212,8 @@ def create_test_booking(
     if existing:
         same = (
             existing.creation_actor_id == actor.pk
+            and existing.workflow == workflow
+            and existing.zelle_sender == zelle_sender
             and close_session == existing.session_blocks.exists()
             and existing.customer_id == customer.pk
             and existing.session_id == session_id
@@ -184,14 +257,16 @@ def create_test_booking(
         socks=socks,
         supervised=supervised,
         expected_method=expected_method,
+        zelle_sender=zelle_sender,
         creation_key=key,
         creation_actor=actor,
         referral_source=referral_source,
+        workflow=workflow,
     )
     quote = write_quote(booking, policy, actor)
     AuditEvent.objects.create(
         actor=actor,
-        action="booking.test_created",
+        action="booking.test_created" if workflow == "legacy_test" else "booking.setup_started",
         record_type="booking",
         record_id=str(booking.reference),
         changes={
@@ -223,6 +298,7 @@ def edit_test_booking(
     referral_source=None,
     close_session=False,
     reopen_affected_sessions=False,
+    zelle_sender=None,
 ):
     lock_calendar(exclusive=close_session or reopen_affected_sessions)
     if close_session or reopen_affected_sessions:
@@ -268,12 +344,38 @@ def edit_test_booking(
     booking.session = session
     booking.supervised = supervised
     booking.expected_method = expected_method
+    if zelle_sender is not None:
+        from .payments.receipts import sender
+
+        booking.zelle_sender = sender(
+            zelle_sender,
+            required=booking.workflow == "integrated_v1" and expected_method == "zelle",
+        )
     if referral_source is not None:
         if not isinstance(referral_source, str) or len(referral_source) > 240:
             raise ValidationError("Referral source must be 240 characters or fewer.")
         booking.referral_source = referral_source.strip()
     booking.edit_version += 1
     booking.save()
+    if booking.workflow == "integrated_v1":
+        from .payments.models import BookingChargeState
+        from .waivers.models import BookingWaiverReview
+
+        state, _ = BookingChargeState.objects.get_or_create(booking=booking)
+        state.pending_fee_units = max(
+            0, state.pending_fee_units + before["children"] - booking.children
+        )
+        state.revision += 1
+        state.save(update_fields=["pending_fee_units", "revision"])
+        if booking.children > before["children"] or booking.babies > before["babies"]:
+            review = BookingWaiverReview.objects.filter(booking=booking).first()
+            if review:
+                review.coverage_confirmed = False
+                review.paper_signed = False
+                review.revision += 1
+                review.save(
+                    update_fields=["coverage_confirmed", "paper_signed", "revision", "updated_at"]
+                )
     price_changed = any(
         before[field] != getattr(booking, field)
         for field in ("children", "adults", "babies", "socks", "supervised", "expected_method")
@@ -312,6 +414,7 @@ def move_test_booking(
     override_capacity=False,
     close_session=False,
     reopen_affected_sessions=False,
+    zelle_sender=None,
 ):
     lock_calendar(exclusive=close_session or reopen_affected_sessions)
     if close_session or reopen_affected_sessions:
@@ -374,6 +477,8 @@ def release_test_booking(*, actor, booking_id, version, reopen_affected_sessions
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
+    if booking.workflow == "integrated_v1":
+        raise ValidationError("Use the reviewed cancellation action for an integrated booking.")
     check_editable(booking, version)
     Session.objects.select_for_update().get(pk=booking.session_id)
     before = snapshot(booking)

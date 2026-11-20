@@ -177,10 +177,11 @@ class PaymentOperation(models.Model):
         default="arrival",
         choices=[
             (x, x.replace("_", " ").title())
-            for x in ("arrival", "cancellation", "no_show", "correction")
+            for x in ("arrival", "cancellation", "no_show", "follow_up", "correction")
         ],
     )
     amount = models.DecimalField(max_digits=14, decimal_places=2)
+    manual_received_on = models.DateField(null=True)
     allocation = models.JSONField()
     state = models.CharField(max_length=10, choices=State.choices, default=State.READY)
     provider_reference = models.CharField(max_length=40, blank=True)
@@ -219,7 +220,7 @@ class FinancialPosting(FinancialFact):
     fee = models.DecimalField(max_digits=14, decimal_places=2)
     item_tax = models.DecimalField(max_digits=14, decimal_places=2)
     fee_tax = models.DecimalField(max_digits=14, decimal_places=2)
-    occurred_at = models.DateTimeField()
+    occurred_at = models.DateTimeField(null=True)
     recorded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -245,6 +246,18 @@ class PaymentEvent(FinancialFact):
     @property
     def state_label(self):
         return dict(PaymentOperation.State.choices).get(self.state, "Review required")
+
+    @property
+    def detail_label(self):
+        if self.code.startswith("plan_"):
+            return dict(PaymentFollowup._meta.get_field("plan").choices).get(self.code[5:], "")
+        return {
+            "external_correction_review": "Provider reversal reported — owner reconciliation needed",
+            "external_correction_verified": "Completed provider correction verified",
+            "manual_refund_confirmed": "Owner confirmed actual refund given",
+            "changed_before_dispatch": "Booking or card changed before charge",
+            "interrupted_dispatch": "Interrupted payment — check provider before another attempt",
+        }.get(self.code, "")
 
 
 class ProviderEvent(FinancialFact):
@@ -375,3 +388,81 @@ class BookingCardAgreement(models.Model):
     consent = models.OneToOneField(PaymentConsent, on_delete=models.PROTECT)
     resolved_at = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class FinancialLineAdjustment(FinancialFact):
+    """Invoice changes are not receipts and never rewrite a posted payment."""
+
+    request_key = models.UUIDField()
+    line = models.ForeignKey(FinancialLine, on_delete=models.PROTECT, related_name="adjustments")
+    reason = models.CharField(
+        max_length=30,
+        choices=[
+            ("tender_change", "Uncharged fee removed after tender change"),
+            ("owner_price", "Owner price correction"),
+        ],
+    )
+    net = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    fee = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    item_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    fee_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request_key", "line"], name="invoice_adjustment_line_unique"
+            )
+        ]
+
+
+class BookingChargeState(models.Model):
+    booking = models.OneToOneField(
+        "core.Booking", on_delete=models.PROTECT, related_name="charge_state"
+    )
+    pending_fee_units = models.PositiveIntegerField(default=0)
+    comped = models.BooleanField(default=False)
+    special_subtotal = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    revision = models.PositiveIntegerField(default=1)
+
+
+class BookingCheckout(FinancialFact):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    request_key = models.UUIDField(unique=True)
+    fingerprint = models.CharField(max_length=64)
+    booking = models.ForeignKey("core.Booking", on_delete=models.PROTECT, related_name="checkouts")
+    sale = models.ForeignKey(
+        FinancialSale, null=True, on_delete=models.PROTECT, related_name="checkouts"
+    )
+    kind = models.CharField(
+        max_length=12,
+        choices=[
+            ("arrival", "Arrival"),
+            ("cancellation", "Cancellation"),
+            ("no_show", "No show"),
+            ("payment", "Remaining payment"),
+        ],
+    )
+    booking_version = models.PositiveIntegerField()
+    details = models.JSONField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PaymentFollowup(models.Model):
+    operation = models.OneToOneField(
+        PaymentOperation, on_delete=models.PROTECT, related_name="followup"
+    )
+    plan = models.CharField(
+        max_length=20,
+        choices=[
+            ("authenticate", "Customer will authenticate"),
+            ("replace_card", "Customer will provide another card"),
+            ("unpaid", "Leave unpaid for follow-up"),
+            ("owner_review", "Owner correction/reconciliation"),
+        ],
+    )
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True)

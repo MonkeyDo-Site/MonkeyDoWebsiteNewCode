@@ -230,3 +230,42 @@ class DispatchTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertFalse(ProviderEvent.objects.exists())
+
+    def test_later_settlement_refresh_appends_observation_without_duplicate_receipt(self):
+        operation = self.operation(self.sale())
+        with patch("core.payments.operations.Gateway") as gateway:
+            gateway.return_value.charge.return_value = {"status_code": "A", "reference_number": 451}
+            gateway.return_value.transaction.return_value = self.evidence(
+                operation, created_at="2026-11-19T15:00:00-05:00"
+            )
+            execute(operation.pk)
+            gateway.return_value.transaction.return_value = self.evidence(
+                operation,
+                created_at="2026-11-19T15:00:00-05:00",
+                settled_date="2026-11-20",
+                status_details={"status": "settled"},
+            )
+            reconcile(operation_id=operation.pk, actor=self.owner)
+            reconcile(operation_id=operation.pk, actor=self.owner)
+            self.assertEqual(gateway.return_value.charge.call_count, 1)
+        operation.refresh_from_db()
+        self.assertEqual(operation.state, "succeeded")
+        self.assertEqual(operation.observations.count(), 2)
+        self.assertEqual(FinancialPosting.objects.count(), 1)
+
+    def test_external_void_flags_owner_review_without_inventing_refund_allocations(self):
+        from core.models import OwnerNotice
+
+        operation = self.operation(self.sale())
+        with patch("core.payments.operations.Gateway") as gateway:
+            gateway.return_value.charge.return_value = {"status_code": "A", "reference_number": 451}
+            gateway.return_value.transaction.return_value = self.evidence(operation)
+            execute(operation.pk)
+            gateway.return_value.transaction.return_value = self.evidence(
+                operation, status_details={"status": "voided"}
+            )
+            reconcile(operation_id=operation.pk, actor=self.owner)
+            reconcile(operation_id=operation.pk, actor=self.owner)
+        self.assertEqual(FinancialPosting.objects.count(), 1)
+        self.assertEqual(OwnerNotice.objects.count(), 1)
+        self.assertEqual(operation.followup.plan, "owner_review")

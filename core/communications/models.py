@@ -23,6 +23,8 @@ class MessageDelivery(models.Model):
             ("booking_waiver", "Booking Confirmation with Waiver Link"),
             ("waiver_completed", "Waiver Completed Notification"),
             ("payment_issue", "Owner Payment Alert"),
+            ("backup_alert", "Owner Backup Alert"),
+            ("email_issue", "Owner Email Alert"),
         ],
     )
     template_version = models.CharField(max_length=60)
@@ -39,6 +41,8 @@ class MessageDelivery(models.Model):
                 ("queued", "Queued"),
                 ("sending", "Sending"),
                 ("sent", "Sent to email provider"),
+                ("delivered", "Delivery reported by provider"),
+                ("bounced", "Bounced / rejected by recipient"),
                 ("unknown", "Delivery outcome unknown"),
                 ("failed", "Sending failed"),
                 ("cancelled", "Superseded before sending"),
@@ -50,6 +54,8 @@ class MessageDelivery(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     dispatched_at = models.DateTimeField(null=True)
     sent_at = models.DateTimeField(null=True)
+    delivered_at = models.DateTimeField(null=True)
+    bounced_at = models.DateTimeField(null=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
 
 
@@ -65,3 +71,13 @@ class MessageEvent(FinancialFact):
         return dict(MessageDelivery._meta.get_field("state").choices).get(
             self.state, "Review required"
         )
+
+
+class MailProviderEvent(FinancialFact):
+    message_key = models.UUIDField(null=True)
+    event_id = models.CharField(max_length=200, unique=True)
+    payload_hash = models.CharField(max_length=64)
+    provider_reference = models.CharField(max_length=40)
+    event_type = models.CharField(max_length=40)
+    occurred_at = models.DateTimeField()
+    received_at = models.DateTimeField(auto_now_add=True)

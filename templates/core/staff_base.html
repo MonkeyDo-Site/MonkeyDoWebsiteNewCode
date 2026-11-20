@@ -9,7 +9,7 @@
     {% if waiver_enabled and perms.core.view_waiversignature and perms.core.view_customer and perms.core.view_booking %}<a href="{% url 'waivers' %}">Waivers</a>{% endif %}
     {% if booking_email_enabled and perms.core.view_messagedelivery and perms.core.view_customer and perms.core.view_booking %}<a href="{% url 'messages' %}">Messages</a>{% endif %}
     {% if perms.core.view_customer %}<a href="{% url 'customers' %}">Customers</a>{% endif %}
-    {% if user.is_superuser %}<a href="{% url 'website_settings' %}">Website settings</a><a href="{% url 'membership_pricing' %}">Membership pricing</a><a href="{% url 'scheduling' %}">Owner scheduling</a><a href="{% url 'staff_accounts' %}">Staff accounts</a><a href="{% url 'owner_security' %}">Owner security</a><a href="{% url 'staging_settings' %}">Staging access</a><a href="{% url 'pricing_settings' %}">Staging pricing</a>{% endif %}
+    {% if user.is_superuser %}{% if backups_enabled %}<a href="{% url 'backups' %}">Backups</a>{% endif %}<a href="{% url 'website_settings' %}">Website settings</a><a href="{% url 'membership_pricing' %}">Membership pricing</a><a href="{% url 'scheduling' %}">Owner scheduling</a><a href="{% url 'staff_accounts' %}">Staff accounts</a><a href="{% url 'owner_security' %}">Owner security</a><a href="{% url 'staging_settings' %}">Staging access</a><a href="{% url 'pricing_settings' %}">Staging pricing</a>{% endif %}
     <a href="/admin/">Database inspector</a>
     <p class="caption">Test workspace · No real payments</p>
   </div></details></aside>

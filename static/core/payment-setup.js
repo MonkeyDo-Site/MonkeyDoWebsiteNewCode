@@ -59,7 +59,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
         wizard_stage: form.elements.wizard_stage.value,
         policy_version: form.elements.policy_version.value,
         agree_payment: form.elements.agree_payment.checked,
-        agree_cancellation: form.elements.agree_cancellation.checked
+        agree_cancellation: form.elements.agree_cancellation.type === 'hidden' ? form.elements.agree_cancellation.value === '1' : form.elements.agree_cancellation.checked
       };
       if (form.elements.method.value === 'new') {
         if (!hosted) throw new Error();

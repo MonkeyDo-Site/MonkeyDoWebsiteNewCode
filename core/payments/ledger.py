@@ -16,10 +16,12 @@ from core.permissions import require_actor
 
 from .amounts import COMPONENTS, ZERO, allocate, amount
 from .models import (
+    BookingCardAgreement,
     FinancialLine,
     FinancialPosting,
     FinancialSale,
     PaymentEvent,
+    PaymentFollowup,
     PaymentMethod,
     PaymentOperation,
 )
@@ -31,6 +33,8 @@ CATEGORIES = {
     "Required adult admission": "minimum_adult",
     "Additional adults": "additional_adult",
     "Grip socks — pick up upon arrival": "socks",
+    "Partial cancellation fee": "partial_cancellation",
+    "Cancellation fee": "cancellation_fee",
 }
 RESERVED = ("ready", "sending", "unknown", "succeeded", "action")
 
@@ -79,7 +83,7 @@ def audit(actor, action, operation):
 
 
 @transaction.atomic
-def accept_booking_sale(*, actor, booking_id, quote_id, creation_key):
+def accept_booking_sale(*, actor, booking_id, quote_id, creation_key, kind="visit"):
     enabled()
     require_actor(actor, "core.collect_payment")
     creation_key = lock_request(creation_key)
@@ -89,18 +93,20 @@ def accept_booking_sale(*, actor, booking_id, quote_id, creation_key):
     if booking.workflow != "integrated_v1":
         raise ValidationError("Earlier test bookings cannot generate payment operations.")
     quote = BookingQuote.objects.get(pk=quote_id, booking=booking)
-    if quote.revision != booking.edit_version:
+    if quote.pk != booking.quotes.first().pk:
         raise ValidationError("Review the current booking price before collection.")
     data = quote.snapshot
+    if kind not in {"visit", "cancellation"} or data.get("sale_kind", "visit") != kind:
+        raise ValidationError("The saved price does not match this payment purpose.")
     identity = fingerprint(
-        {"booking": booking.pk, "quote": quote.pk, "customer": booking.customer_id}
+        {"booking": booking.pk, "quote": quote.pk, "customer": booking.customer_id, "kind": kind}
     )
     prior = FinancialSale.objects.filter(creation_key=creation_key).first()
     if prior:
         if prior.fingerprint != identity:
             raise ValidationError("This payment request key has already been used.")
         return prior
-    prior = FinancialSale.objects.filter(quote=quote, kind="visit").first()
+    prior = FinancialSale.objects.filter(quote=quote, kind=kind).first()
     if prior:
         return prior
     # One order revision may be replaced only before any operation reserves money.
@@ -135,6 +141,7 @@ def accept_booking_sale(*, actor, booking_id, quote_id, creation_key):
         creation_key=creation_key,
         fingerprint=identity,
         customer=booking.customer,
+        kind=kind,
         customer_label=booking.customer.last_name,
         booking=booking,
         quote=quote,
@@ -176,14 +183,18 @@ def accept_booking_sale(*, actor, booking_id, quote_id, creation_key):
 
 
 def full_allocation(sale):
+    from .invoices import effective_components
+
     return [
-        {"line": str(line.pk), **{key: str(getattr(line, key)) for key in COMPONENTS}}
-        for line in sale.lines.all()
+        {"line": key, **{component: str(value) for component, value in values.items()}}
+        for key, values in effective_components(sale).items()
     ]
 
 
 def checked_allocation(sale, allocation):
-    lines = {str(line.pk): line for line in sale.lines.all()}
+    from .invoices import effective_components
+
+    lines = effective_components(sale)
     cleaned, seen = [], set()
     if not isinstance(allocation, list) or not allocation or len(allocation) > len(lines):
         raise ValidationError("A bounded financial line allocation is required.")
@@ -195,7 +206,7 @@ def checked_allocation(sale, allocation):
             raise ValidationError("Payment allocation does not belong to this sale.")
         seen.add(key)
         values = {k: amount(part[k]) for k in COMPONENTS}
-        if any(values[k] > getattr(lines[key], k) for k in COMPONENTS):
+        if any(values[k] > lines[key][k] for k in COMPONENTS):
             raise ValidationError("Allocation exceeds the accepted financial line.")
         cleaned.append({"line": key, **{k: str(v) for k, v in values.items()}})
     return cleaned
@@ -223,6 +234,7 @@ def request_operation(
     original_id=None,
     kind="receipt",
     purpose="arrival",
+    received_on=None,
 ):
     enabled()
     require_actor(actor, "core.collect_payment", owner=kind != "receipt")
@@ -233,16 +245,24 @@ def request_operation(
         or kind not in PaymentOperation.Kind.values
     ):
         raise ValidationError("Choose a supported payment operation.")
-    if purpose not in {"arrival", "cancellation", "no_show", "correction"}:
+    if purpose not in {"arrival", "cancellation", "no_show", "follow_up", "correction"}:
         raise ValidationError("Choose a supported payment purpose.")
     if kind != "receipt":
         purpose = "correction"
+    if purpose == "correction":
+        require_actor(actor, "core.collect_payment", owner=True)
+    if tender != "card":
+        from .receipts import receipt_date
+
+        received_on = receipt_date(received_on)
+    elif received_on is not None:
+        raise ValidationError("Card dates come from verified provider evidence.")
     if sale.booking_id:
         booking = Booking.objects.select_for_update().get(pk=sale.booking_id)
         if booking.workflow != "integrated_v1" or (
             kind == "receipt"
             and sale.kind == "visit"
-            and sale.quote.revision != booking.edit_version
+            and sale.quote_id != booking.quotes.first().pk
         ):
             raise ValidationError("Review the current integrated booking before collection.")
     cleaned = checked_allocation(sale, allocation)
@@ -260,6 +280,7 @@ def request_operation(
             "allocation": cleaned,
             "method": str(method_id) if method_id else None,
             "original": str(original_id) if original_id else None,
+            "received_on": received_on.isoformat() if received_on else None,
         }
     )
     prior = PaymentOperation.objects.filter(request_key=request_key).first()
@@ -274,6 +295,12 @@ def request_operation(
         )
         if kind == "receipt" and (method.state != "active" or not method.provider_method):
             raise ValidationError("This saved payment method is not available for charging.")
+        if kind == "receipt" and sale.booking_id:
+            agreement = BookingCardAgreement.objects.filter(booking_id=sale.booking_id).first()
+            if (agreement and agreement.method_id != method.pk) or (
+                not agreement and settings.BOOKING_COMPLETION_ENABLED
+            ):
+                raise ValidationError("Use the currently reviewed card agreement for this booking.")
         if (
             not method.reusable
             and method.booking_id != sale.booking_id
@@ -287,7 +314,9 @@ def request_operation(
         if original_id:
             raise ValidationError("A receipt cannot be a refund of another operation.")
         used = used_components(sale.operations.filter(kind="receipt", state__in=RESERVED))
-        limits = {str(x.pk): {k: getattr(x, k) for k in COMPONENTS} for x in sale.lines.all()}
+        from .invoices import effective_components
+
+        limits = effective_components(sale)
     else:
         original = PaymentOperation.objects.select_for_update().get(
             pk=original_id, sale=sale, kind="receipt", state="succeeded", tender=tender
@@ -318,6 +347,7 @@ def request_operation(
         last_four=method.last_four if method else "",
         tender=tender,
         amount=value,
+        manual_received_on=received_on,
         allocation=cleaned,
         actor=actor,
     )
@@ -332,9 +362,14 @@ def record_result(
 ):
     enabled()
     operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
-    if source not in {"provider", "staff", "worker", "reconcile", "webhook"} or not re.fullmatch(
-        r"[a-z0-9_]{0,40}", code
-    ):
+    if source not in {
+        "provider",
+        "staff",
+        "worker",
+        "reconcile",
+        "webhook",
+        "owner_dashboard",
+    } or not re.fullmatch(r"[a-z0-9_]{0,40}", code):
         raise ValidationError("Invalid safe payment result classification.")
     if provider_reference and not re.fullmatch(r"[1-9][0-9]{0,19}", provider_reference):
         raise ValidationError("Invalid provider transaction reference.")
@@ -351,7 +386,7 @@ def record_result(
     if operation.tender == "card" and state == "succeeded" and not provider_reference:
         raise ValidationError("A successful card operation needs its provider reference.")
     if state == "succeeded":
-        when = occurred_at or timezone.now()
+        when = occurred_at
         for part in operation.allocation:
             FinancialPosting.objects.create(
                 operation=operation,
@@ -377,6 +412,14 @@ def record_result(
         operation=operation, state=state, source=source, code=code, actor=actor
     )
     audit(actor, "payment.result_recorded", operation)
+    if state in {"unknown", "action", "declined"}:
+        PaymentFollowup.objects.get_or_create(
+            operation=operation, defaults={"plan": "owner_review"}
+        )
+    if state == "succeeded" and operation.sale.booking_id:
+        from .checkout import resolve_if_settled
+
+        resolve_if_settled(operation.sale.booking_id)
     if state in {"unknown", "action", "declined"} and settings.BOOKING_EMAIL_ENABLED:
         from core.communications.content import owner_payment_issue
         from core.communications.models import MessageDelivery

@@ -115,3 +115,55 @@ safe deployment checks throughout. Preserve all older booking records/history.
 Only after the stage and developer checks are complete, prepare the as-built owner
 guide and final handoff. Provider-backed sandbox tests require private Banquest/R2
 configuration at that point; mocks are not presented as successful integration.
+
+## Current implementation checkpoint — November 20, 2026
+
+The earlier remaining-work lists above are historical checkpoints, not a claim
+that those screens are still absent. Since then, local development adds:
+
+- Booking-bound staff card setup/final confirmation, pending waiver instructions,
+  explicit source replacement and future-use removal. Replacements preserve a
+  previous retained source when the new choice is booking-only.
+- Staff arrival, cancellation and no-show review/confirm flows. Preview does not
+  record attendance or money. Actual receipt confirmation, proportional split
+  tender allocation and remaining-balance collection preserve received cash if a
+  card balance fails. Uncertain requests cannot be automatically replayed.
+- Pending $3 partial-child cancellation fees, actual counts/capacity review,
+  owner-only complimentary $0 status and required waiver handling. Positive
+  special-price allocation awaits the separately asked scope clarification.
+- Actual Zelle sender information and manual receipt dates, separate from visit,
+  entry, provider charge and settlement dates. Missing provider timestamps stay
+  unknown. Invoice fee adjustments do not masquerade as receipts.
+- Owner-only verification/import of an already completed provider refund/void,
+  with original-payment/component checks and no financial POST. Settlement
+  refresh appends observations without reposting a receipt; external corrections
+  raise an owner review rather than inventing refund/tax allocations.
+- Completion-page email correction scoped to the current completed booking
+  session, existing email uniqueness/history rules and one booking confirmation.
+  A queued older-address attempt is superseded without sending two current copies.
+- Signed Resend/Svix delivery/bounce events, message history and owner alerts,
+  including tagged reconciliation of a lost send response. Only bounded delivery
+  facts are stored. Authentication email recipient restrictions are unchanged.
+- Private authenticated CMS AES-256-GCM encryption of a streaming PostgreSQL
+  dump before R2 upload; separate backup bucket/read credentials, verified
+  ciphertext hash/size, seven nightly/twelve distinct monthly retention, owner
+  downloads/restore-report UI and a protected isolated-workstation verification
+  script. No recovery private key is configured on DigitalOcean or R2. An owner
+  restore report is labeled as such, not an automatic successful restore.
+- Two-year waiver-file removal now purges contact/IP/browser details only after
+  remote deletion is verified; minimal legal signing/history facts remain.
+
+Validation: 557 tests passed in the latest complete local PostgreSQL run. Subsequent
+focused tests cover signed mail events and completion email correction (7), card
+replacement (3), and external corrections/encryption/retention (20). The encryption
+check actually decrypts local synthetic bytes and rejects a wrong key/tampering;
+it is not a real R2 upload or full PostgreSQL restoration claim. Ruff and migration
+checks are repeated as implementation continues.
+
+Still required before a ready-to-merge/deploy claim: remaining business-branch
+answers, integrated browser/regression checks, staff permission/deployment grants,
+worker/retention installation and resource preflight, closed checksummed schema
+upgrade/rollback compatibility, private provider configuration/acceptance and the
+final owner guide (prepared only after development completes). The PR stays draft.
+No hosted migration, source charge, email delivery or offsite recovery point has
+been made by these local checks.

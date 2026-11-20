@@ -15,6 +15,10 @@ LABELS = {
     "supervised": "Play type",
     "session_id": "Session",
     "expected_method": "Expected payment method",
+    "zelle_sender": "Zelle sender name/account",
+    "comped": "Complimentary booking",
+    "last_four": "Card ending in",
+    "future_use": "Keep for future visits",
     "attendance": "Status",
     "kind": "Membership type",
     "places": "Amount",
@@ -56,6 +60,19 @@ def audit_event(event):
                         "after": value(key, new, after),
                     }
                 )
+    elif any(
+        key in LABELS and isinstance(item, dict) and "before" in item and "after" in item
+        for key, item in data.items()
+    ):
+        changes = [
+            {
+                "label": LABELS[key],
+                "before": value(key, item["before"]),
+                "after": value(key, item["after"]),
+            }
+            for key, item in data.items()
+            if key in LABELS and isinstance(item, dict) and "before" in item and "after" in item
+        ]
     elif event.action == "membership.draft_created":
         changes = [
             {"label": LABELS[key], "before": "—", "after": value(key, item)}
@@ -74,7 +91,11 @@ def audit_event(event):
     }
     return {
         "event": event,
-        "has_before": isinstance(data.get("before"), dict),
+        "has_before": isinstance(data.get("before"), dict)
+        or any(
+            key in LABELS and isinstance(item, dict) and "before" in item
+            for key, item in data.items()
+        ),
         "action_label": actions.get(
             event.action, " ".join(event.action.split(".")[-1].split("_")).capitalize()
         ),

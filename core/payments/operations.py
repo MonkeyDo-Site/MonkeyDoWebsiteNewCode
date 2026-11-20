@@ -14,11 +14,13 @@ from .ledger import enabled, fingerprint, record_result
 from .models import PaymentEvent, PaymentMethod, PaymentOperation, ProviderObservation
 
 
-def verify_transaction(operation, data):
+def verify_transaction(operation, data, *, allow_declined=False, allow_reversal=False):
     """Reconcile provider evidence against immutable application identity/amount."""
     if not isinstance(data, dict):
         raise ProviderFailure("invalid_provider_transaction")
     provider_id = reference(data.get("id"))
+    if getattr(operation, "provider_reference", "") and provider_id != operation.provider_reference:
+        raise ProviderFailure("provider_reference_mismatch")
     if amount(data.get("amount_details", {}).get("amount")) != operation.amount:
         raise ProviderFailure("provider_amount_mismatch")
     meta = data.get("custom_fields", {})
@@ -46,19 +48,25 @@ def verify_transaction(operation, data):
     if operation.kind == "void":
         if status != "voided":
             raise ProviderFailure("provider_not_voided")
-    elif status not in {"captured", "settled"}:
+    elif status not in (
+        {"captured", "settled"}
+        | ({"declined"} if allow_declined else set())
+        | ({"voided", "returned"} if allow_reversal else set())
+    ):
         # Authorization, partial/unknown/submitted and a voided original are not
         # evidence of the requested successful receipt/refund.
         raise ProviderFailure("provider_not_captured")
     return provider_id
 
 
-def observe(operation, data):
-    provider_id = verify_transaction(operation, data)
-    when = parse_datetime(data.get("created_at", ""))
+def observe(operation, data, *, allow_declined=False, allow_reversal=False):
+    provider_id = verify_transaction(
+        operation, data, allow_declined=allow_declined, allow_reversal=allow_reversal
+    )
+    when = parse_datetime(data.get("created_at") or "")
     if when is not None and timezone.is_naive(when):
         raise ProviderFailure("invalid_provider_timestamp")
-    settled = parse_date(data.get("settled_date", ""))
+    settled = parse_date(data.get("settled_date") or "")
     batch = data.get("transaction_details", {}).get("batch_id")
     card = data.get("card_details") or {}
     brand, last_four = card.get("card_type", ""), card.get("last4", "")
@@ -98,6 +106,46 @@ def observe(operation, data):
     # Voiding a transaction updates the original: its created_at is the charge
     # date, not the void date. Keep confirmation time separately for that case.
     return provider_id, when if operation.kind != "void" else None
+
+
+def refresh_completed(operation):
+    """Read-only settlement refresh; reversal evidence needs an owner allocation."""
+    if (
+        operation.tender != "card"
+        or operation.state != "succeeded"
+        or not operation.provider_reference
+    ):
+        return operation
+    data = Gateway().transaction(operation.provider_reference)
+    observe(operation, data, allow_reversal=operation.kind == "receipt")
+    if data["status_details"]["status"] in {"voided", "returned"}:
+        from core.models import OwnerNotice
+
+        from .models import PaymentFollowup
+
+        with transaction.atomic():
+            operation = PaymentOperation.objects.select_for_update().get(pk=operation.pk)
+            _, created = PaymentEvent.objects.get_or_create(
+                operation=operation,
+                state=operation.state,
+                source="provider",
+                code="external_correction_review",
+            )
+            if created:
+                PaymentFollowup.objects.update_or_create(
+                    operation=operation,
+                    defaults={"plan": "owner_review", "resolved_at": None},
+                )
+                OwnerNotice.objects.create(
+                    customer=operation.sale.customer,
+                    subject="Provider payment correction needs review",
+                    details={
+                        "kind": "payment_correction",
+                        "operation_id": str(operation.pk),
+                        "provider_reference": operation.provider_reference,
+                    },
+                )
+    return operation
 
 
 @transaction.atomic
@@ -152,7 +200,13 @@ def execute(operation_id):
         )(operation)
         if response.get("status_code") == "D":
             return record_result(
-                operation_id=operation.pk, state="declined", source="provider", code="declined"
+                operation_id=operation.pk,
+                state="declined",
+                source="provider",
+                code="declined",
+                provider_reference=reference(response["reference_number"])
+                if response.get("reference_number")
+                else "",
             )
         if response.get("status_code") != "A":
             raise ProviderFailure("provider_outcome_unknown")
@@ -191,7 +245,9 @@ def reconcile(*, operation_id, actor=None, provider_reference=None):
     operation = PaymentOperation.objects.select_related("original").get(pk=operation_id)
     if actor is not None:
         require_actor(actor, "core.review_payment", owner=True)
-    if operation.state in {"succeeded", "declined", "cancelled"}:
+    if operation.state == "succeeded":
+        return refresh_completed(operation)
+    if operation.state in {"declined", "cancelled"}:
         return operation
     if operation.state == "ready":
         raise ValidationError("This operation has not been dispatched.")
@@ -203,7 +259,7 @@ def reconcile(*, operation_id, actor=None, provider_reference=None):
     gateway = Gateway()
     try:
         data = gateway.transaction(reference(provider_id))
-        verified, occurred_at = observe(operation, data)
+        verified, occurred_at = observe(operation, data, allow_declined=True)
     except (ProviderFailure, ValidationError, TypeError, ValueError, AttributeError):
         return record_result(
             operation_id=operation.pk,
@@ -214,10 +270,14 @@ def reconcile(*, operation_id, actor=None, provider_reference=None):
         )
     return record_result(
         operation_id=operation.pk,
-        state="succeeded",
+        state="declined"
+        if data.get("status_details", {}).get("status") == "declined"
+        else "succeeded",
         source="reconcile",
         provider_reference=verified,
-        code="captured",
+        code="declined"
+        if data.get("status_details", {}).get("status") == "declined"
+        else "captured",
         actor=actor,
         occurred_at=occurred_at,
     )

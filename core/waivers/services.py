@@ -356,7 +356,18 @@ def expire_evidence(*, limit=100):
             signature = WaiverSignature.objects.select_for_update().get(pk=pk)
             signature.state = "deleted"
             signature.deleted_at = timezone.now()
-            signature.save(update_fields=["state", "deleted_at"])
+            signature.signer_email = signature.signer_phone = signature.user_agent = ""
+            signature.ip_address = None
+            signature.save(
+                update_fields=[
+                    "state",
+                    "deleted_at",
+                    "signer_email",
+                    "signer_phone",
+                    "ip_address",
+                    "user_agent",
+                ]
+            )
             AuditEvent.objects.create(
                 actor=None,
                 action="waiver.evidence_removed",

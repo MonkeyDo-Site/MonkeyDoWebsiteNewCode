@@ -224,6 +224,10 @@ class WaiverTests(TestCase):
         self.assertEqual(signature.state, "deleted")
         self.assertIsNotNone(signature.deleted_at)
         self.assertEqual(signature.signer_name, "Test Guardian")
+        self.assertEqual(signature.signer_email, "")
+        self.assertEqual(signature.signer_phone, "")
+        self.assertEqual(signature.user_agent, "")
+        self.assertIsNone(signature.ip_address)
         self.assertFalse(memory.objects)
         self.assertTrue(AuditEvent.objects.filter(action="waiver.evidence_removed").exists())
 

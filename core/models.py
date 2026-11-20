@@ -171,6 +171,7 @@ class Booking(models.Model):
     )
     edit_version = models.PositiveIntegerField(default=1)
     socks = models.PositiveIntegerField(default=0)
+    zelle_sender = models.CharField(max_length=160, blank=True)
     expected_method = models.CharField(
         max_length=12,
         choices=[
@@ -209,6 +210,14 @@ class Booking(models.Model):
 
     @property
     def status_label(self):
+        if self.workflow == "integrated_v1" and not self.setup_pending and not self.attendance:
+            from .waivers.services import booking_coverage
+
+            return (
+                "Upcoming — waiver complete"
+                if booking_coverage(self)
+                else "Upcoming — waiver required"
+            )
         if self.setup_pending and self.attendance == self.Attendance.CANCELLED:
             return "Cancelled"
         if self.setup_pending and not self.attendance:
@@ -613,15 +622,20 @@ class SessionReservationBlock(models.Model):
 
 
 # Registered with the existing core app; strings in FKs avoid import cycles.
-from .communications.models import MessageDelivery, MessageEvent  # noqa: E402,F401
+from .backups.models import BackupDownload, BackupRestoreCheck, BackupRun  # noqa: E402,F401
+from .communications.models import MailProviderEvent, MessageDelivery, MessageEvent  # noqa: E402,F401
 from .payments.models import (  # noqa: E402,F401
     BookingCardAgreement,
+    BookingChargeState,
+    BookingCheckout,
     DurableJob,
     FinancialLine,
+    FinancialLineAdjustment,
     FinancialPosting,
     FinancialSale,
     PaymentConsent,
     PaymentEvent,
+    PaymentFollowup,
     PaymentMethod,
     PaymentOperation,
     PaymentPolicyVersion,

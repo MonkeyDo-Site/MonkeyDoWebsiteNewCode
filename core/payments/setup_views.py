@@ -50,11 +50,11 @@ class SetupForm(forms.Form):
 @require_POST
 @sensitive_post_parameters()
 @sensitive_variables()
-def setup_card(request):
+def setup_card(request, *, reader=current, writer=save, actor=None):
     if not settings.PAYMENT_SANDBOX_ENABLED:
         return JsonResponse({"error": "Card setup is unavailable."}, status=404)
     try:
-        flow = current(request)
+        flow = reader(request)
         if flow.get("workflow") != "integrated_v1" or flow.get("stage") not in {
             "details",
             "review",
@@ -87,10 +87,11 @@ def setup_card(request):
                 method_id=values["method"],
                 payment_accepted=True,
                 cancellation_accepted=True,
+                actor=actor,
             )
         else:
             flow["payment_setup_key"] = str(values["request_key"])
-            save(request, flow)
+            writer(request, flow)
             request.session.save()  # Durable recovery pointer before provider I/O.
             result = exchange(
                 flow=flow,
@@ -101,6 +102,7 @@ def setup_card(request):
                 retain=values["retain"],
                 payment_accepted=True,
                 cancellation_accepted=True,
+                actor=actor,
             )
             if result.state != "succeeded":
                 return JsonResponse(
@@ -112,7 +114,7 @@ def setup_card(request):
                 )
             accepted = result.consent
         flow["payment_consent"] = str(accepted.pk)
-        save(request, flow)
+        writer(request, flow)
         return JsonResponse(
             {
                 "state": "saved",
@@ -148,6 +150,7 @@ def card_context(flow):
 
     return {
         "card_setup_key": flow.get("payment_setup_key") or uuid.uuid4(),
+        "card_endpoint": reverse("customer_card_setup"),
         "card_status_url": reverse("customer_card_status", args=[flow["payment_setup_key"]])
         if flow.get("payment_setup_key")
         else "",
@@ -167,11 +170,11 @@ def card_context(flow):
 
 
 @require_GET
-def setup_status(request, setup_id):
+def setup_status(request, setup_id, *, reader=current, writer=save):
     if not settings.PAYMENT_SANDBOX_ENABLED:
         return JsonResponse({"error": "Card setup is unavailable."}, status=404)
     try:
-        flow = current(request)
+        flow = reader(request)
         if flow.get("stage") not in {"details", "waiver", "card", "review"}:
             raise ValidationError("Return to the current booking before checking card setup.")
         digest, _ = flow_identity(flow)
@@ -181,7 +184,7 @@ def setup_status(request, setup_id):
             if setup.method.state != "active":
                 raise ValidationError("This payment method is no longer available.")
             flow["payment_consent"] = str(accepted.pk)
-            save(request, flow)
+            writer(request, flow)
             return JsonResponse(
                 {
                     "state": "saved",

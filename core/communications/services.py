@@ -63,7 +63,7 @@ def claim(message_id):
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
     if (
-        message.kind != "payment_issue"
+        message.kind not in {"payment_issue", "email_issue", "backup_alert"}
         and message.customer_id
         and message.customer.email.casefold() != message.recipient.casefold()
     ):
@@ -71,7 +71,21 @@ def claim(message_id):
         message.code = "contact_changed"
         message.save(update_fields=["state", "code"])
         MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
-        if message.customer.email:
+        replacement_exists = (
+            MessageDelivery.objects.exclude(pk=message.pk)
+            .filter(
+                booking_id=message.booking_id,
+                customer=message.customer,
+                kind=message.kind,
+                recipient__iexact=message.customer.email,
+                state__in=["queued", "sending", "sent", "delivered"],
+                created_at__gte=message.created_at,
+            )
+            .exists()
+            if message.booking_id
+            else False
+        )
+        if message.customer.email and not replacement_exists:
             enqueue(
                 key="contact-refresh:" + str(message.pk),
                 kind=message.kind,
@@ -132,6 +146,8 @@ def deliver(message_id):
             record_id=str(current.pk),
             changes={"kind": current.kind, "booking_id": current.booking_id},
         )
+        if state in {"failed", "unknown"}:
+            notify_issue(current)
         return current
 
 
@@ -191,3 +207,25 @@ def resend_confirmation(*, actor, message_id, request_key):
         unsigned_waiver=original.unsigned_waiver,
         actor=actor,
     )
+
+
+def notify_issue(message):
+    if message.kind in {"email_issue", "payment_issue", "backup_alert"}:
+        return
+    try:
+        enqueue(
+            key="email-issue:" + str(message.pk),
+            kind="email_issue",
+            recipient=settings.BOOKING_REPLY_TO,
+            subject="MonkeyDo booking email requires review",
+            text="A sandbox customer email failed, bounced or has an unknown sending outcome. Recipient: "
+            + message.recipient
+            + ". Review the protected Messages page. Booking: "
+            + str(message.booking_id or "not linked")
+            + ". No automatic resend will be made.",
+            customer=message.customer,
+            booking=message.booking,
+        )
+    except Exception:
+        # Message state/history is the persistent fallback if the alert cannot queue.
+        pass

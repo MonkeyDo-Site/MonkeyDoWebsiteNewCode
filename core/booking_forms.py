@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 
 from django import forms
+from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 
@@ -73,6 +74,9 @@ class TestBookingForm(forms.Form):
     expected_method = forms.ChoiceField(
         choices=Booking._meta.get_field("expected_method").choices, label="Expected payment method"
     )
+    zelle_sender = forms.CharField(
+        required=False, max_length=160, label="Zelle sender name/account"
+    )
     override_capacity = forms.BooleanField(required=False, label="Owner: override session capacity")
     close_session = forms.BooleanField(
         required=False,
@@ -101,6 +105,7 @@ class TestBookingForm(forms.Form):
                     "babies",
                     "socks",
                     "expected_method",
+                    "zelle_sender",
                     "supervised",
                     "session",
                 )
@@ -132,8 +137,23 @@ class TestBookingForm(forms.Form):
         )
         if not booking:
             self.fields.pop("reopen_affected_sessions", None)
+        if (booking and booking.workflow != "integrated_v1") or (
+            not booking and not settings.BOOKING_COMPLETION_ENABLED
+        ):
+            self.fields.pop("zelle_sender")
         session_date_picker(self, booking)
         customer_picker(self)
+
+    def clean(self):
+        data = super().clean()
+        if "zelle_sender" in self.fields and data.get("expected_method") == "zelle":
+            from .payments.receipts import sender
+
+            try:
+                data["zelle_sender"] = sender(data.get("zelle_sender", ""), required=True)
+            except forms.ValidationError as error:
+                self.add_error("zelle_sender", error)
+        return data
 
 
 class TimingForm(forms.Form):

@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.crypto import salted_hmac
 from django.views.decorators.debug import sensitive_variables
 
-from core.models import AuditEvent
+from core.models import AuditEvent, Booking
 from core.permissions import require_actor
 from core.public_booking import assert_flow, customer_from_flow
 
@@ -55,6 +55,35 @@ def reusable_methods(flow):
     )
 
 
+def authorize_actor(flow, actor):
+    if not flow.get("staff_actor") and actor is None:
+        return
+    if actor is None or flow.get("staff_actor") != actor.pk:
+        raise ValidationError("Return to the authorized staff booking form.")
+    for permission in ("core.view_booking", "core.change_booking", "core.view_customer"):
+        require_actor(actor, permission)
+    _, customer = flow_identity(flow)
+    if customer is None:
+        raise ValidationError("Choose the staff booking’s customer before card setup.")
+    try:
+        booking = Booking.objects.get(
+            pk=flow.get("staff_booking"), customer=customer, workflow="integrated_v1"
+        )
+    except Booking.DoesNotExist:
+        raise ValidationError("The booking changed. Reload its card setup form.") from None
+    if booking.edit_version != flow.get("staff_booking_version") or (
+        booking.attendance and flow.get("staff_action") != "replace"
+    ):
+        raise ValidationError("The booking changed. Reload its card setup form.")
+    if flow.get("staff_action") == "replace":
+        from .models import PaymentOperation
+
+        if PaymentOperation.objects.filter(
+            sale__booking=booking, state__in=["ready", "sending", "unknown", "action"]
+        ).exists():
+            raise ValidationError("Resolve the pending payment before replacing its source.")
+
+
 def consent(*, method, digest, retain, actor=None, accepted_at=None):
     policy, _ = PaymentPolicyVersion.objects.get_or_create(
         version=VERSION,
@@ -87,8 +116,11 @@ def consent(*, method, digest, retain, actor=None, accepted_at=None):
 
 @transaction.atomic
 @sensitive_variables()
-def prepare(*, flow, request_key, nonce, retain, payment_accepted, cancellation_accepted):
+def prepare(
+    *, flow, request_key, nonce, retain, payment_accepted, cancellation_accepted, actor=None
+):
     enabled()
+    authorize_actor(flow, actor)
     digest, customer = flow_identity(flow)
     # Different request keys in this flow must not exchange a nonce concurrently.
     lock_request(uuid.UUID(digest[:32]))
@@ -122,6 +154,7 @@ def prepare(*, flow, request_key, nonce, retain, payment_accepted, cancellation_
             "customer": customer,
             "customer_revision": customer.revision if customer else None,
             "reusable": retain,
+            "actor": actor,
             "expires_at": datetime.fromtimestamp(flow["expires"], tz=dt_timezone.utc),
         },
     )
@@ -177,13 +210,14 @@ def persist_method(setup, data):
             digest=setup.flow_hash,
             retain=setup.reusable,
             accepted_at=setup.created_at,
+            actor=setup.actor,
         )
         setup.method = method
         setup.consent = accepted
         setup.state = "succeeded"
         setup.save(update_fields=["method", "consent", "state"])
         AuditEvent.objects.create(
-            actor=None,
+            actor=setup.actor,
             action="payment.card_setup_completed",
             record_type="payment_method",
             record_id=str(method.pk),
@@ -208,6 +242,7 @@ def exchange(
     retain,
     payment_accepted,
     cancellation_accepted,
+    actor=None,
 ):
     enabled()
     from .gateway import validate_nonce
@@ -221,6 +256,7 @@ def exchange(
         retain=retain,
         payment_accepted=payment_accepted,
         cancellation_accepted=cancellation_accepted,
+        actor=actor,
     )
     with transaction.atomic():
         claimed = PaymentSetup.objects.select_for_update().get(pk=setup.pk)
@@ -250,8 +286,9 @@ def exchange(
 
 
 @sensitive_variables()
-def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted):
+def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted, actor=None):
     enabled()
+    authorize_actor(flow, actor)
     digest, customer = flow_identity(flow)
     if customer is None or payment_accepted is not True or cancellation_accepted is not True:
         raise ValidationError("Verify customer details and accept both payment policies.")
@@ -298,7 +335,7 @@ def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted):
         method = reusable_methods(flow).select_for_update().get(pk=method_id)
         method.brand, method.last_four = brand, last_four
         method.save(update_fields=["brand", "last_four"])
-        return consent(method=method, digest=digest, retain=True)
+        return consent(method=method, digest=digest, retain=True, actor=actor)
 
 
 def selected_consent(flow):
@@ -364,7 +401,7 @@ def bind_booking(*, flow, booking):
             older.reusable = False
             older.save(update_fields=["reusable"])
             AuditEvent.objects.create(
-                actor=None,
+                actor=accepted.actor,
                 action="payment.future_method_replaced",
                 record_type="payment_method",
                 record_id=str(older.pk),
@@ -407,3 +444,64 @@ def reconcile_setup(*, actor, setup_id):
     if not isinstance(methods, list) or len(methods) != 1:
         raise ValidationError("Provider review is needed to identify the saved card.")
     return persist_method(setup, gateway.method(reference(methods[0].get("id"))))
+
+
+@transaction.atomic
+def replace_booking_card(*, actor, flow, booking_id):
+    """Only explicit reviewed replacement changes the current booking agreement."""
+    from .methods import queue_disposal
+    from .models import PaymentOperation
+
+    enabled()
+    authorize_actor(flow, actor)
+    booking = Booking.objects.select_for_update().get(pk=booking_id, workflow="integrated_v1")
+    if flow.get("staff_booking") != booking.pk or flow.get("staff_action") != "replace":
+        raise ValidationError("Review this booking’s replacement card form.")
+    if PaymentOperation.objects.filter(
+        sale__booking=booking, state__in=["ready", "sending", "unknown", "action"]
+    ).exists():
+        raise ValidationError("Reconcile the pending payment before changing its card.")
+    accepted = selected_consent(flow)
+    agreement = BookingCardAgreement.objects.select_for_update().get(booking=booking)
+    if agreement.consent_id == accepted.pk:
+        return agreement
+    if booking.attendance:
+        from .checkout import summary
+
+        if not summary(booking).get("can_collect"):
+            raise ValidationError(
+                "There is no unresolved reviewed balance requiring a replacement card."
+            )
+    method = PaymentMethod.objects.select_for_update().get(pk=accepted.method_id)
+    if method.state != "active" or method.customer_id != booking.customer_id:
+        raise ValidationError("The replacement card is not available for this customer.")
+    old = agreement.method
+    if method.reusable:
+        older = (
+            PaymentMethod.objects.select_for_update()
+            .filter(customer=booking.customer, reusable=True, state="active")
+            .exclude(pk=method.pk)
+        )
+        for previous in older:
+            previous.reusable = False
+            previous.save(update_fields=["reusable"])
+            queue_disposal(previous)
+    if method.booking_id is None:
+        method.booking = booking
+        method.save(update_fields=["booking"])
+    agreement.method = method
+    agreement.consent = accepted
+    agreement.resolved_at = None
+    agreement.save(update_fields=["method", "consent", "resolved_at"])
+    queue_disposal(old)
+    AuditEvent.objects.create(
+        actor=actor,
+        action="payment.booking_card_replaced",
+        record_type="booking",
+        record_id=str(booking.reference),
+        changes={
+            "last_four": {"before": old.last_four, "after": method.last_four},
+            "future_use": method.reusable,
+        },
+    )
+    return agreement

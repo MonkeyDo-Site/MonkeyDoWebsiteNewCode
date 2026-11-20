@@ -20,6 +20,7 @@ def enqueue(*, kind, reference, key):
         "provider_event",
         "method_remove",
         "customer_email",
+        "email_event",
     }:
         raise ValidationError("Unsupported worker operation.")
     job, created = DurableJob.objects.get_or_create(
@@ -73,6 +74,10 @@ def run_one():
     try:
         if job.kind == "provider_event":
             from .webhooks import process_event
+
+            process_event(job.reference)
+        elif job.kind == "email_event":
+            from core.communications.webhooks import process_event
 
             process_event(job.reference)
         elif job.kind == "customer_email":

@@ -190,8 +190,15 @@ class DetailsForm(forms.Form):
         choices=Booking._meta.get_field("expected_method").choices, label="Payment method"
     )
 
-    def __init__(self, *args, session, **kwargs):
+    zelle_sender = forms.CharField(
+        required=False, max_length=160, label="Zelle sender name/account"
+    )
+
+    def __init__(self, *args, session, require_sender=True, **kwargs):
+        self.require_sender = require_sender
         super().__init__(*args, **kwargs)
+        if not settings.BOOKING_COMPLETION_ENABLED:
+            self.fields.pop("zelle_sender")
         from .availability import availability
 
         horizon = (
@@ -233,6 +240,17 @@ class DetailsForm(forms.Form):
         if not self.available_play.get(data["play_type"]):
             self.add_error("play_type", "This play type is not available for this session.")
             return data
+        if "zelle_sender" in self.fields:
+            from .payments.receipts import sender
+
+            data["zelle_sender"] = (
+                sender(
+                    data.get("zelle_sender", ""),
+                    required=self.require_sender and data["expected_method"] == "zelle",
+                )
+                if data["expected_method"] == "zelle"
+                else ""
+            )
         data["supervised"] = data.pop("play_type") == "supervised"
         validate_attendees(
             **{k: data[k] for k in ("children", "adults", "babies", "socks", "supervised")}
@@ -686,7 +704,9 @@ def initial_live_quote(form, flow):
     values["expected_method"] = (
         values.get("expected_method") or form.fields["expected_method"].choices[0][0]
     )
-    candidate = DetailsForm(values, session=public_session(flow["session_id"]))
+    candidate = DetailsForm(
+        values, session=public_session(flow["session_id"]), require_sender=False
+    )
     if candidate.is_valid():
         try:
             quote = review_quote(flow, candidate.cleaned_data)
@@ -709,7 +729,9 @@ def live_estimate(request):
         if flow["stage"] != "details":
             raise ValidationError("Return to Session Details to update the estimate.")
         limit(request, "estimate", 240)
-        form = DetailsForm(request.POST, session=public_session(flow["session_id"]))
+        form = DetailsForm(
+            request.POST, session=public_session(flow["session_id"]), require_sender=False
+        )
         if not form.is_valid():
             return JsonResponse(
                 {
@@ -728,3 +750,58 @@ def live_estimate(request):
         )
     except ValidationError as exc:
         return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+
+
+class CompletionEmailForm(forms.Form):
+    email = forms.EmailField(label="Email address")
+    version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    request_key = forms.UUIDField(widget=forms.HiddenInput)
+
+
+@enabled
+@sensitive_post_parameters("email")
+@require_http_methods(["GET", "POST"])
+def completion_email(request):
+    from django.db import IntegrityError
+
+    from .booking_email import correct_email
+
+    try:
+        flow = current(request)
+    except ValidationError:
+        raise Http404 from None
+    if flow.get("stage") != "done" or flow.get("workflow") != "integrated_v1":
+        raise Http404
+    booking = (
+        Booking.objects.select_related("customer")
+        .filter(
+            pk=flow.get("booking_id"),
+            creation_key=flow["key"],
+            source="customer_test",
+            workflow="integrated_v1",
+        )
+        .first()
+    )
+    if not booking:
+        raise Http404
+    form = CompletionEmailForm(
+        request.POST if request.method == "POST" else None,
+        initial={
+            "email": booking.customer.email,
+            "version": booking.customer.revision,
+            "request_key": uuid.uuid4(),
+        },
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            limit(request, "completion-email", 10)
+            correct_email(flow=flow, **form.cleaned_data)
+            return redirect("customer_booking_receipt")
+        except ValidationError as error:
+            form.add_error(None, " ".join(error.messages))
+        except IntegrityError:
+            form.add_error(
+                "email",
+                "That email address is already in use. Please enter a different address or call/text 848-238-5147.",
+            )
+    return render(request, "core/customer_booking_email.html", {"form": form})

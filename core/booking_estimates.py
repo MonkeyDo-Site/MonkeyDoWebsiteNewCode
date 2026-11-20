@@ -6,8 +6,7 @@ import json
 from django.core import signing
 from django.core.exceptions import ValidationError
 
-from .booking_management import check_editable
-from .pricing import booking_quote
+from .booking_management import calculate_quote, check_editable
 
 SALT = "staff-booking-amount-reminder-v1"
 
@@ -23,7 +22,7 @@ def edit_estimate(booking, data):
         key: data[key]
         for key in ("children", "adults", "babies", "socks", "supervised", "expected_method")
     }
-    quote = booking_quote(saved.policy, **values)
+    quote = calculate_quote(booking, saved.policy, values)
     payload = {
         **values,
         "session": data["session"].pk,

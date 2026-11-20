@@ -197,3 +197,14 @@ if BOOKING_COMPLETION_ENABLED and not all(
     raise ImproperlyConfigured(
         "Completed sandbox bookings require the separate booking, payment, waiver and customer-mail flags."
     )
+
+# Separate encrypted-backup opt-in and credentials. No private recovery key belongs here.
+BACKUP_ENABLED = os.environ.get("MONKEYDO_BACKUPS") == "1"
+R2_BACKUP_BUCKET = os.environ.get("R2_BACKUP_BUCKET", "")
+R2_BACKUP_ACCESS_KEY = os.environ.get("R2_BACKUP_ACCESS_KEY", "")
+R2_BACKUP_SECRET_KEY = os.environ.get("R2_BACKUP_SECRET_KEY", "")
+R2_BACKUP_READ_ACCESS_KEY = os.environ.get("R2_BACKUP_READ_ACCESS_KEY", "")
+R2_BACKUP_READ_SECRET_KEY = os.environ.get("R2_BACKUP_READ_SECRET_KEY", "")
+BACKUP_ENCRYPTION_CERTIFICATE = os.environ.get("MONKEYDO_BACKUP_PUBLIC_CERTIFICATE", "")
+
+RESEND_WEBHOOK_SECRET = os.environ.get("RESEND_WEBHOOK_SECRET", "")

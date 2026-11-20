@@ -59,6 +59,9 @@ def receive(body, signature):
             raw_id = payload.get("reference_number", txn.get("id"))
             if raw_id is not None:
                 provider_id = reference(raw_id)
+            details = txn.get("transaction_details", {})
+            if details.get("type") == "credit" and details.get("reference_number"):
+                facts["original_reference"] = reference(details["reference_number"])
             operation_key = txn.get("custom_fields", {}).get("custom1")
             if operation_key:
                 facts["operation"] = str(uuid.UUID(operation_key))
@@ -89,6 +92,9 @@ def process_event(event_id):
         return
     from .operations import reconcile
 
+    if event.facts.get("original_reference") and event.provider_reference:
+        flag_external_credit(event)
+        return
     operation_id = event.facts.get("operation")
     if operation_id:
         operation = PaymentOperation.objects.filter(pk=operation_id, tender="card").first()
@@ -99,13 +105,13 @@ def process_event(event_id):
             list(
                 PaymentOperation.objects.filter(
                     provider_reference=event.provider_reference, tender="card"
-                ).exclude(state__in=["ready", "succeeded", "declined", "cancelled"])[:2]
+                ).exclude(state__in=["ready", "declined", "cancelled"])[:2]
             )
             if event.provider_reference
             else []
         )
         operation = candidates[0] if len(candidates) == 1 else None
-    if operation is None or operation.state in {"ready", "succeeded", "declined", "cancelled"}:
+    if operation is None or operation.state in {"ready", "declined", "cancelled"}:
         return
     # Signed payloads only trigger read-only reconciliation. They do not bypass
     # immutable amount/identity checks or directly post a financial result.
@@ -117,13 +123,17 @@ def process_event(event_id):
         from .operations import observe
 
         data = Gateway().transaction(event.provider_reference)
-        verified, occurred_at = observe(operation, data)
+        verified, occurred_at = observe(operation, data, allow_declined=True)
         record_result(
             operation_id=operation.pk,
-            state="succeeded",
+            state="declined"
+            if data.get("status_details", {}).get("status") == "declined"
+            else "succeeded",
             source="webhook",
             provider_reference=verified,
-            code="captured",
+            code="declined"
+            if data.get("status_details", {}).get("status") == "declined"
+            else "captured",
             occurred_at=occurred_at,
         )
 
@@ -140,3 +150,68 @@ def endpoint(request):
     except (ValidationError, ValueError):
         return HttpResponse(status=400)
     return HttpResponse(status=202)
+
+
+def flag_external_credit(event):
+    """Verified linked external credit needs owner component allocation, never auto-posting."""
+    from core.models import OwnerNotice
+
+    from .gateway import Gateway
+    from .ledger import fingerprint
+    from .models import PaymentEvent, PaymentFollowup, ProviderObservation
+
+    original = PaymentOperation.objects.filter(
+        kind="receipt",
+        tender="card",
+        state="succeeded",
+        provider_reference=event.facts["original_reference"],
+    ).first()
+    if original is None:
+        return
+    data = Gateway().transaction(event.provider_reference)
+    details = data.get("transaction_details", {})
+    value = amount(data.get("amount_details", {}).get("amount"))
+    if (
+        reference(data.get("id")) != event.provider_reference
+        or details.get("type") != "credit"
+        or reference(details.get("reference_number")) != original.provider_reference
+        or not 0 < value <= original.amount
+        or data.get("status_details", {}).get("status") not in {"captured", "settled"}
+    ):
+        raise ProviderFailure("external_credit_not_verified")
+    with transaction.atomic():
+        PaymentOperation.objects.select_for_update().get(pk=original.pk)
+        ProviderObservation.objects.get_or_create(
+            operation=original,
+            fingerprint=fingerprint(
+                {
+                    "external_credit": event.provider_reference,
+                    "status": data["status_details"]["status"],
+                    "amount": str(value),
+                }
+            ),
+            defaults={
+                "provider_reference": event.provider_reference,
+                "provider_status": "external_credit",
+                "amount": value,
+            },
+        )
+        _, created = PaymentEvent.objects.get_or_create(
+            operation=original,
+            state=original.state,
+            source="provider",
+            code="external_correction_review",
+        )
+        if created:
+            PaymentFollowup.objects.update_or_create(
+                operation=original, defaults={"plan": "owner_review", "resolved_at": None}
+            )
+            OwnerNotice.objects.create(
+                customer=original.sale.customer,
+                subject="Provider refund needs recording",
+                details={
+                    "kind": "payment_correction",
+                    "operation_id": str(original.pk),
+                    "provider_reference": event.provider_reference,
+                },
+            )

@@ -14,7 +14,23 @@ def plural(count, singular, multiple):
 
 
 def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comped=False):
-    quote = booking.quotes.first().snapshot
+    quote = dict(booking.quotes.first().snapshot)
+    checkout = booking.checkouts.select_related("sale").order_by("-created_at").first()
+    actual = None
+    if checkout and checkout.sale:
+        from core.payments.amounts import COMPONENTS, ZERO
+        from core.payments.invoices import effective_components, received
+
+        values = effective_components(checkout.sale).values()
+        totals = {key: sum((row[key] for row in values), ZERO) for key in COMPONENTS}
+        quote.update(
+            subtotal=str(totals["net"]),
+            processing_fee=str(totals["fee"]),
+            sales_tax=str(totals["item_tax"] + totals["fee_tax"]),
+            total=str(sum(totals.values(), ZERO)),
+        )
+        actual = received(checkout.sale)
+        corrected = checkout.sale.operations.exclude(kind="receipt").exists()
     lines = [
         f"Dear Family {booking.customer.last_name},",
         "",
@@ -42,13 +58,26 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
     lines.append(f"Subtotal: ${quote['subtotal']}")
     if Decimal(quote["processing_fee"]):
         lines.append(f"Credit-card processing fee: ${quote['processing_fee']}")
-    lines.extend(
-        [
-            f"Sales tax: ${quote['sales_tax']}",
-            f"Estimated total due at arrival: ${quote['total']}",
-            "No admission payment has been collected. Staff will review and collect payment after you arrive.",
-        ]
-    )
+    lines.append(f"Sales tax: ${quote['sales_tax']}")
+    if actual is None:
+        lines.extend(
+            [
+                f"Estimated total due at arrival: ${quote['total']}",
+                "No admission payment has been collected. Staff will review and collect payment after you arrive.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                f"Actual payment received, net of recorded reversals: ${actual:.2f}",
+                (
+                    "A recorded correction requires owner review; this message does not request another payment."
+                    if corrected
+                    else f"Remaining amount: ${max(Decimal('0'), Decimal(quote['total']) - actual):.2f}"
+                ),
+                "No admission payment was collected online.",
+            ]
+        )
     if booking.expected_method == "zelle":
         lines.extend(
             [

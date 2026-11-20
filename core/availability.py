@@ -20,7 +20,9 @@ def opening_time(day, horizon):
 
 
 def occupancy(session):
-    bookings = session.bookings.exclude(attendance=Booking.Attendance.CANCELLED)
+    bookings = session.bookings.exclude(
+        attendance__in=[Booking.Attendance.CANCELLED, Booking.Attendance.NO_SHOW]
+    )
     counts = bookings.aggregate(children=Sum("children"), adults=Sum("adults"))
     return (
         counts["children"] or 0,

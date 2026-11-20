@@ -37,6 +37,15 @@ def bookings(request):
 def booking_detail(request, pk):
     booking = get_object_or_404(Booking.objects.select_related("customer", "session"), pk=pk)
     waiver_context = {}
+    payment_context = {}
+    if (
+        settings.BOOKING_COMPLETION_ENABLED
+        and request.user.has_perm("core.view_paymentoperation")
+        and booking.workflow == "integrated_v1"
+    ):
+        from .payments.checkout import summary
+
+        payment_context["payment_summary"] = summary(booking)
     if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature"):
         from .waivers.forms import PaperWaiverForm
         from .waivers.models import BookingWaiverReview
@@ -57,9 +66,10 @@ def booking_detail(request, pk):
         {
             "booking": booking,
             **waiver_context,
-            "booking_messages": booking.messages.exclude(kind="payment_issue").order_by(
-                "-created_at"
-            )[:5]
+            **payment_context,
+            "booking_messages": booking.messages.exclude(
+                kind__in=["payment_issue", "email_issue", "backup_alert"]
+            ).order_by("-created_at")[:5]
             if settings.BOOKING_EMAIL_ENABLED and request.user.has_perm("core.view_messagedelivery")
             else [],
             "quote": booking.quotes.first(),
@@ -95,6 +105,7 @@ def booking_create(request):
         session_date_picker(form)
     if request.method == "POST" and request.POST.get("load_sessions") != "1" and form.is_valid():
         data = dict(form.cleaned_data)
+        data["workflow"] = "integrated_v1" if settings.BOOKING_COMPLETION_ENABLED else "legacy_test"
         data.pop("session_date", None)
         data["session_id"] = data.pop("session").pk
         try:

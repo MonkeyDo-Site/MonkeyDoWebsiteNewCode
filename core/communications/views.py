@@ -65,7 +65,7 @@ def message_list(request):
         "-created_at", "-pk"
     )
     if not request.user.is_superuser:
-        records = records.exclude(kind="payment_issue")
+        records = records.exclude(kind__in=["payment_issue", "backup_alert", "email_issue"])
     form = MessageFilters(request.GET)
     possible = []
     if form.is_valid():
@@ -116,7 +116,10 @@ def message_detail(request, pk):
     message = get_object_or_404(
         MessageDelivery.objects.select_related("customer", "booking"), pk=pk
     )
-    if message.kind == "payment_issue" and not request.user.is_superuser:
+    if (
+        message.kind in {"payment_issue", "backup_alert", "email_issue"}
+        and not request.user.is_superuser
+    ):
         raise PermissionDenied
     can_resend = bool(
         message.booking_id

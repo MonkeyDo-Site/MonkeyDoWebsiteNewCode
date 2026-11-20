@@ -1,7 +1,7 @@
 {% extends 'core/staff_base.html' %}
 {% block staff_content %}
 <div class="page-title-actions"><h1>Bookings</h1>{% if perms.core.add_booking and perms.core.view_customer %}<a class="button small" href="{% url 'booking_create' %}">Add booking</a>{% endif %}</div>
-<p class="notice">Test reservations only. Card setup, waiver coverage, confirmations and payments are not yet connected.</p>
+{% if booking_completion_enabled %}<p class="notice">Sandbox booking workspace. Earlier test bookings are labeled separately. Ordinary admission is collected after arrival review.</p>{% else %}<p class="notice">Test reservations only. Card setup, waiver coverage, confirmations and payments are not yet connected.</p>{% endif %}
 {% include 'core/partials/booking_filters.html' %}
 
 {% include 'core/partials/booking_table.html' %}

@@ -210,6 +210,7 @@ def submit_booking(flow):
         creation_key=key,
         creation_fingerprint=fingerprint,
         **{k: data[k] for k in DETAILS},
+        zelle_sender=data.get("zelle_sender", "") if completing else "",
     )
     saved = BookingQuote.objects.create(
         booking=booking, policy_id=quote["policy_id"], revision=1, snapshot=quote, actor=None

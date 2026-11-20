@@ -21,6 +21,15 @@ class BookingFilters(forms.Form):
         required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Through date"
     )
     q = forms.CharField(max_length=120, required=False, label="Family name, phone or email")
+    workflow = forms.ChoiceField(
+        required=False,
+        label="Booking workflow",
+        choices=[
+            ("", "All bookings"),
+            ("legacy_test", "Old test bookings"),
+            ("integrated_v1", "New booking workflow"),
+        ],
+    )
     session = forms.MultipleChoiceField(
         required=False, label="Sessions", choices=[], widget=forms.CheckboxSelectMultiple
     )
@@ -127,6 +136,8 @@ def booking_context(request, *, today_only=False):
         rows = rows.none()
     else:
         filters = form.cleaned_data
+        if filters["workflow"]:
+            rows = rows.filter(workflow=filters["workflow"])
         query = filters["q"].strip()
         if query:
             exact, possible = name_candidates(query)

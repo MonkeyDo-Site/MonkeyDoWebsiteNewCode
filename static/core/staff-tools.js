@@ -292,3 +292,69 @@ function bindPageSizes() {
   }
 }
 bindPageSizes();
+for (const form of document.querySelectorAll('[data-reviewed-checkout]')) {
+  const final = form.querySelector('[data-confirm-checkout]');
+  if (!final) continue;
+  for (const input of form.querySelectorAll('input:not([type=hidden]), select, textarea')) {
+    input.addEventListener('input', () => {
+      final.disabled = true;
+      form.querySelector('[data-review-changed]').hidden = false;
+      form.elements.reviewed_hash.value = '';
+    });
+  }
+}
+for (const form of document.querySelectorAll('[data-reviewed-checkout]')) {
+  const method = form.querySelector('[name=method]');
+  if (!method) continue;
+  const field = name => form.querySelector(`[data-field="${name}"]`);
+  const visibility = (name, visible) => {
+    const wrap = field(name);
+    if (!wrap) return;
+    wrap.hidden = !visible;
+    for (const input of wrap.querySelectorAll('input,select')) input.disabled = !visible;
+  };
+  const sync = () => {
+    const fee = form.querySelector('[name=charge_fee]');
+    const closureHasFee = !fee || fee.value === 'yes';
+    visibility('method', closureHasFee);
+    for (const kind of ['cash','check','zelle','gift_card']) visibility(`${kind}_amount`, method.value === 'split');
+    const zelleAmount = form.querySelector('[name=zelle_amount]');
+    const giftAmount = form.querySelector('[name=gift_card_amount]');
+    visibility('zelle_verified', closureHasFee && (method.value === 'zelle' || (method.value === 'split' && Number(zelleAmount?.value) > 0)));
+    visibility('gift_card_verified', closureHasFee && (method.value === 'gift_card' || (method.value === 'split' && Number(giftAmount?.value) > 0)));
+  };
+  form.addEventListener('input', sync);
+  form.addEventListener('change', sync);
+  sync();
+}
+
+/* Zelle sender details are needed only for the selected Zelle payment path. */
+for (const panel of document.querySelectorAll('[data-zelle-sender]')) {
+  const form = panel.closest('form');
+  const method = form?.elements.expected_method;
+  if (!method) continue;
+  const sync = () => { panel.hidden = method.value !== 'zelle'; };
+  method.addEventListener('change', sync);
+  sync();
+}
+
+/* Keep payment review focused on the actual tender; server validation is authoritative. */
+for (const form of document.querySelectorAll('[data-reviewed-checkout]')) {
+  const method = form.elements.method;
+  if (!method) continue;
+  const sync = () => {
+    const kind = method.value;
+    const split = kind === 'split';
+    const show = (name, visible) => {
+      const row = form.querySelector(`[data-field="${name}"]`);
+      if (row && !row.querySelector('.errorlist')) row.hidden = !visible;
+    };
+    for (const tender of ['cash', 'check', 'zelle', 'gift_card']) show(`${tender}_amount`, split);
+    show('received_on', !['card', 'comped'].includes(kind));
+    show('zelle_sender', kind === 'zelle' || split);
+    show('zelle_verified', kind === 'zelle' || split);
+    show('gift_card_verified', kind === 'gift_card' || split);
+  };
+  method.addEventListener('change', sync);
+  sync();
+}
