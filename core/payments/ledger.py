@@ -76,6 +76,25 @@ def lock_request(key):
     return key
 
 
+def lock_sale(sale_id):
+    """Serialize allocations without UPDATE permission on an immutable sale.
+
+    Call inside the surrounding transaction. Booking actions already lock the
+    booking, so use that same order before taking the per-sale advisory lock.
+    Sales without a booking still get the same allocation/reversal protection.
+    """
+    sale = FinancialSale.objects.get(pk=sale_id)
+    if sale.booking_id:
+        Booking.objects.select_for_update().get(pk=sale.booking_id)
+    if connection.vendor == "postgresql":
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT pg_advisory_xact_lock(%s, %s)",
+                [73219, int.from_bytes(sale.pk.bytes[:4], signed=True)],
+            )
+    return sale
+
+
 def audit(actor, action, operation):
     AuditEvent.objects.create(
         actor=actor,
@@ -247,7 +266,7 @@ def request_operation(
     enabled()
     require_actor(actor, "core.collect_payment", owner=kind != "receipt")
     request_key = lock_request(request_key)
-    sale = FinancialSale.objects.select_for_update().get(pk=sale_id)
+    sale = lock_sale(sale_id)
     if (
         tender not in dict(PaymentOperation._meta.get_field("tender").choices)
         or kind not in PaymentOperation.Kind.values
