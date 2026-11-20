@@ -43,8 +43,11 @@ against rewriting/deleting accepted financial facts remain in force.
 The restricted-role suite covers card confirmation/idempotent replay with no
 inline provider request, cash arrival and correction, original fact update/delete
 denial, non-card remainder adjustments, verified card-refund import without a
-refund POST, and competing allocations with and without a booking. Existing
-financial tests and the full PostgreSQL suite are required before merge.
+refund POST, and competing allocations with and without a booking. The restricted
+worker also completes one simulated card receipt once, preserving a single
+posting on repeat execution. All 594 local PostgreSQL tests pass; the final
+restricted-role/worker checks pass too. GitHub PostgreSQL 17 and native Windows
+PowerShell checks must pass on the final PR head before merge.
 
 Deploy this as a normal code-only Functional update using the reviewed browser
 ZIP and one PowerShell block. Do not pass a reviewed schema-batch flag. Existing

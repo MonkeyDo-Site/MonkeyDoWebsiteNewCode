@@ -26,6 +26,7 @@ from core.payments.checkout import confirm, preview
 from core.payments.corrections import record_correction
 from core.payments.invoices import received
 from core.payments.ledger import full_allocation, record_result, request_operation
+from core.payments.operations import execute
 from tests import test_booking_checkout as fixtures
 from tests import test_payment_ledger as ledger_fixtures
 
@@ -116,6 +117,27 @@ class PaymentRuntimeGrantTests(RuntimeRoleMixin, TestCase):
         self.assertEqual(PaymentOperation.objects.get().state, "ready")
         self.assertFalse(FinancialPosting.objects.exists())
         self.assertEqual(Booking.objects.get(pk=booking.pk).attendance, "arrived")
+        operation = PaymentOperation.objects.get()
+        with self.runtime_role(), patch("core.payments.operations.Gateway") as provider:
+            provider.return_value.charge.return_value = {
+                "status_code": "A",
+                "reference_number": 451,
+            }
+            provider.return_value.transaction.return_value = {
+                "id": 451,
+                "amount_details": {"amount": operation.amount},
+                "transaction_details": {"type": "charge"},
+                "status_details": {"status": "captured"},
+                "custom_fields": {
+                    "custom1": str(operation.pk),
+                    "custom2": "monkeydo:sandbox",
+                },
+            }
+            self.assertEqual(execute(operation.pk).state, "succeeded")
+            self.assertEqual(execute(operation.pk).state, "succeeded")
+            self.assertEqual(provider.return_value.charge.call_count, 1)
+            self.assertEqual(received(result.sale), operation.amount)
+        self.assertEqual(FinancialPosting.objects.count(), 1)
 
     def test_cash_arrival_and_owner_correction_leave_financial_facts_append_only(self):
         booking = self.booking()
