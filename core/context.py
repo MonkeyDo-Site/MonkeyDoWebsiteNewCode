@@ -17,6 +17,7 @@ def site_context(request):
         "staff_parent": parent,
         "payment_sandbox_enabled": settings.PAYMENT_SANDBOX_ENABLED,
         "waiver_enabled": settings.WAIVER_ENABLED,
+        "booking_email_enabled": settings.BOOKING_EMAIL_ENABLED,
         "owner_scheduling_section": bool(
             request.resolver_match
             and request.resolver_match.url_name

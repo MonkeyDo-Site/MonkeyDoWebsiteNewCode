@@ -1,5 +1,7 @@
 """Accepted ordinary-booking email wording with actual estimate/delivery facts."""
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.urls import reverse
 
@@ -37,10 +39,11 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
         lines.append(
             f"{item['label']}: {item['quantity']} × ${item['unit_price']} = ${item['amount']}"
         )
+    lines.append(f"Subtotal: ${quote['subtotal']}")
+    if Decimal(quote["processing_fee"]):
+        lines.append(f"Credit-card processing fee: ${quote['processing_fee']}")
     lines.extend(
         [
-            f"Subtotal: ${quote['subtotal']}",
-            f"Credit-card processing fee: ${quote['processing_fee']}",
             f"Sales tax: ${quote['sales_tax']}",
             f"Estimated total due at arrival: ${quote['total']}",
             "No admission payment has been collected. Staff will review and collect payment after you arrive.",

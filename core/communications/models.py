@@ -59,3 +59,9 @@ class MessageEvent(FinancialFact):
     code = models.CharField(max_length=40, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+
+    @property
+    def state_label(self):
+        return dict(MessageDelivery._meta.get_field("state").choices).get(
+            self.state, "Review required"
+        )

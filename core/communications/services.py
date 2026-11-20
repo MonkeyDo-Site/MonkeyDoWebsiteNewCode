@@ -133,3 +133,61 @@ def deliver(message_id):
             changes={"kind": current.kind, "booking_id": current.booking_id},
         )
         return current
+
+
+@transaction.atomic
+def resend_confirmation(*, actor, message_id, request_key):
+    from django.urls import reverse
+
+    from core.payments.ledger import lock_request
+    from core.permissions import require_actor
+    from core.waivers.services import create_share
+
+    from .content import booking_confirmation
+
+    enabled()
+    for permission in (
+        "core.change_booking",
+        "core.view_booking",
+        "core.view_customer",
+        "core.view_messagedelivery",
+    ):
+        require_actor(actor, permission)
+    key = lock_request(request_key)
+    original = MessageDelivery.objects.select_related("booking__customer", "customer").get(
+        pk=message_id
+    )
+    if (
+        original.kind not in {"booking_confirmation", "booking_waiver"}
+        or original.booking_id is None
+    ):
+        raise ValidationError("Only a booking confirmation can be resent here.")
+    dedupe = "resend:" + str(key)
+    previous = MessageDelivery.objects.filter(dedupe_key=dedupe).first()
+    if previous:
+        if previous.booking_id != original.booking_id or previous.actor_id != actor.pk:
+            raise ValidationError("This resend request was already used for another confirmation.")
+        return previous
+    customer = original.booking.customer
+    if not customer.email:
+        raise ValidationError("Add a current customer email address before sending a confirmation.")
+    waiver_url = None
+    waiver_type = "single"
+    if original.kind == "booking_waiver":
+        _, token = create_share(actor=actor, booking_id=original.booking_id)
+        waiver_url = settings.BOOKING_STAGING_ORIGIN + reverse("shared_waiver", args=[token])
+        if original.unsigned_waiver:
+            waiver_type = (
+                "online_shared" if original.booking.source == "customer_test" else "multiple"
+            )
+    return enqueue(
+        key=dedupe,
+        kind=original.kind,
+        recipient=customer.email,
+        subject=original.subject,
+        text=booking_confirmation(original.booking, waiver_url=waiver_url, waiver_type=waiver_type),
+        customer=customer,
+        booking=original.booking,
+        unsigned_waiver=original.unsigned_waiver,
+        actor=actor,
+    )

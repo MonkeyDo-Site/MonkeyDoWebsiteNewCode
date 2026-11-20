@@ -108,5 +108,6 @@ class BookingWaiverReview(models.Model):
     coverage_confirmed = models.BooleanField(default=False)
     paper_signed = models.BooleanField(default=False)
     share_requested = models.BooleanField(default=False)
+    revision = models.PositiveIntegerField(default=1)
     # Owner/staff audit contains actors/times for actual paper/coverage confirmations.
     updated_at = models.DateTimeField(auto_now=True)

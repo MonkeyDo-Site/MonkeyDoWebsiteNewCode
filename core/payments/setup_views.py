@@ -7,6 +7,7 @@ from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
+from django.urls import reverse
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_POST
 
@@ -117,9 +118,17 @@ def setup_card(request):
                 "state": "saved",
                 "brand": accepted.method.brand,
                 "last_four": accepted.method.last_four,
+                "consent_id": str(accepted.pk),
             }
         )
-    except (ValidationError, PaymentMethod.DoesNotExist, ValueError, TypeError, KeyError):
+    except ValidationError as error:
+        public_error = (
+            error.message
+            if getattr(error, "code", "") in {"expired_saved_method", "unusable_saved_method"}
+            else "Card setup could not be completed for this booking. Please review your details or call/text 848-238-5147."
+        )
+        return JsonResponse({"error": public_error}, status=400)
+    except (PaymentMethod.DoesNotExist, ValueError, TypeError, KeyError):
         return JsonResponse(
             {
                 "error": "Card setup could not be completed for this booking. Please review your details or call/text 848-238-5147."
@@ -139,6 +148,9 @@ def card_context(flow):
 
     return {
         "card_setup_key": flow.get("payment_setup_key") or uuid.uuid4(),
+        "card_status_url": reverse("customer_card_status", args=[flow["payment_setup_key"]])
+        if flow.get("payment_setup_key")
+        else "",
         "card_methods": reusable_methods(flow),
         "card_policy_version": VERSION,
         "card_payment_policy": PAYMENT,
@@ -160,6 +172,8 @@ def setup_status(request, setup_id):
         return JsonResponse({"error": "Card setup is unavailable."}, status=404)
     try:
         flow = current(request)
+        if flow.get("stage") not in {"details", "waiver", "card", "review"}:
+            raise ValidationError("Return to the current booking before checking card setup.")
         digest, _ = flow_identity(flow)
         setup = PaymentSetup.objects.select_related("method").get(pk=setup_id, flow_hash=digest)
         if setup.state == "succeeded":
@@ -169,7 +183,12 @@ def setup_status(request, setup_id):
             flow["payment_consent"] = str(accepted.pk)
             save(request, flow)
             return JsonResponse(
-                {"state": "saved", "brand": setup.method.brand, "last_four": setup.method.last_four}
+                {
+                    "state": "saved",
+                    "brand": setup.method.brand,
+                    "last_four": setup.method.last_four,
+                    "consent_id": str(accepted.pk),
+                }
             )
         return JsonResponse(
             {

@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST, require_safe
 from .models import (
     AuditEvent,
     DurableJob,
+    MessageDelivery,
     OwnerNotice,
     PaymentOperation,
     PaymentSetup,
@@ -27,6 +28,11 @@ def dashboard(request):
         "core/dashboard.html",
         {
             "alerts": alerts,
+            "email_issues": MessageDelivery.objects.filter(state__in=["failed", "unknown"])
+            .select_related("customer")
+            .order_by("created_at")[:20]
+            if settings.BOOKING_EMAIL_ENABLED and request.user.is_superuser
+            else [],
             "payment_issues": PaymentOperation.objects.filter(
                 state__in=["unknown", "action", "sending"]
             )

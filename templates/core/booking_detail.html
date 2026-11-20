@@ -30,6 +30,11 @@
 <button class="button small">Cancel booking</button>
 </form>
 </article>{% endif %}
+{% if booking.workflow == 'integrated_v1' and waiver_enabled and perms.core.view_waiversignature %}
+<article class="panel"><h2>Waivers</h2>{% for link in waiver_links %}<p><a href="{% url 'waiver_detail' link.signature_id %}">{{ link.signature.signer_name }}</a> · {{ link.signature.get_state_display }}<br>Signed {{ link.signature.signed_at|date:'M j, Y' }} · Valid until {{ link.signature.valid_until|date:'M j, Y' }}</p>{% empty %}<p>No electronic signing record is linked yet.</p>{% endfor %}
+{% if perms.core.change_booking %}<form method="post" action="{% url 'waiver_share_create' booking.pk %}" target="_blank" rel="noopener">{% csrf_token %}<input type="hidden" name="open_now" value="1"><button class="button small">Sign waiver now</button></form>
+<form method="post" action="{% url 'waiver_paper_review' booking.pk %}">{% csrf_token %}{% include 'core/partials/form_fields.html' with form=paper_form %}<button class="button small">Save paper-waiver record</button></form>{% endif %}</article>{% endif %}
+{% if booking_email_enabled and perms.core.view_messagedelivery %}<article class="panel"><h2>Messages</h2>{% for delivery in booking_messages %}<p><a href="{% url 'message_detail' delivery.pk %}">{{ delivery.get_kind_display }}</a> · {{ delivery.get_state_display }}<br>{{ delivery.recipient }} · {{ delivery.created_at|date:'M j, Y g:i A' }}</p>{% empty %}<p>No booking messages are recorded.</p>{% endfor %}<a href="{% url 'messages' %}?booking={{ booking.pk }}">View message history</a></article>{% endif %}
 <details>
 <summary>Price history</summary>{% for old in quotes %}
 <article class="panel">

@@ -187,10 +187,13 @@ if (filterForm) {
   }
 }
 for (const form of document.querySelectorAll('[data-auto-date]')) {
-  form.querySelector('[data-date-fallback]').hidden = true;
-  form.querySelector('input[type=date]').addEventListener('change', event => {
-    if (event.target.value && event.target.validity.valid) form.requestSubmit();
-  });
+  const fallback = form.querySelector('[data-date-fallback]');
+  if (fallback) fallback.hidden = true;
+  for (const date of form.querySelectorAll('input[type=date]')) {
+    date.addEventListener('change', event => {
+      if (event.target.validity.valid) form.requestSubmit();
+    });
+  }
 }
 for (const date of document.querySelectorAll('[data-session-date]')) {
   const form = date.closest('form');

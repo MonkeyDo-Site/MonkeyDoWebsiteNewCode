@@ -14,6 +14,7 @@ from core.payments.methods import expire_unused_setups, remove_unused
 from core.payments.policy import POLICY_HASH, VERSION
 from core.payments.setup import (
     bind_booking,
+    choose_saved,
     exchange,
     selected_consent,
 )
@@ -95,6 +96,40 @@ class CardSetupTests(TestCase):
             self.assertNotIn("cvv", fields)
         self.assertNotEqual(setup.nonce_hash, "nonce-Synthetic")
         self.assertFalse(Booking.objects.exists())
+
+    def test_saved_choice_checks_current_provider_ownership_and_transient_expiry_without_charge(
+        self,
+    ):
+        self.sale()
+        self.method.reusable = True
+        self.method.save(update_fields=["reusable"])
+        flow = self.flow()
+        evidence = self.card() | {"id": int(self.method.provider_method)}
+        with patch("core.payments.setup.Gateway") as gateway:
+            gateway.return_value.method.return_value = evidence
+            accepted = choose_saved(
+                flow=flow,
+                method_id=self.method.pk,
+                payment_accepted=True,
+                cancellation_accepted=True,
+            )
+            self.assertEqual(accepted.method_id, self.method.pk)
+            gateway.return_value.charge.assert_not_called()
+            gateway.return_value.verify.assert_not_called()
+        for response, message in (
+            (evidence | {"expiry_year": 2020}, "Your saved card has expired"),
+            (evidence | {"expiry_year": None}, "Your saved payment method could not be used"),
+            (evidence | {"customer_id": 999}, "Your saved payment method could not be used"),
+        ):
+            with self.subTest(message=message), patch("core.payments.setup.Gateway") as gateway:
+                gateway.return_value.method.return_value = response
+                with self.assertRaisesMessage(ValidationError, message):
+                    choose_saved(
+                        flow=flow,
+                        method_id=self.method.pk,
+                        payment_accepted=True,
+                        cancellation_accepted=True,
+                    )
 
     def test_abandoned_card_is_disposed_even_if_future_retention_was_selected(self):
         flow = self.flow()
@@ -298,7 +333,7 @@ class CardSetupTests(TestCase):
                 "/book/card/setup/", data=payload, content_type="application/json"
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(set(response.json()), {"state", "brand", "last_four"})
+        self.assertEqual(set(response.json()), {"state", "brand", "last_four", "consent_id"})
         self.assertEqual(self.client.get(f"/book/card/setup/{key}/").json()["state"], "saved")
         session = self.client.session
         session["customer_test_booking"] = self.flow()

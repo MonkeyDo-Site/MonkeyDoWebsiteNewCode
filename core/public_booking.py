@@ -138,7 +138,16 @@ def submit_booking(flow):
         if existing.source != "customer_test" or existing.creation_fingerprint != fingerprint:
             raise ValidationError("This booking session has already been used. Start again.")
         return existing
+    from . import booking_completion
+
+    completing = booking_completion.integrated(flow)
+    if completing:
+        booking_completion.enabled()
+        from .payments.setup import selected_consent
+
+        selected_consent(flow)
     contact_lock()
+    deferred_email = None
     if flow.get("proof"):
         customer = customer_from_flow(flow, lock=True)
         if not customer.email:
@@ -148,26 +157,9 @@ def submit_booking(flow):
                     {"email": "An email address is required for public bookings."}
                 )
             check_email_available(email, customer.pk)
-            customer.email = email
-            customer.revision += 1
-            customer.full_clean()
-            customer.save(update_fields=["email", "revision"])
-            AuditEvent.objects.create(
-                actor=None,
-                action="customer.public_email_added",
-                record_type="customer",
-                record_id=str(customer.pk),
-                changes={"email": {"before": "", "after": email}},
-            )
-            previous_ids = list(
-                historical_email_customers(email, customer.pk).values_list("pk", flat=True)
-            )
-            if previous_ids:
-                OwnerNotice.objects.create(
-                    customer=customer,
-                    subject="Email address reused from customer history",
-                    details={"previous_customer_ids": previous_ids, "email": email},
-                )
+            # Keep the verified customer revision unchanged until card/waiver
+            # bindings have been checked inside this same transaction.
+            deferred_email = email
     else:
         values = flow.get("contact")
         if not values:
@@ -214,6 +206,7 @@ def submit_booking(flow):
         customer=customer,
         session=session,
         source="customer_test",
+        workflow="integrated_v1" if completing else "legacy_test",
         creation_key=key,
         creation_fingerprint=fingerprint,
         **{k: data[k] for k in DETAILS},
@@ -228,4 +221,30 @@ def submit_booking(flow):
         record_id=str(booking.reference),
         changes={"after": snapshot(booking), "quote_id": saved.pk, "source": "customer_test"},
     )
+    if completing:
+        booking_completion.complete(flow, booking)
+    if deferred_email is not None:
+        email = deferred_email
+        customer.email = email
+        customer.revision += 1
+        customer.full_clean()
+        customer.save(update_fields=["email", "revision"])
+        AuditEvent.objects.create(
+            actor=None,
+            action="customer.public_email_added",
+            record_type="customer",
+            record_id=str(customer.pk),
+            changes={"email": {"before": "", "after": email}},
+        )
+        previous_ids = list(
+            historical_email_customers(email, customer.pk).values_list("pk", flat=True)
+        )
+        if previous_ids:
+            OwnerNotice.objects.create(
+                customer=customer,
+                subject="Email address reused from customer history",
+                details={"previous_customer_ids": previous_ids, "email": email},
+            )
+    if completing:
+        booking_completion.confirmation(booking)
     return booking

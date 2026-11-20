@@ -189,3 +189,11 @@ if BOOKING_EMAIL_ENABLED and DESIGN_REVIEW_ONLY:
     raise ImproperlyConfigured("Customer booking mail is unavailable in frozen design review.")
 BOOKING_STAGING_ORIGIN = "https://staging.monkeydoplay.com"
 BOOKING_REPLY_TO = "monkeydoplay@gmail.com"
+
+BOOKING_COMPLETION_ENABLED = os.environ.get("MONKEYDO_BOOKING_COMPLETION") == "1"
+if BOOKING_COMPLETION_ENABLED and not all(
+    (CUSTOMER_TEST_BOOKING, PAYMENT_SANDBOX_ENABLED, WAIVER_ENABLED, BOOKING_EMAIL_ENABLED)
+):
+    raise ImproperlyConfigured(
+        "Completed sandbox bookings require the separate booking, payment, waiver and customer-mail flags."
+    )

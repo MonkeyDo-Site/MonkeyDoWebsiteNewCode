@@ -1,5 +1,5 @@
 {% load static %}
-<section class="panel card-setup" aria-labelledby="card-heading" data-card-setup data-endpoint="{% url 'customer_card_setup' %}">
+<section class="panel card-setup" aria-labelledby="card-heading" data-card-setup data-endpoint="{% url 'customer_card_setup' %}" data-status-url="{{ card_status_url }}" data-status-prefix="{% url 'customer_card_setup' %}">
 <h2 id="card-heading">Secure card setup</h2>
 <p>{{ card_payment_policy }}</p><p>{{ card_retention_policy }}</p>
 <p>{{ card_cancellation_policy }} {{ card_cancellation_scope }}</p>
@@ -14,6 +14,7 @@
 <label><input type="checkbox" name="agree_payment" required> I agree to this payment policy.</label>
 <label><input type="checkbox" name="agree_cancellation" required> I understand the Monkey Do cancellation policy.</label>
 <button type="submit" class="button" data-save-card>Save card securely</button>
+<button type="button" class="text-button" data-check-card hidden>Check card setup</button>
 <p role="status" data-card-status>Saving a card does not charge your admission or create a verification hold.</p>
 </form>
 {{ card_public_key|json_script:'card-tokenization-key' }}

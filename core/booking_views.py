@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -35,11 +36,32 @@ def bookings(request):
 @require_safe
 def booking_detail(request, pk):
     booking = get_object_or_404(Booking.objects.select_related("customer", "session"), pk=pk)
+    waiver_context = {}
+    if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature"):
+        from .waivers.forms import PaperWaiverForm
+        from .waivers.models import BookingWaiverReview
+
+        review = BookingWaiverReview.objects.filter(booking=booking).first()
+        waiver_context = {
+            "waiver_links": booking.waiver_links.select_related("signature"),
+            "paper_form": PaperWaiverForm(
+                initial={
+                    "revision": review.revision if review else 0,
+                    "paper_signed": review.paper_signed if review else False,
+                }
+            ),
+        }
     return render(
         request,
         "core/booking_detail.html",
         {
             "booking": booking,
+            **waiver_context,
+            "booking_messages": booking.messages.exclude(kind="payment_issue").order_by(
+                "-created_at"
+            )[:5]
+            if settings.BOOKING_EMAIL_ENABLED and request.user.has_perm("core.view_messagedelivery")
+            else [],
             "quote": booking.quotes.first(),
             "quotes": booking.quotes.select_related("policy", "actor"),
             "has_reservation_blocks": booking_has_blocks(booking),

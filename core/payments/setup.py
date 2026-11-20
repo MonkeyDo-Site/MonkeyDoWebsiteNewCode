@@ -249,14 +249,56 @@ def exchange(
         return setup
 
 
-@transaction.atomic
+@sensitive_variables()
 def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted):
     enabled()
     digest, customer = flow_identity(flow)
     if customer is None or payment_accepted is not True or cancellation_accepted is not True:
         raise ValidationError("Verify customer details and accept both payment policies.")
-    method = reusable_methods(flow).select_for_update().get(pk=method_id)
-    return consent(method=method, digest=digest, retain=True)
+    method = reusable_methods(flow).get(pk=method_id)
+    try:
+        data = Gateway().method(reference(method.provider_method))
+        if (
+            reference(data.get("id")) != method.provider_method
+            or reference(data.get("customer_id")) != method.provider_customer
+            or data.get("payment_method_type") != "card"
+        ):
+            raise ProviderFailure("invalid_saved_method_owner")
+        month, year = data.get("expiry_month"), data.get("expiry_year")
+        now = timezone.localtime()
+        if (
+            type(month) is not int
+            or type(year) is not int
+            or not 1 <= month <= 12
+            or not 1900 <= year <= now.year + 30
+        ):
+            raise ProviderFailure("invalid_saved_method_metadata")
+        # Only a well-formed past expiry is described to the customer as expired.
+        if (year, month) < (now.year, now.month):
+            raise ValidationError(
+                "Your saved card has expired and needs to be updated before this booking can be completed.",
+                code="expired_saved_method",
+            )
+        brand, last_four = data.get("card_type"), data.get("last4")
+        if (
+            brand not in {"Visa", "MasterCard", "Amex", "Discover", "JCB", "Diners"}
+            or not isinstance(last_four, str)
+            or len(last_four) != 4
+            or not last_four.isascii()
+            or not last_four.isdigit()
+        ):
+            raise ProviderFailure("invalid_saved_method_metadata")
+    except (ProviderFailure, TypeError, AttributeError):
+        raise ValidationError(
+            "Your saved payment method could not be used. Please enter a payment method for this booking.",
+            code="unusable_saved_method",
+        ) from None
+    with transaction.atomic():
+        # Check scope/state again after provider I/O, without holding DB locks over it.
+        method = reusable_methods(flow).select_for_update().get(pk=method_id)
+        method.brand, method.last_four = brand, last_four
+        method.save(update_fields=["brand", "last_four"])
+        return consent(method=method, digest=digest, retain=True)
 
 
 def selected_consent(flow):

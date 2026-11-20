@@ -14,5 +14,5 @@
 {% if user.is_superuser %}{% for setup in setup_issues %}<p><a href="{% url 'card_setup_detail' setup.pk %}">Card setup needing review</a> · {{ setup.created_at|date:'M j, Y g:i A' }}</p>{% endfor %}{% if blocked_jobs %}<p class="notice">{{ blocked_jobs|length }} background job{{ blocked_jobs|length|pluralize }} need owner review. No uncertain payment is automatically retried.</p>{% endif %}{% endif %}
 <p><a href="{% url 'payments' %}">View payment history</a></p>
 {% endif %}
-<p class="caption">Booking email monitoring will be connected with booking completion.</p>
+{% if booking_email_enabled and user.is_superuser %}<h2>Emails needing attention</h2>{% for delivery in email_issues %}<p><a href="{% url 'message_detail' delivery.pk %}">{{ delivery.get_kind_display }} · {{ delivery.recipient }}</a> · {{ delivery.get_state_display }}</p>{% empty %}<p>No failed or uncertain booking emails are recorded.</p>{% endfor %}{% endif %}
 {% endblock %}

@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
+from core.booking_progress import progress
 from core.forms import normalize_phone
 from core.models import Booking
 from core.pagination import paginate
@@ -98,6 +99,7 @@ def signing_form(request, *, flow=None, share_token=None):
             "appointment": share.booking.session.starts_at if share else None,
             "shared": share is not None,
             "flow": flow,
+            "progress_steps": progress(4, waivers=True) if flow else None,
         },
     )
 
@@ -110,6 +112,8 @@ def public_sign(request):
         flow = current(request)
         if flow.get("workflow") != "integrated_v1" or not flow.get("details"):
             raise ValidationError("Complete your customer and session details before signing.")
+        if flow.get("stage") not in {"waiver", "review", "details"}:
+            raise ValidationError("Return to the current booking before signing.")
         return signing_form(request, flow=flow)
     except ValidationError as error:
         return render(
@@ -232,14 +236,33 @@ def waivers(request):
 
 @staff_permission("core.view_waiversignature")
 @enabled_view
-@require_safe
+@require_http_methods(["GET", "POST"])
 def waiver_detail(request, pk):
     staff_access(request)
     signature = get_object_or_404(WaiverSignature.objects.select_related("version"), pk=pk)
+    error = None
+    if request.method == "POST":
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        from .services import reconcile_evidence
+
+        try:
+            reconcile_evidence(actor=request.user, signature_id=pk)
+            messages.success(
+                request, "The stored evidence was verified and its signing record completed."
+            )
+            return redirect("waiver_detail", pk=pk)
+        except (EvidenceUnavailable, ValidationError, WaiverSignature.DoesNotExist):
+            error = "The existing evidence could not be verified. It was not marked signed."
     return render(
         request,
         "core/waivers/detail.html",
-        {"signature": signature, "waiver_now": timezone.now(), "current_version": VERSION},
+        {
+            "signature": signature,
+            "waiver_now": timezone.now(),
+            "current_version": VERSION,
+            "error": error,
+        },
     )
 
 
@@ -281,6 +304,8 @@ def share_create(request, booking_id):
         link, token = create_share(actor=request.user, booking_id=booking_id)
     except (ValidationError, Booking.DoesNotExist):
         raise Http404 from None
+    if request.POST.get("open_now") == "1":
+        return redirect("shared_waiver", token=token)
     return render(
         request,
         "core/waivers/share.html",
@@ -303,3 +328,33 @@ def unsigned_pdf(request):
         filename="MonkeyDo-unsigned-waiver.pdf",
         content_type="application/pdf",
     )
+
+
+@staff_permission("core.change_booking")
+@staff_permission("core.view_booking")
+@staff_permission("core.view_waiversignature")
+@enabled_view
+@require_POST
+def paper_review(request, booking_id):
+    from .forms import PaperWaiverForm
+    from .services import set_paper
+
+    form = PaperWaiverForm(request.POST)
+    if form.is_valid():
+        try:
+            set_paper(
+                actor=request.user,
+                booking_id=booking_id,
+                **{
+                    "revision": form.cleaned_data["revision"],
+                    "signed": form.cleaned_data["paper_signed"],
+                },
+            )
+            messages.success(
+                request, "Paper-waiver record saved. Electronic signatures were not created."
+            )
+        except ValidationError as error:
+            messages.error(request, " ".join(error.messages))
+    else:
+        messages.error(request, "Review the current paper-waiver form before saving.")
+    return redirect("booking_detail", pk=booking_id)

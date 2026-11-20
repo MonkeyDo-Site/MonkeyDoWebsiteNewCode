@@ -53,3 +53,12 @@ class SignatureForm(forms.Form):
         if not data.get("minors") and data.get("relationship") in {"Parent", "Legal guardian"}:
             self.add_error("minors", "Enter the names of the minors you are signing for.")
         return data
+
+
+class PaperWaiverForm(forms.Form):
+    revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
+    paper_signed = forms.BooleanField(
+        required=False,
+        label="Paper waivers signed",
+        help_text="Mark only after all required paper waivers have actually been signed. This does not create an electronic signature.",
+    )

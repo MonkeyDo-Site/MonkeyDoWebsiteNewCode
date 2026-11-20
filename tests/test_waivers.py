@@ -137,6 +137,41 @@ class WaiverTests(TestCase):
         self.assertEqual(result.pk, signature.pk)
         self.assertEqual(result.state, "signed")
 
+    def test_owner_reconciles_written_evidence_without_repeating_upload_or_signing(self):
+        from core.waivers.services import reconcile_evidence
+
+        self.sale()
+        _, token = create_share(actor=self.owner, booking_id=self.booking.pk)
+        memory = MemoryEvidence()
+        with patch("core.waivers.services.EvidenceStore", return_value=memory):
+            with patch(
+                "core.waivers.services.complete_signature",
+                side_effect=ValidationError("Interrupted local save"),
+            ):
+                with self.assertRaises(ValidationError):
+                    sign(data=self.signing_data(), share_token=token)
+            pending = WaiverSignature.objects.get()
+            self.assertEqual(pending.state, "pending")
+            self.assertEqual(pending.booking_links.get().booking_id, self.booking.pk)
+            verified = reconcile_evidence(actor=self.owner, signature_id=pending.pk)
+        self.assertEqual(verified.state, "signed")
+        self.assertEqual(WaiverSignature.objects.count(), 1)
+
+    def test_paper_mark_is_audited_booking_fact_and_not_an_electronic_signature(self):
+        from core.waivers.services import booking_coverage, set_paper
+
+        self.sale()
+        review = set_paper(actor=self.staff, booking_id=self.booking.pk, revision=0, signed=True)
+        self.assertTrue(booking_coverage(self.booking))
+        self.assertFalse(WaiverSignature.objects.exists())
+        self.assertTrue(AuditEvent.objects.filter(action="waiver.paper_reviewed").exists())
+        with self.assertRaises(ValidationError):
+            set_paper(actor=self.staff, booking_id=self.booking.pk, revision=0, signed=False)
+        set_paper(
+            actor=self.staff, booking_id=self.booking.pk, revision=review.revision, signed=False
+        )
+        self.assertFalse(booking_coverage(self.booking))
+
     def test_shared_signing_exposes_only_appointment_and_allows_independent_parents(self):
         self.sale()
         link, token = create_share(actor=self.owner, booking_id=self.booking.pk)

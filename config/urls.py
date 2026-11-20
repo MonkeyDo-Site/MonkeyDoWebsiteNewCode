@@ -16,6 +16,7 @@ from core import (
     views,
     website_settings,
 )
+from core.communications import views as message_views
 from core.payments import views as payment_views
 from core.payments.setup_views import setup_card, setup_status
 from core.payments.webhooks import endpoint as payment_webhook
@@ -23,6 +24,13 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path("staff/messages/", message_views.message_list, name="messages"),
+    path(
+        "staff/bookings/<int:booking_id>/waiver/paper/",
+        waiver_views.paper_review,
+        name="waiver_paper_review",
+    ),
+    path("staff/messages/<uuid:pk>/", message_views.message_detail, name="message_detail"),
     path("waiver/unsigned.pdf", waiver_views.unsigned_pdf, name="unsigned_waiver"),
     path("waiver/shared/<str:token>/", waiver_views.shared_sign, name="shared_waiver"),
     path("book/waiver/", waiver_views.public_sign, name="customer_waiver"),

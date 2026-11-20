@@ -186,6 +186,12 @@ def prepare_signature(*, data, flow=None, share_token=None, ip=None, user_agent=
     candidate.evidence_hash = hashlib.sha256(evidence_bytes(candidate)).hexdigest()
     candidate.full_clean()
     candidate.save()
+    # Preserve intended associations even if the object write/acknowledgment fails.
+    # Pending evidence never qualifies as valid coverage.
+    if booking:
+        WaiverBookingLink.objects.get_or_create(signature=candidate, booking=booking)
+    if customer:
+        WaiverCustomerLink.objects.get_or_create(signature=candidate, customer=customer)
     return candidate, booking, customer
 
 
@@ -209,7 +215,13 @@ def complete_signature(signature_id, *, booking=None, customer=None):
         WaiverCustomerLink.objects.get_or_create(signature=signature, customer=customer)
     if booking is not None:
         WaiverBookingLink.objects.get_or_create(signature=signature, booking=booking)
-        if first and booking.customer.email and settings.BOOKING_EMAIL_ENABLED:
+    if first and settings.BOOKING_EMAIL_ENABLED:
+        for linked in signature.booking_links.select_related(
+            "booking__customer", "booking__session"
+        ):
+            booking = linked.booking
+            if not booking.customer.email:
+                continue
             from core.communications.content import waiver_completed
             from core.communications.services import enqueue
 
@@ -223,6 +235,23 @@ def complete_signature(signature_id, *, booking=None, customer=None):
                 booking=booking,
             )
     return signature
+
+
+def reconcile_evidence(*, actor, signature_id):
+    enabled()
+    require_actor(actor, "core.view_signed_waiver", owner=True)
+    signature = WaiverSignature.objects.get(
+        pk=signature_id, state="pending", delete_after__gt=timezone.now()
+    )
+    EvidenceStore().get(signature.object_key, signature.evidence_hash)
+    result = complete_signature(signature.pk)
+    AuditEvent.objects.create(
+        actor=actor,
+        action="waiver.storage_reconciled",
+        record_type="waiver",
+        record_id=str(signature.pk),
+    )
+    return result
 
 
 @sensitive_variables()
@@ -336,3 +365,56 @@ def expire_evidence(*, limit=100):
             )
             removed += 1
     return removed
+
+
+def booking_coverage(booking):
+    from .models import BookingWaiverReview
+
+    review = BookingWaiverReview.objects.filter(booking=booking).first()
+    if review and review.paper_signed:
+        return True
+    return bool(
+        review
+        and review.coverage_confirmed
+        and booking.waiver_links.filter(
+            signature__state="signed",
+            signature__signed_at__lte=timezone.now(),
+            signature__valid_until__gt=booking.session.starts_at,
+        ).exists()
+    )
+
+
+@transaction.atomic
+def set_paper(*, actor, booking_id, revision, signed):
+    from .models import BookingWaiverReview
+
+    enabled()
+    for permission in ("core.view_booking", "core.change_booking", "core.view_waiversignature"):
+        require_actor(actor, permission)
+    if type(signed) is not bool or type(revision) is not int or revision < 0:
+        raise ValidationError("Review the current paper-waiver form.")
+    booking = Booking.objects.select_for_update().get(pk=booking_id)
+    if booking.workflow != "integrated_v1":
+        raise ValidationError(
+            "Use a new integrated booking; earlier test records are preserved unchanged."
+        )
+    review = BookingWaiverReview.objects.select_for_update().filter(booking=booking).first()
+    if revision != (review.revision if review else 0):
+        raise ValidationError("Waiver coverage changed. Reload the booking before saving.")
+    before = review.paper_signed if review else False
+    if review is None:
+        review = BookingWaiverReview(booking=booking)
+    else:
+        review.revision += 1
+    review.paper_signed = signed
+    if not signed:
+        review.coverage_confirmed = False
+    review.save()
+    AuditEvent.objects.create(
+        actor=actor,
+        action="waiver.paper_reviewed",
+        record_type="booking",
+        record_id=str(booking.reference),
+        changes={"paper_waivers_signed": {"before": before, "after": signed}},
+    )
+    return review

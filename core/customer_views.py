@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods, require_safe
 from .customers import correct_previous_phone, create_customer, save_comment, update_customer
 from .forms import CommentForm, CustomerForm, PreviousPhoneForm, phone_search_digits
 from .memberships import current_draft
-from .models import AuditEvent, Customer, CustomerComment, PaymentOperation
+from .models import AuditEvent, Customer, CustomerComment, PaymentOperation, WaiverSignature
 from .name_matching import match_rank, name_candidates
 from .pagination import paginate
 from .permissions import staff_permission
@@ -113,6 +113,14 @@ def customer_detail(request, pk):
         "core/customer_detail.html",
         {
             "customer": customer,
+            "customer_waivers": WaiverSignature.objects.filter(
+                Q(customer_links__customer=customer) | Q(booking_links__booking__customer=customer)
+            )
+            .distinct()
+            .order_by("-signed_at")[:3]
+            if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature")
+            else [],
+            "waiver_now": timezone.now(),
             "payment_operations": PaymentOperation.objects.filter(sale__customer=customer).order_by(
                 "-requested_at"
             )[:5]

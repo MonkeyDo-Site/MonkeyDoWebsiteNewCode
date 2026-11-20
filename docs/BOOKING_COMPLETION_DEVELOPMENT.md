@@ -63,8 +63,9 @@ handoff. Migrations 0027 onward are not allowed by the older closed 0026 helper.
 Keep the PR draft until the complete stage and reviewed deployment are ready.
 Existing staging configuration has not changed.
 
-Validation checkpoint: all 504 tests passed locally on PostgreSQL, including
-63 targeted payment/card/staff/waiver/outbox checks. Twelve browser checks across
+Validation checkpoint: all 514 tests passed locally on PostgreSQL, including the new public booking, paper-mark and message controls.
+Sixteen focused card/setup/public checks also passed after adding read-only saved-card
+ownership/expiry validation; malformed metadata is not mislabeled as expiry. Twelve browser checks across
 1440px and 390px passed for payment/waiver lists/details and public/shared signing
 forms, including no page overflow, unchecked consent and shared-page privacy.
 Ruff check/format and migration drift checks pass. CI formatting caught two new
@@ -81,23 +82,34 @@ rescheduling-aware next-day expiry, staff search/paging/detail/evidence access,
 and two-year file deletion with retained metadata/audit. SQL guards protect
 signed facts and earlier versions. Storage/transport checks use synthetic mocks.
 
-Remaining: connect public coverage/reuse/new-minor decisions, staff paper fallback,
-arrival controls, notifications, pending-evidence recovery and real configured-R2
-acceptance. An online group-booking clarification is pending: all coverage before
+Public coverage/reuse/new-minor decisions, audited/stale-protected staff paper
+marking, linked booking/customer records, shared completion notifications and
+owner read-only pending-evidence recovery are now implemented locally. Remaining:
+arrival integration and real configured-R2 acceptance. An online group-booking clarification is pending: all coverage before
 confirmation versus a pending booking/link before all parents finish.
 
 ## Increment 3 — complete end-to-end booking (in progress)
 
-Implemented locally: a durable message snapshot/outbox, separate TEST-marked
+Implemented locally: completed public self/family booking now binds secure card
+consent and waiver coverage atomically, adds the approved Waiver progress step,
+queues one confirmation and displays actual queued/sent/unknown delivery state.
+Both public card-payment and alternate-tender/backup-card paths save the method
+without charging admission. Browser checks completed Open Play/cash and
+Supervised Play/card flows through signing and receipt at 1440px/390px, using
+synthetic external SDK/API/R2 adapters only, with no browser errors.
+
+Also implemented: a durable message snapshot/outbox, separate TEST-marked
 Resend customer transport supporting approved test recipients and the unsigned
 source PDF, current-contact refresh before sending, explicit sent/failed/unknown
 states, no blind interrupted-send replay, and approved booking/waiver/owner-alert
-content. These services are being tested and wired, not a completed booking flow.
+content. Staff message tables/history/resend, current-contact snapshots, explicit duplicate-safe
+booking-only resends and Dashboard failure visibility are connected.
 
-Remaining: connect customer/staff card and waiver setup to completion, actual confirmation
-emails and current-email correction/resend, arrival review/collection and split
-payments, actual attendance versus payment state, cancellation/no-show/partial
-arrival and approved comped/override behavior. Carry worker/backups/resource and
+Remaining: staff secure card/setup and final confirmation; actual provider-backed
+confirmation delivery and public email-correction controls; arrival review/collection,
+split payments and actual attendance versus payment state; cancellation/no-show/partial
+arrival and approved comped/override behavior. The separate completed-booking flag
+defaults off, as do its integration dependencies. Carry worker/backups/resource and
 safe deployment checks throughout. Preserve all older booking records/history.
 
 Only after the stage and developer checks are complete, prepare the as-built owner
