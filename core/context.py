@@ -15,6 +15,11 @@ def site_context(request):
         parent = ("Membership drafts", "/staff/memberships/")
     return {
         "staff_parent": parent,
+        "payment_sandbox_enabled": settings.PAYMENT_SANDBOX_ENABLED,
+        "waiver_enabled": settings.WAIVER_ENABLED,
+        "booking_email_enabled": settings.BOOKING_EMAIL_ENABLED,
+        "booking_completion_enabled": settings.BOOKING_COMPLETION_ENABLED,
+        "backups_enabled": settings.BACKUP_ENABLED,
         "owner_scheduling_section": bool(
             request.resolver_match
             and request.resolver_match.url_name

@@ -21,7 +21,7 @@ Current authority: [documentation index](README.md), [main requirements](MONKEYD
 | Customers/admin | Last Name only, six-digit IDs, Family/Day Camp, current/previous contact history, Today+Dashboard separate, card-grid records, permissions/exports |
 | Capacity | 35children/50combined, babies excluded, manual2yearclosures, owner exclusive/advance overrides and staff arrival override, explicit full/party labels |
 | Payments | Banquest selected; no holds, tokens not issuer approval, optional future-use retention, safe last4 history indefinite, review then explicit arrival charge, no automatic payment retries initially |
-| Tax/fee | 3% on pretax card-funded amount; tax on taxable goods+their fee portion, one fee/one tax row, proportional splits. Staging6.6%; production UEZ rate and retained-fee tax reversal still pending |
+| Tax/fee | 3% on pretax card-funded amount; tax on taxable goods+their fee portion, one fee/one tax row, proportional splits. Staging6.6%; production UEZ rate pending; retained-fee tax reversed when admission payment is applied to membership, per later accountant clarification |
 | Cancellation | $3per applicable ordinary/member/supervised child, partial fee at arrival, no extraadultfee, owner/staff ordinary waiver; party$50ownerwaivable; no ordinary refund program but owner error corrections/member/club exceptions |
 | Memberships | Subscription17.99 and Unlimited39.99 anonymous places, documented benefit/adult allocation, three-month new minimum, selected term, exact billing calendars, grace7actualdate/no gap benefits, paid/unpaid conversion and usable customer credit |
 | Programs | Supervised18.99/Subscription14.24, clubs279/1298week/dropoff3–8, participants/waivers/attendancefollowup; party28975minutes10+10extras19.99/5member15%beforetax |
@@ -541,3 +541,47 @@ email-collection screens, preserving the chosen session. No review screenshots
 are needed; owner will accept changes after deployment. Retain browser ZIP plus
 one routine PowerShell command. No next-phase payment/waiver work is authorized.
 See OWNER_EDITS_BATCH_5.md for all comments and verification boundaries.
+
+
+## Accountant answer on retained-fee tax — November 19, 2026
+
+Owner supplied the accountant's answer: “If it’s applied towards membership, it
+should be refunded. If it’s not applied, then it should not be reversed.” Applied
+to the owner's admission-to-nontaxable-membership scenario, the retained $0.45
+processing fee remains nonrefundable, but its $0.03 tax reverses along with the
+$0.99 admission tax when the paid admission is applied to membership. Of $16.47
+paid, $16.02 is available for the replacement purchase; do not refund and credit
+the same money twice. No application/payment behavior was changed by recording
+this answer. Production tax rate remains open. Companion payment, membership,
+open-decision and remaining-stage documents now reflect this clarification.
+
+
+## Accountant reports later; financial source facts from the start — November 19, 2026
+
+Owner requested eventual income/tax/refund/net-income reports and allowed report
+implementation after go-live, asking whether the underlying configuration must
+change now. Review found immutable quote snapshots and audit in the current
+application; actual payment/tender/refund records remain planned. Add explicit
+source-data acceptance criteria to the next payment phase, before real money:
+item/category/tax/fee allocations, actual tenders/outcomes, original/correction
+links, distinct service/receipt/refund/settlement dates and safe provider IDs.
+Keep tax versus income, customer fees versus processor costs, credits versus
+external refunds and receipts versus deposits distinct; preserve retention and
+exclude sandbox/estimates. Report screens/accounting layout can follow launch;
+no server/key change is required solely for reporting. No financial models,
+migrations or reporting UI were built in this review. Full detail lives in
+ACCOUNTANT_REPORTING_FOUNDATION.md.
+
+
+## Actual-money report scope and next-stage readiness — November 19, 2026
+
+Owner clarified that accountant reports need actual dollars paid, asking why
+discounts were mentioned. Treat original price/approved discounts as internal
+reconciliation/refund-tax detail only; do not count them as income or mandate a
+report column, new discount feature or extra staff input. Reporting notes now
+state this explicitly. Review identified no additional owner business-rule
+decision required before the agreed next development scope. Technical payment
+records/failure handling, secure card/waiver setup, callback routing, delivery,
+worker/resources, backups and migration/recovery remain in that scope. Secrets
+are needed for integration tests later, not before local coding; production tax
+rate/live activation remain launch inputs. No application development began.

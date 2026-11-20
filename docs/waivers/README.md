@@ -37,3 +37,23 @@ internally and receive no fabricated signature. Customer-email uniqueness does
 not impose a unique email constraint across separate waiver signers. The
 [remaining plan](../NEXT_PHASE_REVIEW.md) records this sequence; no waiver code or
 signed file is created by the planning update.
+
+
+## Authorized booking-stage implementation update
+
+Draft PR #30 now implements separate Django signing, metadata/history, private R2
+evidence, shared-parent pages and retention workflows locally. The original static
+source prototype is preserved. Local tests/browser evidence and the outstanding
+approved online-group pending/held-place exception are recorded in [implementation status](../BOOKING_COMPLETION_DEVELOPMENT.md).
+No actual configured R2 upload, hosted waiver completion or production acceptance
+is claimed by that local implementation.
+
+
+## Approved online group exception
+
+On final booking save, customers bringing other parents' minors may reserve
+places and request the shared parent-waiver link and unsigned PDF by email.
+The booking is visible as Waiver pending, with its capacity retained. Staff verify
+actual coverage before play; incomplete waivers do not automatically release places.
+Individual signing does not disclose other parents' contacts, signatures or payment
+information, and does not itself attest that everyone in the group is covered.

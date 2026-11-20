@@ -164,3 +164,50 @@ if TRUST_LOCAL_CLIENT_IP and os.environ.get("DJANGO_TRUST_PROXY") != "1":
 
 # Friendly recovery keeps the standard CSRF validation and HTTP 403 status.
 CSRF_FAILURE_VIEW = "core.views.csrf_failure"
+
+# Independent opt-in: existing pending-test booking routes remain unchanged.
+# Production APP_ENV is rejected above; the adapter additionally pins its sandbox host.
+PAYMENT_SANDBOX_ENABLED = os.environ.get("MONKEYDO_PAYMENT_SANDBOX") == "1"
+if PAYMENT_SANDBOX_ENABLED and DESIGN_REVIEW_ONLY:
+    raise ImproperlyConfigured("Payment integration is unavailable in frozen design review.")
+BANQUEST_API_SOURCE_KEY = os.environ.get("BANQUEST_API_SOURCE_KEY", "")
+BANQUEST_API_PIN = os.environ.get("BANQUEST_API_PIN", "")
+BANQUEST_TOKENIZATION_PUBLIC_KEY = os.environ.get("BANQUEST_TOKENIZATION_PUBLIC_KEY", "")
+BANQUEST_WEBHOOK_KEY = os.environ.get("BANQUEST_WEBHOOK_KEY", "")
+
+# Separate opt-in; credentials are supplied only via the protected host environment.
+WAIVER_ENABLED = os.environ.get("MONKEYDO_WAIVERS") == "1"
+if WAIVER_ENABLED and DESIGN_REVIEW_ONLY:
+    raise ImproperlyConfigured("Signed waivers are unavailable in frozen design review.")
+R2_ACCOUNT_ID = os.environ.get("MONKEYDO_R2_ACCOUNT_ID", "")
+R2_WAIVER_BUCKET = os.environ.get("MONKEYDO_R2_WAIVER_BUCKET", "")
+R2_WAIVER_ACCESS_KEY = os.environ.get("MONKEYDO_R2_WAIVER_ACCESS_KEY", "")
+R2_WAIVER_SECRET_KEY = os.environ.get("MONKEYDO_R2_WAIVER_SECRET_KEY", "")
+
+BOOKING_EMAIL_ENABLED = os.environ.get("MONKEYDO_BOOKING_EMAIL") == "1"
+if BOOKING_EMAIL_ENABLED and DESIGN_REVIEW_ONLY:
+    raise ImproperlyConfigured("Customer booking mail is unavailable in frozen design review.")
+BOOKING_STAGING_ORIGIN = "https://staging.monkeydoplay.com"
+BOOKING_REPLY_TO = "monkeydoplay@gmail.com"
+
+BOOKING_COMPLETION_ENABLED = os.environ.get("MONKEYDO_BOOKING_COMPLETION") == "1"
+if BOOKING_COMPLETION_ENABLED and not all(
+    (CUSTOMER_TEST_BOOKING, PAYMENT_SANDBOX_ENABLED, WAIVER_ENABLED, BOOKING_EMAIL_ENABLED)
+):
+    raise ImproperlyConfigured(
+        "Completed sandbox bookings require the separate booking, payment, waiver and customer-mail flags."
+    )
+
+# Separate encrypted-backup opt-in and credentials. No private recovery key belongs here.
+BACKUP_ENABLED = os.environ.get("MONKEYDO_BACKUPS") == "1"
+R2_BACKUP_BUCKET = os.environ.get("R2_BACKUP_BUCKET", "")
+R2_BACKUP_ACCESS_KEY = os.environ.get("R2_BACKUP_ACCESS_KEY", "")
+R2_BACKUP_SECRET_KEY = os.environ.get("R2_BACKUP_SECRET_KEY", "")
+R2_BACKUP_READ_ACCESS_KEY = os.environ.get("R2_BACKUP_READ_ACCESS_KEY", "")
+R2_BACKUP_READ_SECRET_KEY = os.environ.get("R2_BACKUP_READ_SECRET_KEY", "")
+BACKUP_ENCRYPTION_CERTIFICATE = os.environ.get("MONKEYDO_BACKUP_PUBLIC_CERTIFICATE", "")
+
+RESEND_WEBHOOK_SECRET = os.environ.get("RESEND_WEBHOOK_SECRET", "")
+
+# Required before connecting a recovered database to application workers.
+RECOVERY_HOLD = os.environ.get("MONKEYDO_RECOVERY_HOLD") == "1"

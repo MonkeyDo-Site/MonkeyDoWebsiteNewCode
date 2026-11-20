@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly verified encrypted offsite recovery point
+
+[Timer]
+OnCalendar=*-*-* 07:00:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+Unit=monkeydo-functional-backup.service
+
+[Install]
+WantedBy=timers.target

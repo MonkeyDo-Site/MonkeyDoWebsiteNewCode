@@ -21,6 +21,15 @@ class BookingFilters(forms.Form):
         required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Through date"
     )
     q = forms.CharField(max_length=120, required=False, label="Family name, phone or email")
+    workflow = forms.ChoiceField(
+        required=False,
+        label="Booking workflow",
+        choices=[
+            ("", "All bookings"),
+            ("legacy_test", "Old test bookings"),
+            ("integrated_v1", "New booking workflow"),
+        ],
+    )
     session = forms.MultipleChoiceField(
         required=False, label="Sessions", choices=[], widget=forms.CheckboxSelectMultiple
     )
@@ -34,6 +43,7 @@ class BookingFilters(forms.Form):
         choices=[
             ("pending", "Setup pending"),
             ("upcoming", "Upcoming"),
+            ("waiver_pending", "Waiver pending"),
             ("cancelled", "Cancelled"),
             ("arrived", "Arrived"),
             ("no_show", "No show"),
@@ -127,6 +137,8 @@ def booking_context(request, *, today_only=False):
         rows = rows.none()
     else:
         filters = form.cleaned_data
+        if filters["workflow"]:
+            rows = rows.filter(workflow=filters["workflow"])
         query = filters["q"].strip()
         if query:
             exact, possible = name_candidates(query)
@@ -160,12 +172,24 @@ def booking_context(request, *, today_only=False):
             rows = rows.filter(supervised=filters["play"][0] == "supervised")
         if filters["status"]:
             status = Q(
-                attendance__in=[s for s in filters["status"] if s not in {"pending", "upcoming"}]
+                attendance__in=[
+                    s
+                    for s in filters["status"]
+                    if s not in {"pending", "upcoming", "waiver_pending"}
+                ]
             )
             if "pending" in filters["status"]:
                 status |= Q(attendance="", setup_pending=True)
             if "upcoming" in filters["status"]:
                 status |= Q(attendance="", setup_pending=False)
+            if "waiver_pending" in filters["status"]:
+                status |= Q(
+                    workflow="integrated_v1",
+                    attendance="",
+                    setup_pending=False,
+                    waiver_review__paper_signed=False,
+                    waiver_review__coverage_confirmed=False,
+                )
             rows = rows.filter(status)
         order = ["session__starts_at", "created_at", "pk"]
         if query:

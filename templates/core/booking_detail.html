@@ -1,8 +1,10 @@
 {% extends 'core/staff_base.html' %}{% load audit_labels %}
 {% block staff_content %}
 <h1>{% if perms.core.view_customer %}<a href="{% url 'customer_detail' booking.customer_id %}">{{ booking.customer.last_name }}</a>{% else %}{{ booking.customer.last_name }}{% endif %}</h1>
-<p class="eyebrow">Booking #{{ booking.pk }} · {{ booking.status_label }}</p>
+<p class="eyebrow">Booking #{{ booking.pk }} · {{ booking.status_label }}</p>{% if booking.workflow == 'legacy_test' %}<p class="caption">Old test booking · Its original records and history are preserved.</p>{% endif %}
+{% if booking.workflow == 'integrated_v1' and booking.setup_pending and perms.core.change_booking %}<p><a class="button" href="{% url 'staff_booking_setup' booking.pk %}">Complete booking setup</a></p>{% endif %}
 <p>{{ booking.session.starts_at|date:'l, F j, Y' }} · {{ booking.session.starts_at|date:'g:i A' }} – {{ booking.session.ends_at|date:'g:i A' }}</p>
+{% if booking.workflow == 'integrated_v1' and booking_completion_enabled and not booking.attendance and perms.core.collect_payment and perms.core.change_booking %}<div class="filter-actions"><a class="button" href="{% url 'booking_arrival' booking.pk %}">Start arrival</a><a href="{% url 'booking_no_show' booking.pk %}">Mark as no show</a><a href="{% url 'booking_cancel' booking.pk %}">Cancel booking</a><a href="{% url 'booking_edit' booking.pk %}">Edit booking</a><a href="{% url 'booking_move' booking.pk %}">Change timing</a></div>{% endif %}
 <div class="booking-detail-grid"><article class="panel">
 <h2>Visit details</h2>
 <p>{{ booking.children }} children · {{ booking.adults }} adults · {{ booking.babies }} babies</p>
@@ -18,7 +20,7 @@
 <p class="caption">Pricing version {{ quote.policy_id }} · Quote revision {{ quote.revision }} · Saved {{ quote.created_at|date:'M j, Y g:i A' }}. Test tax only; production rate is not approved.</p>
 </article>{% else %}
 <p>No price snapshot exists for this earlier test record. Historical amounts have not been invented.</p>{% endif %}
-</div><p class="caption">Test booking: card setup, waiver coverage, confirmation delivery, arrival and payment are not recorded yet.</p>{% if perms.core.change_booking and booking.setup_pending and not booking.attendance %}
+</div>{% if booking.workflow == 'legacy_test' %}<p class="caption">Test booking: card setup, waiver coverage, confirmation delivery, arrival and payment are not recorded yet.</p>{% elif booking.card_agreement %}<p class="caption">Saved payment method ending in {{ booking.card_agreement.method.last_four }}. Estimates are separate from money received.</p>{% endif %}{% if perms.core.change_booking and booking.setup_pending and not booking.attendance and booking.workflow == 'legacy_test' %}
 <p>
 <a class="button small" href="{% url 'booking_edit' booking.pk %}">Edit booking</a>
 </p>
@@ -30,6 +32,12 @@
 <button class="button small">Cancel booking</button>
 </form>
 </article>{% endif %}
+{% if payment_summary %}<article class="panel"><h2>Payment</h2>{% if request.user.is_superuser and not booking.attendance %}<p><a href="{% url 'booking_comped' booking.pk %}">Owner pricing / complimentary booking</a></p>{% endif %}{% if perms.core.change_booking and booking.card_agreement %}<p><a href="{% url 'booking_card_change' booking.pk %}">Change booking card</a></p>{% endif %}{% if payment_summary.can_collect and perms.core.collect_payment %}<p><a class="button small" href="{% url 'booking_payment' booking.pk %}">Review remaining payment</a></p>{% endif %}<p><strong>{{ payment_summary.status }}</strong></p><p>Money received, after recorded corrections: ${{ payment_summary.received|floatformat:2 }}</p>{% if payment_summary.due != None %}<p>Reviewed balance unpaid: ${{ payment_summary.due|floatformat:2 }}</p>{% else %}<p>{% if payment_summary.sale %}A payment correction needs owner review before any further amount can be treated as due.{% else %}An arrival invoice has not yet been accepted. The saved estimate is not a receipt.{% endif %}</p>{% endif %}{% for operation in payment_summary.operations %}<p><a href="{% url 'payment_detail' operation.pk %}">{{ operation.get_kind_display }} · ${{ operation.amount|floatformat:2 }}</a> · {{ operation.get_state_display }} · {{ operation.get_tender_display }}{% if operation.last_four %} ending in {{ operation.last_four }}{% endif %}</p>{% endfor %}</article>{% endif %}
+{% if booking.workflow == 'integrated_v1' and waiver_enabled and perms.core.view_waiversignature %}
+<article class="panel"><h2>Waivers</h2>{% if booking.waiver_review.share_requested and not booking.waiver_review.coverage_confirmed and not booking.waiver_review.paper_signed %}<p class="notice">Waiver pending. This booking holds its places while parents sign. Review coverage for everyone before play.</p>{% endif %}{% for link in waiver_links %}<p><a href="{% url 'waiver_detail' link.signature_id %}">{{ link.signature.signer_name }}</a> · {{ link.signature.get_state_display }}<br>Covered minors: {{ link.signature.minors|join:', '|default:'Self only' }}<br>Signed {{ link.signature.signed_at|date:'M j, Y' }} · Valid until {{ link.signature.valid_until|date:'M j, Y' }}</p>{% empty %}<p>No electronic signing record is linked yet.</p>{% endfor %}
+{% if perms.core.change_booking %}<form method="post" action="{% url 'waiver_share_create' booking.pk %}" target="_blank" rel="noopener">{% csrf_token %}<input type="hidden" name="open_now" value="1"><button class="button small">Sign waiver now</button></form>
+<form method="post" action="{% url 'waiver_paper_review' booking.pk %}">{% csrf_token %}{% include 'core/partials/form_fields.html' with form=paper_form %}<button class="button small">Save paper-waiver record</button></form>{% endif %}</article>{% endif %}
+{% if booking_email_enabled and perms.core.view_messagedelivery %}<article class="panel"><h2>Messages</h2>{% for delivery in booking_messages %}<p><a href="{% url 'message_detail' delivery.pk %}">{{ delivery.get_kind_display }}</a> · {{ delivery.get_state_display }}<br>{{ delivery.recipient }} · {{ delivery.created_at|date:'M j, Y g:i A' }}</p>{% empty %}<p>No booking messages are recorded.</p>{% endfor %}<a href="{% url 'messages' %}?booking={{ booking.pk }}">View message history</a></article>{% endif %}
 <details>
 <summary>Price history</summary>{% for old in quotes %}
 <article class="panel">

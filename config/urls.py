@@ -16,9 +16,97 @@ from core import (
     views,
     website_settings,
 )
+from core.backups import views as backup_views
+from core.communications import views as message_views
+from core.communications.webhooks import endpoint as email_webhook
+from core.payments import staff_setup
+from core.payments import views as payment_views
+from core.payments.checkout_views import checkout as booking_checkout
+from core.payments.checkout_views import complimentary, remaining_payment
+from core.payments.setup_views import setup_card, setup_status
+from core.payments.views import payment_correction
+from core.payments.webhooks import endpoint as payment_webhook
 from core.security import ProtectedLoginView
+from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path("staff/backups/<uuid:pk>/review/", backup_views.review_issue, name="backup_review_issue"),
+    path("staff/background/<uuid:pk>/", payment_views.background_job, name="background_job"),
+    path("staff/cards/<uuid:pk>/retire/", payment_views.retire_card, name="retire_card"),
+    path(
+        "staff/cards/<uuid:pk>/removal/", payment_views.removal_review, name="card_removal_review"
+    ),
+    path("integrations/resend/webhook/", email_webhook, name="email_webhook"),
+    path(
+        "book/complete/email/", public_booking_views.completion_email, name="customer_booking_email"
+    ),
+    path("staff/backups/", backup_views.backups, name="backups"),
+    path("staff/backups/<uuid:pk>/download/", backup_views.download, name="backup_download"),
+    path(
+        "staff/backups/<uuid:pk>/manifest/",
+        backup_views.download,
+        {"metadata": True},
+        name="backup_manifest",
+    ),
+    path(
+        "staff/backups/<uuid:pk>/restore-check/", backup_views.record_restore, name="backup_restore"
+    ),
+    path("staff/payments/<uuid:pk>/correction/", payment_correction, name="payment_correction"),
+    path(
+        "staff/bookings/<int:pk>/card/change/", staff_setup.replace_card, name="booking_card_change"
+    ),
+    path("staff/bookings/<int:pk>/complimentary/", complimentary, name="booking_comped"),
+    path("staff/bookings/<int:pk>/payment/", remaining_payment, name="booking_payment"),
+    path("staff/bookings/<int:pk>/arrival/", booking_checkout, name="booking_arrival"),
+    path(
+        "staff/bookings/<int:pk>/cancel/",
+        booking_checkout,
+        {"kind": "cancellation"},
+        name="booking_cancel",
+    ),
+    path(
+        "staff/bookings/<int:pk>/no-show/",
+        booking_checkout,
+        {"kind": "no_show"},
+        name="booking_no_show",
+    ),
+    path(
+        "staff/bookings/<int:pk>/setup/",
+        staff_setup.staff_booking_setup,
+        name="staff_booking_setup",
+    ),
+    path(
+        "staff/bookings/<int:pk>/card/setup/", staff_setup.staff_card_setup, name="staff_card_setup"
+    ),
+    path(
+        "staff/bookings/<int:pk>/card/setup/<uuid:setup_id>/",
+        staff_setup.staff_card_status,
+        name="staff_card_status",
+    ),
+    path("staff/messages/", message_views.message_list, name="messages"),
+    path(
+        "staff/bookings/<int:booking_id>/waiver/paper/",
+        waiver_views.paper_review,
+        name="waiver_paper_review",
+    ),
+    path("staff/messages/<uuid:pk>/", message_views.message_detail, name="message_detail"),
+    path("waiver/unsigned.pdf", waiver_views.unsigned_pdf, name="unsigned_waiver"),
+    path("waiver/shared/<str:token>/", waiver_views.shared_sign, name="shared_waiver"),
+    path("book/waiver/", waiver_views.public_sign, name="customer_waiver"),
+    path("staff/waivers/", waiver_views.waivers, name="waivers"),
+    path("staff/waivers/<uuid:pk>/", waiver_views.waiver_detail, name="waiver_detail"),
+    path("staff/waivers/<uuid:pk>/evidence/", waiver_views.evidence, name="waiver_evidence"),
+    path(
+        "staff/bookings/<int:booking_id>/waiver/share/",
+        waiver_views.share_create,
+        name="waiver_share_create",
+    ),
+    path("staff/payments/", payment_views.payments, name="payments"),
+    path("staff/payments/<uuid:pk>/", payment_views.payment_detail, name="payment_detail"),
+    path("staff/card-setups/<uuid:pk>/", payment_views.card_setup_detail, name="card_setup_detail"),
+    path("book/card/setup/", setup_card, name="customer_card_setup"),
+    path("book/card/setup/<uuid:setup_id>/", setup_status, name="customer_card_status"),
+    path("integrations/banquest/webhook/", payment_webhook, name="banquest_webhook"),
     path("staff/", ProtectedLoginView.as_view(), name="staff_login"),
     path("staff/website-settings/", website_settings.website_settings, name="website_settings"),
     path("staff/scheduling/weekly/", recurring_views.recurring_settings, name="recurring_settings"),

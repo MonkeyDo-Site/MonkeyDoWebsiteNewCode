@@ -1,5 +1,41 @@
 # Staging build status
 
+## Booking completion stage — implemented in PR #30
+
+The local stage is complete: public/staff card/waiver/confirmation flows, held
+online groups with Waiver pending, arrival/split and balance-only payment review,
+owner special admissions/complimentary pricing, linked corrections, immutable
+financial facts, private evidence retention, mail delivery/bounce history,
+encrypted backup/isolated restore tooling and closed reviewed deployment.
+**588 local PostgreSQL tests pass**, including actual upgrade, legacy-code insert
+compatibility, rollback-on-grant-failure and permission/concurrency checks.
+Desktop/phone synthetic-provider browser flows and isolated encrypted restore
+checks pass. Final GitHub PostgreSQL 17/native Windows checks precede merge.
+
+The operator reported successful Banquest sandbox read-only authentication and
+R2 temporary-file/read-only restriction checks; the Resend domain is Verified.
+No end-to-end hosted card, signature, collection or booking-delivery acceptance is
+claimed. New integration flags remain disabled until callback/activation setup.
+Backups remain disabled pending owner recovery-key setup and hosted restore
+acceptance. No hosted schema or worker activation has been performed by the agent.
+
+[As-built owner guide](BOOKING_COMPLETION_TEST_GUIDE.md) ·
+[Word guide](BOOKING_COMPLETION_TEST_GUIDE.docx) ·
+[Browser ZIP / one-block release](BOOKING_COMPLETION_RELEASE.md) ·
+[Implementation evidence](BOOKING_COMPLETION_DEVELOPMENT.md) ·
+[Private operator setup](BOOKING_STAGING_OPERATIONS.md).
+
+## Subsequent planning: accountant tax clarification and future reports
+
+Owner supplied the retained-processing-fee tax answer; payment/membership rules
+now document reversal when the admission payment is applied to membership.
+Accountant report screens may be built after launch. The next payment foundation
+must capture [reportable financial source facts](ACCOUNTANT_REPORTING_FOUNDATION.md)
+from the start; existing price estimates are not real receipts. These updates
+change documentation only. No ledger, report, payment operation, migration or
+provider configuration was implemented by this planning review.
+
+
 ## Fifth batch — implementation and PR authorized
 
 The owner reported PR #28 deployed to staging. Reviewed commit

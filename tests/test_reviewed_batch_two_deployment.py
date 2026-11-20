@@ -272,13 +272,16 @@ class ReviewedSchemaIntegrationTests(TransactionTestCase):
                 self.assertEqual(len(json.loads(output.getvalue())["pending"]), 3)
                 call_command("reviewed_batch_two_schema", apply=True, stdout=io.StringIO())
                 call_command("reviewed_batch_two_schema", apply=True, stdout=io.StringIO())
-            from core.models import (
-                Booking,
-                BookingQuote,
-                Customer,
-                MembershipDraft,
-                MembershipDraftCycle,
+            # Inspect that historical release's schema; runtime Booking now
+            # has the later workflow-provenance column, absent at 0025.
+            reviewed_apps = (
+                MigrationExecutor(connection).loader.project_state([schema.REVIEWED[-1]]).apps
             )
+            Booking = reviewed_apps.get_model("core", "Booking")
+            BookingQuote = reviewed_apps.get_model("core", "BookingQuote")
+            Customer = reviewed_apps.get_model("core", "Customer")
+            MembershipDraft = reviewed_apps.get_model("core", "MembershipDraft")
+            MembershipDraftCycle = reviewed_apps.get_model("core", "MembershipDraftCycle")
 
             self.assertEqual(Customer.objects.get(pk=first.pk).email, "SAME@example.invalid")
             self.assertEqual(Customer.objects.get(pk=first.pk).referral_source, "")

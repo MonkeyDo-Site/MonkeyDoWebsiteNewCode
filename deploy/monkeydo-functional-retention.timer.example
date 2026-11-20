@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly expired waiver evidence check
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=600
+Unit=monkeydo-functional-retention.service
+
+[Install]
+WantedBy=timers.target

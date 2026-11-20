@@ -12,7 +12,7 @@ The owner subsequently authorized staging website/database development and expli
 
 ### Current baseline and remaining-stage order
 
-The owner reports PR #28 deployed on the shared protected staging site, including
+The owner subsequently reports PR #29 deployed on the shared protected staging site, including
 public/staff pending test reservations, editable membership drafts and the latest
 customer/filter/layout/scheduling improvements. The proposed homepage redesign
 was excluded. Account email is configured and inbox receipt was owner-confirmed;
@@ -132,9 +132,9 @@ Member free/discounted admissions and adult benefits override ordinary pricing a
 
 Collect Last Name, phone, email, date/session, baby/child/adult quantities, calculated total (never re-enter total manually), payment method and appropriate consent/waiver. Supervised and club field exceptions are in [PROGRAMS.md](PROGRAMS.md). Email is mandatory for public booking, including identified customers whose staff-created record has no email. Staff may create customer profiles without email. SMS is a later optional additional text confirmation, not a replacement email preference.
 
-Validate in browser and server: required fields/consent, nonnegative integer counts, nonzero attendance, adult rule where applicable, card setup unless owner-comped, availability/end time, capacity and permissions. Online waiver must be covered before booking completes; admin/phone bookings may confirm pending.
+Validate in browser and server: required fields/consent, nonnegative integer counts, nonzero attendance, adult rule where applicable, card setup unless owner-comped, availability/end time, capacity and permissions. Online family waiver coverage is required before completion. For an online booking involving other parents' minors, the customer may instead request the shared parent-waiver link: final save reserves places immediately, sends the link and unsigned PDF, and shows Waiver pending until coverage is reviewed. Pending waivers do not automatically release places. Admin/phone bookings may also confirm pending. Everyone needs coverage before play.
 
-The visible public progress indicator has four steps: Choose Session, Customer Details, Session Details, Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. Add a waiver step only when the approved waiver workflow is implemented. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed at the upper right of the quantity section, with Payment method and Continue below it at the bottom right. All four quantity inputs stack on the left. Add breathing room above and below the play-type selector; the estimate starts level with the first quantity input box, below its label, as the fields move down. Right-align Continue beneath the payment selector. Show Family/contact links, Your Group, then Choose play type; omit Start again from Session Details and initial phone entry while retaining later lookup/recovery restart actions; use quantity labels with separate age guidance. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
+The earlier test workflow has four visible steps: Choose Session, Customer Details, Session Details, Payment Details. With completed booking enabled, insert Waiver between Session Details and Payment Details. Expected payment-method selection stays in Session Details; the breakdown and final reviewed save action live in Payment Details, without a separate visible Review step. Show completion afterward. The completed workflow uses that Waiver step without a separate visible Review step. Show an itemized calculation before confirmation. Public Session Details has a read-only live estimate labelled Total before applicable taxes, placed at the upper right of the quantity section, with Payment method and Continue below it at the bottom right. All four quantity inputs stack on the left. Add breathing room above and below the play-type selector; the estimate starts level with the first quantity input box, below its label, as the fields move down. Right-align Continue beneath the payment selector. Show Family/contact links, Your Group, then Choose play type; omit Start again from Session Details and initial phone entry while retaining later lookup/recovery restart actions; use quantity labels with separate age guidance. The live estimate shows only admissions/adults/socks and their base subtotal, excluding both card-processing fees and tax from its rows and total; final Payment Details shows the complete fee/tax-inclusive breakdown. Stack compact Open/Supervised information cards without booking buttons outside the form on desktop and below it on phones. Save immutable price/tax/fee/policy snapshots; an authorized edit creates a new revision with before/after audit, not silent rewriting of the original. Future owner pricing/settings do not alter accepted existing bookings or cohort prices.
 
 ## 7. Customers and public identification
 
@@ -178,7 +178,7 @@ Customer and booking comments: searchable, newest-first, author/date/time/edit h
 
 ## 8. Waivers and signature evidence
 
-Owner-approved wording and electronic interaction are confirmed; **counsel review is not an owner-required gate**. Report insurance-broker approval accurately without claiming counsel review. The preserved prototype still says draft and does not save signatures; updating its code/UI is deferred to separately authorized development. See [source provenance](waivers/README.md).
+Owner-approved wording and electronic interaction are confirmed; **counsel review is not an owner-required gate**. Report insurance-broker approval accurately without claiming counsel review. The preserved static prototype still carries its historical draft/no-save labels. The separately authorized booking-stage draft PR implements new Django signing/evidence workflows locally; it does not alter that source prototype or claim hosted provider acceptance. See [source provenance](waivers/README.md).
 
 - Use complete accessible HTML text, printable/downloadable unsigned PDF, unselected acknowledgments, electronic-record/signature consent, typed full legal name, relationship and names of covered minors, and an explicit signing action. Never infer signature from booking submission or precheck consent.
 - Use MONKEYDO LLC consistently. Customer must not re-enter booking confirmation number; link customer/booking/version automatically.
@@ -240,7 +240,21 @@ coverage from different parents.
 
 Staff see calculated fee changes but cannot enter special prices. Enforce every permission server-side, not merely hidden buttons.
 
+Owner special prices cover admissions only; grip socks, applicable processing fees and tax remain separate. If attendee counts change, retain the agreed admissions total and prompt the owner to adjust it optionally. Do not add an automatic partial-cancellation fee for those changes. Staff count changes retain the total and create an owner Dashboard notice. Full cancellation/no-show still requires a separate explicit charge/no-charge choice. A fully owner-comped booking remains a distinct all-charges-$0 case.
+
 ## 10. Export, print, retention, and security
+
+Owner accountant reports for income, sales tax, refunds and net receipts may be
+built after launch. Before live payments, implement the source records in
+[ACCOUNTANT_REPORTING_FOUNDATION.md](ACCOUNTANT_REPORTING_FOUNDATION.md): immutable
+sale lines/tax/fee allocations, actual tenders/outcomes, linked adjustments and
+credits, separate service/receipt/refund/settlement dates, safe provider IDs and
+test/live distinction. Distinguish tax collected from sales income, customer
+processing fees from provider expenses, external refunds from customer credit,
+and net receipts from bank deposits/profit. Final report format/accounting basis
+can be agreed later; do not discard facts needed to choose it. Existing basic
+operational exports and access rules remain separately required.
+
 
 - Export customers, all bookings/by booking-date range, one customer's payment history, all payments/by date range; membership and program exports in companion docs. CSV is the documented export format.
 - Customer standard fields: Last Name/current phone/current email. Optional ID, previous phone/email, next booking, waiver status and comments. Booking comments optional/default excluded. Never export tokens, raw cards, passwords or secrets.
@@ -429,3 +443,18 @@ page to phone entry while retaining the selected session and clearing old proofs
 Apply this to both new customers and identified profiles adding missing email;
 staff retain their separate shorter errors. This batch has owner-authorized
 post-deployment review, without preparing review screenshots.
+
+
+## Accountant clarification — tax on a retained processing fee
+
+Owner-supplied guidance, November 19, 2026: when an already-paid admission is
+applied toward a nontaxable membership, reverse its admission tax and the tax
+attributable to its retained original processing fee. The fee itself remains
+nonrefundable. If the payment is not applied toward membership, that fee tax is
+not reversed under this rule. Preserve historical rates, rounded amounts and
+separate reversal entries. In the supplied $16.47 example, retain $0.45 and make
+$16.02 available toward membership, including reversal of $0.99 admission tax and
+$0.03 fee tax. Existing credit/refund rules apply; do not both credit and refund
+the same funds. See [payment accounting](PAYMENTS.md) and
+[membership conversion](MEMBERSHIPS.md). This resolves the former accounting
+question without activating payment or conversion functionality.

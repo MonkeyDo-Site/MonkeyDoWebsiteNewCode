@@ -50,6 +50,39 @@ BATCH_THREE_MIGRATIONS = {
     "0026_owner_feedback_batch_three.py": "ac2c2abaaf4d8f39855b3aa15e51e803746a4fb8d1bfd5ef442c10018b3acf6f",
 }
 
+BOOKING_MIGRATIONS = {
+    "0027_payment_foundation.py": "d9ddf42e75cb21d1549a403556e4c16073c9cbc3cd4102317f7f155cbcd455e8",
+    "0028_financial_record_guards.py": "e3b182b45f60e0e21c11aec5240af42fb883af5dc2b8572043c84cb182f21ea4",
+    "0029_waiver_evidence.py": "59436757945de6ac2564d22b36b192152140ed45192e366f9596acb03493068f",
+    "0030_waiver_evidence_guards.py": "f0830e0c16b56df506d9c6608afd471624aa850f8505146a2db357d59a36df1c",
+    "0031_waiver_optional_metadata.py": "530a9034499e9e96e85edbf24ce6b1b242c66a78c7af8c8be30ecb170c8b26aa",
+    "0032_message_outbox.py": "d77253f92b62676215bb020d268962186f46b43d829f822384e7719b35bfe0b8",
+    "0033_message_history_guards.py": "1f0b02d741794d6e46c43dd4bf5358989b7ac5ced8856368cd984b20b218789f",
+    "0034_waiver_review_revision.py": "da70678c34fce18a38072cf7c7c8863beddad383556d70cdb7a8f3515467ad40",
+    "0035_booking_checkout.py": "054811e087d2bfd3e8184847b6337549efb278353e19106a598fad81023acd3b",
+    "0036_checkout_record_guards.py": "d8d246b8a5cd6474b27b0a922b5ac014f35782c80f314f281d5ed50cb266d5a2",
+    "0037_payment_followup_actions.py": "d196f960fac3ae1eae0d1e4d09f006171f45794de61bba8fe638b3697613820a",
+    "0038_remaining_payment_checkout.py": "859cab7bd8003ea7e7af581f63968b064b333364dc4331585841f2430adff78f",
+    "0039_system_payment_followup.py": "aa22be6b83affec71b43189c9751efae80d6a227dc39866f79cd3006fdaa4160",
+    "0040_actual_receipt_dates.py": "bee599e37c479b2499184e048c189696345fe3733f9f168d0c2624f167b4ce30",
+    "0041_waiver_contact_retention.py": "8f547ff62776bbd956494f8117396bb587be2245aeb264fa762a86f88f20a748",
+    "0042_encrypted_backup_metadata.py": "308d81709e219789ca6753c6e33f45276c27327306682ee81cf3686b9e760cb3",
+    "0043_backup_record_guards.py": "6a21a2144bd3f3da9ea707a467fcf38d816523e4035819d860bc5882cf2b6d6a",
+    "0044_mail_delivery_events.py": "9dbbff552dfd23b2a55f48d8d8b6413ee884c5f23885b7f9b90656d1da3a7f92",
+    "0045_mail_delivery_status_guards.py": "ba8d3da2cccd0545bda2bfe1ecb6f06291e476f49c914508aee6909469d2afc0",
+    "0046_mail_attempt_reconciliation.py": "e02635fb8f1514631f5052fd18e44adebc9e7534fdc5d5b0feef1691ae860c69",
+    "0047_backup_issue_review.py": "060d9f0a50f00337ae7746c9830c46056d5052f21ddbd4db7c73aff580779949",
+}
+BOOKING_UNITS = {
+    "monkeydo-functional-backup.service.example": "1975613e1c7bc71881ffba37a41e56f66474f7044f2c72fba2103c08b9b6e1af",
+    "monkeydo-functional-backup.timer.example": "52fa3c4e6c95d942d41abd29b030595beedee8e40bd503f87af2b320146804b5",
+    "monkeydo-functional-jobs.service.example": "46aca1ecc6cd5916e3f172ae635661f46ebf859386183a7b36ee1164cb7c55f6",
+    "monkeydo-functional-jobs.timer.example": "c0f9d6b99c84f5587753bb22d74aab3fcf5d14b5b97598b65085618a52341af8",
+    "monkeydo-functional-retention.service.example": "541f5a9b584e2dc6750cbb639c61ebde87a74fc1d54d721eb50aee5f538d6aaa",
+    "monkeydo-functional-retention.timer.example": "59a37f36ac62af1521a759e4a885c62d3f78dd85020635a1e1e3214438ee48bd",
+}
+BOOKING_CAPABILITY = "3351e827516af795bd1aeaaaac8ab9b7f83225f53e759db16fcb5ce972c0c567"
+
 TARGET = "design"
 RUNTIME_USER = "monkeydo"
 DB_NAME = "monkeydo_staging"
@@ -254,6 +287,24 @@ def read_environment(path, owner_uid=0):
                 "MONKEYDO_TEST_EMAIL_RECIPIENTS",
                 "RESEND_API_KEY",
                 "MONKEYDO_TRUST_LOCAL_CLIENT_IP",
+                "MONKEYDO_RECOVERY_HOLD",
+                "MONKEYDO_PAYMENT_SANDBOX",
+                "MONKEYDO_WAIVERS",
+                "MONKEYDO_BOOKING_EMAIL",
+                "MONKEYDO_BOOKING_COMPLETION",
+                "MONKEYDO_BACKUPS",
+                "BANQUEST_API_SOURCE_KEY",
+                "BANQUEST_API_PIN",
+                "BANQUEST_TOKENIZATION_PUBLIC_KEY",
+                "BANQUEST_WEBHOOK_KEY",
+                "RESEND_WEBHOOK_SECRET",
+                "MONKEYDO_R2_ACCOUNT_ID",
+                "MONKEYDO_R2_WAIVER_BUCKET",
+                "MONKEYDO_R2_WAIVER_ACCESS_KEY",
+                "MONKEYDO_R2_WAIVER_SECRET_KEY",
+                "R2_BACKUP_BUCKET",
+                "R2_BACKUP_READ_ACCESS_KEY",
+                "R2_BACKUP_READ_SECRET_KEY",
             }
         )
     result = {}
@@ -267,6 +318,16 @@ def read_environment(path, owner_uid=0):
         if not value or any(c.isspace() for c in value) or any(c in value for c in "\"'`$"):
             raise DeployError("Configuration must use simple unquoted values.")
         result[name] = value
+    for name in (
+        "MONKEYDO_PAYMENT_SANDBOX",
+        "MONKEYDO_WAIVERS",
+        "MONKEYDO_BOOKING_EMAIL",
+        "MONKEYDO_BOOKING_COMPLETION",
+        "MONKEYDO_BACKUPS",
+        "MONKEYDO_RECOVERY_HOLD",
+    ):
+        if name in result and result[name] not in {"0", "1"}:
+            raise DeployError("Integration flags must be explicitly 0 or 1.")
     required = {
         "APP_ENV": "staging",
         "MONKEYDO_DESIGN_ONLY": "0" if TARGET == "functional" else "1",
@@ -370,7 +431,10 @@ class Host:
         )
         redacted = (result.stdout or "") + (result.stderr or "")
         for name, value in self.environment.items():
-            if any(word in name for word in ("SECRET", "PASSWORD", "TOKEN", "PIN", "KEY")):
+            if value and (
+                name.endswith("_KEY")
+                or any(word in name for word in ("SECRET", "PASSWORD", "TOKEN", "PIN"))
+            ):
                 redacted = redacted.replace(value, "[REDACTED]")
         with self.log.open("a") as output:
             output.write(redacted)
@@ -558,8 +622,174 @@ class Host:
         print("Reviewed database updates verified. Private checkpoint:", backup, flush=True)
         return {"applied": report["applied"], "checkpoint": str(backup)}
 
+    def booking_resources(self):
+        values = {}
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            name, _, value = line.partition(":")
+            if name in {"MemTotal", "MemAvailable"}:
+                values[name] = int(value.split()[0]) * 1024
+        if (
+            values.get("MemTotal", 0) < 1536 * 1024 * 1024
+            or values.get("MemAvailable", 0) < 512 * 1024 * 1024
+            or shutil.disk_usage(BASE).free < 3 * 1024 * 1024 * 1024
+        ):
+            raise DeployError(
+                "Insufficient resources for reviewed booking workers/backup. Review Droplet size and current resize price before any purchase; no schema update started."
+            )
+
+    def booking_accounts(self):
+        import pwd
+
+        try:
+            account = pwd.getpwnam("monkeydo-functional-backup")
+        except KeyError:
+            self.command(
+                [
+                    "/usr/sbin/useradd",
+                    "--system",
+                    "--user-group",
+                    "--no-create-home",
+                    "--home-dir",
+                    "/nonexistent",
+                    "--shell",
+                    "/usr/sbin/nologin",
+                    "monkeydo-functional-backup",
+                ]
+            )
+            account = pwd.getpwnam("monkeydo-functional-backup")
+        if not 0 < account.pw_uid < 1000 or account.pw_shell != "/usr/sbin/nologin":
+            raise DeployError("Unexpected dedicated backup service identity.")
+        sql = """DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='monkeydo-functional-backup') THEN
+                CREATE ROLE "monkeydo-functional-backup" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT;
+            END IF;
+            IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='monkeydo-functional-backup' AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls))
+                OR EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member WHERE r.rolname='monkeydo-functional-backup') THEN
+                RAISE EXCEPTION 'Unexpected backup role privileges';
+            END IF;
+        END $$;
+        GRANT CONNECT ON DATABASE monkeydo_functional TO "monkeydo-functional-backup";
+        GRANT USAGE ON SCHEMA public TO "monkeydo-functional-backup";
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO "monkeydo-functional-backup";
+        GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO "monkeydo-functional-backup";"""
+        self.command(
+            [
+                "/usr/sbin/runuser",
+                "-u",
+                "postgres",
+                "--",
+                "/usr/bin/psql",
+                "-X",
+                "-v",
+                "ON_ERROR_STOP=1",
+                "-d",
+                "monkeydo_functional",
+                "-c",
+                sql,
+            ]
+        )
+
+    def booking_units_installed(self):
+        return [
+            Path("/etc/systemd/system") / name.removesuffix(".example")
+            for name in BOOKING_UNITS
+            if (Path("/etc/systemd/system") / name.removesuffix(".example")).is_file()
+        ]
+
+    def stop_booking_workers(self):
+        if TARGET == "functional":
+            units = self.booking_units_installed()
+            if units:
+                for suffix in (".timer", ".service"):
+                    names = [p.name for p in units if p.suffix == suffix]
+                    if names:
+                        self.command(["systemctl", "stop"] + names)
+
+    def start_booking_workers(self):
+        if TARGET == "functional":
+            timers = [p.name for p in self.booking_units_installed() if p.suffix == ".timer"]
+            if timers:
+                self.command(["systemctl", "start"] + timers)
+
+    def install_booking_runtime(self, candidate):
+        for name, digest in BOOKING_UNITS.items():
+            source = candidate / "deploy" / name
+            if not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest() != digest:
+                raise DeployError(
+                    "Reviewed worker unit checksum mismatch. Website remains deployed; worker setup needs review."
+                )
+        for name in BOOKING_UNITS:
+            atomic_write(
+                Path("/etc/systemd/system") / name.removesuffix(".example"),
+                (candidate / "deploy" / name).read_bytes(),
+                0o644,
+            )
+        self.command(["systemctl", "daemon-reload"])
+        timers = [name.removesuffix(".example") for name in BOOKING_UNITS if ".timer." in name]
+        self.command(["systemctl", "enable"] + timers)
+        self.start_booking_workers()
+
+    def reviewed_booking(self, candidate, commit):
+        if TARGET != "functional":
+            raise DeployError("Reviewed booking schema preparation is Functional-only.")
+        for name, expected in BOOKING_MIGRATIONS.items():
+            path = candidate / "core/migrations" / name
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                raise DeployError(
+                    "Reviewed booking migration checksum mismatch; no schema update started."
+                )
+        self.booking_resources()
+        migration_host = Host(
+            self.environment | {"POSTGRES_USER": "monkeydo-functional-migrate"}, self.log
+        )
+        arguments = [
+            str(candidate / ".venv/bin/python"),
+            "manage.py",
+            "reviewed_booking_completion_schema",
+        ]
+        migration_host.command(
+            arguments, user="monkeydo-functional-migrate", runtime=True, cwd=candidate
+        )
+        self.booking_accounts()
+        backup = None
+        failure = None
+        print(
+            "Reviewed booking database preflight passed. Saving a private checkpoint before the approved upgrade...",
+            flush=True,
+        )
+        try:
+            self.stop_booking_workers()
+            self.command(["systemctl", "stop", UNIT])
+            backup = self.schema_checkpoint(commit)
+            report = json.loads(
+                migration_host.command(
+                    arguments + ["--apply"],
+                    user="monkeydo-functional-migrate",
+                    runtime=True,
+                    cwd=candidate,
+                    timeout=600,
+                )
+            )
+        except Exception as error:
+            failure = error
+        finally:
+            self.command(["systemctl", "start", UNIT])
+            self.healthy()
+            self.start_booking_workers()
+        if failure:
+            raise DeployError(
+                "Reviewed booking update stopped. Existing code was restarted; inspect the protected log. External effects are never reversed by a database rollback."
+            ) from failure
+        return {"applied": report["applied"], "checkpoint": str(backup)}
+
     def prepare(
-        self, archive, digest, commit, reviewed_batch_two=False, reviewed_batch_three=False
+        self,
+        archive,
+        digest,
+        commit,
+        reviewed_batch_two=False,
+        reviewed_batch_three=False,
+        reviewed_booking=False,
     ):
         import pwd
 
@@ -616,7 +846,9 @@ class Host:
         )
         self.command([python, "manage.py", "check"], user=RUNTIME_USER, runtime=True, cwd=candidate)
         schema_update = None
-        if reviewed_batch_two:
+        if reviewed_booking:
+            schema_update = self.reviewed_booking(candidate, commit)
+        elif reviewed_batch_two:
             schema_update = self.reviewed_batch_two(candidate, commit)
         elif reviewed_batch_three:
             schema_update = self.reviewed_batch_three(candidate, commit)
@@ -635,6 +867,13 @@ class Host:
                 runtime=True,
                 cwd=candidate,
             )
+            if (candidate / "core/management/commands/booking_stage_preflight.py").is_file():
+                self.command(
+                    [python, "manage.py", "booking_stage_preflight"],
+                    user=RUNTIME_USER,
+                    runtime=True,
+                    cwd=candidate,
+                )
         else:
             self.command([python, "-c", probe], user=RUNTIME_USER, runtime=True, cwd=candidate)
         metadata = {
@@ -649,8 +888,52 @@ class Host:
         )
         return candidate
 
+    def ensure_booking_compatible(self, target):
+        marker = target / "deploy/booking-completion-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest() == BOOKING_CAPABILITY
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_paymentoperation') IS NOT NULL"]
+        )
+        if present == "f":
+            return False
+        if present != "t":
+            raise DeployError(
+                "Cannot verify booking workflow compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_booking WHERE workflow='integrated_v1') OR EXISTS (SELECT 1 FROM core_paymentsetup) OR EXISTS (SELECT 1 FROM core_financialsale) OR EXISTS (SELECT 1 FROM core_waiversignature) OR EXISTS (SELECT 1 FROM core_messagedelivery) OR EXISTS (SELECT 1 FROM core_backuprun)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage existing integrated bookings, payments, waivers, messages or backups. Keep compatible code or fix forward; no database rollback can reverse external effects."
+            )
+        return False
+
     def ensure_compatible_release(self, target):
         if TARGET != "functional":
+            return
+        if self.ensure_booking_compatible(target):
             return
         migration = target / "core/migrations/0026_owner_feedback_batch_three.py"
         if (
@@ -697,12 +980,14 @@ class Host:
         target = Path(snapshot["release"])
         if not target.is_relative_to(BASE / "releases") or not (target / "manage.py").is_file():
             raise DeployError("Saved release target is unavailable; manual recovery required.")
+        self.stop_booking_workers()
         self.command(["systemctl", "stop", UNIT])
         try:
             self.ensure_compatible_release(target)
         except BaseException:
             # Keep the original pointer and restart it even on a refused rollback.
             self.command(["systemctl", "start", UNIT])
+            self.start_booking_workers()
             raise
         temporary = self.current.parent / (".current-" + uuid.uuid4().hex)
         temporary.symlink_to(target)
@@ -764,6 +1049,8 @@ class Controller:
             print("Recovering the previous release from an interrupted deployment...", flush=True)
             self.host.switch(self.state["pending"])
             self.host.healthy()
+            if hasattr(self.host, "start_booking_workers"):
+                self.host.start_booking_workers()
             self.state["pending"] = None
             self.save()
             raise DeployError("Interrupted deployment recovered. Run the requested command again.")
@@ -776,12 +1063,16 @@ class Controller:
         try:
             self.host.switch(target)
             self.host.healthy()
+            if hasattr(self.host, "start_booking_workers"):
+                self.host.start_booking_workers()
             self.state.update(previous=previous, pending=None, active=target)
             self.save()
         except BaseException as failure:
             try:
                 self.host.switch(previous)
                 self.host.healthy()
+                if hasattr(self.host, "start_booking_workers"):
+                    self.host.start_booking_workers()
             except BaseException:
                 self.state["pending"] = previous
                 try:
@@ -802,20 +1093,30 @@ class Controller:
                 "Update failed. The previous release was restored and verified."
             ) from failure
 
-    def deploy(self, archive, digest, commit, reviewed_batch_two=False, reviewed_batch_three=False):
-        if reviewed_batch_two and reviewed_batch_three:
+    def deploy(
+        self,
+        archive,
+        digest,
+        commit,
+        reviewed_batch_two=False,
+        reviewed_batch_three=False,
+        reviewed_booking=False,
+    ):
+        if sum((reviewed_batch_two, reviewed_batch_three, reviewed_booking)) > 1:
             raise DeployError("Choose only one reviewed schema batch.")
         self.recover()
         self.host.healthy()
         print("Preparing a separate release; the existing site stays running...", flush=True)
-        if reviewed_batch_two or reviewed_batch_three:
+        if reviewed_batch_two or reviewed_batch_three or reviewed_booking:
             # Persist recovery before the optional schema step can stop the service.
             # A killed process is then handled by the existing recover-on-next-run path.
             self.state["pending"] = self.host.snapshot()
             self.save()
             try:
                 options = (
-                    {"reviewed_batch_three": True}
+                    {"reviewed_booking": True}
+                    if reviewed_booking
+                    else {"reviewed_batch_three": True}
                     if reviewed_batch_three
                     else {"reviewed_batch_two": True}
                 )
@@ -835,6 +1136,8 @@ class Controller:
             candidate = self.host.prepare(archive, digest, commit)
         print("Checks passed. Switching the release and verifying HTTPS...", flush=True)
         self.activate(self.host.candidate_snapshot(candidate))
+        if reviewed_booking:
+            self.host.install_booking_runtime(candidate)
         print("Deployment verified. Previous code and Python environment are retained.")
 
     def rollback(self):
@@ -871,6 +1174,7 @@ def main():
     reviewed = deploy.add_mutually_exclusive_group()
     reviewed.add_argument("--apply-reviewed-batch-two", action="store_true")
     reviewed.add_argument("--apply-reviewed-batch-three", action="store_true")
+    reviewed.add_argument("--apply-reviewed-booking", action="store_true")
     sub.add_parser("rollback")
     sub.add_parser("status")
     args = parser.parse_args()
@@ -878,6 +1182,7 @@ def main():
     if (
         getattr(args, "apply_reviewed_batch_two", False)
         or getattr(args, "apply_reviewed_batch_three", False)
+        or getattr(args, "apply_reviewed_booking", False)
     ) and args.target != "functional":
         parser.error("Reviewed schema updates require the Functional target.")
     if os.geteuid() != 0:
@@ -922,6 +1227,7 @@ def main():
                     args.commit,
                     args.apply_reviewed_batch_two,
                     args.apply_reviewed_batch_three,
+                    args.apply_reviewed_booking,
                 )
     except Exception as error:
         print("Deployment stopped:", str(error), file=sys.stderr)

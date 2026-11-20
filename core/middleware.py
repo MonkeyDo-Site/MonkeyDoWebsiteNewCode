@@ -3,6 +3,13 @@ import ipaddress
 from django.conf import settings
 
 
+def signed_callback(request):
+    return request.method == "POST" and (
+        (settings.PAYMENT_SANDBOX_ENABLED and request.path == "/integrations/banquest/webhook/")
+        or (settings.BOOKING_EMAIL_ENABLED and request.path == "/integrations/resend/webhook/")
+    )
+
+
 class StagingAccessMiddleware:
     """Keep test pages behind staff login when configured for hosted staging."""
 
@@ -27,6 +34,7 @@ class StagingAccessMiddleware:
                 "/staging/access/",
                 "/static/",
             )
+            callback = signed_callback(request)
             owner_setup = (
                 request.path == "/staff/staging-access/"
                 and request.user.is_authenticated
@@ -36,6 +44,7 @@ class StagingAccessMiddleware:
                 request.path != "/staff/"
                 and not request.path.startswith(public_auth)
                 and not owner_setup
+                and not callback
             ):
                 if not access_valid(request, SiteSettings.objects.filter(pk=1).first()):
                     response = redirect("staging_access")
@@ -61,6 +70,8 @@ class AccountAccessMiddleware:
 
         from .models import AccountSecurity
 
+        if signed_callback(request):
+            return self.get_response(request)
         if request.user.is_authenticated:
             profile, _ = AccountSecurity.objects.get_or_create(user=request.user)
             now = timezone.now().timestamp()

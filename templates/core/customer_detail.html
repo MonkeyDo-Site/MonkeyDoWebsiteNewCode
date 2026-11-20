@@ -15,7 +15,7 @@
     {% if perms.core.view_customer_history %}<p><a href="{% url 'customer_history' customer.pk %}">Customer history</a></p>{% endif %}
   </article>
   <article class="panel">
-    <h2>Waivers</h2><p>Waiver records will be connected in a later development increment. No coverage is verified by this preview.</p>
+    <h2>Waivers</h2>{% if waiver_enabled and perms.core.view_waiversignature %}{% for signature in customer_waivers %}<p><a href="{% url 'waiver_detail' signature.pk %}">{{ signature.signer_name }}</a> · {{ signature.get_state_display }}<br>Signed {{ signature.signed_at|date:'M j, Y' }} · Valid until {{ signature.valid_until|date:'M j, Y' }}</p>{% empty %}<p>No electronic signing records are linked to this customer.</p>{% endfor %}<p class="caption">Confirm participant coverage for each booking.</p><a href="{% url 'waivers' %}?customer={{ customer.pk }}">View waiver history</a>{% else %}<p>Waiver records will be connected in a later development increment. No coverage is verified by this preview.</p>{% endif %}
   </article>
   <article class="panel">
     <h2>Bookings</h2>
@@ -24,12 +24,13 @@
     {% if can_view_bookings %}
     {% if first_today %}<h3>Today · {{ first_today.session.starts_at|date:'g:i A' }}</h3>
     <p>{{ first_today.children }} children · {{ first_today.adults }} adults · {{ first_today.babies }} babies · {{ first_today.status_label }}</p>
+    {% if booking_completion_enabled and first_today.workflow == 'integrated_v1' and not first_today.attendance and not first_today.setup_pending and perms.core.collect_payment and perms.core.change_booking %}<p><a class="button small" href="{% url 'booking_arrival' first_today.pk %}">Start arrival</a></p>{% endif %}
     {% else %}<p>No bookings today.</p>{% endif %}
     {% if more_today %}<details><summary>View {{ more_today|length }} more booking{{ more_today|length|pluralize }} today</summary>
     {% for booking in more_today %}<p>{{ booking.session.starts_at|date:'g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults</p>{% endfor %}</details>{% endif %}
     <p>Other bookings: {{ upcoming_count }} upcoming · {{ previous_count }} previous</p>
     <details><summary>View all bookings</summary>
-    {% for booking in bookings %}<p>{{ booking.session.starts_at|date:'D, M j, Y g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.status_label }} · <a href="{% url 'booking_detail' booking.pk %}">Open booking</a></p>{% empty %}<p>No bookings yet.</p>{% endfor %}
+    {% for booking in bookings %}<p>{{ booking.session.starts_at|date:'D, M j, Y g:i A' }} · {{ booking.children }} children · {{ booking.adults }} adults · {{ booking.status_label }}{% if booking.workflow == 'legacy_test' %} · Old test booking{% endif %} · <a href="{% url 'booking_detail' booking.pk %}">Open booking</a></p>{% empty %}<p>No bookings yet.</p>{% endfor %}
     </details>
     {% else %}<p>Booking access is not enabled for this account.</p>{% endif %}
   </article>
@@ -43,6 +44,6 @@
     {% else %}<p>Comment access is not enabled for this account.</p>{% endif %}
   </article>
 {% if perms.core.view_membershipdraft %}<article class="panel"><h2>Memberships</h2><p class="caption">Test drafts only; benefits are not active.</p>{% for draft in membership_drafts|slice:':3' %}<p><a href="{% url 'membership_detail' draft.pk %}">#{{ draft.membership_number }} · {{ draft.get_kind_display }} · {{ draft.places }} place{{ draft.places|pluralize }} · {{ draft.months }} month{{ draft.months|pluralize }}</a><br>{{ draft.starts_on }}–{{ draft.ends_on }}</p>{% empty %}<p>No membership drafts recorded.</p>{% endfor %}<a href="{% url 'membership_drafts' %}?customer={{ customer.pk }}">View membership draft history</a></article>{% endif %}
-<article class="panel"><h2>Payment history</h2><p>No payment transactions are recorded by this test workspace. Saved booking and membership estimates are not payments.</p></article>
+{% if payment_sandbox_enabled and perms.core.view_paymentoperation %}<article class="panel"><h2>Saved cards for future visits</h2>{% for method in saved_methods %}<p>{{ method.brand }} ending in {{ method.last_four }}</p>{% if perms.core.change_customer %}<form method="post" action="{% url 'retire_card' method.pk %}">{% csrf_token %}<label><input type="checkbox" name="confirm" required> Remove this card from future-use choices. Existing bookings keep their source until settled or replaced.</label><button class="button small">Stop keeping for future visits</button></form>{% endif %}{% empty %}<p>No card is retained for future visits.</p>{% endfor %}</article>{% endif %}<article class="panel"><h2>Payment history</h2>{% if payment_sandbox_enabled and perms.core.view_paymentoperation %}{% for operation in payment_operations %}<p><a href="{% url 'payment_detail' operation.pk %}">{{ operation.get_kind_display }} · ${{ operation.amount|floatformat:2 }}</a><br>{{ operation.get_state_display }} · {{ operation.requested_at|date:'M j, Y g:i A' }}</p>{% empty %}<p>No payment transactions recorded. Saved estimates are not payments.</p>{% endfor %}<a href="{% url 'payments' %}?q={{ customer.phone|urlencode }}">View payment history</a>{% else %}<p>No payment transactions are recorded by this test workspace. Saved booking and membership estimates are not payments.</p>{% endif %}</article>
 </div>
 {% endblock %}

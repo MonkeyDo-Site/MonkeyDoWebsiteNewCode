@@ -122,7 +122,7 @@ class ThirdBatchDeploymentTests(TestCase):
                 (["t", "t"], False),
                 (["unknown"], False),
             ):
-                with patch.object(host, "command", side_effect=answers):
+                with patch.object(host, "command", side_effect=["f"] + answers):
                     if accepted:
                         host.ensure_compatible_release(root / "releases/old")
                     else:
@@ -209,7 +209,23 @@ class ThirdBatchSchemaIntegrationTests(TransactionTestCase):
                 (type(quote), quote.pk),
             ]
             before = [model.objects.values().get(pk=pk) for model, pk in models]
-            with patch.object(schema, "guard_database"), patch.object(schema, "RUNTIME_ROLE", role):
+
+            def historical_executor(database):
+                # Test the closed 0026 release against its own graph, not newer
+                # payment migrations that the historical command must reject.
+                frozen = MigrationExecutor(database)
+                nodes = [node for node in frozen.loader.graph.leaf_nodes() if node[0] != "core"]
+                nodes.append(schema.REVIEWED)
+                frozen.loader.graph.leaf_nodes = lambda app=None: [
+                    node for node in nodes if app is None or node[0] == app
+                ]
+                return frozen
+
+            with (
+                patch.object(schema, "MigrationExecutor", side_effect=historical_executor),
+                patch.object(schema, "guard_database"),
+                patch.object(schema, "RUNTIME_ROLE", role),
+            ):
                 output = io.StringIO()
                 call_command("reviewed_batch_three_schema", stdout=output)
                 self.assertEqual(json.loads(output.getvalue())["pending"], [schema.REVIEWED[1]])

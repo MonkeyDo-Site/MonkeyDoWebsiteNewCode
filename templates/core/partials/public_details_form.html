@@ -12,6 +12,7 @@
 <aside class="live-booking-estimate" aria-label="Live price estimate"><h3>Your play estimate</h3><div data-public-estimate-content>{% include 'core/partials/live_quote.html' with data=live_quote %}</div><p class="caption" role="status" data-public-estimate-status>Updates as you change your selections.</p></aside>
 <div class="public-payment">
 {% include 'core/partials/public_field.html' with field=form.expected_method %}
+{% if form.zelle_sender %}<div data-zelle-sender>{% include 'core/partials/public_field.html' with field=form.zelle_sender %}</div>{% endif %}
 <button class="button">Continue</button>
 </div>
 </div>

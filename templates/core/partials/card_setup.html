@@ -1,0 +1,24 @@
+{% load static %}
+<section class="panel card-setup" aria-labelledby="card-heading" data-card-setup data-endpoint="{{ card_endpoint }}" data-status-url="{{ card_status_url }}" data-status-prefix="{{ card_endpoint }}">
+<h2 id="card-heading">Secure card setup</h2>
+<p>{{ card_payment_policy }}</p><p>{{ card_retention_policy }}</p>
+<p>{{ card_cancellation_policy }} {{ card_cancellation_scope }}</p>
+{% if card_configured %}
+<form data-card-form>
+{% include 'core/partials/wizard_identity.html' %}<input type="hidden" name="policy_version" value="{{ card_policy_version }}"><input type="hidden" name="request_key" value="{{ card_setup_key }}">
+<fieldset><legend>Choose a card</legend>
+{% for method in card_methods %}<label><input type="radio" name="method" value="{{ method.pk }}"> Saved payment method ending in {{ method.last_four }}</label>{% endfor %}
+<label><input type="radio" name="method" value="new" checked> Enter a new card</label></fieldset>
+<div data-new-card><div id="provider-card-frame" aria-label="Secure provider card entry"></div>
+<label><input type="checkbox" name="retain"> {% if card_staff %}The customer wants to keep this card for future MonkeyDo visits.{% else %}Keep this card for future MonkeyDo visits.{% endif %} If there is already a saved card, this replaces it for future use after this booking is completed.</label></div>
+{% if card_staff %}<label><input type="checkbox" name="agree_payment" required> The payment and cancellation policies have been reviewed with the customer.</label><input type="hidden" name="agree_cancellation" value="1">{% else %}<label><input type="checkbox" name="agree_payment" required> I agree to this payment policy.</label>
+<label><input type="checkbox" name="agree_cancellation" required> I understand the Monkey Do cancellation policy.</label>{% endif %}
+<button type="submit" class="button" data-save-card>Save card securely</button>
+<button type="button" class="text-button" data-check-card hidden>Check card setup</button>
+<p role="status" data-card-status>Saving a card does not charge your admission or create a verification hold.</p>
+</form>
+{{ card_public_key|json_script:'card-tokenization-key' }}
+<script src="https://tokenization.sandbox.banquestgateway.com/tokenization/v0.3" defer></script>
+<script src="{% static 'core/payment-setup.js' %}" defer></script>
+{% else %}<p class="notice">Secure sandbox card setup has not been configured yet. Please contact MonkeyDo for assistance.</p>{% endif %}
+</section>

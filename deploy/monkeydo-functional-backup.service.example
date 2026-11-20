@@ -1,0 +1,23 @@
+[Unit]
+Description=MonkeyDo encrypted offsite staging database backup
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=monkeydo-functional-backup
+Group=monkeydo-functional-backup
+WorkingDirectory=/srv/monkeydo-functional/staging/current
+EnvironmentFile=-/etc/monkeydo/backup.env
+Environment=APP_ENV=staging
+Environment=MONKEYDO_DESIGN_ONLY=0
+ExecCondition=/usr/bin/test ${MONKEYDO_BACKUPS} = 1
+ExecStart=/srv/monkeydo-functional/staging/current/.venv/bin/python manage.py run_encrypted_backup
+TimeoutStartSec=900
+MemoryMax=384M
+Nice=15
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

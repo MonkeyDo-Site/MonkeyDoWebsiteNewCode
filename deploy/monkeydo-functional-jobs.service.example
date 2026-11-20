@@ -1,0 +1,24 @@
+[Unit]
+Description=MonkeyDo sandbox booking jobs (bounded, no uncertain charge replay)
+After=network-online.target postgresql.service monkeydo-functional.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=monkeydo-functional
+Group=monkeydo-functional
+WorkingDirectory=/srv/monkeydo-functional/staging/current
+EnvironmentFile=/etc/monkeydo/functional.env
+Environment=APP_ENV=staging
+Environment=MONKEYDO_DESIGN_ONLY=0
+ExecCondition=/usr/bin/test ${MONKEYDO_PAYMENT_SANDBOX} = 1
+ExecCondition=/usr/bin/test ${MONKEYDO_RECOVERY_HOLD} != 1
+ExecStart=/srv/monkeydo-functional/staging/current/.venv/bin/python manage.py run_payment_jobs --limit 3
+TimeoutStartSec=180
+MemoryMax=384M
+Nice=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

@@ -37,6 +37,8 @@ def enabled(view):
     def wrapped(request, *args, **kwargs):
         if not settings.CUSTOMER_TEST_BOOKING or settings.DESIGN_REVIEW_ONLY:
             raise Http404
+        if settings.RECOVERY_HOLD:
+            return render(request, "core/booking_paused.html", status=503)
         return view(request, *args, **kwargs)
 
     return wrapped
@@ -190,8 +192,15 @@ class DetailsForm(forms.Form):
         choices=Booking._meta.get_field("expected_method").choices, label="Payment method"
     )
 
-    def __init__(self, *args, session, **kwargs):
+    zelle_sender = forms.CharField(
+        required=False, max_length=160, label="Zelle sender name/account"
+    )
+
+    def __init__(self, *args, session, require_sender=True, **kwargs):
+        self.require_sender = require_sender
         super().__init__(*args, **kwargs)
+        if not settings.BOOKING_COMPLETION_ENABLED:
+            self.fields.pop("zelle_sender")
         from .availability import availability
 
         horizon = (
@@ -233,6 +242,17 @@ class DetailsForm(forms.Form):
         if not self.available_play.get(data["play_type"]):
             self.add_error("play_type", "This play type is not available for this session.")
             return data
+        if "zelle_sender" in self.fields:
+            from .payments.receipts import sender
+
+            data["zelle_sender"] = (
+                sender(
+                    data.get("zelle_sender", ""),
+                    required=self.require_sender and data["expected_method"] == "zelle",
+                )
+                if data["expected_method"] == "zelle"
+                else ""
+            )
         data["supervised"] = data.pop("play_type") == "supervised"
         validate_attendees(
             **{k: data[k] for k in ("children", "adults", "babies", "socks", "supervised")}
@@ -247,17 +267,43 @@ class ConfirmForm(forms.Form):
     )
 
 
+class CompletedConfirmForm(ConfirmForm):
+    payment_consent = forms.UUIDField(widget=forms.HiddenInput)
+    acknowledge_test = forms.BooleanField(
+        label="I understand this is a sandbox booking. Admission payment is collected only after staff review at arrival."
+    )
+
+
 def display(request, flow, *, form=None, error=None, notice=None):
     session = public_session(flow["session_id"])
     customer = customer_from_flow(flow) if flow.get("proof") else None
+    completing = flow.get("workflow") == "integrated_v1"
+    card = {}
+    if completing and flow["stage"] == "review":
+        from .payments.setup import selected_consent
+        from .payments.setup_views import card_context
+
+        card = card_context(flow)
+        try:
+            card["accepted_card"] = selected_consent(flow).method
+        except ValidationError:
+            pass
     return render(
         request,
         "core/customer_booking.html",
         {
             "progress_steps": progress(
-                3 if flow["stage"] == "details" else 4 if flow["stage"] == "review" else 2
+                3
+                if flow["stage"] == "details"
+                else 4
+                if flow["stage"] == "waiver"
+                else (5 if completing else 4)
+                if flow["stage"] == "review"
+                else 2,
+                waivers=completing,
             ),
             "flow": flow,
+            **card,
             "session": session,
             "form": form,
             "error": error,
@@ -290,6 +336,11 @@ def start(request, session_id):
         "expires": (timezone.now() + timedelta(seconds=LIFETIME)).timestamp(),
         "stage": "phone",
     }
+    if settings.BOOKING_COMPLETION_ENABLED:
+        from .booking_completion import enabled as completion_enabled
+
+        completion_enabled()
+        flow["workflow"] = "integrated_v1"
     save(request, flow)
     return redirect("customer_booking")
 
@@ -305,7 +356,11 @@ def wizard(request):
             and request.GET.get("restart") == "1"
             and flow["stage"] != "done"
         ):
-            flow = {key: flow[key] for key in ("key", "session_id", "expires")}
+            flow = {
+                key: flow[key]
+                for key in ("key", "session_id", "expires", "workflow")
+                if key in flow
+            }
             flow["stage"] = "phone"
             save(request, flow)
             return redirect("customer_booking")
@@ -313,6 +368,10 @@ def wizard(request):
             return redirect("customer_booking_receipt")
         session = public_session(flow["session_id"])
         stage = flow["stage"]
+        completing = flow.get("workflow") == "integrated_v1"
+        from .waivers.coverage_forms import CoverageForm
+
+        confirm_type = CompletedConfirmForm if completing else ConfirmForm
         form_type = {
             "phone": PhoneForm,
             "retry_phone": RetryPhoneForm,
@@ -326,12 +385,15 @@ def wizard(request):
             "contact": ContactForm,
             "email": RequiredEmailForm,
             "details": DetailsForm,
-            "review": ConfirmForm,
+            "review": confirm_type,
+            "waiver": CoverageForm if completing else None,
             **public_verification.FORMS,
         }.get(stage)
         if form_type is None:
             raise ValidationError("Start a new booking session.")
         args = {"session": session} if stage == "details" else {}
+        if stage == "waiver":
+            args["flow"] = flow
         if stage == "details" and flow.get("details"):
             args["initial"] = flow["details"] | {
                 "play_type": "supervised" if flow["details"]["supervised"] else "open"
@@ -348,6 +410,8 @@ def wizard(request):
             fresh_args = dict(args)
             if stage == "review":
                 fresh_args["initial"] = {"flow_key": flow["key"]}
+                if completing:
+                    fresh_args["initial"]["payment_consent"] = flow.get("payment_consent")
             return display(
                 request,
                 flow,
@@ -355,7 +419,9 @@ def wizard(request):
                 notice="Your booking changed in another tab or an earlier step. Please review this page before continuing.",
             )
         if stage == "review" and request.method == "GET":
-            form = ConfirmForm(initial={"flow_key": flow["key"]})
+            form = confirm_type(
+                initial={"flow_key": flow["key"], "payment_consent": flow.get("payment_consent")}
+            )
         if request.method == "POST" and stage == "contact":
             form.is_valid()
             if form.cleaned_data.get("last_name"):
@@ -505,8 +571,21 @@ def wizard(request):
             elif stage == "details":
                 flow["quote"] = review_quote(flow, data)
                 flow["details"] = data
+                flow["stage"] = "waiver" if completing else "review"
+            elif stage == "waiver":
+                flow["waiver_signatures"] = [str(item.pk) for item in data["signatures"]]
+                flow["waiver_share_requested"] = data.get("share_requested") is True
+                flow["waiver_coverage"] = (
+                    not flow["waiver_share_requested"] and data.get("coverage_confirmed") is True
+                )
                 flow["stage"] = "review"
             elif stage == "review":
+                if completing and str(data["payment_consent"]) != flow.get("payment_consent"):
+                    form.add_error(
+                        None,
+                        "Card setup changed. Please review and save your chosen card before confirming.",
+                    )
+                    return display(request, flow, form=form)
                 if str(data["flow_key"]) != flow["key"]:
                     raise ValidationError(
                         "Another booking was started in this browser. Please review it again."
@@ -569,8 +648,19 @@ def receipt(request):
         {
             "booking": booking,
             "quote": booking.quotes.first(),
-            "progress_steps": progress(4, done=True),
+            "progress_steps": progress(
+                5 if booking.workflow == "integrated_v1" else 4,
+                done=True,
+                waivers=booking.workflow == "integrated_v1",
+            ),
             "progress_done": True,
+            "booking_message": booking.messages.filter(
+                kind__in=["booking_confirmation", "booking_waiver"]
+            )
+            .order_by("-created_at")
+            .first()
+            if booking.workflow == "integrated_v1"
+            else None,
         },
     )
 
@@ -619,7 +709,9 @@ def initial_live_quote(form, flow):
     values["expected_method"] = (
         values.get("expected_method") or form.fields["expected_method"].choices[0][0]
     )
-    candidate = DetailsForm(values, session=public_session(flow["session_id"]))
+    candidate = DetailsForm(
+        values, session=public_session(flow["session_id"]), require_sender=False
+    )
     if candidate.is_valid():
         try:
             quote = review_quote(flow, candidate.cleaned_data)
@@ -642,7 +734,9 @@ def live_estimate(request):
         if flow["stage"] != "details":
             raise ValidationError("Return to Session Details to update the estimate.")
         limit(request, "estimate", 240)
-        form = DetailsForm(request.POST, session=public_session(flow["session_id"]))
+        form = DetailsForm(
+            request.POST, session=public_session(flow["session_id"]), require_sender=False
+        )
         if not form.is_valid():
             return JsonResponse(
                 {
@@ -661,3 +755,58 @@ def live_estimate(request):
         )
     except ValidationError as exc:
         return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+
+
+class CompletionEmailForm(forms.Form):
+    email = forms.EmailField(label="Email address")
+    version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    request_key = forms.UUIDField(widget=forms.HiddenInput)
+
+
+@enabled
+@sensitive_post_parameters("email")
+@require_http_methods(["GET", "POST"])
+def completion_email(request):
+    from django.db import IntegrityError
+
+    from .booking_email import correct_email
+
+    try:
+        flow = current(request)
+    except ValidationError:
+        raise Http404 from None
+    if flow.get("stage") != "done" or flow.get("workflow") != "integrated_v1":
+        raise Http404
+    booking = (
+        Booking.objects.select_related("customer")
+        .filter(
+            pk=flow.get("booking_id"),
+            creation_key=flow["key"],
+            source="customer_test",
+            workflow="integrated_v1",
+        )
+        .first()
+    )
+    if not booking:
+        raise Http404
+    form = CompletionEmailForm(
+        request.POST if request.method == "POST" else None,
+        initial={
+            "email": booking.customer.email,
+            "version": booking.customer.revision,
+            "request_key": uuid.uuid4(),
+        },
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            limit(request, "completion-email", 10)
+            correct_email(flow=flow, **form.cleaned_data)
+            return redirect("customer_booking_receipt")
+        except ValidationError as error:
+            form.add_error(None, " ".join(error.messages))
+        except IntegrityError:
+            form.add_error(
+                "email",
+                "That email address is already in use. Please enter a different address or call/text 848-238-5147.",
+            )
+    return render(request, "core/customer_booking_email.html", {"form": form})

@@ -3,11 +3,12 @@
 Initial review: November 16, 2026. Updated after the owner-reported PR #27
 deployment and the owner’s responses to this plan.
 
-**Status: sequence and planning clarifications accepted; next-phase application
-development has not started.** This update reconciles documentation only. No
-provider configuration, database records, application code or hosted service was
-changed. The owner wants ordinary/supervised booking completed first, active
-memberships next, and the remaining business workflows afterward.
+**Current status: the owner authorized the complete ordinary/supervised booking
+stage on November 19, 2026. Implementation and developer checks are in PR #30;
+private configuration and hosted acceptance remain separate.** See
+[the implementation boundary](BOOKING_COMPLETION_DEVELOPMENT.md) for what exists,
+what remains and actual test evidence. Earlier planning/baseline statements below
+are historical and do not describe the newly developed code as deployed.
 
 ## Baseline and evidence
 
@@ -88,7 +89,7 @@ They can be reviewed and deployed as useful staging increments.
 | Order | Work | What becomes testable |
 | --- | --- | --- |
 | 0 | Review the owner's current test findings; correct defects affecting shared rules; reconcile the current status and roadmap. | A reliable baseline with known remaining issues. Testing can continue while independent design/integration investigation proceeds. |
-| 1A | Payment-operation/tender records, durable jobs and message outbox, Banquest sandbox adapter, secure provider-controlled card setup, consent and method lifecycle, webhook/reconciliation handling and permissions. | Both card-payment setup and alternate-tender backup-card setup, plus explicit sandbox payment operations, including failure, timeout, replay and duplicate handling. No live payments. |
+| 1A | Payment-operation/tender records with reportable line/tax/fee allocations and linked adjustment dates, durable jobs and message outbox, Banquest sandbox adapter, secure provider-controlled card setup, consent and method lifecycle, webhook/reconciliation handling and permissions. | Both card-payment setup and alternate-tender backup-card setup, plus explicit sandbox payment operations, including failure, timeout, replay and duplicate handling. No live payments. |
 | 1B | Approved waiver text/version and signing evidence, private test R2 storage, coverage/expiry, shared-parent links, paper fallback, staff viewing and retention. Develop alongside 1A where independent. | Actual saved electronic evidence and correct coverage decisions, rather than the preserved unsigned prototype. |
 | 1C | Complete ordinary and supervised public/staff booking, confirmations, customer email correction/resend, arrival review, actual collection, split tenders, cancellation/no-show and partial-arrival fees, owner comped/custom/exclusive booking behavior. | An end-to-end test visit: reserve, complete required setup, receive an accurate email, review attendance/coverage, explicitly charge or record payment, and inspect history. |
 | 2 | Active membership purchase, accepted terms, monthly/prepaid collection, installments, benefit reservation/usage, renewal/addition, owner exceptions, conversion and customer credit. | Memberships actually affect bookings, including member information/popup and adjusted pricing at the appropriate booking step; failures, calendar boundaries, mixed benefits and conversion credit can be tested. Preserve existing calendar/price work and the shared filters/layout conventions. |
@@ -105,6 +106,17 @@ choices and the required backup-card rules, including manual physical gift-card
 verification. It need not invent a digital gift-card balance system. Standalone
 gift-card sales and later customer-credit consumption belong to their dependent
 increments. Shared ledger design must accommodate them from the start.
+
+The owner allows accountant income/tax/refund report screens to follow launch.
+[Financial source-data requirements](ACCOUNTANT_REPORTING_FOUNDATION.md) belong
+in stage 1A before real receipts: preserve original sale/tax/fee allocations,
+actual tenders and dates, linked refunds/voids/credits/conversions and safe
+provider/settlement references. Estimates and credit reallocations are not new
+cash receipts. Keep tax, customer fee, provider cost and deposit separate. Final
+report layout/accounting presentation may wait without delaying the required
+source-data capture. Existing operational exports/printing remain in their
+previously approved acceptance scope.
+
 
 ## Both card paths belong to the next stage
 
@@ -252,10 +264,14 @@ go-ahead; technical provider/backup investigation belongs to that authorized sta
 
 - Production sales-tax/UEZ rate: still needed before live billing. Continue the
   approved 6.6% staging rate for sandbox work; never silently promote it.
-- On an already-paid admission converted to membership, must the tax on the
-  retained original processing fee stay or be reversed? Example: retain the
-  original $0.45 fee; the unresolved amount is its $0.03 tax. Obtain the
-  owner/accountant decision before implementing/accepting that conversion case.
+- Retained-fee tax is now resolved by the accountant answer supplied November 19,
+  2026: reverse that tax when the admission payment is applied to the nontaxable
+  membership; otherwise retain it. The original processing fee is nonrefundable.
+  The supplied $16.47 transaction leaves $16.02 applicable to membership after
+  retaining $0.45 and reversing $0.99 admission tax plus $0.03 fee tax. Preserve
+  separate audit/reversal entries and existing credit/refund rules. See
+  [payment requirements](PAYMENTS.md). This is a membership-stage acceptance
+  criterion, not a remaining question or an implemented payment feature.
 
 Banquest sandbox processor/3DS behavior, durable token and deletion semantics,
 idempotency/reconciliation, proportional cent allocation and the protected
@@ -277,3 +293,36 @@ The earlier Word documents were reconciled through their repository request
 matrices and approved conversation clarifications; this review did not freshly
 extract the private Word attachments. No new provider or hosted acceptance claim
 is made.
+
+
+## Readiness recheck before the next stage — November 19, 2026
+
+The owner asked whether any other preparation is needed and clarified that the
+accountant summary should use actual receipts, refunds, tax and remaining funds.
+Internal original-price/discount detail supports reconciliation and correct
+refund allocations; no extra report columns or new discount feature are needed.
+
+No new owner business-rule decision was identified as necessary before coding
+the already-agreed next scope. Technical preparation belongs to that authorized
+work, not another owner approval checklist:
+- Design actual payment/tender/refund records, safe operation identity, webhook
+  deduplication and unknown-outcome reconciliation before making provider calls.
+- Preserve private provider-controlled card fields, consent and booking-only
+  versus retained-card lifecycle; plan signed provider callbacks through the
+  private staging gate without opening staff routes.
+- Carry the approved waiver text/coverage into private test R2 storage and verify
+  booking-email delivery/attachments; do not ask again for new waiver wording or
+  repeat the already-completed sender setup.
+- Recheck host resources and plan workers, encrypted offsite backups/restore,
+  migration compatibility and single-command deployment together. Code rollback
+  cannot undo a charge, sent email or saved signing evidence.
+- Keep old pending-test records separate from new integrated-flow reservations,
+  preserving IDs/history. Exercise both card-payment and alternate/backup-card
+  routes through arrival, cancellation, failure and recovery.
+
+Sandbox keys, private storage credentials and callback configuration are required
+for real integration testing, not to start local implementation. Provide exact
+private setup steps then; do not ask for secrets in chat/GitHub. Production tax
+rate and live configuration remain later launch inputs, not sandbox-development
+blockers. Accountant report layout/recognition presentation may wait.
+Next-phase application development still requires the owner's go-ahead.

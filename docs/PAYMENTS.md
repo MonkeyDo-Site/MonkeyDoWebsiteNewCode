@@ -1,6 +1,6 @@
 # Payments, tax, card lifecycle, and Banquest evidence
 
-Consolidated November 5, 2026. Business rules are owner decisions; provider findings below are public documentation observations, not authenticated account tests. No integration, credential installation, verification or charge is performed by this checkpoint.
+Consolidated November 5, 2026. Business rules are owner decisions; provider findings below are public documentation observations, not authenticated account tests. The original checkpoint was documentation-only. Authorized local integration work now exists in draft PR #30; see [implementation status](BOOKING_COMPLETION_DEVELOPMENT.md). No hosted credential installation, real provider verification or charge is claimed.
 
 ## 1. Payment timing, consent, and arrival
 
@@ -83,6 +83,7 @@ Before payment details require unchecked **I understand the Monkey Do cancellati
 
 - Any ordinary cancellation timing, customer calls/texts rather than self-service cancellation. Staff/owner chooses charge/no-charge, no mandatory reason. Use **No show**, not “didn't arrive.” Show fee and explicit **Confirm no show and charge $amount** / **Confirm no show without a fee**; $0 comped no-show just confirms. Cancel closes without acting.
 - Fewer actual children: remove absent child's admission, restore applicable benefit, add itemized $3 partial-cancellation fee, collect with remaining arrival payment. Three ordinary children booked/two arrive -> $30 admission+$3 pending fee before tax/card fee. Remove absent extra adult's $5, no fee.
+- **Owner special admissions exception:** a special price covers admissions only, with socks separately priced. Count changes retain the agreed admissions total unless the owner chooses to adjust it; prompt the owner and apply no automatic partial-cancellation fee. Staff cannot adjust the special price; their count changes create an owner Dashboard notice. Full cancellation/no-show still has its separate explicit charge/no-charge choice. Fully owner-comped bookings remain all-charges-$0.
 - Avoid stacking/double-collecting already-recorded partial fees when a whole booking later cancels; ledger must reconcile the approved per-admission obligations rather than create duplicate charges.
 - Party has **$50** cancellation/no-show fee and owner waiver, not ordinary per-child calculation. Club first no-show has enrollment-payment follow-up, no ordinary $3 club fee.
 - Phone cancellation without presented/verified physical gift card charges backup card; gift-card use requires actual verification.
@@ -143,7 +144,27 @@ Summary50subtotal+.75fee+2.01tax=**52.76**. This is not a customer handing over 
 
 Already-paid cash conversions at6.6%:1child+1adult15+.99tax=15.99paid ->17.99Subscription, reverse replaced admission/tax,2.00additional before any new card fee.2children+2adults ordinary35+2.31=37.31paid ->35.98Subscription,1.33customer credit. For original card payment keep original fee nonrefundable; new card charge has its own fee, not waived.
 
-**Still open:** tax on retained original processing fee after conversion. Example15admission+.45fee+.99admission tax+.03fee tax=16.47. Admission and .99 reverse; .45 fee remains. Whether .03 remains/reverses awaits owner/accountant. Do not silently decide or call it resolved.
+**Accountant clarification supplied by the owner, November 19, 2026:**
+
+> If it’s applied towards membership, it should be refunded.
+> If it’s not applied, then it should not be reversed.
+
+For the admission-payment-to-nontaxable-membership conversion described by the
+owner, reverse the tax on the retained original processing fee when that payment
+is applied toward membership. If it is not applied toward membership, that tax
+is not reversed under this rule. The processing fee itself remains nonrefundable.
+
+In the supplied example, $15 admission + $0.45 fee + $0.99 admission tax + $0.03
+fee tax = $16.47 already paid. When converted/applied toward membership, reverse
+the admission, its $0.99 tax and the $0.03 fee tax; retain the $0.45 original fee.
+The amount available toward the replacement membership is therefore **$16.02**.
+This is an allocation of existing paid funds, not a new payment or an automatic
+cash/card refund in addition to that allocation. Preserve separate original and
+reversal entries and the original rate/rounded amounts. Existing excess-credit
+and separately authorized refund rules still govern any remaining balance; a
+new card charge has its own applicable processing fee. The production tax rate
+is still a separate open input. This documents future behavior, not an implemented
+conversion/payment integration.
 
 ## 5. Banquest documented capabilities and limits
 
@@ -197,3 +218,28 @@ Sandbox transactions **cannot move to live**. Separate credentials/data/endpoint
 One Edit booking form changes eligible session, attendee counts, play type and expected tender. The revised itemized estimate is visible before saving; if the amount changes, show a save-time reminder to review the expected payment method rather than an extra dropdown; this is not a collection action. Reprice with the original immutable policy and append a quote revision. Customer payment-history cards remain truthful empty transaction states until a payment ledger is implemented; quotes and planned membership installments are estimates. Actual payment/card replacement/arrival workflows remain as specified above and are not enabled by these UI changes.
 
 Booking/membership payment selectors explain the actual applicable credit-card rate (currently 3%). This is label presentation only; the existing fee base, rounding and tax rules above still apply. Public selection stays in Session Details; Payment Details provides the breakdown/final reviewed save action.
+
+
+## 6. Capture financial facts before live payments; accountant reports later
+
+The owner permits building accountant income/tax/refund reports after launch.
+The payment foundation must first capture the source records described in
+[reporting foundation](ACCOUNTANT_REPORTING_FOUNDATION.md): stable sale/line/operation
+IDs, immutable price/tax categories and cent allocations (including fee tax),
+actual tenders and statuses, linked refunds/voids/corrections/conversions/credits,
+distinct event/service/settlement dates, safe provider references and environment.
+Keep customer processing fees separate from actual provider costs and deposits.
+Do not count estimates, failed/unknown attempts, credit applications or converted
+funds as new receipts. Preserve the original transaction and later adjustment;
+current prices/rates or edited customer records cannot rewrite past financial
+facts. Accountant report screens/formats can wait; the source-data acceptance
+criteria belong in stage 1A before real payments. No accounting integration or
+provider/report configuration is activated by this planning clarification.
+
+
+Reporting clarification: the owner's requested summary uses actual amounts
+received, refunds, tax and remaining amounts. Original prices/approved discounts
+may be retained internally for accepted-charge reconciliation and refund/tax
+allocation; neither uncollected full prices nor discounts count as receipts.
+This does not require a discount report column, a new discount feature or an
+extra staff input. The displayed accountant report can remain simple.
