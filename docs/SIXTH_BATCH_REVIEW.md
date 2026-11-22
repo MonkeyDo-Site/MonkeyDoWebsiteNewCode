@@ -32,3 +32,12 @@ Implementation and validation results will be added before review.
 - No schema changes are required. Use the normal Functional deployment; preserve existing sandbox flags, credentials and disabled backups.
 
 The owner-facing [testing guide](SIXTH_BATCH_TEST_GUIDE.md) covers the full batch. Only Payment Details images are supplied for pre-deployment design review.
+
+## Verification completed
+
+- 606 PostgreSQL tests pass, including new owner-only retry/unknown-outcome checks, shared-parent completion privacy, adult-only signing, preserved original waiver coverage, method-switch consent, frozen/escaped HTML email, browser checkpoint behavior and restricted runtime-role insertion of the new policy versions.
+- Ruff, Django checks and migration-drift checks pass; no schema migration is generated. Existing deploy-helper tests remain in the full suite.
+- Chromium checks pass at 1440px and 390px for Credit card, Cash, Check and Zelle, with no horizontal page overflow or JavaScript errors. Card-save validation, confirmation gating and an end-to-end browser booking/navigation flow pass with synthetic adapters. [Full payment-page images](design-review/sixth-payment-review/README.md).
+- [Post-deployment test guide](SIXTH_BATCH_TEST_GUIDE.md) and [Word copy](SIXTH_BATCH_TEST_GUIDE.docx) were prepared after implementation and reopened for verification.
+
+Hosted acceptance and payment-page design approval remain the owner's review. This work has not been merged or deployed by the agent.
