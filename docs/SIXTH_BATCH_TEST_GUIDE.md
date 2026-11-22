@@ -8,17 +8,19 @@ On a wide screen, all five steps fit across one row: Choose Session, Customer De
 
 ## 2. New customer and all-expired waivers
 
-On Waiver coverage, expect “Please select option 1 or both options:”. Signing now is required; requesting the shared parent link is optional. Selecting only the link must not bypass signing. A returning customer whose waivers have all expired sees the expiry explanation and follows the same rule. A waiver must still be valid for the appointment date, not just today's date.
+On Sign Waiver, expect “Please select option 1 or both options:”. Signing now is required; requesting the shared parent link is optional. Selecting only the link must not bypass signing. A returning customer whose waivers have all expired sees the expiry explanation and follows the same rule. A waiver must still be valid for the appointment date, not just today's date.
 
 ## 3. Existing current and mixed waiver history
 
-Check that each applicable current waiver shows signer, covered minor names and expiry date. An older unexpired waiver remains usable despite the shortened age acknowledgment in this release. Expired evidence remains in history. For mixed history, the explanation distinguishes expired and unexpired coverage.
+Check that each applicable current waiver shows “Signed by [adult] for [minors]” and its expiry date. Every coverage-selection page says “Sign Waiver” and “Every participating minor needs a signed waiver.” An older unexpired waiver remains usable despite the shortened age acknowledgment in this release. Expired evidence remains in history. For mixed history, the explanation distinguishes expired and unexpired coverage.
 
 Choose existing coverage to continue without signing again. Choose to sign for additional minors and check that Continue to payment is disabled until signing is completed. Participants not covered by existing waivers need a new signature or the requested shared-parent link. Selecting complete coverage must not bypass the participant-count check.
 
 ## 4. Signing and completion
 
 Both the customer's form and the shared parent's form omit email and phone inputs. The full legal waiver, typed full legal name, parent/legal guardian choices, minor-name field and three explicit acknowledgments remain. No Self choices or self-only help sentence appear. The age acknowledgment reads “I confirm that I am at least 18 years old.”
+
+On the signing form, choosing Parent asks for minors’ first names, one per line. Choosing Legal guardian asks for first and last names, one minor per line. The label and instructions update immediately; without JavaScript the instructions still explain both roles. A guardian submitting a first name alone receives an error before anything is signed. Names already typed remain when the relationship changes. New summaries use names as entered; existing signed records retain their original names and evidence.
 
 Adult-only visits use the same screens and form. Leave the minor-name and relationship fields blank when signing for an attending adult; no separate Self option is needed. Selecting Parent or Legal guardian requires the covered minors' names.
 
@@ -68,4 +70,4 @@ Previously signed evidence remains saved; changing a payment method does not req
 
 ## Deployment boundary
 
-This is a normal code-only Functional deployment, with no database migration switch and no credential changes. It preserves active sandbox integrations and the existing disabled-backup setting. Existing bookings, evidence, payments and histories remain. Merge only after the final PR checks pass and the payment-page design is approved; use the exact reviewed ZIP and single PowerShell block supplied with the handoff.
+This is a normal code-only Functional deployment, with no database migration switch and no credential changes. It preserves active sandbox integrations and the existing disabled-backup setting. Existing bookings, evidence, payments and histories remain. The owner approved the email design and all collected changes and requested no more review images. Merge after the final PR checks pass; use the exact reviewed ZIP and single PowerShell block supplied with the handoff.

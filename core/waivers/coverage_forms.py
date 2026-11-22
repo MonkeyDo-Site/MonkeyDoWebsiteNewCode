@@ -49,8 +49,8 @@ def validate_coverage(flow, signatures, shared):
 
 class WaiverChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, signature):
-        covered = ", ".join(signature.minors) or "Attending adult"
-        return f"{signature.signer_name} — {covered}"
+        covered = " for " + ", ".join(signature.minors) if signature.minors else ""
+        return f"Signed by {signature.signer_name}{covered}"
 
 
 class CoverageForm(forms.Form):

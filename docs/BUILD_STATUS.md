@@ -1,8 +1,8 @@
 # Staging build status
 
-## Sixth review — PR #32 implemented, awaiting owner design review
+## Sixth review — PR #32 implemented, approved follow-up updates
 
-Implements the complete sixth feedback batch and manual owner card retry. Previous PR #31 is merged; owner reports deployment and successful sandbox payment after Banquest's reset. This PR does not change live payment activation, schema, credentials, backup activation, homepage design or memberships. 608 local PostgreSQL tests and desktop/phone browser checks pass. See [scope](SIXTH_BATCH_REVIEW.md), [test guide](SIXTH_BATCH_TEST_GUIDE.md), [payment-page images](design-review/sixth-payment-review/README.md) and final PR check results before merging.
+Implements the complete sixth feedback batch and manual owner card retry. Previous PR #31 is merged; owner reports deployment and successful sandbox payment after Banquest's reset. This PR does not change live payment activation, schema, credentials, backup activation, homepage design or memberships. The owner approved the email design and all collected payment/waiver follow-up changes, with no further screenshots requested. 612 PostgreSQL tests pass. Final validation includes relationship-specific minor names, preserved signed history, and 12 desktop/phone browser interactions. See [scope](SIXTH_BATCH_REVIEW.md), [test guide](SIXTH_BATCH_TEST_GUIDE.md), [payment-page images](design-review/sixth-payment-review/README.md) and final PR check results before merging.
 
 
 ## November 20 staging collection fix

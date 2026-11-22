@@ -125,7 +125,7 @@ class CompletedPublicBookingTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session[SESSION_KEY]["stage"], "waiver")
         response = self.client.get(reverse("customer_booking"))
-        self.assertContains(response, "Waiver coverage")
+        self.assertContains(response, "Sign Waiver")
         self.assertNotContains(response, "No card is collected")
         response = self.client.post(
             reverse("customer_booking"),

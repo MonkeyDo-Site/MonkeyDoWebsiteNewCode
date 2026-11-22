@@ -275,6 +275,67 @@ class SixthBookingTests(TestCase):
         with override_settings(APP_ENV="production"):
             self.assertNotIn("acknowledge_test", CompletedConfirmForm().fields)
 
+    def test_parent_can_sign_first_names_without_surnames_being_added(self):
+        from core.waivers.services import sign
+
+        flow = self.bare_flow()
+        data = self.signing_data(relationship="Parent", minors="Yanky\nYoely\nBaily")
+        with patch("core.waivers.services.EvidenceStore", return_value=MemoryEvidence()):
+            signature = sign(data=data, flow=flow)
+        self.assertEqual(signature.minors, ["Yanky", "Yoely", "Baily"])
+        self.assertEqual(signature.relationship, "Parent")
+        self.store(flow)
+        page = self.client.get(reverse("customer_booking"))
+        self.assertContains(page, "Sign Waiver")
+        self.assertContains(page, "Every participating minor needs a signed waiver.")
+        self.assertContains(page, "Signed by Test Guardian for Yanky, Yoely, Baily")
+        self.assertNotContains(page, "Waiver coverage")
+
+    def test_guardian_requires_each_minors_first_and_last_name_before_storage(self):
+        from core.waivers.services import sign
+
+        flow = self.bare_flow()
+        with patch("core.waivers.services.EvidenceStore") as store:
+            with self.assertRaises(ValidationError):
+                sign(
+                    data=self.signing_data(
+                        relationship="Legal guardian", minors="Yanky\nYoely Braun"
+                    ),
+                    flow=flow,
+                )
+            store.assert_not_called()
+        self.assertFalse(WaiverSignature.objects.exists())
+        with patch("core.waivers.services.EvidenceStore", return_value=MemoryEvidence()):
+            signature = sign(
+                data=self.signing_data(
+                    relationship="Legal guardian", minors="Yanky Braun\nYoely Greenfeld"
+                ),
+                flow=flow,
+            )
+        self.assertEqual(signature.minors, ["Yanky Braun", "Yoely Greenfeld"])
+
+    def test_name_instructions_match_relationship_on_initial_and_invalid_forms(self):
+        from core.waivers.forms import SignatureForm
+
+        parent = SignatureForm(self.signing_data(relationship="Parent", minors="Yanky"))
+        self.assertTrue(parent.is_valid(), parent.errors)
+        self.assertIn("first name on a separate line", parent.fields["minors"].help_text)
+        guardian = SignatureForm(self.signing_data(relationship="Legal guardian", minors="Yanky"))
+        self.assertFalse(guardian.is_valid())
+        self.assertIn("first and last name", guardian.fields["minors"].help_text)
+        self.assertIn("first and last name", guardian.errors["minors"][0])
+
+    def test_historical_minor_names_are_preserved_in_the_updated_summary(self):
+        flow = self.bare_flow()
+        old = self.legacy(flow)
+        original = list(old.minors)
+        self.store(flow)
+        page = self.client.get(reverse("customer_booking"))
+        self.assertContains(page, "Signed by Prior Guardian for Test Child")
+        old.refresh_from_db()
+        self.assertEqual(old.minors, original)
+        self.assertEqual(old.version_id, "MD-WAIVER-2026-01")
+
     def test_confirmation_emails_have_one_total_conditional_socks_and_escaped_branded_html(self):
         flow = self.ready()
         booking = submit_booking(flow)

@@ -1,4 +1,4 @@
 {% extends 'core/base.html' %}{% block title %}Waiver saved · MonkeyDo{% endblock %}{% block content %}
 {% include 'core/partials/booking_progress.html' %}<section class="page-heading"><h1>Thank you! Your electronic waiver has been signed:</h1></section>
-<section class="panel record-form"><p><strong>{{ signature.signer_name }}</strong>{% if signature.minors %} – {{ signature.minors|join:', ' }}{% endif %}</p>
+<section class="panel record-form"><p>{% include 'core/partials/waiver_signer_summary.html' %}</p>
 <form method="post">{% include 'core/partials/wizard_identity.html' %}{% include 'core/partials/form_fields.html' %}<button class="button">Continue to payment</button></form></section>{% endblock %}

@@ -16,7 +16,7 @@ Authorized November 21, 2026 after review of all 19 comments and 20 screenshots.
 
 ## Release and acceptance
 
-Develop in a draft PR. Show owner only updated Payment Details screenshots (including alternate-payment wording); other pages will receive owner acceptance after staging deployment. Preserve the browser ZIP download plus one PowerShell command. Do not merge or deploy automatically. Homepage design, active memberships and live payment activation are outside this batch.
+Develop in a draft PR. Initial visual review covered Payment Details; the owner later requested waiver-page and sample-email previews and approved the collected changes. Remaining functional acceptance is after staging deployment. Preserve the browser ZIP download plus one PowerShell command. Do not merge or deploy automatically. Homepage design, active memberships and live payment activation are outside this batch.
 
 Implementation and validation results will be added before review.
 
@@ -31,16 +31,16 @@ Implementation and validation results will be added before review.
 - The original provider frame was surrounded by excess height. The public payment frame has compact responsive sizing; genuine provider iframe/card-brand acceptance remains part of hosted testing. Local browser captures simulate provider card entry and both external adapters; no external requests or actual charges are claimed by those checks.
 - No schema changes are required. Use the normal Functional deployment; preserve existing sandbox flags, credentials and disabled backups.
 
-The owner-facing [testing guide](SIXTH_BATCH_TEST_GUIDE.md) covers the full batch. Only Payment Details images are supplied for pre-deployment design review.
+The owner-facing [testing guide](SIXTH_BATCH_TEST_GUIDE.md) covers the full batch. The owner subsequently reviewed waiver-page images and one sample branded email as well as Payment Details. The email design and all collected changes are approved; no additional images are requested.
 
 ## Verification completed
 
-- 608 PostgreSQL tests pass, including new owner-only retry/unknown-outcome checks, shared-parent completion privacy, adult-only signing, preserved original waiver coverage, method-switch consent, frozen/escaped HTML email, browser checkpoint behavior and restricted runtime-role insertion of the new policy versions.
+- 612 PostgreSQL tests pass, including new owner-only retry/unknown-outcome checks, shared-parent completion privacy, adult-only signing, preserved original waiver coverage, method-switch consent, frozen/escaped HTML email, browser checkpoint behavior and restricted runtime-role insertion of the new policy versions.
 - Ruff, Django checks and migration-drift checks pass; no schema migration is generated. Existing deploy-helper tests remain in the full suite.
 - Chromium checks pass at 1440px and 390px for Credit card, Cash, Check and Zelle, with no horizontal page overflow or JavaScript errors. Card-save validation, confirmation gating and an end-to-end browser booking/navigation flow pass with synthetic adapters. [Full payment-page images](design-review/sixth-payment-review/README.md).
 - [Post-deployment test guide](SIXTH_BATCH_TEST_GUIDE.md) and [Word copy](SIXTH_BATCH_TEST_GUIDE.docx) were prepared after implementation and reopened for verification.
 
-Hosted acceptance and payment-page design approval remain the owner's review. This work has not been merged or deployed by the agent.
+Hosted functional acceptance remains the owner's post-deployment review. Visual design review and the collected follow-up changes are approved. This work has not been merged or deployed by the agent.
 
 ## Payment-image review corrections
 
@@ -51,3 +51,14 @@ Hosted acceptance and payment-page design approval remain the owner's review. Th
 - Phone interaction checks caught and fixed decorative-arrow pointer overlap; it no longer obstructs either button. A saved page can explicitly change/save another card without reusing the earlier nonce-exchange request key.
 
 Updated browser checks also pass for a saved page changing cards after reload, primary/backup acceptance without the removed checkbox, no decorative-arrow obstruction, confirmation focus/visibility and reduced-motion suppression. The [animation preview](design-review/sixth-payment-review/confirm-booking-animation.webm) records the actual local transition using synthetic provider entry.
+
+## Approved waiver follow-up and final handoff
+
+The owner approved the sample email design and requested all collected changes in the same PR, with an updated ZIP and one deployment command and no further image review.
+
+- Customer waiver selection pages now use “Sign Waiver” and “Every participating minor needs a signed waiver.” The signing form uses the same heading and sentence; minimal thank-you pages retain their approved thank-you headings.
+- Current-waiver and post-signing summaries use “Signed by [adult] for [minors]”, with the existing expiry information where applicable.
+- Parent signing asks for first names; legal guardian signing asks for first and last names and rejects missing surnames before storing evidence. The form updates its label/help with the relationship selection and also validates the posted role server-side. Neither role change nor summary formatting appends or removes surnames. Earlier signed names and evidence remain unchanged.
+- The approved email design is unchanged. No new screenshots are prepared for this follow-up.
+
+Final follow-up verification: all 612 PostgreSQL tests pass; 12 desktop/phone browser checks cover all four selection variants and both signing relationships, including dynamic label/help changes, guardian missing-surname rejection, preserved typed names, and updated signer summaries. No new screenshots or external provider operations were created.
