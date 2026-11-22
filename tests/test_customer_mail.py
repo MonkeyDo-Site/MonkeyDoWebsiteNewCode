@@ -135,7 +135,8 @@ class CustomerMailTests(TestCase):
     def test_confirmation_uses_final_breakdown_and_does_not_claim_money_was_received(self):
         self.sale(method="zelle", socks=1)
         body = booking_confirmation(self.booking)
-        self.assertIn("No admission payment has been collected.", body)
-        self.assertIn("Please Zelle payment to monkeydoplay@gmail.com.", body)
+        self.assertIn("Your total is $", body)
+        self.assertNotIn("Actual payment received", body)
+        self.assertIn("Please Zelle payment at any time to monkeydoplay@gmail.com.", body)
         self.assertIn("Sales tax:", body)
-        self.assertIn("Pick up upon arrival", body)
+        self.assertIn("pick up upon arrival", body)

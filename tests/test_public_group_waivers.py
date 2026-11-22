@@ -39,9 +39,7 @@ class PublicGroupWaiverTests(TestCase):
 
     def pending(self):
         flow = self.ready()
-        flow.update(
-            stage="review", waiver_signatures=[], waiver_coverage=False, waiver_share_requested=True
-        )
+        flow.update(stage="review", waiver_coverage=False, waiver_share_requested=True)
         return flow, submit_booking(flow)
 
     def test_shared_option_holds_places_and_queues_one_link_and_unsigned_pdf(self):
@@ -75,14 +73,13 @@ class PublicGroupWaiverTests(TestCase):
         self.assertEqual(MessageDelivery.objects.filter(kind="waiver_completed").count(), 1)
         self.assertFalse(FinancialPosting.objects.exists())
 
-    def test_share_choice_can_continue_without_signature_but_ordinary_choice_cannot(self):
+    def test_shared_link_still_requires_own_signature_or_current_coverage(self):
         flow = self.ready()
-        flow["waiver_signatures"] = []
-        group = CoverageForm({"share_requested": "on"}, flow=flow)
+        group = CoverageForm({"use_existing": "on", "share_requested": "on"}, flow=flow)
         self.assertTrue(group.is_valid(), group.errors)
-        ordinary = CoverageForm({"additional_minors": "no", "coverage_confirmed": "on"}, flow=flow)
-        self.assertFalse(ordinary.is_valid())
-        flow.update(waiver_share_requested=False, waiver_coverage=False)
+        ordinary = CoverageForm({"use_existing": "on"}, flow=flow)
+        self.assertTrue(ordinary.is_valid(), ordinary.errors)
+        flow.update(waiver_signatures=[], waiver_share_requested=True, waiver_coverage=False)
         with self.assertRaises(ValidationError):
             submit_booking(flow)
 

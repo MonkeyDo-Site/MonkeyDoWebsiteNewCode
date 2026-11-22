@@ -61,7 +61,10 @@ def validate_nonce(nonce, expiry_month, expiry_year):
         or not now.year <= expiry_year <= now.year + 30
         or (expiry_year, expiry_month) < (now.year, now.month)
     ):
-        raise ValidationError("The entered card has expired or has an invalid expiry.")
+        raise ValidationError(
+            "The entered card has expired or has an invalid expiry. Please check the expiration date or use another card.",
+            code="entered_card_expiry",
+        )
 
 
 class Gateway:

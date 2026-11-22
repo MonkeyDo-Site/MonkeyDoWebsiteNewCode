@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from core.models import AuditEvent, Booking
+from core.permissions import require_actor
 
 from .amounts import COMPONENTS, ZERO
 from .checkout import authorize, resolve_if_settled
@@ -22,10 +23,23 @@ from .ledger import (
 from .models import BookingCheckout
 
 
-def preview(*, actor, booking_id, method, context="follow_up", received_on=None, zelle_sender=""):
+def preview(
+    *,
+    actor,
+    booking_id,
+    method,
+    context="follow_up",
+    received_on=None,
+    zelle_sender="",
+    retry_declined=False,
+):
     from .receipts import receipt_date, sender
 
     authorize(actor)
+    if retry_declined:
+        require_actor(actor, "core.collect_payment", owner=True)
+        if method != "card":
+            raise ValidationError("Retry uses the reviewed card on this booking.")
     if method not in {"card", "cash", "check", "zelle", "gift_card"} or context not in {
         "arrival",
         "follow_up",
@@ -42,9 +56,19 @@ def preview(*, actor, booking_id, method, context="follow_up", received_on=None,
     if checkout is None or checkout.sale is None:
         raise ValidationError("There is no reviewed balance to collect.")
     sale = checkout.sale
+    if (
+        retry_declined
+        and not sale.operations.filter(kind="receipt", tender="card", state="declined").exists()
+    ):
+        raise ValidationError("There is no declined card payment to retry for this balance.")
     if sale.operations.filter(state__in=["ready", "sending", "unknown", "action"]).exists():
         raise ValidationError("Resolve the pending or uncertain payment before another attempt.")
-    if sale.operations.exclude(kind="receipt").exists():
+    if (
+        sale.operations.exclude(kind="receipt").exists()
+        or sale.operations.filter(
+            events__code="external_correction_review", followup__resolved_at__isnull=True
+        ).exists()
+    ):
         raise ValidationError(
             "An owner must review this corrected/refunded invoice before further collection."
         )
@@ -116,8 +140,11 @@ def confirm(
     confirmed,
     received_on=None,
     zelle_sender="",
+    retry_declined=False,
 ):
     authorize(actor)
+    if retry_declined:
+        require_actor(actor, "core.collect_payment", owner=True)
     if confirmed is not True:
         raise ValidationError("Explicitly confirm the reviewed remaining payment.")
     key = lock_request(request_key)
@@ -139,6 +166,7 @@ def confirm(
         context=context,
         received_on=received_on,
         zelle_sender=zelle_sender,
+        retry_declined=retry_declined,
     )
     if digest != reviewed_hash:
         raise ValidationError("The remaining balance or saved card changed. Review it again.")

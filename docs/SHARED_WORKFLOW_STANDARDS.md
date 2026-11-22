@@ -1,5 +1,10 @@
 # Shared workflow and screen standards for the remaining stages
 
+## Sixth review carry-forward
+
+The current ordinary-booking navigation, waiver and payment presentation is described in [SIXTH_BATCH_REVIEW.md](SIXTH_BATCH_REVIEW.md). Reuse applicable compact totals, responsive five-step progress, preserved inputs/signatures, explicit consent/confirmation, browser-history protections and truthful method-specific payment/email facts in later features. Do not carry ordinary arrival-charge wording into membership purchases charged at purchase. All financial rules and historical evidence remain as previously approved.
+
+
 This is the carry-forward specification for improvements approved during the
 first development stage, including PRs 25–27 and the subsequent owner planning
 answers. It supplements [main requirements](MONKEYDO_REQUIREMENTS.md); it does

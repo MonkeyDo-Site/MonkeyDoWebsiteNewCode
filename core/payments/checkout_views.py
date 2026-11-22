@@ -352,20 +352,33 @@ class RemainingForm(ReceiptForm):
 @staff_permission("core.view_booking")
 @guarded
 @require_http_methods(["GET", "POST"])
-def remaining_payment(request, pk):
+def remaining_payment(request, pk, retry=False):
     from . import remainders
 
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "session"), pk=pk, workflow="integrated_v1"
     )
+    if retry and not request.user.is_superuser:
+        raise PermissionDenied
+    if retry:
+        from .checkout import summary
+
+        if not summary(booking).get("can_retry"):
+            messages.warning(
+                request, "This balance cannot be retried. Review its latest payment status first."
+            )
+            return redirect("booking_detail", pk=pk)
     form = RemainingForm(
         request.POST if request.method == "POST" else None,
         initial={
             "request_key": uuid.uuid4(),
             "method": "card",
             "zelle_sender": booking.zelle_sender,
+            "context": "follow_up" if retry else "",
         },
     )
+    if retry:
+        form.fields["method"].choices = [("card", "Retry card on file")]
     reviewed = None
     if request.method == "POST" and form.is_valid():
         values = form.cleaned_data
@@ -381,6 +394,7 @@ def remaining_payment(request, pk):
                     request_key=values["request_key"],
                     reviewed_hash=values["reviewed_hash"],
                     confirmed=True,
+                    retry_declined=retry,
                 )
                 messages.success(
                     request,
@@ -394,6 +408,7 @@ def remaining_payment(request, pk):
                 context=values["context"],
                 received_on=values.get("received_on"),
                 zelle_sender=values.get("zelle_sender", ""),
+                retry_declined=retry,
             )
             posted = request.POST.copy()
             posted["reviewed_hash"] = digest
@@ -409,7 +424,7 @@ def remaining_payment(request, pk):
     return render(
         request,
         "core/remaining_payment.html",
-        {"booking": booking, "form": form, "reviewed": reviewed},
+        {"booking": booking, "form": form, "reviewed": reviewed, "retry": retry},
     )
 
 

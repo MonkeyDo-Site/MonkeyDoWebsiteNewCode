@@ -44,7 +44,8 @@ class MessageViewTests(TestCase):
         self.assertEqual(queued.booking_id, self.booking.pk)
         self.assertEqual(queued.recipient, "updated@example.invalid")
         self.assertEqual(queued.state, "queued")
-        self.assertIn("No admission payment has been collected", queued.text_body)
+        self.assertIn("Your card will be charged upon arrival.", queued.text_body)
+        self.assertNotIn("Actual payment received", queued.text_body)
         self.assertEqual(message.recipient, "test@example.invalid")
 
     def test_repeated_waiver_resend_does_not_create_more_links(self):

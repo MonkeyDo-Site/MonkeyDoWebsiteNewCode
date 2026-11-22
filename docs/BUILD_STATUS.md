@@ -1,5 +1,10 @@
 # Staging build status
 
+## Sixth review — PR #32 in progress
+
+Implements the complete sixth feedback batch and manual owner card retry. Previous PR #31 is merged; owner reports deployment and successful sandbox payment after Banquest's reset. This PR does not change live payment activation, schema, credentials, backup activation, homepage design or memberships. See [scope](SIXTH_BATCH_REVIEW.md), [test guide](SIXTH_BATCH_TEST_GUIDE.md) and final PR check results before merging.
+
+
 ## November 20 staging collection fix
 
 The operator reported PR #30 deployed from reviewed commit

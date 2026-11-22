@@ -480,4 +480,10 @@ def summary(booking):
         "pending": pending,
         "operations": operations.order_by("-requested_at"),
         "can_collect": bool(due and not pending and not corrected),
+        "can_retry": bool(
+            due
+            and not pending
+            and not corrected
+            and operations.filter(kind="receipt", tender="card", state="declined").exists()
+        ),
     }

@@ -16,7 +16,7 @@ from core.public_booking_views import current, limit, save
 from .gateway import ProviderFailure
 from .models import PaymentMethod, PaymentSetup
 from .policy import VERSION
-from .setup import choose_saved, exchange, flow_identity
+from .setup import choose_saved, exchange, flow_identity, selected_consent
 
 
 class SetupForm(forms.Form):
@@ -68,12 +68,21 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
         data = json.loads(request.body)
         if not isinstance(data, dict) or set(data) - set(SetupForm.base_fields):
             raise ValidationError("Use the secure card-entry form.")
+        # Primary-card customers accept the displayed payment terms through the
+        # explicit Save action; alternate methods retain their separate checkbox.
+        if not actor and flow.get("details", {}).get("expected_method") == "card":
+            data["agree_payment"] = True
         form = SetupForm(data)
         if not form.is_valid():
-            return JsonResponse(
-                {"error": "Complete secure card entry and accept both payment policies."},
-                status=400,
-            )
+            if any(name in form.errors for name in ("expiry_month", "expiry_year")):
+                explanation = (
+                    "Please check the expiration month and year in the secure card fields."
+                )
+            elif any(name in form.errors for name in ("agree_payment", "agree_cancellation")):
+                explanation = "Please accept the applicable payment and cancellation policies before saving your card."
+            else:
+                explanation = "Please complete the card number, expiration date and security code in the secure fields."
+            return JsonResponse({"error": explanation}, status=400)
         values = form.cleaned_data
         if (
             str(values["wizard_key"]) != flow["key"]
@@ -113,7 +122,23 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
                     status=202,
                 )
             accepted = result.consent
+        flow.pop("payment_method_changed", None)
+        from core.models import AuditEvent
+
+        AuditEvent.objects.get_or_create(
+            action="payment.policy_accepted",
+            record_type="payment_consent",
+            record_id=str(accepted.pk),
+            defaults={
+                "actor": actor,
+                "changes": {
+                    "expected_method": flow.get("details", {}).get("expected_method"),
+                    "policy_version": VERSION,
+                },
+            },
+        )
         flow["payment_consent"] = str(accepted.pk)
+        flow["payment_consent_method"] = flow.get("details", {}).get("expected_method")
         writer(request, flow)
         return JsonResponse(
             {
@@ -126,7 +151,8 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
     except ValidationError as error:
         public_error = (
             error.message
-            if getattr(error, "code", "") in {"expired_saved_method", "unusable_saved_method"}
+            if getattr(error, "code", "")
+            in {"expired_saved_method", "unusable_saved_method", "entered_card_expiry"}
             else "Card setup could not be completed for this booking. Please review your details or call/text 848-238-5147."
         )
         return JsonResponse({"error": public_error}, status=400)
@@ -145,16 +171,60 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
 
 
 def card_context(flow):
-    from .policy import CANCELLATION, CANCELLATION_SCOPE, PAYMENT, RETENTION, VERSION
+    from django.db.models import Q
+
+    from .policy import (
+        BACKUP_CANCELLATION,
+        BACKUP_PAYMENT,
+        BACKUP_RETENTION,
+        CANCELLATION,
+        CANCELLATION_SCOPE,
+        PAYMENT,
+        RETENTION,
+        VERSION,
+    )
     from .setup import reusable_methods
 
+    method = flow.get("details", {}).get("expected_method", "card")
+    names = {
+        "card": "credit card",
+        "cash": "cash",
+        "check": "check",
+        "zelle": "Zelle",
+        "gift_card": "gift card",
+    }
+    try:
+        accepted = selected_consent(flow)
+    except ValidationError:
+        accepted = None
+    methods = reusable_methods(flow)
+    if flow.get("payment_method_changed") and flow.get("payment_setup_key"):
+        previous = PaymentSetup.objects.filter(
+            pk=flow["payment_setup_key"], flow_hash=flow_identity(flow)[0], state="succeeded"
+        ).first()
+        if previous and previous.method_id:
+            methods = PaymentMethod.objects.filter(
+                Q(pk__in=methods.values("pk")) | Q(pk=previous.method_id), state="active"
+            )
     return {
-        "card_setup_key": flow.get("payment_setup_key") or uuid.uuid4(),
+        "card_primary": method == "card",
+        "card_backup_payment": BACKUP_PAYMENT,
+        "card_backup_retention": BACKUP_RETENTION,
+        "card_backup_cancellation": BACKUP_CANCELLATION,
+        "card_method_name": names.get(method, method),
+        "card_is_zelle": method == "zelle",
+        "card_ready": accepted is not None,
+        "card_accepted_consent": str(accepted.pk) if accepted else "",
+        "card_accepted_last_four": accepted.method.last_four if accepted else "",
+        "card_public_booking": not bool(flow.get("staff_actor")),
+        "card_setup_key": uuid.uuid4()
+        if flow.get("payment_method_changed")
+        else (flow.get("payment_setup_key") or uuid.uuid4()),
         "card_endpoint": reverse("customer_card_setup"),
         "card_status_url": reverse("customer_card_status", args=[flow["payment_setup_key"]])
-        if flow.get("payment_setup_key")
+        if flow.get("payment_setup_key") and not flow.get("payment_method_changed")
         else "",
-        "card_methods": reusable_methods(flow),
+        "card_methods": methods,
         "card_policy_version": VERSION,
         "card_payment_policy": PAYMENT,
         "card_retention_policy": RETENTION,
@@ -180,6 +250,14 @@ def setup_status(request, setup_id, *, reader=current, writer=save):
         digest, _ = flow_identity(flow)
         setup = PaymentSetup.objects.select_related("method").get(pk=setup_id, flow_hash=digest)
         if setup.state == "succeeded":
+            if flow.get("payment_method_changed"):
+                return JsonResponse(
+                    {
+                        "state": "review",
+                        "error": "Your card was saved. Choose it and accept the policies for your selected payment method.",
+                    },
+                    status=409,
+                )
             accepted = setup.consent
             if setup.method.state != "active":
                 raise ValidationError("This payment method is no longer available.")

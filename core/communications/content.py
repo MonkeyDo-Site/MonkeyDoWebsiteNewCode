@@ -52,9 +52,7 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
             ]
         ),
         "",
-        "Your booking is complimentary. No payment or card is required."
-        if comped
-        else f"Your total is ${quote['total']}. You selected to pay via {booking.get_expected_method_display()}.",
+        "Your booking is complimentary. No payment or card is required." if comped else "",
     ]
     for item in quote["lines"]:
         lines.append(
@@ -64,14 +62,20 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
     if Decimal(quote["processing_fee"]):
         lines.append(f"Credit-card processing fee: ${quote['processing_fee']}")
     lines.append(f"Sales tax: ${quote['sales_tax']}")
-    if actual is None:
+    if actual is None and not comped:
         lines.extend(
             [
-                f"Estimated total due at arrival: ${quote['total']}",
-                "No admission payment has been collected. Staff will review and collect payment after you arrive.",
+                f"Your total is ${quote['total']}.",
+                (
+                    "You selected to pay via credit card. Your card will be charged upon arrival."
+                    if booking.expected_method == "card"
+                    else f"You selected to pay via {booking.get_expected_method_display()}, which is due upon arrival."
+                    if booking.expected_method in {"cash", "check"}
+                    else ""
+                ),
             ]
         )
-    else:
+    elif actual is not None:
         lines.extend(
             [
                 f"Actual payment received, net of recorded reversals: ${actual:.2f}",
@@ -87,13 +91,18 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
         lines.extend(
             [
                 "",
-                "You selected Zelle as your form of payment. Please Zelle payment to monkeydoplay@gmail.com.",
+                (
+                    "You selected to pay via Zelle. Please Zelle payment at any time to monkeydoplay@gmail.com. "
+                    "If the Zelle isn’t received before the visit and cannot be taken care of upon arrival, your backup card will be charged."
+                )
+                if actual is None
+                else "You selected Zelle as your form of payment. Please Zelle payment to monkeydoplay@gmail.com only for any verified remaining balance.",
             ]
         )
     if booking.expected_method == "gift_card" and not comped:
         lines.extend(["", "Gift card must be presented upon arrival."])
-    if booking.socks:
-        lines.append("Grip socks: Pick up upon arrival.")
+    if not booking.socks:
+        lines.append("Please remember to bring along your grip socks.")
     if waiver_url:
         lines.append("")
         if waiver_type == "multiple":
@@ -122,7 +131,10 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
     if booking.source == "staff" and not comped:
         lines.append(CANCELLATION + " " + CANCELLATION_SCOPE)
     lines.extend(["", "Get ready to go bananas,", "The Monkey Do team"])
-    return "\n".join(lines)
+    body = "\n".join(lines)
+    while "\n\n\n" in body:
+        body = body.replace("\n\n\n", "\n\n")
+    return body
 
 
 def waiver_completed(signature, booking):

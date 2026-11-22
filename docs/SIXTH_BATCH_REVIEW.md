@@ -19,3 +19,16 @@ Authorized November 21, 2026 after review of all 19 comments and 20 screenshots.
 Develop in a draft PR. Show owner only updated Payment Details screenshots (including alternate-payment wording); other pages will receive owner acceptance after staging deployment. Preserve the browser ZIP download plus one PowerShell command. Do not merge or deploy automatically. Homepage design, active memberships and live payment activation are outside this batch.
 
 Implementation and validation results will be added before review.
+
+## Implementation decisions
+
+- PR #32 extends the existing remaining-balance service with an owner-only Retry card route on both booking and payment detail. It rechecks declined/pending/corrected state and current amount/card inside confirmation; no provider request occurs on opening or reviewing the page.
+- Waiver acknowledgment revision MD-WAIVER-2026-02 uses the unchanged legal release. Both it and MD-WAIVER-2026-01 remain eligible for current participant/date coverage. Original evidence and acknowledgment text are never overwritten. New parent signatures store no signer email/phone; existing historical contacts remain under the existing retention policy.
+- Adult-only visits use the same form. Relationship is required when minors are entered; an adult signing without minors can leave it blank. No Self option or special adult-only screen is introduced.
+- Public payment policies use MD-PAYMENT-2026-02, retaining earlier versions. Primary-card payment acceptance is the explicit Save action beside the shown terms; backup methods retain their checkbox. The stored policy includes both displayed variants and acceptance records the intended method. No tax, price, cancellation calculation, surcharge or issuer-hold rule changes.
+- New confirmation messages use MD-EMAIL-2026-02 with deterministic branded HTML from the frozen message text and a plain-text alternative. Existing frozen messages remain intact; paid/corrected resends retain actual received and remaining facts.
+- Browser history uses browser-session-owned step checkpoints, server-side stale-flow/edited-answer checks, no-store headers and back/forward-cache revalidation. It creates no financial GET action. Completed flows resolve to the saved receipt.
+- The original provider frame was surrounded by excess height. The public payment frame has compact responsive sizing; genuine provider iframe/card-brand acceptance remains part of hosted testing. Local browser captures simulate provider card entry and both external adapters; no external requests or actual charges are claimed by those checks.
+- No schema changes are required. Use the normal Functional deployment; preserve existing sandbox flags, credentials and disabled backups.
+
+The owner-facing [testing guide](SIXTH_BATCH_TEST_GUIDE.md) covers the full batch. Only Payment Details images are supplied for pre-deployment design review.

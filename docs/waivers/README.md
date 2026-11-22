@@ -1,5 +1,10 @@
 # MonkeyDo waiver source and status
 
+## Current sixth-review update
+
+PR #32 implements the approved conditional coverage screens, separate post-signing completion, same adult-only form, and removal of signer contact fields and Self choices. No active email/verification flow used the shared parent's contact; the completion notice goes to the booking customer. The legal release and source PDF remain unchanged. MD-WAIVER-2026-02 records the shorter age acknowledgment for new signatures; unexpired MD-WAIVER-2026-01 coverage remains usable. Existing evidence is unchanged. New/all-expired customers must sign now and may also request the shared link. See [accepted scope](../SIXTH_BATCH_REVIEW.md) and [testing guide](../SIXTH_BATCH_TEST_GUIDE.md). Historical planning/prototype notes below describe earlier checkpoints.
+
+
 ## Preserved source
 
 - File: `source/MD Waiver (1).pdf`

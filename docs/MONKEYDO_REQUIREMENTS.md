@@ -1,5 +1,10 @@
 # MonkeyDo current website requirements
 
+## Sixth booking review — approved and implemented in PR #32
+
+The sixth review supersedes earlier ordinary-booking presentation and navigation details: conditional waiver selection with signing required for new/all-expired customers; no signer contact inputs or Self choices; same adult-only signing form; separate completion pages; method-specific Payment Details; Save card then explicitly Confirm booking; compact totals and branded confirmation email; owner-only declined-card retry of the unpaid balance. Financial calculations, waiver legal release, prior evidence, held group places and owner/staff boundaries are preserved. See [accepted scope](SIXTH_BATCH_REVIEW.md) and [staging test guide](SIXTH_BATCH_TEST_GUIDE.md). Homepage design and active memberships remain outside this batch.
+
+
 Consolidated November 5, 2026 from history prompts A–AG and later owner answers. This document replaces the older planning checkpoint for current requirements. Specialized rules live in the linked companion documents. All behavior below is an implementation target unless explicitly identified as existing evidence.
 
 ## 1. Scope, status, and approvals

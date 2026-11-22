@@ -1,1 +1,1 @@
-{% if signature.state != 'signed' %}{{ signature.get_state_display }}{% elif signature.valid_until <= waiver_now %}Expired{% elif signature.version_id != current_version %}Earlier version{% else %}Current and unexpired{% endif %}
+{% if signature.state != 'signed' %}{{ signature.get_state_display }}{% elif signature.valid_until <= waiver_now %}Expired{% elif signature.version_id not in coverage_versions %}Earlier version{% else %}Current and unexpired{% endif %}
