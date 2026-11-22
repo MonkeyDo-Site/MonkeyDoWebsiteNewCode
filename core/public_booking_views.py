@@ -279,6 +279,11 @@ class CompletedConfirmForm(ConfirmForm):
         label="I understand this is a sandbox booking. Admission payment is collected only after staff review at arrival."
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if settings.APP_ENV == "production":
+            self.fields.pop("acknowledge_test", None)
+
 
 def display(request, flow, *, form=None, error=None, notice=None):
     session = public_session(flow["session_id"])

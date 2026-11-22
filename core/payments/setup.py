@@ -27,12 +27,12 @@ from .models import (
 from .policy import (
     BACKUP_CANCELLATION,
     BACKUP_PAYMENT,
-    BACKUP_RETENTION,
     CANCELLATION,
     CANCELLATION_SCOPE,
     PAYMENT,
     POLICY_HASH,
     PRIMARY_PAYMENT,
+    PUBLIC_PAYMENT_ACCEPTANCE,
     RETENTION,
     VERSION,
 )
@@ -105,7 +105,7 @@ def consent(*, method, digest, retain, actor=None, accepted_at=None):
                 "scope": CANCELLATION_SCOPE,
                 "primary_card_payment": PRIMARY_PAYMENT,
                 "backup_card_payment": BACKUP_PAYMENT,
-                "backup_retention": BACKUP_RETENTION,
+                "public_payment_acceptance": PUBLIC_PAYMENT_ACCEPTANCE,
                 "backup_cancellation": BACKUP_CANCELLATION,
             },
         },

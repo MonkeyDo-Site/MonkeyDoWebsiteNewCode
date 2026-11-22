@@ -1021,3 +1021,21 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 @media(max-width:560px) { .public-payment-page .card-setup iframe { height:160px } }
 .card-setup [hidden] { display:none!important }
 .customer-booking-form .payment-navigation form + form { margin-top:0 }
+
+/* Payment-image review corrections: a clear second action after saving. */
+.payment-method-summary { padding-bottom:18px }
+.payment-method-summary .button { transform:translateY(-6px) }
+.card-confirm-actions .confirm-ready:not(:disabled) { background:var(--rose-ink); color:#fff; box-shadow:0 0 0 3px #ad415d22 }
+.card-confirm-actions .confirm-ready:not(:disabled):hover { background:#92334c }
+.card-confirm-actions .confirm-ready:focus-visible { outline:3px solid var(--rose-ink); outline-offset:5px }
+@media(prefers-reduced-motion:no-preference) {
+ .card-confirm-actions .confirm-attention:not(:disabled) { animation:booking-confirm-pulse 1.1s ease-in-out 3 }
+ @keyframes booking-confirm-pulse {
+  0%,100% { box-shadow:0 0 0 3px #ad415d22 }
+  50% { box-shadow:0 0 0 10px #ad415d40 }
+ }
+}
+@media(max-width:850px) {
+ .payment-method-summary .button { margin-bottom:22px }
+}
+.card-step-arrow { pointer-events:none; flex:none; width:28px; height:28px; line-height:28px; text-align:center; align-self:center }

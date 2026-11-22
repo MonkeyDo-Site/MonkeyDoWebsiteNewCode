@@ -68,9 +68,9 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
         data = json.loads(request.body)
         if not isinstance(data, dict) or set(data) - set(SetupForm.base_fields):
             raise ValidationError("Use the secure card-entry form.")
-        # Primary-card customers accept the displayed payment terms through the
-        # explicit Save action; alternate methods retain their separate checkbox.
-        if not actor and flow.get("details", {}).get("expected_method") == "card":
+        # Public customers accept displayed payment terms by explicitly saving
+        # the card. Staff still record their separate policy-reviewed checkbox.
+        if actor is None:
             data["agree_payment"] = True
         form = SetupForm(data)
         if not form.is_valid():
@@ -176,7 +176,6 @@ def card_context(flow):
     from .policy import (
         BACKUP_CANCELLATION,
         BACKUP_PAYMENT,
-        BACKUP_RETENTION,
         CANCELLATION,
         CANCELLATION_SCOPE,
         PAYMENT,
@@ -209,7 +208,6 @@ def card_context(flow):
     return {
         "card_primary": method == "card",
         "card_backup_payment": BACKUP_PAYMENT,
-        "card_backup_retention": BACKUP_RETENTION,
         "card_backup_cancellation": BACKUP_CANCELLATION,
         "card_method_name": names.get(method, method),
         "card_is_zelle": method == "zelle",

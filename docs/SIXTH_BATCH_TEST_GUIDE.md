@@ -30,13 +30,15 @@ After signing through the emailed shared link, expect only the thank-you and app
 
 Try Credit card, Cash, Check and Zelle. Check that each page has a compact cream itemized breakdown, with amounts aligned on the right and “Total due at arrival”. Tax and applicable card fees remain in these final payment details; the earlier Session Details estimate still excludes them.
 
-Credit card shows only its intended arrival-payment explanation and cancellation acknowledgment, without the alternate-payment agreement checkbox. Cash/Check/Zelle explain the backup card and retain that agreement checkbox. Zelle says its instructions will arrive by email. Check the owner's supplied public cancellation sentence and separate membership sentence. Existing fee calculations, minimum-admission fees and owner-comped exceptions have not changed.
+Credit card shows only its intended arrival-payment explanation. Cash/Check/Zelle explain the backup card. No public payment-policy checkbox or booking-only-card disclaimer is shown: explicitly choosing Save card securely records acceptance of the displayed payment terms. The separate cancellation acknowledgment and optional future-use choice remain. Zelle says its instructions will arrive by email. Check the owner's supplied public cancellation sentence and separate membership sentence. Existing fee calculations, minimum-admission fees and owner-comped exceptions have not changed.
 
 Use Switch payment method on Payment Details. Previously signed waivers must remain saved. The quote updates for the new method; explicitly save/accept the applicable card policies again. A card already saved within this booking can be selected again without entering another card. Booking-only cards are not silently changed into future-use cards.
 
 ## 6. Save card, then confirm
 
-Save card securely and Confirm booking appear beside each other with an arrow on wide screens; they stack on phones. Confirm booking starts lighter and disabled. Save the card and accept applicable policies. After successful setup, expect “Card saved successfully … You can now confirm your booking” and an enabled Confirm booking button. There is no automatic final booking submission.
+Save card securely and Confirm booking appear beside each other with an arrow on wide screens; they stack on phones. Confirm booking starts lighter and disabled. There is only one Save card securely button. After successful setup, Confirm booking turns rose, pulses gently three times, receives focus and comes into view if needed. Expect “Your card is saved. Click Confirm booking to finish your reservation.” Reduced-motion settings suppress the pulse. The button remains rose after the animation ends. There is no automatic final booking submission.
+
+The initial credit-card message is “Card will be charged at arrival. Save your card first, then confirm your booking.” The backup-card message begins “Saving a backup card does not charge it.” Switch payment method is positioned slightly higher, with more space before the backup-card explanation. The sandbox acknowledgment appears only in staging/development/test; the production form omits it.
 
 Changing the selected card or its policy choices disables confirmation until it is saved again. Incomplete provider card entry should give actionable instructions and allow correction. An uncertain server/provider response instead asks you to check the existing setup; it must not silently exchange a second card token.
 

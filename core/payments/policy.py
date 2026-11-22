@@ -28,7 +28,7 @@ CANCELLATION_SCOPE = (
 )
 PRIMARY_PAYMENT = "You’re almost done with your booking. You chose to pay by credit card. Payment will be processed after you arrive."
 BACKUP_PAYMENT = "Please note: MonkeyDo requires a backup credit card for each booking by cash, check or Zelle. Please enter your credit card info. The card will only be charged in the event the form of payment you chose isn’t received."
-BACKUP_RETENTION = "A card saved only for this booking is removed when its payment obligations are settled. A card you choose to keep for future visits remains saved; cards needed by other outstanding bookings remain until those obligations are resolved."
+PUBLIC_PAYMENT_ACCEPTANCE = "The customer accepts the displayed payment terms by explicitly selecting Save card securely; no separate payment-policy checkbox is presented. Cancellation acknowledgment and optional future-use consent remain separate."
 BACKUP_CANCELLATION = CANCELLATION.replace(
     "credit card will be charged", "backup card will be charged"
 )
@@ -42,7 +42,7 @@ POLICY_HASH = hashlib.sha256(
             CANCELLATION_SCOPE,
             PRIMARY_PAYMENT,
             BACKUP_PAYMENT,
-            BACKUP_RETENTION,
+            PUBLIC_PAYMENT_ACCEPTANCE,
             BACKUP_CANCELLATION,
         ]
     ).encode()

@@ -218,8 +218,62 @@ class SixthBookingTests(TestCase):
         self.assertNotContains(page, "backup credit card for each booking")
         self.assertContains(page, "data-confirm-booking disabled")
         self.assertContains(page, "Total due at arrival")
+        self.assertContains(
+            page,
+            "Card will be charged at arrival. Save your card first, then confirm your booking.",
+        )
+        self.assertContains(page, "Save card securely", count=1)
         self.assertNotContains(page, "Estimated total at arrival")
         self.assertIn("no-store", page.headers["Cache-Control"])
+
+    def test_backup_card_uses_save_action_without_disclaimer_or_payment_checkbox(self):
+        flow = self.bare_flow()
+        flow["stage"] = "review"
+        flow["details"]["expected_method"] = "cash"
+        flow["quote"] = review_quote(flow, flow["details"])
+        self.store(flow)
+        page = self.client.get(reverse("customer_booking"))
+        self.assertNotContains(page, "A card saved only for this booking")
+        self.assertNotContains(page, "I agree to this payment policy")
+        self.assertNotContains(page, "create a verification hold")
+        self.assertContains(page, "Saving a backup card does not charge it.")
+        self.assertContains(page, "I understand the Monkey Do cancellation policy")
+        self.assertContains(page, "Save card securely", count=1)
+        with patch("core.payments.setup.Gateway") as gateway:
+            self.gateway(gateway)
+            payload = {
+                "wizard_key": flow["key"],
+                "wizard_stage": "review",
+                "policy_version": PAYMENT_VERSION,
+                "request_key": str(uuid.uuid4()),
+                "nonce": "nonce-Synthetic",
+                "expiry_month": 12,
+                "expiry_year": 2035,
+                "agree_cancellation": True,
+                "retain": False,
+            }
+            response = self.client.post(
+                reverse("customer_card_setup"), payload, content_type="application/json"
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+            gateway.return_value.charge.assert_not_called()
+        from core.payments.models import PaymentConsent
+
+        accepted = PaymentConsent.objects.get()
+        self.assertTrue(accepted.payment_accepted)
+        self.assertTrue(accepted.cancellation_accepted)
+        self.assertIn(
+            "explicitly selecting Save card securely",
+            accepted.policy.text["public_payment_acceptance"],
+        )
+        self.assertFalse(FinancialPosting.objects.exists())
+
+    def test_sandbox_acknowledgment_is_absent_from_production_form(self):
+        from core.public_booking_views import CompletedConfirmForm
+
+        self.assertIn("acknowledge_test", CompletedConfirmForm().fields)
+        with override_settings(APP_ENV="production"):
+            self.assertNotIn("acknowledge_test", CompletedConfirmForm().fields)
 
     def test_confirmation_emails_have_one_total_conditional_socks_and_escaped_branded_html(self):
         flow = self.ready()

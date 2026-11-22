@@ -15,14 +15,23 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     if (confirmedChoice) confirmedChoice.value = '';
     if (confirm) confirm.disabled = true;
     section.dataset.ready = '0';
+    if (confirm) confirm.classList.remove('confirm-ready', 'confirm-attention');
   };
   const showSaved = data => {
-    report(`Card saved successfully · ending in ${data.last_four}. You can now confirm your booking.`);
+    report('Your card is saved. Click Confirm booking to finish your reservation.');
     const summary = document.querySelector('[data-selected-card]');
     if (summary) summary.textContent = `Saved payment method ending in ${data.last_four}. No admission payment has been collected.`;
     button.disabled = true;
     if (confirmedChoice) confirmedChoice.value = data.consent_id;
-    if (confirm) confirm.disabled = false;
+    if (confirm) {
+      confirm.disabled = false;
+      confirm.classList.add('confirm-ready', 'confirm-attention');
+      confirm.focus({preventScroll: true});
+      const bounds = confirm.getBoundingClientRect();
+      if (bounds.top < 0 || bounds.bottom > window.innerHeight) {
+        confirm.scrollIntoView({block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+      }
+    }
     form.elements.request_key.value = crypto.randomUUID();
     check.hidden = true;
     uncertain = false;
@@ -62,7 +71,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     button.disabled = false;
     statusUrl = '';
     check.hidden = true;
-    report('Save your selected card and policies before confirming your booking.');
+    report(publicStatus?.dataset.idleMessage || 'Save your selected card and policies before confirming your booking.');
   });
   sync();
   form.addEventListener('submit', async event => {
@@ -123,7 +132,8 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     }
   });
   if (section.dataset.ready === '1') {
-    if (confirm) confirm.disabled = false;
+    form.elements.request_key.value = crypto.randomUUID();
+    if (confirm) { confirm.disabled = false; confirm.classList.add('confirm-ready'); }
     button.disabled = true;
   } else if (statusUrl) {
     button.disabled = true;

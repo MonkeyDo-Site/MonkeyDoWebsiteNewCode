@@ -11,12 +11,12 @@
 <div data-new-card><div id="provider-card-frame" aria-label="Secure provider card entry"></div>
 <label><input type="checkbox" name="retain"> {% if card_staff %}The customer wants to keep this card for future MonkeyDo visits.{% else %}Keep this card for future MonkeyDo visits.{% endif %} If there is already a saved card, this replaces it for future use after this booking is completed.</label></div>
 {% if card_staff %}<label><input type="checkbox" name="agree_payment" required> The payment and cancellation policies have been reviewed with the customer.</label><input type="hidden" name="agree_cancellation" value="1">
-{% else %}{% if card_primary %}<input type="hidden" name="agree_payment" value="1">{% else %}<p class="caption">{{ card_backup_retention }}</p><label><input type="checkbox" name="agree_payment" required> I agree to this payment policy.</label>{% endif %}
+{% else %}<input type="hidden" name="agree_payment" value="1">
 <h3>Cancellation policy</h3><p>{% if card_public_booking %}{% if card_primary %}{{ card_cancellation_policy }}{% else %}{{ card_backup_cancellation }}{% endif %}{% else %}{{ card_cancellation_policy }} {{ card_cancellation_scope }}{% endif %}</p>
 <label><input type="checkbox" name="agree_cancellation" required> I understand the Monkey Do cancellation policy.</label>{% endif %}
-<button type="submit" class="button" data-save-card{% if card_public_booking %} hidden{% endif %}>Save card securely</button>
+{% if not card_public_booking %}<button type="submit" class="button" data-save-card>Save card securely</button>{% endif %}
 <button type="button" class="text-button" data-check-card hidden>Check card setup</button>
-<p class="caption" role="status" data-card-status>{% if card_public_booking and card_primary %}Card will be charged at arrival.{% else %}Saving a card does not charge your admission or create a verification hold.{% endif %}</p>
+{% if not card_public_booking %}<p class="caption" role="status" data-card-status>Saving a card does not charge your admission or create a verification hold.</p>{% endif %}
 </form>
 {{ card_public_key|json_script:'card-tokenization-key' }}
 <script src="https://tokenization.sandbox.banquestgateway.com/tokenization/v0.3" defer></script>
