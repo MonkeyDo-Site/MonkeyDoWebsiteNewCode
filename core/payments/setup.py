@@ -24,7 +24,18 @@ from .models import (
     PaymentPolicyVersion,
     PaymentSetup,
 )
-from .policy import CANCELLATION, CANCELLATION_SCOPE, PAYMENT, POLICY_HASH, RETENTION, VERSION
+from .policy import (
+    BACKUP_CANCELLATION,
+    BACKUP_PAYMENT,
+    CANCELLATION,
+    CANCELLATION_SCOPE,
+    PAYMENT,
+    POLICY_HASH,
+    PRIMARY_PAYMENT,
+    PUBLIC_PAYMENT_ACCEPTANCE,
+    RETENTION,
+    VERSION,
+)
 
 
 def flow_identity(flow):
@@ -43,16 +54,14 @@ def flow_identity(flow):
 
 
 def reusable_methods(flow):
+    from django.db.models import Q
+
     digest, customer = flow_identity(flow)
-    if customer is None:
-        return PaymentMethod.objects.none()
-    return PaymentMethod.objects.filter(
-        customer=customer,
-        reusable=True,
-        state="active",
-        environment="sandbox",
-        booking__isnull=False,
-    )
+    current = PaymentSetup.objects.filter(flow_hash=digest, state="succeeded").values("method_id")
+    scope = Q(pk__in=current)
+    if customer:
+        scope |= Q(customer=customer, reusable=True, booking__isnull=False)
+    return PaymentMethod.objects.filter(scope, state="active", environment="sandbox")
 
 
 def authorize_actor(flow, actor):
@@ -94,6 +103,10 @@ def consent(*, method, digest, retain, actor=None, accepted_at=None):
                 "retention": RETENTION,
                 "cancellation": CANCELLATION,
                 "scope": CANCELLATION_SCOPE,
+                "primary_card_payment": PRIMARY_PAYMENT,
+                "backup_card_payment": BACKUP_PAYMENT,
+                "public_payment_acceptance": PUBLIC_PAYMENT_ACCEPTANCE,
+                "backup_cancellation": BACKUP_CANCELLATION,
             },
         },
     )
@@ -292,7 +305,7 @@ def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted, ac
     writes_allowed()
     authorize_actor(flow, actor)
     digest, customer = flow_identity(flow)
-    if customer is None or payment_accepted is not True or cancellation_accepted is not True:
+    if payment_accepted is not True or cancellation_accepted is not True:
         raise ValidationError("Verify customer details and accept both payment policies.")
     method = reusable_methods(flow).get(pk=method_id)
     try:
@@ -337,11 +350,13 @@ def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted, ac
         method = reusable_methods(flow).select_for_update().get(pk=method_id)
         method.brand, method.last_four = brand, last_four
         method.save(update_fields=["brand", "last_four"])
-        return consent(method=method, digest=digest, retain=True, actor=actor)
+        return consent(method=method, digest=digest, retain=method.reusable, actor=actor)
 
 
 def selected_consent(flow):
     digest, customer = flow_identity(flow)
+    if flow.get("payment_method_changed"):
+        raise ValidationError("Review and save your card for the selected payment method.")
     try:
         accepted = PaymentConsent.objects.select_related("method").get(
             pk=flow["payment_consent"],

@@ -1,9 +1,9 @@
-{% extends 'core/base.html' %}{% load date_labels %}{% block title %}MONKEYDO LLC Liability Waiver{% endblock %}{% block content %}
+{% extends 'core/base.html' %}{% load date_labels static %}{% block title %}MONKEYDO LLC Liability Waiver{% endblock %}{% block content %}
 {% if flow %}{% include 'core/partials/booking_progress.html' %}{% endif %}<div class="container section"><h1>MONKEYDO LLC Liability Waiver</h1><p>Version {{ version.pk }}</p>
 {% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}
 {% if appointment %}<p>Appointment: {{ appointment|date:'l, F j, Y g:i A' }}</p>{% endif %}
 <p>Please read the complete waiver before continuing. <a href="{% url 'unsigned_waiver' %}">Download the unsigned PDF</a>.</p>
 <section class="panel waiver-legal" tabindex="0" aria-label="Complete liability waiver text">{{ legal_html|safe }}</section>
-<form method="post" class="panel record-form">{% if flow %}{% include 'core/partials/wizard_identity.html' %}{% else %}{% csrf_token %}{% endif %}<h2>Sign the waiver</h2><p>Your waiver will be linked automatically. You do not need to enter a booking confirmation number.</p>
+<form method="post" class="panel record-form" data-waiver-signing>{% if flow %}{% include 'core/partials/wizard_identity.html' %}{% else %}{% csrf_token %}{% endif %}<h2>Sign Waiver</h2><p>Every participating minor needs a signed waiver.</p><p>Your waiver will be linked automatically. You do not need to enter a booking confirmation number.</p>
 {% include 'core/partials/form_fields.html' %}<button class="button">Sign waiver</button><p>Waivers are valid for one year, subject to the active waiver version and participant coverage.</p></form>
-{% if flow %}<p><a href="{% url 'customer_booking' %}">Return to your booking</a></p>{% endif %}</div>{% endblock %}
+{% if flow %}<p><a href="{% url 'customer_booking' %}">Return to your booking</a></p>{% endif %}</div><script src="{% static 'core/waiver-signing.js' %}" defer></script>{% endblock %}

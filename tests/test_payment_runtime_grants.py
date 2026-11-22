@@ -87,6 +87,19 @@ class PaymentRuntimeGrantTests(RuntimeRoleMixin, TestCase):
     arrival_inputs = fixtures.CheckoutTests.arrival_inputs
     act = fixtures.CheckoutTests.act
 
+    def test_new_waiver_and_payment_policy_versions_can_be_recorded_by_runtime_role(self):
+        from core.payments.setup import consent
+        from core.waivers.services import approved_version
+        from tests import test_payment_ledger as ledger
+
+        ledger.PaymentLedgerTests.sale(self)
+        with self.runtime_role():
+            version = approved_version()
+            accepted = consent(method=self.method, digest="a" * 64, retain=False)
+        self.assertEqual(version.pk, "MD-WAIVER-2026-02")
+        self.assertEqual(accepted.version, "MD-PAYMENT-2026-02")
+        self.assertIn("backup_card_payment", accepted.policy.text)
+
     def test_reviewed_card_confirmation_queues_once_without_financial_update_permission(self):
         booking = self.booking()
         data = self.arrival_inputs(booking)

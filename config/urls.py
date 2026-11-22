@@ -56,6 +56,12 @@ urlpatterns = [
         "staff/bookings/<int:pk>/card/change/", staff_setup.replace_card, name="booking_card_change"
     ),
     path("staff/bookings/<int:pk>/complimentary/", complimentary, name="booking_comped"),
+    path(
+        "staff/bookings/<int:pk>/payment/retry/",
+        remaining_payment,
+        {"retry": True},
+        name="booking_retry_card",
+    ),
     path("staff/bookings/<int:pk>/payment/", remaining_payment, name="booking_payment"),
     path("staff/bookings/<int:pk>/arrival/", booking_checkout, name="booking_arrival"),
     path(
@@ -92,6 +98,10 @@ urlpatterns = [
     path("staff/messages/<uuid:pk>/", message_views.message_detail, name="message_detail"),
     path("waiver/unsigned.pdf", waiver_views.unsigned_pdf, name="unsigned_waiver"),
     path("waiver/shared/<str:token>/", waiver_views.shared_sign, name="shared_waiver"),
+    path(
+        "book/payment-method/", public_booking_views.payment_method, name="customer_payment_method"
+    ),
+    path("book/waiver/complete/", waiver_views.public_complete, name="customer_waiver_complete"),
     path("book/waiver/", waiver_views.public_sign, name="customer_waiver"),
     path("staff/waivers/", waiver_views.waivers, name="waivers"),
     path("staff/waivers/<uuid:pk>/", waiver_views.waiver_detail, name="waiver_detail"),

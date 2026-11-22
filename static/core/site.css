@@ -976,3 +976,66 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .card-setup iframe { max-width:100%; border:0 }
 .waiver-coverage label { white-space:normal }
 .message-preview { overflow-wrap:anywhere }
+
+/* Sixth owner review: booking-only payment and waiver presentation. */
+.booking-progress.five-steps ol { grid-template-columns:repeat(5,minmax(0,1fr)); gap:.6rem }
+.booking-progress.five-steps li { gap:.35rem; font-size:.83rem }
+.booking-progress.five-steps svg { width:24px; min-width:24px }
+.public-payment-page { max-width:900px }
+.payment-quote { max-width:560px; padding:22px; margin:22px 0 28px; background:#faf7ef; border-radius:20px; min-width:0 }
+.payment-quote h3 { margin:0 0 18px }
+.payment-quote .quote-items { margin:0 }
+.payment-quote .quote-items>div { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px; margin:12px 0; align-items:baseline }
+.payment-quote dt { font-weight:600; font-size:.9rem }
+.payment-quote dd { margin:0; text-align:right; white-space:nowrap }
+.payment-quote .quote-total { border-top:1px solid #b9c4b8; padding-top:14px; font-weight:800 }
+.payment-method-summary { display:flex; align-items:flex-start; gap:24px; justify-content:space-between }
+.payment-method-summary p { margin-top:0; max-width:560px }
+.payment-method-summary .button { flex:none; margin:0 }
+.public-payment-page .card-setup { padding:0; margin:24px 0 12px }
+.card-setup #provider-card-frame { margin:12px 0 }
+.card-setup iframe { display:block; width:100% }
+.public-payment-page .card-setup h3 { font-size:22px; margin:24px 0 12px }
+.card-setup label { display:block }
+.card-confirm-actions { display:flex; align-items:center; gap:18px; margin:20px 0 12px; flex-wrap:wrap }
+.card-step-arrow { font-size:28px; color:#5b7966 }
+.card-confirm-actions .button:disabled { background:#becbbd; color:#3b5041; cursor:not-allowed; opacity:1 }
+.card-confirm-actions .button:disabled:hover { transform:none }
+.booking-confirm-form .sandbox-ack { font-size:.85rem; display:flex; align-items:flex-start; gap:8px }
+.booking-confirm-form input[type=checkbox] { flex:none; width:auto; margin-top:5px }
+.payment-navigation { display:flex; gap:22px; flex-wrap:wrap; margin-top:20px }
+.payment-navigation form { margin:0 }
+.waiver-coverage .form-field { margin-bottom:20px }
+@media(max-width:850px) {
+ .booking-progress.five-steps ol { grid-template-columns:repeat(3,minmax(0,1fr)); gap:.8rem }
+ .payment-method-summary { display:block }
+ .payment-method-summary .button { margin:0 0 16px }
+}
+@media(max-width:560px) {
+ .booking-progress.five-steps ol { grid-template-columns:repeat(2,minmax(0,1fr)) }
+ .card-confirm-actions { flex-direction:column; align-items:stretch; gap:8px }
+ .card-step-arrow { text-align:center; transform:rotate(90deg); line-height:1 }
+ .payment-quote { padding:18px }
+}
+.public-payment-page .card-setup iframe { height:100px }
+@media(max-width:560px) { .public-payment-page .card-setup iframe { height:160px } }
+.card-setup [hidden] { display:none!important }
+.customer-booking-form .payment-navigation form + form { margin-top:0 }
+
+/* Payment-image review corrections: a clear second action after saving. */
+.payment-method-summary { padding-bottom:18px }
+.payment-method-summary .button { transform:translateY(-6px) }
+.card-confirm-actions .confirm-ready:not(:disabled) { background:var(--rose-ink); color:#fff; box-shadow:0 0 0 3px #ad415d22 }
+.card-confirm-actions .confirm-ready:not(:disabled):hover { background:#92334c }
+.card-confirm-actions .confirm-ready:focus-visible { outline:3px solid var(--rose-ink); outline-offset:5px }
+@media(prefers-reduced-motion:no-preference) {
+ .card-confirm-actions .confirm-attention:not(:disabled) { animation:booking-confirm-pulse 1.1s ease-in-out 3 }
+ @keyframes booking-confirm-pulse {
+  0%,100% { box-shadow:0 0 0 3px #ad415d22 }
+  50% { box-shadow:0 0 0 10px #ad415d40 }
+ }
+}
+@media(max-width:850px) {
+ .payment-method-summary .button { margin-bottom:22px }
+}
+.card-step-arrow { pointer-events:none; flex:none; width:28px; height:28px; line-height:28px; text-align:center; align-self:center }

@@ -1,0 +1,7 @@
+{% load date_labels %}
+<h2>Sign Waiver</h2>
+<p>Every participating minor needs a signed waiver.{% if waiver_choices.has_expired %} Waivers expire after a year.{% if waiver_choices.signatures %} Some waivers you signed in the past have expired and some have not.{% else %} The waiver you previously signed has expired.{% endif %}{% elif waiver_choices.signatures %} Your current signed waivers:{% endif %}</p>
+{% for signature in waiver_choices.signatures %}<p>{% include 'core/partials/waiver_signer_summary.html' %} · expiring {{ signature.valid_until|date:'F j, Y' }}</p>{% endfor %}
+<p>{% if not waiver_choices.signatures %}Please select option 1 or both options:{% else %}Please select the applicable options:{% endif %}</p>
+<form method="post" id="customer-booking-form" class="waiver-coverage" data-waiver-choices>{% include 'core/partials/wizard_identity.html' %}{% include 'core/partials/form_fields.html' %}
+<div class="filter-actions"><button class="button" data-sign-waiver>Sign waiver{% if waiver_choices.signatures %} now{% endif %}</button>{% if waiver_choices.signatures %}<button class="button secondary" data-waiver-continue>Continue to payment</button>{% endif %}</div></form>

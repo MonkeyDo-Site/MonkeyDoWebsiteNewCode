@@ -36,7 +36,7 @@ def enqueue(
         "unsigned_waiver": unsigned_waiver,
         "customer_id": customer.pk if customer else None,
         "booking_id": booking.pk if booking else None,
-        "template_version": "MD-EMAIL-2026-01",
+        "template_version": "MD-EMAIL-2026-02",
     }
     message, created = MessageDelivery.objects.get_or_create(
         dedupe_key=key, defaults=data | {"fingerprint": fingerprint(data), "actor": actor}

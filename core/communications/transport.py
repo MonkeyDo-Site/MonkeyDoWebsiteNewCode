@@ -51,6 +51,13 @@ def send(delivery):
         "text": "MONKEYDO STAGING TEST — This is a test booking, not a real visit or payment.\n\n"
         + delivery.text_body,
     }
+    if delivery.template_version == "MD-EMAIL-2026-02" and delivery.kind in {
+        "booking_confirmation",
+        "booking_waiver",
+    }:
+        from .presentation import confirmation_html
+
+        payload["html"] = confirmation_html(delivery.text_body)
     if delivery.unsigned_waiver:
         source = settings.BASE_DIR / "docs" / "waivers" / "source" / "MD Waiver (1).pdf"
         data = source.read_bytes()

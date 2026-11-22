@@ -29,7 +29,9 @@ from .models import (
 from .storage import EvidenceStore, enabled
 
 NY = ZoneInfo("America/New_York")
-VERSION = "MD-WAIVER-2026-01"
+VERSION = "MD-WAIVER-2026-02"
+# The legal release is unchanged; the owner approved retaining earlier coverage.
+COVERAGE_VERSIONS = ("MD-WAIVER-2026-01", VERSION)
 SOURCE_HASH = "f159515b1c1c531bc57fce6a8813aa63f38f25da014459807759495f028ccdb6"
 
 
@@ -162,8 +164,6 @@ def prepare_signature(*, data, flow=None, share_token=None, ip=None, user_agent=
         k: values[k]
         for k in (
             "signer_name",
-            "signer_email",
-            "signer_phone",
             "relationship",
             "minors",
             "adult_accepted",
@@ -171,6 +171,8 @@ def prepare_signature(*, data, flow=None, share_token=None, ip=None, user_agent=
             "electronic_accepted",
         )
     }
+    facts["signer_email"] = ""
+    facts["signer_phone"] = ""
     identity = fingerprint(
         facts | {"flow": digest, "version": version.pk, "text_hash": version.text_hash}
     )
@@ -284,7 +286,7 @@ def valid_customer_signatures(customer, *, at=None):
     return WaiverSignature.objects.filter(
         customer_links__customer=customer,
         state="signed",
-        version_id=VERSION,
+        version_id__in=COVERAGE_VERSIONS,
         signed_at__lte=timezone.now(),
         valid_until__gt=at or timezone.now(),
     ).order_by("-signed_at")
@@ -300,20 +302,22 @@ def bind_booking(*, flow, booking):
         not isinstance(ids, list)
         or len(ids) > 100
         or (
-            not flow.get("waiver_share_requested")
-            and (not ids or flow.get("waiver_coverage") is not True)
+            not ids
+            or (not flow.get("waiver_share_requested") and flow.get("waiver_coverage") is not True)
         )
     ):
         raise ValidationError("Complete waiver coverage before confirming this booking.")
     if flow.get("waiver_share_requested") and booking.children + booking.babies == 0:
         raise ValidationError("Shared parent signing requires a booking that includes minors.")
+    selected = []
     for signature_id in ids:
         signature = WaiverSignature.objects.get(
             pk=signature_id,
             state="signed",
-            version_id=VERSION,
+            version_id__in=COVERAGE_VERSIONS,
             valid_until__gt=booking.session.starts_at,
         )
+        selected.append(signature)
         if signature.flow_hash != digest and not (
             customer and signature.customer_links.filter(customer=customer).exists()
         ):
@@ -321,6 +325,9 @@ def bind_booking(*, flow, booking):
         WaiverBookingLink.objects.get_or_create(signature=signature, booking=booking)
         if signature.flow_hash == digest:
             WaiverCustomerLink.objects.get_or_create(signature=signature, customer=booking.customer)
+    from .coverage_forms import validate_coverage
+
+    validate_coverage(flow, selected, bool(flow.get("waiver_share_requested")))
     from .models import BookingWaiverReview
 
     BookingWaiverReview.objects.get_or_create(

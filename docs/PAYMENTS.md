@@ -1,5 +1,12 @@
 # Payments, tax, card lifecycle, and Banquest evidence
 
+## Sixth review clarification
+
+PR #32 adds an explicit owner Retry card action for a verified decline, using the existing reviewed unpaid-balance service. No automatic retry and no retry of a pending/unknown outcome. Payment Details now has separate primary-card and backup-card instructions, the owner's supplied $15/$18 cancellation display wording plus membership sentence, and adjacent Save card / Confirm booking controls. Public wording does not change any cancellation, minimum-admission, tax or processing-fee calculation. Card saving is not an issuer approval or verification hold. Public payment-policy acceptance is recorded by the explicit Save card action for both primary and backup cards; there is no separate public payment-policy checkbox or booking-only-card disclaimer. The cancellation acknowledgment, optional future-use consent and existing retention rules remain. New consent wording is versioned, with historical consent preserved. See [sixth batch](SIXTH_BATCH_REVIEW.md).
+
+The owner has since reported a successful hosted sandbox charge after Banquest reset its processor setup. Earlier Resend delivery and Banquest signed-decline callbacks were verified from supplied outputs. Backups remain disabled pending owner-controlled recovery-key setup. Historical local-only status notes below describe earlier checkpoints.
+
+
 Consolidated November 5, 2026. Business rules are owner decisions; provider findings below are public documentation observations, not authenticated account tests. The original checkpoint was documentation-only. Authorized local integration work now exists in draft PR #30; see [implementation status](BOOKING_COMPLETION_DEVELOPMENT.md). No hosted credential installation, real provider verification or charge is claimed.
 
 ## 1. Payment timing, consent, and arrival

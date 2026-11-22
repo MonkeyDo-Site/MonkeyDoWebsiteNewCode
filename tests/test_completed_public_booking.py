@@ -125,23 +125,21 @@ class CompletedPublicBookingTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session[SESSION_KEY]["stage"], "waiver")
         response = self.client.get(reverse("customer_booking"))
-        self.assertContains(response, "Waiver coverage")
+        self.assertContains(response, "Sign Waiver")
         self.assertNotContains(response, "No card is collected")
         response = self.client.post(
             reverse("customer_booking"),
             {
                 "wizard_key": flow["key"],
                 "wizard_stage": "waiver",
-                "signatures": flow["waiver_signatures"],
-                "additional_minors": "no",
-                "coverage_confirmed": "on",
+                "use_existing": "on",
             },
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session[SESSION_KEY]["stage"], "review")
         response = self.client.get(reverse("customer_booking"))
-        self.assertContains(response, "Secure card setup")
-        self.assertContains(response, "Confirm sandbox booking")
+        self.assertContains(response, "Your credit card")
+        self.assertContains(response, "Confirm booking")
         response = self.client.post(
             reverse("customer_booking"),
             {
@@ -154,7 +152,7 @@ class CompletedPublicBookingTests(TestCase):
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Your sandbox booking is saved")
+        self.assertContains(response, "No admissions payment was collected online")
         self.assertContains(response, "Your confirmation email is being prepared")
         self.assertNotContains(
             response, "No card, payment, waiver or confirmation email has been recorded"

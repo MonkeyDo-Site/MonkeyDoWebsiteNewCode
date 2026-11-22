@@ -1,5 +1,10 @@
 # Customer email requirements and wording
 
+## Sixth review: ordinary booking confirmations
+
+PR #32 supersedes the older ordinary-booking copy below: one total after the itemized breakdown, followed by the selected method and its arrival/Zelle instructions; no repeated no-admission/staff-review paragraph; no duplicate socks pickup sentence; bring-your-grip-socks reminder only when no socks were ordered. New booking confirmations include branded HTML (logo, cream/green background, bold rose adventure heading, bold appointment and total/method) plus plain text. Paid/corrected resends must still state actual received/remaining amounts. Staging test labels and prior frozen messages remain. See [sixth batch](SIXTH_BATCH_REVIEW.md).
+
+
 Consolidated November 5, 2026. This preserves owner-edited wording and the surrounding drafts for documentation-PR review. It is not executable email code and does not send messages. Bracketed fields/conditions are template instructions, never literal customer text. Escape user input, pluralize counts/verbs and render only applicable sections.
 
 Current implementation boundary: account MFA/reset transport is configured and

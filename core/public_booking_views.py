@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.cache import add_never_cache_headers
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -39,13 +40,18 @@ def enabled(view):
             raise Http404
         if settings.RECOVERY_HOLD:
             return render(request, "core/booking_paused.html", status=503)
-        return view(request, *args, **kwargs)
+        response = view(request, *args, **kwargs)
+        add_never_cache_headers(response)
+        return response
 
     return wrapped
 
 
 def save(request, flow):
+    from .booking_navigation import remember
+
     request.session[SESSION_KEY] = flow
+    remember(request, flow)
 
 
 def current(request):
@@ -273,6 +279,11 @@ class CompletedConfirmForm(ConfirmForm):
         label="I understand this is a sandbox booking. Admission payment is collected only after staff review at arrival."
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if settings.APP_ENV == "production":
+            self.fields.pop("acknowledge_test", None)
+
 
 def display(request, flow, *, form=None, error=None, notice=None):
     session = public_session(flow["session_id"])
@@ -303,6 +314,8 @@ def display(request, flow, *, form=None, error=None, notice=None):
                 waivers=completing,
             ),
             "flow": flow,
+            "booking_history_page": True,
+            "waiver_choices": form if flow["stage"] == "waiver" else None,
             **card,
             "session": session,
             "form": form,
@@ -366,6 +379,12 @@ def wizard(request):
             return redirect("customer_booking")
         if flow["stage"] == "done":
             return redirect("customer_booking_receipt")
+        from .booking_navigation import restore
+
+        flow, navigation_response = restore(request, flow)
+        if navigation_response is not None:
+            return navigation_response
+        save(request, flow)
         session = public_session(flow["session_id"])
         stage = flow["stage"]
         completing = flow.get("workflow") == "integrated_v1"
@@ -392,6 +411,8 @@ def wizard(request):
         if form_type is None:
             raise ValidationError("Start a new booking session.")
         args = {"session": session} if stage == "details" else {}
+        if flow.get("answers", {}).get(stage):
+            args["initial"] = flow["answers"][stage]
         if stage == "waiver":
             args["flow"] = flow
         if stage == "details" and flow.get("details"):
@@ -430,12 +451,29 @@ def wizard(request):
         if request.method == "POST" and form.is_valid():
             limit(request, stage, 60)
             data = form.cleaned_data
+            from .booking_navigation import remember_answers
+
+            remember_answers(flow, stage, form, request.POST)
+            save(request, flow)
             if public_verification.handle(flow, form, stage):
                 save(request, flow)
                 if form.errors:
                     return display(request, flow, form=form)
                 return redirect("customer_booking")
             if stage == "phone":
+                # Re-entering identity always re-verifies it; never retain an old
+                # profile proof or contact while processing another phone.
+                for field in (
+                    "proof",
+                    "candidate",
+                    "candidate_name",
+                    "contact",
+                    "contact_email",
+                    "payment_consent",
+                    "waiver_coverage",
+                    "waiver_share_requested",
+                ):
+                    flow.pop(field, None)
                 if not allow_security_request("public-booking-phone:" + data["phone"], 8):
                     raise ValidationError(
                         "Please call or text 848-238-5147 for help with this booking."
@@ -569,10 +607,26 @@ def wizard(request):
                 }
                 flow["stage"] = "details"
             elif stage == "details":
+                if (
+                    flow.get("details", {}).get("expected_method", data["expected_method"])
+                    != data["expected_method"]
+                ):
+                    flow.pop("payment_consent", None)
+                    flow["payment_method_changed"] = True
                 flow["quote"] = review_quote(flow, data)
                 flow["details"] = data
                 flow["stage"] = "waiver" if completing else "review"
             elif stage == "waiver":
+                if data.get("sign_now"):
+                    flow["waiver_share_requested"] = data.get("share_requested") is True
+                    flow["waiver_signatures"] = list(
+                        dict.fromkeys(
+                            flow.get("waiver_signatures", [])
+                            + [str(item.pk) for item in data["signatures"]]
+                        )
+                    )
+                    save(request, flow)
+                    return redirect("customer_waiver")
                 flow["waiver_signatures"] = [str(item.pk) for item in data["signatures"]]
                 flow["waiver_share_requested"] = data.get("share_requested") is True
                 flow["waiver_coverage"] = (
@@ -663,6 +717,77 @@ def receipt(request):
             else None,
         },
     )
+
+
+class PaymentMethodForm(forms.Form):
+    expected_method = forms.ChoiceField(label="Payment method", choices=[])
+    zelle_sender = forms.CharField(
+        required=False, max_length=160, label="Zelle sender name/account"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["expected_method"].choices = payment_method_choices(
+            PricingPolicy.objects.first()
+        )
+
+    def clean(self):
+        from .payments.receipts import sender
+
+        data = super().clean()
+        if data.get("expected_method") == "zelle":
+            data["zelle_sender"] = sender(data.get("zelle_sender", ""), required=True)
+        return data
+
+
+@enabled
+@require_http_methods(["GET", "POST"])
+def payment_method(request):
+    try:
+        flow = current(request)
+        if flow.get("stage") != "review" or flow.get("workflow") != "integrated_v1":
+            return redirect("customer_booking")
+        form = PaymentMethodForm(
+            request.POST if request.method == "POST" else None, initial=flow["details"]
+        )
+        if request.method == "POST":
+            if (
+                request.POST.get("wizard_key") != flow["key"]
+                or request.POST.get("wizard_stage") != flow["stage"]
+            ):
+                return redirect("customer_booking")
+            if form.is_valid():
+                from .payments.models import PaymentSetup
+                from .payments.setup import flow_identity
+
+                if PaymentSetup.objects.filter(
+                    flow_hash=flow_identity(flow)[0],
+                    state__in=["prepared", "customer_sending", "method_sending", "unknown"],
+                ).exists():
+                    form.add_error(
+                        None, "Check the pending card setup before changing payment methods."
+                    )
+                    return render(request, "core/payment_method.html", {"flow": flow, "form": form})
+                changed = flow["details"]["expected_method"] != form.cleaned_data["expected_method"]
+                details = flow["details"] | form.cleaned_data
+                if details["expected_method"] != "zelle":
+                    details["zelle_sender"] = ""
+                flow["quote"] = review_quote(flow, details)
+                flow["details"] = details
+                if changed:
+                    flow.pop("payment_consent", None)
+                    # Keep recovery of an unfinished exchange, but do not silently
+                    # reuse its policy consent under another intended tender.
+                    flow["payment_method_changed"] = True
+                save(request, flow)
+                return redirect("customer_booking")
+        return render(
+            request,
+            "core/payment_method.html",
+            {"flow": flow, "form": form, "progress_steps": progress(5, waivers=True)},
+        )
+    except ValidationError:
+        return redirect("customer_booking")
 
 
 @enabled

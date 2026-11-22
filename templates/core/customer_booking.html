@@ -4,7 +4,7 @@
 {% if error %}<p class="notice" role="alert">{{ error }}</p><a class="button" href="{% url 'schedule' %}">Choose a session</a>{% endif %}
 {% if session %}<p>{{ session.starts_at|date:'l, F j, Y' }} · {{ session.starts_at|date:'g:i A' }}–{{ session.ends_at|date:'g:i A' }}</p>{% endif %}
 </section>
-{% if form %}{% if flow_notice %}<p class="notice" role="alert">{{ flow_notice }}</p>{% endif %}<div class="customer-booking-layout{% if flow.stage == 'details' %} with-play-info{% endif %}"><section class="panel customer-booking-form">
+{% if form %}{% if flow_notice %}<p class="notice" role="alert">{{ flow_notice }}</p>{% endif %}<div class="customer-booking-layout{% if flow.stage == 'details' %} with-play-info{% endif %}"><section class="panel customer-booking-form{% if flow.stage == 'review' %} public-payment-page{% endif %}">
 {% if flow.stage == 'name' %}<p>{% if flow.visited == 'no' %}Looks like you've been to Monkey Do in the past. {% endif %}We found a customer profile with the phone number you entered — {{ flow.phone }}. For verification, please enter your last name{% if flow.verification_entry == 'returning_current' %} or email address{% endif %}.</p>{% endif %}
 {% if flow.stage == 'name_confirm' or flow.stage == 'email_confirm' %}<h2>Is this your family?</h2><p>We found a customer “{{ flow.candidate_name }}” {% if flow.stage == 'email_confirm' %}{% if flow.recovery_match_kind == 'phone_email' %}matching the phone number and email address you entered{% else %}matching the details you already entered{% endif %}{% else %}for phone {{ flow.phone }}{% endif %}. Is this you?</p>{% endif %}
 {% if flow.stage == 'retry_phone' %}<h2>Let's try another number</h2><p>No customer was found with {{ flow.phone }}. Did you use a different phone number for a previous booking?</p>{% endif %}
@@ -23,23 +23,17 @@
 {% if flow.stage == 'email' %}<h2>Add your email address</h2><p>Your customer record doesn’t have an email address yet. Please enter one to continue.</p>{% endif %}
 {% if flow.contact_email %}<p>Email for this booking: {{ flow.contact_email }}</p>{% endif %}
 {% if flow.stage == 'contact' %}<h2>Your details</h2><p>Phone: {{ flow.phone }}</p>{% endif %}
-{% if flow.stage == 'review' %}<h2>Payment Details</h2>{% if flow.waiver_share_requested %}<p class="notice">After you confirm, your places will be reserved and the shared waiver link will be emailed to you. Waiver coverage remains pending until it is reviewed for everyone.</p>{% endif %}
-<p>{% if flow.details.supervised %}Supervised Play{% else %}Open Play{% endif %} · {{ flow.details.children }} children · {{ flow.details.adults }} adults · {{ flow.details.babies }} babies · {{ flow.details.socks }} pairs of socks</p>
-{% include 'core/quote_items.html' with data=quote %}
-<p>Amounts use the staging tax rate. This estimate does not mean money was received.</p>{% endif %}
-{% if flow.stage == 'waiver' %}<h2>Waiver coverage</h2><p>Every participating minor needs waiver coverage. Select the applicable current waivers, or sign for yourself and the minors for whom you are legally responsible.</p><p><a class="button small" href="{% url 'customer_waiver' %}">Sign waiver</a></p>{% endif %}
-{% if flow.stage == 'review' and flow.workflow == 'integrated_v1' %}{% include 'core/partials/card_setup.html' %}{% if accepted_card %}<p class="notice" role="status" data-selected-card>Saved payment method ending in {{ accepted_card.last_four }}. No admission payment has been collected.</p>{% endif %}{% endif %}
-{% if flow.stage == 'profile_choice' %}{% include 'core/partials/profile_choice.html' %}
+{% if flow.stage == 'review' and flow.workflow == 'integrated_v1' %}{% include 'core/partials/payment_page.html' %}{% elif flow.stage == 'waiver' %}{% include 'core/partials/waiver_choices.html' %}{% elif flow.stage == 'profile_choice' %}{% include 'core/partials/profile_choice.html' %}
 {% else %}<form method="post" id="customer-booking-form"{% if flow.stage == 'details' %} data-public-estimate="{% url 'customer_live_estimate' %}" class="public-details-layout"{% elif flow.stage == 'waiver' %} class="waiver-coverage"{% endif %}>
 {% include 'core/partials/wizard_identity.html' %}
 {% if flow.stage == 'details' %}{% include 'core/partials/public_details_form.html' %}
-{% else %}{% include 'core/partials/form_fields.html' %}
+{% else %}{% if flow.stage == 'review' %}<h2>Payment Details</h2>{% include 'core/quote_items.html' with data=quote %}{% endif %}{% include 'core/partials/form_fields.html' %}
 <button class="button">{% if flow.stage == 'review' and flow.workflow == 'integrated_v1' %}Confirm sandbox booking{% elif flow.stage == 'review' %}Save pending test reservation{% elif flow.stage == 'conflict_stop' %}Start again{% else %}Continue{% endif %}</button>
 {% endif %}</form>{% endif %}
-{% if flow.stage == 'review' %}<form method="post" action="{% url 'customer_booking_revise' %}">{% csrf_token %}<input type="hidden" name="flow_key" value="{{ flow.key }}"><button class="text-button">Change your session details or your payment method</button></form>{% endif %}
-{% if flow.stage != 'contact' and flow.stage != 'retry_phone' and flow.stage != 'conflict_stop' and flow.stage != 'details' and flow.stage != 'phone' %}
+{% if flow.stage == 'review' and flow.workflow != 'integrated_v1' %}<form method="post" action="{% url 'customer_booking_revise' %}">{% csrf_token %}<input type="hidden" name="flow_key" value="{{ flow.key }}"><button class="text-button">Change your session details or your payment method</button></form>{% endif %}
+{% if flow.stage != 'waiver' and flow.stage != 'review' and flow.stage != 'contact' and flow.stage != 'retry_phone' and flow.stage != 'conflict_stop' and flow.stage != 'details' and flow.stage != 'phone' %}
 {% if session %}<form method="post" action="{% url 'customer_booking_start' session.pk %}">{% csrf_token %}<button class="text-button">Start again / try another phone number</button></form>{% endif %}
 {% if flow.stage == 'name' and flow.verification_entry != 'returning_current' %}<form method="post" action="{% url 'customer_email_recovery' %}">{% csrf_token %}<button class="text-button">Find my customer details by email</button></form>{% endif %}
 {% endif %}
 </section>{% if flow.stage == 'details' %}{% include 'core/partials/booking_play_info.html' %}{% endif %}</div>{% endif %}
-{% endblock %}
+<div hidden data-booking-history data-step="{{ flow.stage }}" data-flow="{{ flow.key }}"></div>{% endblock %}

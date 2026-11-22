@@ -2,7 +2,7 @@ LABELS = ("Choose Session", "Customer Details", "Session Details", "Payment Deta
 
 
 def progress(step, *, done=False, waivers=False):
-    labels = LABELS[:3] + ("Waiver",) + LABELS[3:] if waivers else LABELS
+    labels = LABELS[:3] + ("Waiver Details",) + LABELS[3:] if waivers else LABELS
     return [
         {
             "number": i,

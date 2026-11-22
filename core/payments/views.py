@@ -184,10 +184,22 @@ def payment_detail(request, pk):
                     None,
                     "The result could not be confirmed. Review the original provider transaction before any further payment.",
                 )
+    from .checkout import summary
+
+    can_retry = bool(
+        request.user.is_superuser
+        and operation.sale.booking_id
+        and summary(operation.sale.booking).get("can_retry")
+    )
     return render(
         request,
         "core/payment_detail.html",
-        {"operation": operation, "form": form, "followup_form": followup_form},
+        {
+            "operation": operation,
+            "form": form,
+            "followup_form": followup_form,
+            "can_retry": can_retry,
+        },
     )
 
 

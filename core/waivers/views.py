@@ -1,5 +1,6 @@
 """Limited shared signing pages and permission-checked staff waiver records."""
 
+import hashlib
 import uuid
 from functools import wraps
 
@@ -12,6 +13,7 @@ from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.cache import add_never_cache_headers
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
@@ -23,9 +25,11 @@ from core.pagination import paginate
 from core.permissions import staff_permission
 from core.public_booking_views import current, limit, save
 
+from .coverage_forms import CoverageConfirmationForm, current_signatures
 from .forms import SignatureForm
 from .models import WaiverSignature
 from .services import (
+    COVERAGE_VERSIONS,
     VERSION,
     approved_version,
     create_share,
@@ -41,7 +45,9 @@ def enabled_view(view):
     def inner(request, *args, **kwargs):
         if not settings.WAIVER_ENABLED:
             raise Http404
-        return view(request, *args, **kwargs)
+        response = view(request, *args, **kwargs)
+        add_never_cache_headers(response)
+        return response
 
     return inner
 
@@ -51,6 +57,22 @@ def signing_form(request, *, flow=None, share_token=None):
         return render(request, "core/booking_paused.html", status=503)
     version = approved_version()
     share = share_for_token(share_token) if share_token else None
+    if share and request.method == "GET" and request.GET.get("signed"):
+        try:
+            share.booking.waiver_links.select_related("signature").get(
+                signature_id=request.GET["signed"],
+                signature__state="signed",
+                signature__flow_hash=hashlib.sha256(
+                    ("shared:" + str(share.pk)).encode()
+                ).hexdigest(),
+            )
+        except (ValueError, ValidationError, share.booking.waiver_links.model.DoesNotExist):
+            raise Http404 from None
+        return render(
+            request,
+            "core/waivers/shared_complete.html",
+            {"appointment": share.booking.session.starts_at},
+        )
     form = SignatureForm(
         request.POST if request.method == "POST" else None,
         initial={
@@ -78,12 +100,15 @@ def signing_form(request, *, flow=None, share_token=None):
                 ids = flow.setdefault("waiver_signatures", [])
                 if str(signature.pk) not in ids:
                     ids.append(str(signature.pk))
+                flow["last_waiver_signature"] = str(signature.pk)
+                flow["stage"] = "waiver"
                 save(request, flow)
-            messages.success(request, "Thank you. Your electronic waiver has been saved.")
             return (
-                redirect("shared_waiver", token=share_token)
+                redirect(
+                    reverse("shared_waiver", args=[share_token]) + "?signed=" + str(signature.pk)
+                )
                 if share
-                else redirect("customer_waiver")
+                else redirect("customer_waiver_complete")
             )
         except EvidenceUnavailable:
             form.add_error(
@@ -140,6 +165,49 @@ def shared_sign(request, token):
             {"reason": " ".join(error.messages)},
             status=410,
         )
+
+
+@enabled_view
+@require_http_methods(["GET", "POST"])
+def public_complete(request):
+    if settings.RECOVERY_HOLD:
+        return render(request, "core/booking_paused.html", status=503)
+    try:
+        flow = current(request)
+        if flow.get("stage") == "done":
+            return redirect("customer_booking_receipt")
+        if flow.get("stage") not in {"waiver", "review"}:
+            return redirect("customer_booking")
+        signature = current_signatures(flow).filter(pk=flow.get("last_waiver_signature")).first()
+        if signature is None:
+            return redirect("customer_booking")
+        form = CoverageConfirmationForm(
+            request.POST if request.method == "POST" else None, flow=flow
+        )
+        if request.method == "POST":
+            if (
+                request.POST.get("wizard_key") != flow["key"]
+                or request.POST.get("wizard_stage") != flow["stage"]
+            ):
+                return redirect("customer_booking")
+            if form.is_valid():
+                flow["waiver_share_requested"] = form.cleaned_data["coverage"] == "no"
+                flow["waiver_coverage"] = not flow["waiver_share_requested"]
+                flow["stage"] = "review"
+                save(request, flow)
+                return redirect("customer_booking")
+        return render(
+            request,
+            "core/waivers/complete.html",
+            {
+                "flow": flow,
+                "form": form,
+                "signature": signature,
+                "progress_steps": progress(4, waivers=True),
+            },
+        )
+    except (ValidationError, ValueError):
+        return redirect("customer_booking")
 
 
 class WaiverFilters(forms.Form):
@@ -234,12 +302,12 @@ def waivers(request):
             )
         if data["status"] == "valid":
             records = records.filter(
-                state="signed", version_id=VERSION, valid_until__gt=timezone.now()
+                state="signed", version_id__in=COVERAGE_VERSIONS, valid_until__gt=timezone.now()
             )
         elif data["status"] == "expired":
             records = records.filter(valid_until__lte=timezone.now())
         elif data["status"] == "superseded":
-            records = records.exclude(version_id=VERSION)
+            records = records.exclude(version_id__in=COVERAGE_VERSIONS)
         elif data["status"] == "pending":
             records = records.filter(state="pending")
         elif data["status"] == "removed":
@@ -258,6 +326,7 @@ def waivers(request):
             "signatures": paginate(request, records.distinct()),
             "waiver_now": timezone.now(),
             "current_version": VERSION,
+            "coverage_versions": COVERAGE_VERSIONS,
         },
     )
 
@@ -289,6 +358,7 @@ def waiver_detail(request, pk):
             "signature": signature,
             "waiver_now": timezone.now(),
             "current_version": VERSION,
+            "coverage_versions": COVERAGE_VERSIONS,
             "error": error,
         },
     )
