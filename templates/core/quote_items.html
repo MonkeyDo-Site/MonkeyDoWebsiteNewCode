@@ -7,8 +7,9 @@
 <dd>${{ data.processing_fee }}</dd>
 <dt>Sales tax</dt>
 <dd>${{ data.sales_tax }}</dd>
-<dt>{% if actual %}Actual total at arrival{% else %}Estimated total at arrival{% endif %}</dt>
+{% if not adjustment %}<dt>{% if actual %}Actual total at arrival{% else %}Estimated total at arrival{% endif %}</dt>
 <dd>
 <strong>${{ data.total }}</strong>
-</dd>
+</dd>{% endif %}
 </dl>
+{% if adjustment %}{% include 'core/partials/price_adjustment.html' %}{% endif %}

@@ -363,6 +363,9 @@ def checkout(request, pk, kind="arrival"):
             except ValidationError as error:
                 form.add_error(None, error)
     if reviewed:
+        from core.price_adjustments import booking_price_adjustment
+
+        reviewed["adjustment"] = booking_price_adjustment(booking, reviewed["quote"])
         reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"]
         reviewed["refund_due"] = max(0, prepaid["available"] - Decimal(reviewed["quote"]["total"]))
         reviewed["remaining"] = max(0, Decimal(reviewed["quote"]["total"]) - prepaid["available"])

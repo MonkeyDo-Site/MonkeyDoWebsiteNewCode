@@ -65,12 +65,21 @@ def booking_detail(request, pk):
         from .payments.presentation import invoice_breakdown
 
         actual_breakdown = invoice_breakdown(checkout.sale)
+    from .price_adjustments import booking_price_adjustment
+
+    latest_quote = booking.quotes.first()
+    booking_adjustment = (
+        booking_price_adjustment(booking, actual_breakdown or latest_quote.snapshot)
+        if latest_quote
+        else None
+    )
     return render(
         request,
         "core/booking_detail.html",
         {
             "booking": booking,
             "actual_breakdown": actual_breakdown,
+            "booking_adjustment": booking_adjustment,
             "active_waivers": active_customer_waivers(booking)
             if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature")
             else [],
@@ -170,7 +179,13 @@ def booking_edit(request, pk):
             form_error(form, exc)
     if estimate is None and booking.quotes.first():
         saved = booking.quotes.first()
-        estimate = {"quote": saved.snapshot, "original_total": saved.snapshot["total"]}
+        from .price_adjustments import booking_price_adjustment
+
+        estimate = {
+            "quote": saved.snapshot,
+            "original_total": saved.snapshot["total"],
+            "adjustment": booking_price_adjustment(booking, saved.snapshot),
+        }
     return render(
         request,
         "core/booking_form.html",
@@ -206,7 +221,9 @@ def booking_estimate(request, pk):
     return JsonResponse(
         {
             "html": render_to_string(
-                "core/quote_items.html", {"data": estimate["quote"]}, request=request
+                "core/quote_items.html",
+                {"data": estimate["quote"], "adjustment": estimate["adjustment"]},
+                request=request,
             ),
             "total": estimate["quote"]["total"],
             "original_total": estimate["original_total"],

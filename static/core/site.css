@@ -1051,3 +1051,6 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .arrival-field select{min-height:48px;padding:10px 12px;border:1px solid #71816f;border-radius:10px;background:#fff;color:#293e34;font:inherit}.arrival-field [type=checkbox]{width:19px;height:19px}.arrival-workspace .arrival-error:empty{display:none}
 
 .arrival-paper-entry{border-top:1px solid #c8d4c9;margin-top:18px;padding-top:16px}.arrival-paper-toggle{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer}.arrival-paper-toggle input{width:19px;height:19px;margin:0;flex:none}.arrival-paper-entry .arrival-field textarea{width:100%;min-height:105px;padding:12px;border:1px solid #71816f;border-radius:10px;background:#fff;font:inherit}.arrival-paper-entry [hidden]{display:none}.arrival-paper-entry [data-arrival-paper-status]:empty{display:none}
+
+.price-adjustment{border-top:1px solid #b9c6b9;margin-top:18px;padding-top:16px}.price-adjustment h3{font-size:1rem;margin:0 0 16px}.price-adjustment .adjusted-price-total{border-top:1px solid #cbd4c7;padding-top:12px}.price-adjustment .quote-lines dt{font-weight:500}.price-adjustment .quote-lines dt.adjusted-price-total{font-weight:800}
+.staff-layout .price-adjustment{margin:18px 0 0;padding-top:16px}.price-adjustment .quote-lines{margin-bottom:0}

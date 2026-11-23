@@ -16,7 +16,7 @@
 
 {% if quote %}
 <article class="panel">
-<h2>{% if actual_breakdown %}Saved price breakdown{% else %}Saved price estimate{% endif %}</h2>{% if actual_breakdown %}{% include 'core/quote_items.html' with data=actual_breakdown actual=True %}{% else %}{% include 'core/quote_items.html' with data=quote.snapshot %}{% endif %}
+<h2>{% if actual_breakdown %}Saved price breakdown{% else %}Saved price estimate{% endif %}</h2>{% if actual_breakdown %}{% include 'core/quote_items.html' with data=actual_breakdown actual=True adjustment=booking_adjustment %}{% else %}{% include 'core/quote_items.html' with data=quote.snapshot adjustment=booking_adjustment %}{% endif %}
 <p class="caption">Pricing version {{ quote.policy_id }} · Quote revision {{ quote.revision }} · Saved {{ quote.created_at|date:'M j, Y g:i A' }}. Test tax only; production rate is not approved.</p>
 </article>{% else %}
 <p>No price snapshot exists for this earlier test record. Historical amounts have not been invented.</p>{% endif %}

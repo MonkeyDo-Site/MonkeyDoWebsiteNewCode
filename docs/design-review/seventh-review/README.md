@@ -1,5 +1,16 @@
 # Seventh review — first review round
 
+## Price-adjustment summary
+
+A comparison with the original booked amount appears below current line items and above received payments/balance. Each image shows the $55.29 → $42.30 example, with cancelled admission, existing cancellation fee and tax adjustment. The edit preview updates before Save; the saved booking uses accepted financial amounts.
+
+| Page | Desktop | Phone |
+|---|---|---|
+| Arrival with original/adjusted comparison | [Full image](SEVENTH-v7-price-summary-arrival-1440.png) | [Full image](SEVENTH-v7-price-summary-arrival-390.png) |
+| Edit booking before saving | [Full image](SEVENTH-v7-price-summary-edit-1440.png) | [Full image](SEVENTH-v7-price-summary-edit-390.png) |
+| Saved adjusted booking | [Full image](SEVENTH-v7-price-summary-saved-booking-1440.png) | [Full image](SEVENTH-v7-price-summary-saved-booking-390.png) |
+
+
 ## Current arrival update — paper-waiver entry
 
 The arrival waiver card includes **Paper waivers signed**. Checking it expands the actual signing date, adult name, relationship and covered minors on this page. Save updates the active-waiver list without losing attendee/payment changes. Arrival confirmation stays disabled until the paper details are saved or the checkbox is cleared.

@@ -1,5 +1,9 @@
 # Payments, tax, card lifecycle, and Banquest evidence
 
+## Adjusted-price explanation
+
+When a saved booking's price changes, show a compact comparison immediately after its current itemized details and before received funds/balance. Start with the first saved booking total, then combined added admissions/adults/socks, combined removals, existing cancellation fees, tax/processing-fee differences and explicit owner-price changes. Show additions and removals independently even if they offset. One Adjusted total replaces the ordinary total row. This applies to arrival, read-only edit preview before saving, and resulting booking details; quote history and accounting records remain immutable. This is presentation only and cannot create fees, receipts or refunds.
+
 ## Seventh review: actual advance Zelle and one-page arrival
 
 PR #33 implements the owner's revised arrival and receipt workflow. Counts, participant coverage, the cream itemized total, recorded Zelle and remaining/refund balance update on one page. Only the explicit final action saves arrival and queues a card charge or records actual tender. Cash/check receipt dates are automatic at arrival; no date-entry step is shown. Zelle uses its verified bank amount/date and sender, recorded before arrival or in the arrival dialog without changing attendance.
