@@ -1,0 +1,2 @@
+# Review screenshots remain in GitHub; omit them from deployable source archives.
+docs/design-review/seventh-review/*.png export-ignore

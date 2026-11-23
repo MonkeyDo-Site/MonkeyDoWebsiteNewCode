@@ -73,3 +73,7 @@ Moved the shared public booking page’s session date/time directly below Your p
 ## Final review approval and test guide
 
 The owner approved merging and release preparation after the v14 session-date correction. The final post-deployment scenario guide is [SEVENTH_BATCH_TEST_GUIDE.md](SEVENTH_BATCH_TEST_GUIDE.md), with a Word copy beside it. It covers the complete batch and screenshot follow-ups; hosted testing follows the owner-run deployment.
+
+## Release archive size check
+
+The full source archive grew above the existing 200 MiB deployment limit because of screenshot reviews. The seventh-review PNGs are now marked export-ignore: they remain committed and viewable in GitHub but are omitted from browser/source deployment ZIPs. Application files, migration hashes, required preview manifests and the testing guide stay in the archive. The deployment size guard is unchanged.
