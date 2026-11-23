@@ -1,5 +1,20 @@
 # Seventh review — first review round
 
+## Capacity warnings and override controls
+
+Actual application screens with fictional local records. Public customers see capacity warnings and alternatives; override controls are available only to authorized staff/owners. The arrival override applies to that arrival. The owner’s supervised exception applies only to the selected booking and does not itself override child/combined capacity.
+
+| State | Desktop | Phone |
+|---|---|---|
+| Public child limit | [Full image](SEVENTH-v8-01-public-child-limit-1440.png) | [Full image](SEVENTH-v8-01-public-child-limit-390.png) |
+| Public combined child/adult limit | [Full image](SEVENTH-v8-02-public-total-limit-1440.png) | [Full image](SEVENTH-v8-02-public-total-limit-390.png) |
+| Public supervised limit | [Full image](SEVENTH-v8-03-public-supervised-limit-1440.png) | [Full image](SEVENTH-v8-03-public-supervised-limit-390.png) |
+| Arrival capacity warning and override | [Full image](SEVENTH-v8-04-arrival-capacity-override-1440.png) | [Full image](SEVENTH-v8-04-arrival-capacity-override-390.png) |
+| Edit booking capacity warning and owner override | [Full image](SEVENTH-v8-05-edit-capacity-override-1440.png) | [Full image](SEVENTH-v8-05-edit-capacity-override-390.png) |
+| Owner supervised-play exception | [Full image](SEVENTH-v8-06-owner-supervised-exception-1440.png) | [Full image](SEVENTH-v8-06-owner-supervised-exception-390.png) |
+
+All twelve desktop/phone captures passed overflow and JavaScript-error checks. Rejected edits left the example bookings unchanged; no successful override, arrival, payment or email was submitted.
+
 ## Price-adjustment summary
 
 A comparison with the original booked amount appears below current line items and above received payments/balance. Each image shows the $55.29 → $42.30 example, with cancelled admission, existing cancellation fee and tax adjustment. The edit preview updates before Save; the saved booking uses accepted financial amounts.
