@@ -5,7 +5,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     const method=form.elements.method.value;
     for(const field of form.querySelectorAll('[data-noncard-fields] [data-arrival-field]')) {
       const name=field.dataset.arrivalField;
-      const allowed={cash_amount:method==='split',check_amount:method==='split',zelle_amount:method==='split',gift_card_amount:method==='split',zelle_verified:method==='zelle'||method==='split',gift_card_verified:method==='gift_card'||method==='split',received_on:method==='zelle'||method==='split',zelle_sender:method==='zelle'||method==='split'};
+      const allowed={cash_amount:method==='split',check_amount:method==='split',zelle_amount:method==='split',gift_card_amount:method==='split',zelle_verified:method==='split',gift_card_verified:method==='gift_card'||method==='split',received_on:method==='split',zelle_sender:method==='split'};
       field.hidden=!allowed[name];
       for(const input of field.querySelectorAll('input,select'))input.disabled=field.hidden;
     }
@@ -26,7 +26,23 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   form.addEventListener('input',()=>{button.disabled=true;clearTimeout(timer);timer=setTimeout(update,250);});
   form.addEventListener('change',()=>{sync();button.disabled=true;clearTimeout(timer);timer=setTimeout(update,80);});
   form.addEventListener('submit',e=>{if(button.disabled||!form.elements.reviewed_hash.value){e.preventDefault();update();}});
-  window.addEventListener('focus',()=>update());sync();
+  window.addEventListener('focus',()=>update());
+  const receiptDialog=document.querySelector('[data-zelle-receipt-dialog]');
+  if(receiptDialog){
+    form.querySelector('[data-open-zelle-receipt]').addEventListener('click',()=>receiptDialog.showModal());
+    receiptDialog.querySelector('[data-close-zelle-receipt]').addEventListener('click',()=>receiptDialog.close());
+    const receiptForm=receiptDialog.querySelector('form');
+    receiptForm.addEventListener('submit',async event=>{
+      event.preventDefault();const save=receiptForm.querySelector('button[type=submit],button:not([type])');save.disabled=true;
+      try{
+        const response=await fetch(receiptForm.action,{method:'POST',body:new FormData(receiptForm),headers:{Accept:'application/json'}});const data=await response.json();
+        if(!response.ok)throw new Error(Object.values(data.errors||{}).flat().map(e=>e.message).join(' ')||'Review the receipt.');
+        receiptForm.elements.request_key.value=crypto.randomUUID();receiptForm.elements.value.value='';receiptForm.elements.verified.checked=false;
+        receiptDialog.close();const notice=document.createElement('p');notice.textContent=`Zelle recorded: $${data.received}`;form.querySelector('[data-open-zelle-receipt]').before(notice);await update();
+      }catch(error){receiptDialog.querySelector('[data-zelle-error]').textContent=error.message;}finally{save.disabled=false;}
+    });
+  }
+  sync();
 }
 for(const form of document.querySelectorAll('[data-paper-entry]')){
   const check=form.elements.paper_signed,fields=form.querySelector('.paper-entry');
@@ -40,4 +56,14 @@ for(const form of document.querySelectorAll('form')){
   if(!method||!sender)continue;
   const sync=()=>{sender.hidden=method.value!=='zelle';for(const field of sender.querySelectorAll('input'))field.disabled=sender.hidden;};
   method.addEventListener('change',sync);sync();
+}
+
+for(const form of document.querySelectorAll('form:not([data-arrival-live])')){
+ const method=form.elements.method;
+ if(!method)continue;
+ for(const name of ['received_on','zelle_sender']){
+  const field=form.querySelector(`[data-field="${name}"]`);if(!field)continue;
+  const sync=()=>{field.hidden=method.value!=='zelle';for(const input of field.querySelectorAll('input'))input.disabled=field.hidden;};
+  method.addEventListener('change',sync);sync();
+ }
 }

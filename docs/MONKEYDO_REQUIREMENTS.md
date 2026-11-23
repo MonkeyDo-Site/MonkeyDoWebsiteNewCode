@@ -1,5 +1,10 @@
 # MonkeyDo current website requirements
 
+## Seventh owner-review supersessions
+
+The [seventh batch](SEVENTH_BATCH_REVIEW.md) supersedes older paper-checkbox-only and two-step arrival descriptions below. Use one live arrival workspace, automatic cash/check dates, named reusable paper waiver records, booking-specific owner supervised exceptions and verified advance Zelle receipts. Apply each advance receipt once to the final invoice, calculate excess refunds for arrival/cancellation/no-show, and keep an owner Dashboard notice until the actual manual Zelle return is recorded. Keep payments and waivers side by side in booking details, truthful accepted price breakdowns and historical source records. Cancellation/no-show email requires explicit Yes/No with no default. Banquest month-to-year auto-advance remains a provider question, with the owner seeking confirmation; it is not claimed as implemented. Public homepage and membership scope are unchanged.
+
+
 ## Sixth booking review — approved and implemented in PR #32
 
 The sixth review supersedes earlier ordinary-booking presentation and navigation details: conditional waiver selection with signing required for new/all-expired customers; no signer contact inputs or Self choices; same adult-only signing form; separate completion pages; method-specific Payment Details; Save card then explicitly Confirm booking; compact totals and branded confirmation email; owner-only declined-card retry of the unpaid balance. Financial calculations, waiver legal release, prior evidence, held group places and owner/staff boundaries are preserved. Follow-up waiver UI uses “Sign Waiver”, “Every participating minor needs a signed waiver” and “Signed by … for …”. Parent signing asks for first names; legal guardians supply first and last names. Existing evidence/names are preserved. The email design and collected changes are approved, with no further review images requested. See [accepted scope](SIXTH_BATCH_REVIEW.md) and [staging test guide](SIXTH_BATCH_TEST_GUIDE.md). Homepage design and active memberships remain outside this batch.
@@ -200,7 +205,7 @@ Phone/admin bookings can confirm with waiver pending; no verbal waiver. Single/M
 
 Online customers may request link/PDF to forward to other parents. Each completion emails the booking customer's current email with signer and minor names; dashboard updates, no separate staff email. Exact wording in [EMAIL_TEMPLATES.md](EMAIL_TEMPLATES.md).
 
-At arrival one **Sign waiver now** button stays available. Distinguish no prior waiver, expired/superseded waiver, and additional uncovered minors; an old expired record does not keep an alert active when current coverage exists. Prefer electronic signing offered verbally. Paper fallback is an audited **Paper waivers signed** booking checkbox only after all required paper forms are actually signed; no initial upload/minor-name entry or repeated timestamp entry. Club paper coverage is per named participant.
+At arrival one **Sign waiver now** button stays available. Distinguish no prior waiver, expired/superseded waiver, and additional uncovered minors; an old expired record does not keep an alert active when current coverage exists. Prefer electronic signing offered verbally. Paper fallback now records named paper signatures with their actual date and signing adult/minors under the seventh review; no upload is required. Older audited paper marks remain historical records without invented names. Club paper coverage is per named participant.
 
 Before completing ordinary arrival, require Yes to **Was a waiver signed for everyone in this booking?** No returns to waiver handling and preserves entered attendance/payment selections. A checkbox must not fabricate an electronic signature. Every participating minor requires coverage.
 

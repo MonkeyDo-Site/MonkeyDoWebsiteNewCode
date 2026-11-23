@@ -91,6 +91,10 @@ def plan_with_prepayment(policy, lines, method, split, available):
 
     base = quote_lines(lines, policy, card_base=ZERO)
     applied = min(available, amount(base["total"]))
+    if method == "zelle" and available < amount(base["total"]):
+        raise ValidationError(
+            f"Only ${available:.2f} has been recorded through Zelle. Record the verified receipt or another transfer first, or choose the card on file for the remaining balance."
+        )
     if not applied:
         return (*tender_plan(policy, lines, method=method, split=split), ZERO)
     if method in {"card", "split"}:
@@ -224,7 +228,8 @@ def complete_refund(
 def refund_notices():
     return [
         {"booking": b, "amount": facts(b)["refund_due"]}
-        for b in Booking.objects.filter(zelle_receipts__isnull=False, attendance__isnull=False)
+        for b in Booking.objects.filter(zelle_receipts__isnull=False)
+        .exclude(attendance="")
         .select_related("customer")
         .distinct()
         if facts(b)["refund_due"] > ZERO

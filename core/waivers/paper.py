@@ -13,7 +13,7 @@ from core.payments.ledger import lock_request, writes_allowed
 from core.permissions import require_actor
 
 from .models import PaperWaiver
-from .services import enabled, plus_years
+from .services import COVERAGE_VERSIONS, VERSION, enabled, plus_years
 
 
 class SignatureList(list):
@@ -29,10 +29,7 @@ class SignatureList(list):
                     if str(item.pk) != str(value):
                         return False
                 elif key == "version_id__in":
-                    if (
-                        getattr(item, "signature_method", "") != "paper"
-                        and item.version_id not in value
-                    ):
+                    if item.version_id not in value:
                         return False
                 elif key.endswith("__gt"):
                     if getattr(item, key[:-4]) <= value:
@@ -59,7 +56,10 @@ class SignatureList(list):
 
 def current_paper(customer, at=None):
     return PaperWaiver.objects.filter(
-        customer=customer, signed_at__lte=timezone.now(), valid_until__gt=at or timezone.now()
+        customer=customer,
+        version_code__in=COVERAGE_VERSIONS,
+        signed_at__lte=timezone.now(),
+        valid_until__gt=at or timezone.now(),
     ).order_by("-signed_at")
 
 
@@ -71,9 +71,7 @@ def active_customer_waivers(booking):
         state="signed",
         signed_at__lte=timezone.now(),
         valid_until__gt=booking.session.starts_at,
-        version_id__in=__import__(
-            "core.waivers.services", fromlist=["COVERAGE_VERSIONS"]
-        ).COVERAGE_VERSIONS,
+        version_id__in=COVERAGE_VERSIONS,
     ).distinct()
     return sorted(
         [*electronic, *current_paper(booking.customer, booking.session.starts_at)],
@@ -125,6 +123,7 @@ def record(
         raise ValidationError("Use the actual signing date, no later than today.")
     when = timezone.make_aware(datetime.combine(signed_on, time.min), NEW_YORK)
     values = {
+        "version_code": VERSION,
         "booking_id": booking.pk,
         "customer_id": booking.customer_id,
         "signer_name": form.cleaned_data["signer_name"],

@@ -318,12 +318,56 @@ def waivers(request):
             records = records.filter(signed_at__date__lte=data["before"])
     else:
         records = records.none()
+    from .models import PaperWaiver
+
+    papers = PaperWaiver.objects.select_related("customer")
+    if form.is_valid():
+        if data["customer"]:
+            papers = papers.filter(customer_id=data["customer"])
+        if data["q"]:
+            query = data["q"].strip()
+            exact, possible = name_candidates(query)
+            match = (
+                Q(signer_name__icontains=query)
+                | Q(minors__icontains=query)
+                | Q(customer__email__icontains=query)
+                | Q(customer_id__in=exact + possible)
+            )
+            digits = phone_search_digits(query)
+            if digits:
+                match |= Q(customer__phone__contains=digits) | Q(
+                    customer__previous_phone__contains=digits
+                )
+            papers = papers.filter(match)
+        if data["status"] == "valid":
+            papers = papers.filter(
+                version_code__in=COVERAGE_VERSIONS,
+                signed_at__lte=timezone.now(),
+                valid_until__gt=timezone.now(),
+            )
+        elif data["status"] == "expired":
+            papers = papers.filter(valid_until__lte=timezone.now())
+        elif data["status"] == "superseded":
+            papers = papers.exclude(version_code__in=COVERAGE_VERSIONS)
+        elif data["status"] in {"pending", "removed"}:
+            papers = papers.none()
+        if data["after"]:
+            papers = papers.filter(signed_at__date__gte=data["after"])
+        if data["before"]:
+            papers = papers.filter(signed_at__date__lte=data["before"])
+    else:
+        papers = papers.none()
+    combined = sorted(
+        [*records.distinct(), *papers],
+        key=lambda item: (item.signed_at, str(item.pk)),
+        reverse=True,
+    )
     return render(
         request,
         "core/waivers/list.html",
         {
             "form": form,
-            "signatures": paginate(request, records.distinct()),
+            "signatures": paginate(request, combined),
             "waiver_now": timezone.now(),
             "current_version": VERSION,
             "coverage_versions": COVERAGE_VERSIONS,
@@ -447,3 +491,14 @@ def paper_review(request, booking_id):
         except ValidationError as error:
             form.add_error(None, error)
     return render(request, "core/waivers/paper_form.html", {"form": form, "booking": booking})
+
+
+@staff_permission("core.view_waiversignature")
+@enabled_view
+@require_safe
+def paper_detail(request, pk):
+    staff_access(request)
+    from .models import PaperWaiver
+
+    signature = get_object_or_404(PaperWaiver.objects.select_related("customer"), pk=pk)
+    return render(request, "core/waivers/paper_detail.html", {"signature": signature})

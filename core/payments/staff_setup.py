@@ -88,6 +88,14 @@ class StaffConfirmForm(forms.Form):
     covered = forms.BooleanField(
         required=False, label="All participants are covered by the current waivers selected below."
     )
+    paper_signatures = forms.ModelMultipleChoiceField(
+        queryset=__import__(
+            "core.waivers.models", fromlist=["PaperWaiver"]
+        ).PaperWaiver.objects.none(),
+        required=False,
+        label="Current paper waivers",
+        widget=forms.CheckboxSelectMultiple,
+    )
     signatures = WaiverChoiceField(
         required=False,
         queryset=WaiverSignature.objects.none(),
@@ -108,6 +116,11 @@ class StaffConfirmForm(forms.Form):
 
         if charge_state(booking).comped:
             self.fields["payment_consent"].required = False
+        from core.waivers.paper import current_paper
+
+        self.fields["paper_signatures"].queryset = current_paper(
+            booking.customer, booking.session.starts_at
+        )
         self.minimum_minors = booking.children + booking.babies
         self.fields["signatures"].queryset = valid_customer_signatures(
             booking.customer, at=booking.session.starts_at
@@ -116,7 +129,7 @@ class StaffConfirmForm(forms.Form):
     def clean(self):
         data = super().clean()
         if data.get("covered"):
-            selected = data.get("signatures")
+            selected = list(data.get("signatures") or []) + list(data.get("paper_signatures") or [])
             names = {
                 name.casefold().strip() for signature in selected or [] for name in signature.minors
             }
@@ -163,7 +176,17 @@ def finalize(*, actor, booking_id, flow, values):
                 "pk", flat=True
             )
         )
-        if not values["signatures"] or any(item.pk not in allowed for item in values["signatures"]):
+        from core.waivers.paper import current_paper
+
+        papers = list(values.get("paper_signatures") or [])
+        allowed_paper = set(
+            current_paper(booking.customer, booking.session.starts_at).values_list("pk", flat=True)
+        )
+        if (
+            (not values["signatures"] and not papers)
+            or any(item.pk not in allowed for item in values["signatures"])
+            or any(item.pk not in allowed_paper for item in papers)
+        ):
             raise ValidationError("Current participant coverage must be reviewed again.")
         for signature in values["signatures"]:
             WaiverBookingLink.objects.get_or_create(signature=signature, booking=booking)

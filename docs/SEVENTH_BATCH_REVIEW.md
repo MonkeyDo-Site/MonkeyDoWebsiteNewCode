@@ -16,3 +16,14 @@ The owner authorized implementation and a PR on November 22, 2026 after reviewin
 ## Boundaries
 
 No homepage redesign, active memberships, production activation, credential changes or backup activation. New source records must retain accounting dates and must not double-count prepayment applications as new receipts. Pending/uncertain card operations cannot be retried automatically. A calculated Zelle refund is not a transfer; completion requires an owner to confirm it was returned.
+
+## Provider-field question pending
+
+The owner clarified that after entering the second month digit, focus should move directly to the year without a click or Tab. The public Banquest v0.3 API reference documents styles, inline errors and input/change/ready events, but does not document an auto-tab/focus option. This does not prove Banquest cannot enable the behavior. The owner will ask Banquest; implementation of that specific behavior remains pending their answer. Continue all other work. Hosted fields remain provider-controlled. Card spacing and visible inline/site errors use documented styling options.
+
+## First-round implementation and validation
+
+- 625 PostgreSQL tests pass. Coverage includes partial prepayments, stale review proofs, owner-only supervised exceptions, public paper reuse, optional closure email, runtime-role receipt/application/refund writes and automatic cash dates. Existing deployment/schema and payment/waiver tests remain in the suite.
+- Ruff, Django checks, migration drift and pinned migration checksums pass. Additive migrations are 0048–0051; use the reviewed booking upgrade for the eventual approved deployment. No schema has been applied to the hosted site by the agent.
+- Twelve full-page Chromium screenshots cover six arrival/booking/edit states at 1440px and 390px, with no document overflow or JavaScript errors. The separate interaction check preserves changed counts while recording $10 Zelle in-page, collects only $32.30 cash on a $42.30 revised invoice, and resolves a manual refund's Dashboard notice only after actual completion is recorded.
+- [First-round screenshots](design-review/seventh-review/README.md). PR #33 stays draft while the owner reviews images; update this PR for subsequent comments. Deployment ZIP and single PowerShell command follow review. Month-to-year focus remains pending Banquest confirmation.

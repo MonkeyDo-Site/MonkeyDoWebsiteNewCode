@@ -213,7 +213,7 @@ for (const date of document.querySelectorAll('[data-session-date]')) {
       const data = await response.json();
       select.replaceChildren(new Option(data.sessions.length ? 'Choose a session' : 'No available sessions for this date', ''));
       for (const session of data.sessions) {
-        const option=new Option(session.label,session.id);option.dataset.capacity=session.capacity||'';select.add(option);
+        const option=new Option(session.label,session.id);option.dataset.capacity=session.capacity||'';option.dataset.playMode=session.play_mode;option.dataset.supervisedCapacity=session.supervised_capacity;option.dataset.started=session.started?'1':'0';select.add(option);
       }
       select.dispatchEvent(new Event('change', {bubbles: true}));
     } catch (error) {
@@ -396,4 +396,11 @@ for (const notice of document.querySelectorAll('[data-special-price-notice]')) {
 for(const select of document.querySelectorAll('[data-dated-sessions]')){
  const box=document.createElement('p');box.className='caption session-capacity-info';box.setAttribute('role','status');select.after(box);
  select.addEventListener('change',()=>{box.textContent=select.selectedOptions[0]?.dataset.capacity||'';});
+}
+
+for(const form of document.querySelectorAll('form.compact-edit')){
+ const exception=form.querySelector('[data-field=supervised_exception]');
+ if(!exception)continue;
+ const sync=()=>{const option=form.elements.session.selectedOptions[0];const needed=form.elements.supervised.checked&&option&&(option.dataset.playMode==='accompanied'||option.dataset.supervisedCapacity==='0'||option.dataset.started==='1');exception.hidden=!needed;form.elements.supervised_exception.disabled=!needed;};
+ form.elements.supervised.addEventListener('change',sync);form.elements.session.addEventListener('change',sync);sync();
 }

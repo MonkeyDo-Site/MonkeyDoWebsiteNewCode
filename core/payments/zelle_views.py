@@ -1,10 +1,12 @@
 """Explicit recording of bank receipts and owner-confirmed manual refunds."""
 
 import uuid
+from decimal import Decimal
 
 from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
@@ -18,7 +20,7 @@ from .checkout_views import guarded
 class ZelleReceiptForm(forms.Form):
     request_key = forms.UUIDField(widget=forms.HiddenInput)
     value = forms.DecimalField(
-        min_value=".01", max_digits=14, decimal_places=2, label="Zelle amount received"
+        min_value=Decimal(".01"), max_digits=14, decimal_places=2, label="Zelle amount received"
     )
     received_on = forms.DateField(
         required=False,
@@ -33,7 +35,7 @@ class ZelleReceiptForm(forms.Form):
 class ZelleRefundForm(forms.Form):
     request_key = forms.UUIDField(widget=forms.HiddenInput)
     reviewed_amount = forms.DecimalField(
-        min_value=".01", max_digits=14, decimal_places=2, widget=forms.HiddenInput
+        min_value=Decimal(".01"), max_digits=14, decimal_places=2, widget=forms.HiddenInput
     )
     completed_on = forms.DateField(
         required=False,
@@ -60,12 +62,18 @@ def receipt(request, pk):
     if request.method == "POST" and form.is_valid():
         try:
             zelle.record_receipt(actor=request.user, booking_id=pk, **form.cleaned_data)
+            if request.headers.get("Accept") == "application/json":
+                return JsonResponse(
+                    {"saved": True, "received": str(zelle.facts(booking)["received"])}
+                )
             messages.success(
                 request, "Verified Zelle receipt recorded. Arrival has not been marked."
             )
             return redirect("booking_detail", pk=pk)
         except ValidationError as error:
             form.add_error(None, error)
+    if request.headers.get("Accept") == "application/json":
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
     return render(
         request,
         "core/zelle_record.html",

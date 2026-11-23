@@ -117,6 +117,7 @@ class PaperWaiver(FinancialFact):
     """Staff's record of an actual signed paper form; never electronic evidence."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    version_code = models.CharField(max_length=60, default="MD-WAIVER-2026-02")
     request_key = models.UUIDField(unique=True)
     customer = models.ForeignKey(
         "core.Customer", on_delete=models.PROTECT, related_name="paper_waivers"
@@ -133,6 +134,17 @@ class PaperWaiver(FinancialFact):
     created_at = models.DateTimeField(auto_now_add=True)
     signature_method = "paper"
     state = "signed"
+
+    @property
+    def version_id(self):
+        return self.version_code
+
+    def __str__(self):
+        return (
+            "Signed by "
+            + self.signer_name
+            + (" for " + ", ".join(self.minors) if self.minors else "")
+        )
 
     def get_state_display(self):
         return "Signed paper"

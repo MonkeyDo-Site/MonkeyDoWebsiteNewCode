@@ -30,6 +30,11 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path(
+        "staff/waivers/paper/<uuid:pk>/",
+        __import__("core.waivers.views", fromlist=["paper_detail"]).paper_detail,
+        name="paper_waiver_detail",
+    ),
     path("staff/bookings/<int:pk>/zelle/", zelle_views.receipt, name="booking_zelle_receipt"),
     path("staff/bookings/<int:pk>/zelle/refund/", zelle_views.refund, name="booking_zelle_refund"),
     path("staff/backups/<uuid:pk>/review/", backup_views.review_issue, name="backup_review_issue"),

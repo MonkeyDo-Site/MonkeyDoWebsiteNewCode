@@ -58,6 +58,8 @@ def assert_capacity(
             booking_id=booking_id, supervised_exception_session=session
         ).exists()
     )
+    if type(supervised_exception) is not bool:
+        raise ValidationError("Review the booking-specific supervised exception.")
     if supervised_exception and (not booking_id or actor is None or not actor.is_superuser):
         raise ValidationError("Only the owner may approve a supervised exception for this booking.")
     exception = supervised and (supervised_exception or existing_exception)

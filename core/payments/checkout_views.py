@@ -1,6 +1,7 @@
 """Two-step staff review/confirm forms. Merely opening or previewing never charges."""
 
 import uuid
+from decimal import Decimal
 from functools import wraps
 
 from django import forms
@@ -106,6 +107,20 @@ class ArrivalForm(ReceiptForm):
             ("gift_card", "Physical gift card presented"),
             ("split", "Split payment — record received amounts and charge the balance"),
         ]
+        from .zelle import facts
+
+        if facts(booking)["available"]:
+            self.fields["method"].choices = [
+                (
+                    key,
+                    "Charge remaining balance to card on file"
+                    if key == "card"
+                    else "Apply recorded Zelle"
+                    if key == "zelle"
+                    else label,
+                )
+                for key, label in self.fields["method"].choices
+            ]
         if charge_state(booking).comped:
             self.fields["method"].choices = [("comped", "Owner-comped booking — no payment")]
 
@@ -114,12 +129,7 @@ class ArrivalForm(ReceiptForm):
         if self.errors:
             return data
         method = data["method"]
-        from .zelle import facts
-
-        prepaid = facts(self.booking)["available"]
-        needs_zelle = (
-            method == "zelle" and prepaid == 0 or method == "split" and data.get("zelle_amount")
-        )
+        needs_zelle = method == "split" and data.get("zelle_amount")
         if needs_zelle and not data["zelle_verified"]:
             self.add_error(
                 "zelle_verified", "Verify the received Zelle payment in the business bank account."
@@ -173,6 +183,8 @@ class ClosureForm(ReceiptForm):
     def __init__(self, *args, booking, kind, owner=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.booking = booking
+        self.fields.pop("received_on")
+        self.fields.pop("zelle_sender")
         if not booking.customer.email:
             self.fields["send_email"].help_text = "Add a customer email before selecting Yes."
         if not owner or kind != "cancellation":
@@ -223,6 +235,16 @@ def confirm_label(kind, quote, plan):
             if kind != "arrival"
             else "Confirm arrival — owner-comped $0"
         )
+    if any(p.get("advance") for p in plan):
+        new_parts = [p for p in plan if not p.get("advance")]
+        if not new_parts:
+            return f"Confirm {noun} — apply recorded Zelle"
+        card_part = next((p for p in new_parts if p["tender"] == "card"), None)
+        if card_part:
+            return f"Confirm {noun} — apply Zelle and charge ${card_part['amount']}"
+        remaining = sum((Decimal(p["amount"]) for p in new_parts), Decimal("0"))
+        methods = ", ".join(p["tender"].replace("_", " ") for p in new_parts)
+        return f"Confirm {noun} — apply Zelle and record {methods} ${remaining:.2f}"
     card = sum((p["amount"] != "0.00" and p["tender"] == "card" for p in plan))
     if card and len(plan) == 1:
         return f"Confirm {noun} and charge ${quote['total']}"
@@ -313,6 +335,11 @@ def checkout(request, pk, kind="arrival"):
     from .zelle import facts as zelle_facts
 
     prepaid = zelle_facts(booking)
+    from .zelle_views import ZelleReceiptForm
+
+    zelle_form = ZelleReceiptForm(
+        initial={"request_key": uuid.uuid4(), "sender_name": booking.zelle_sender}
+    )
     if request.method == "GET" and kind == "arrival":
         values = {**initial, "waiver_confirmed": "", "zelle_verified": True}
         preview_form = ArrivalForm(values, **args)
@@ -331,12 +358,8 @@ def checkout(request, pk, kind="arrival"):
                 form.add_error(None, error)
     if reviewed:
         reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"]
-        reviewed["refund_due"] = max(
-            0, prepaid["available"] - __import__("decimal").Decimal(reviewed["quote"]["total"])
-        )
-        reviewed["remaining"] = max(
-            0, __import__("decimal").Decimal(reviewed["quote"]["total"]) - prepaid["available"]
-        )
+        reviewed["refund_due"] = max(0, prepaid["available"] - Decimal(reviewed["quote"]["total"]))
+        reviewed["remaining"] = max(0, Decimal(reviewed["quote"]["total"]) - prepaid["available"])
     if is_live:
         from django.template.loader import render_to_string
 
@@ -369,6 +392,7 @@ def checkout(request, pk, kind="arrival"):
             "heading": heading,
             "kind": kind,
             "zelle": prepaid,
+            "zelle_form": zelle_form,
             "active_waivers": active_customer_waivers(booking) if kind == "arrival" else [],
         },
     )

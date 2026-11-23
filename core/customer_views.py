@@ -121,6 +121,9 @@ def customer_detail(request, pk):
             .order_by("-signed_at")[:3]
             if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature")
             else [],
+            "customer_paper_waivers": customer.paper_waivers.order_by("-signed_at")[:3]
+            if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature")
+            else [],
             "waiver_now": timezone.now(),
             "saved_methods": PaymentMethod.objects.filter(
                 customer=customer, reusable=True, state="active"

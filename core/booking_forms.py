@@ -57,6 +57,17 @@ def session_date_picker(form, booking=None):
     form.fields["session"].widget.attrs["data-dated-sessions"] = "true"
 
 
+class SessionChoiceSelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        if hasattr(value, "instance"):
+            session = value.instance
+            option["attrs"]["data-play-mode"] = session.play_mode
+            option["attrs"]["data-supervised-capacity"] = session.supervised_capacity
+            option["attrs"]["data-started"] = "1" if session.starts_at <= timezone.now() else "0"
+        return option
+
+
 class TestBookingForm(forms.Form):
     estimate_token = forms.CharField(required=False, widget=forms.HiddenInput)
     customer = CustomerChoice(queryset=Customer.objects.order_by("last_name", "pk"))
@@ -124,6 +135,7 @@ class TestBookingForm(forms.Form):
             }
             initial["version"] = booking.edit_version
         super().__init__(*args, initial=initial, **kwargs)
+        self.fields["session"].widget = SessionChoiceSelect()
         self.fields["session"].queryset = Session.objects.filter(
             Q(source_slot__isnull=True)
             | Q(source_slot__active=True, source_slot__archived_at__isnull=True),
@@ -201,6 +213,7 @@ class TimingForm(forms.Form):
             initial={"session": booking.session_id, "version": booking.edit_version},
             **kwargs,
         )
+        self.fields["session"].widget = SessionChoiceSelect()
         self.fields["session"].queryset = Session.objects.filter(
             Q(source_slot__isnull=True)
             | Q(source_slot__active=True, source_slot__archived_at__isnull=True),

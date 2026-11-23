@@ -1,6 +1,7 @@
 """Explicit collection of only a reviewed unpaid balance, never a full-order retry."""
 
 import uuid
+from datetime import date
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -109,7 +110,9 @@ def preview(
         if booking.attendance != "arrived"
         else context
     )
-    received_on = receipt_date(received_on) if method != "card" else None
+    received_on = (
+        receipt_date(received_on if method == "zelle" else None) if method != "card" else None
+    )
     zelle_sender = (
         sender(zelle_sender or booking.zelle_sender, required=True) if method == "zelle" else ""
     )
@@ -190,7 +193,7 @@ def confirm(
         allocation=facts["allocation"],
         method_id=facts["method_id"],
         purpose=facts["purpose"],
-        received_on=received_on if method != "card" else None,
+        received_on=date.fromisoformat(facts["received_on"]) if method != "card" else None,
     )
     if method == "card":
         enqueue(

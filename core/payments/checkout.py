@@ -113,6 +113,8 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
     require_current(booking, kind)
     state = charge_state(booking)
+    if kind != "arrival" and type(data.get("send_email", False)) is not bool:
+        raise ValidationError("Choose whether to send a customer email.")
     reopen = data.get("reopen_affected_sessions", False)
     if type(reopen) is not bool or (reopen and kind != "cancellation"):
         raise ValidationError("Review the cancellation reopening choice.")
@@ -199,7 +201,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
 
     manual = any(part["tender"] != "card" and not part.get("advance") for part in plan)
     zelle = any(part["tender"] == "zelle" and not part.get("advance") for part in plan)
-    received_on = receipt_date(data.get("received_on")) if manual else None
+    received_on = receipt_date(data.get("received_on") if zelle else None) if manual else None
     zelle_sender = (
         sender(data.get("zelle_sender", booking.zelle_sender), required=zelle) if zelle else ""
     )
@@ -465,7 +467,7 @@ def summary(booking):
     if checkout is None:
         return {
             "zelle": prepaid,
-            "status": "Comped" if state.comped else "Due at arrival",
+            "status": "Comped" if state.comped else "Awaiting arrival",
             "received": prepaid["received"],
             "due": ZERO if state.comped else None,
             "sale": None,

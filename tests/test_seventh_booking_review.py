@@ -1,6 +1,7 @@
 """Seventh review: cash identity, explicit manual refunds and coverage reuse."""
 
 import uuid
+from datetime import timedelta
 from decimal import Decimal
 
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -11,6 +12,7 @@ from django.utils import timezone
 from core.models import FinancialPosting, PaymentOperation, ZelleReceipt
 from core.payments import zelle
 from core.payments.checkout import confirm, preview
+from core.waivers.coverage_forms import CoverageForm
 from core.waivers.paper import active_customer_waivers, record
 from tests import test_booking_checkout as fixtures
 from tests.helpers import verified_owner_login
@@ -196,3 +198,106 @@ class SeventhReviewTests(TestCase):
         ):
             self.assertContains(response, label)
         self.assertFalse(PaymentOperation.objects.exists())
+
+    def test_partial_zelle_cannot_be_recorded_as_the_full_payment(self):
+        b = self.booking()
+        self.receipt(b, value="10")
+        with self.assertRaisesMessage(ValidationError, "Only $10.00"):
+            self.act(b, self.arrival_inputs(b, method="zelle"))
+        b.refresh_from_db()
+        self.assertFalse(b.attendance)
+        self.assertFalse(PaymentOperation.objects.exists())
+
+    def test_owner_supervised_exception_is_booking_scoped_and_public_limits_remain(self):
+        from core.booking_management import assert_capacity, edit_test_booking
+
+        b = self.booking()
+        slot = b.session
+        slot.play_mode = "accompanied"
+        slot.supervised_capacity = 0
+        slot.starts_at = timezone.now() - timedelta(minutes=15)
+        slot.save()
+        values = dict(
+            booking_id=b.pk,
+            version=b.edit_version,
+            children=1,
+            adults=0,
+            babies=0,
+            socks=0,
+            expected_method="card",
+            supervised=True,
+            supervised_exception=True,
+        )
+        with self.assertRaises(ValidationError):
+            edit_test_booking(actor=self.staff, **values)
+        edit_test_booking(actor=self.owner, **values)
+        b.refresh_from_db()
+        slot.refresh_from_db()
+        self.assertTrue(b.supervised)
+        self.assertEqual(slot.play_mode, "accompanied")
+        self.assertEqual(slot.supervised_capacity, 0)
+        with self.assertRaises(ValidationError):
+            assert_capacity(slot, actor=None, children=1, adults=0, supervised=True)
+        with self.assertRaises(ValidationError):
+            assert_capacity(
+                slot, actor=self.owner, booking_id=b.pk, children=36, adults=0, supervised=True
+            )
+
+    def test_inline_receipt_returns_json_and_preserves_unconfirmed_arrival(self):
+        b = self.booking()
+        verified_owner_login(self.client, self.owner)
+        response = self.client.post(
+            reverse("booking_zelle_receipt", args=[b.pk]),
+            {
+                "request_key": uuid.uuid4(),
+                "value": "5.00",
+                "sender_name": "Test Sender",
+                "verified": "on",
+            },
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["received"], "5.00")
+        b.refresh_from_db()
+        self.assertFalse(b.attendance)
+        self.assertFalse(PaymentOperation.objects.exists())
+
+    def test_reviewed_advance_receipt_and_manual_refund_work_under_runtime_grants(self):
+        from tests.test_payment_runtime_grants import RuntimeRoleMixin
+
+        b = self.booking()
+        with RuntimeRoleMixin.runtime_role(self):
+            self.receipt(b, value="20")
+            self.act(b, self.arrival_inputs(b, method="zelle"))
+            zelle.complete_refund(
+                actor=self.owner,
+                booking_id=b.pk,
+                request_key=uuid.uuid4(),
+                reviewed_amount="4.01",
+                confirmed=True,
+            )
+        self.assertEqual(zelle.facts(b)["refunded"], Decimal("4.01"))
+
+    def test_paper_only_coverage_can_be_reused_by_the_same_public_customer(self):
+
+        b = self.booking()
+        # Isolate paper coverage from the original fictional electronic signature.
+        record(
+            actor=self.owner,
+            booking_id=b.pk,
+            request_key=uuid.uuid4(),
+            signer_name="Test Parent",
+            relationship="Parent",
+            minors="Mindy",
+            signed_on=timezone.localdate(),
+            paper_signed=True,
+        )
+        flow = self.flow()
+        flow.update(session_id=b.session_id, details={"children": 1, "babies": 0}, stage="waiver")
+        form = CoverageForm({"use_existing": "on"}, flow=flow)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertTrue(any(s.signature_method == "paper" for s in form.signatures))
+        other = self.flow(new=True)
+        other.update(session_id=b.session_id, details={"children": 1, "babies": 0}, stage="waiver")
+        other_form = CoverageForm({"use_existing": "on"}, flow=other)
+        self.assertFalse(other_form.is_valid())

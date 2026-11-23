@@ -315,6 +315,7 @@ def bind_booking(*, flow, booking):
 
         paper = PaperWaiver.objects.filter(
             pk=signature_id,
+            version_code__in=COVERAGE_VERSIONS,
             customer=booking.customer,
             signed_at__lte=timezone.now(),
             valid_until__gt=booking.session.starts_at,
@@ -418,6 +419,12 @@ def booking_coverage(booking):
     review = BookingWaiverReview.objects.filter(booking=booking).first()
     if review and review.paper_signed:
         return True
+    from .paper import active_customer_waivers
+
+    active = active_customer_waivers(booking)
+    if review and review.coverage_confirmed and active:
+        names = {name.casefold().strip() for signature in active for name in signature.minors}
+        return len(names) >= booking.children + booking.babies
     return bool(
         review
         and review.coverage_confirmed

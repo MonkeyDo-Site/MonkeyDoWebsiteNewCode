@@ -1,8 +1,11 @@
+import uuid
+
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from .booking_forms import PricingPolicyForm, TestBookingForm, TimingForm, session_date_picker
@@ -51,7 +54,7 @@ def booking_detail(request, pk):
 
         waiver_context = {
             "waiver_links": booking.waiver_links.select_related("signature"),
-            "paper_form": NamedPaperWaiverForm(initial={"request_key": __import__("uuid").uuid4()}),
+            "paper_form": NamedPaperWaiverForm(initial={"request_key": uuid.uuid4()}),
             "paper_waivers": booking.customer.paper_waivers.all().order_by("-signed_at"),
         }
     from .waivers.paper import active_customer_waivers
@@ -173,7 +176,9 @@ def booking_edit(request, pk):
         "core/booking_form.html",
         {
             "form": form,
-            "heading": "Edit test booking",
+            "heading": "Edit booking"
+            if booking.workflow == "integrated_v1"
+            else "Edit test booking",
             "booking": booking,
             "estimate": estimate,
             "show_payment_reminder": show_reminder,
@@ -331,6 +336,9 @@ def dated_sessions(request):
         return {
             "id": row.pk,
             "label": str(row),
+            "play_mode": row.play_mode,
+            "supervised_capacity": row.supervised_capacity,
+            "started": row.starts_at <= timezone.now(),
             "capacity": f"Children: {max(0, row.child_capacity - children)} of {row.child_capacity} available · Total: {max(0, row.total_capacity - children - adults)} of {row.total_capacity} available · Supervised: {max(0, row.supervised_capacity - supervised)} of {row.supervised_capacity} available",
         }
 

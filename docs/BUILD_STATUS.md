@@ -1,5 +1,10 @@
 # Staging build status
 
+## Seventh review — draft PR #33 and screenshot review
+
+PR #32 is merged and the owner reports it deployed. PR #33 implements the seventh feedback batch; it is a draft during owner screenshot review. See [scope](SEVENTH_BATCH_REVIEW.md) and [arrival/booking/edit screenshots](design-review/seventh-review/README.md). New additive schema 0048–0051 requires the checksum-pinned reviewed booking upgrade with a private checkpoint and restricted runtime grants; no hosted migration is performed by the agent. Integration flags, credentials, backups, homepage and active memberships are unchanged. The owner will ask Banquest about automatic month-to-year focus. Final testing guide and deployment ZIP/one command follow completed implementation and review.
+
+
 ## Sixth review — PR #32 implemented, approved follow-up updates
 
 Implements the complete sixth feedback batch and manual owner card retry. Previous PR #31 is merged; owner reports deployment and successful sandbox payment after Banquest's reset. This PR does not change live payment activation, schema, credentials, backup activation, homepage design or memberships. The owner approved the email design and all collected payment/waiver follow-up changes, with no further screenshots requested. 612 PostgreSQL tests pass. Final validation includes relationship-specific minor names, preserved signed history, and 12 desktop/phone browser interactions. See [scope](SIXTH_BATCH_REVIEW.md), [test guide](SIXTH_BATCH_TEST_GUIDE.md), [payment-page images](design-review/sixth-payment-review/README.md) and final PR check results before merging.
