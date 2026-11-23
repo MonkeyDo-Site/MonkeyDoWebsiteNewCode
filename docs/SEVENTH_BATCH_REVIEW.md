@@ -1,6 +1,6 @@
 # Seventh batch: arrival, receipts and waiver records
 
-The owner authorized implementation and a PR on November 22, 2026 after reviewing all 19 document comments and 22 screenshots. Keep the same PR updated during screenshot review. Show the arrival, booking-detail and edit-booking pages. Deliver browser ZIP plus one PowerShell command after review and final validation; do not merge or deploy automatically.
+The owner authorized implementation and a PR on November 22, 2026 after reviewing all 19 document comments and 22 screenshots. Keep the same PR updated during screenshot review. Show the arrival, booking-detail and edit-booking pages. The owner completed screenshot review and explicitly authorized merging PR #33 and preparing the browser ZIP plus single PowerShell deployment command. Merge after final validation; the owner runs the hosted deployment.
 
 ## Agreed decisions
 
@@ -69,3 +69,7 @@ Validation: 46 focused public/completed/seventh tests pass, including child, com
 ## Public session date position
 
 Moved the shared public booking page’s session date/time directly below Your play session, before the staging notice and error warning. The two capacity-recovery buttons remain below the warning. Desktop/phone Chromium checks verify the heading/date/warning order, responsive layout, retained amounts and both recovery actions, with no JavaScript errors. No application behavior or schema changed. Updated v14 screenshots supersede v13.
+
+## Final review approval and test guide
+
+The owner approved merging and release preparation after the v14 session-date correction. The final post-deployment scenario guide is [SEVENTH_BATCH_TEST_GUIDE.md](SEVENTH_BATCH_TEST_GUIDE.md), with a Word copy beside it. It covers the complete batch and screenshot follow-ups; hosted testing follows the owner-run deployment.
