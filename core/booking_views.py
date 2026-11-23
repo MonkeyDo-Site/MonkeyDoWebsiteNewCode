@@ -177,6 +177,10 @@ def booking_edit(request, pk):
                 return redirect("booking_detail", pk=pk)
         except ValidationError as exc:
             form_error(form, exc)
+            form.show_supervised_exception = (
+                request.user.is_superuser
+                and getattr(exc, "code", None) == "supervised_exception_required"
+            )
     if estimate is None and booking.quotes.first():
         saved = booking.quotes.first()
         from .price_adjustments import booking_price_adjustment

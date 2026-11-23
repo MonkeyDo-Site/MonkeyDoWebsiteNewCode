@@ -285,6 +285,41 @@ class SeventhReviewTests(TestCase):
                 slot, actor=self.owner, booking_id=b.pk, children=36, adults=0, supervised=True
             )
 
+    def test_supervised_exception_checkbox_appears_only_after_owner_warning(self):
+        from core.booking_estimates import edit_estimate
+
+        b = self.booking()
+        b.session.play_mode = "accompanied"
+        b.session.supervised_capacity = 0
+        b.session.save()
+        verified_owner_login(self.client, self.owner)
+        url = reverse("booking_edit", args=[b.pk])
+        self.assertNotContains(self.client.get(url), 'name="supervised_exception"')
+        values = dict(
+            session=b.session,
+            version=b.edit_version,
+            children=1,
+            adults=0,
+            babies=0,
+            socks=0,
+            supervised=True,
+            expected_method="cash",
+        )
+        posted = values | {
+            "session": b.session_id,
+            "estimate_token": edit_estimate(b, values)["token"],
+        }
+        response = self.client.post(url, posted)
+        self.assertContains(response, "This session is marked as open play only.")
+        self.assertContains(response, 'name="supervised_exception"')
+        b.refresh_from_db()
+        self.assertFalse(b.supervised)
+        response = self.client.post(url, posted | {"supervised_exception": "on"})
+        self.assertEqual(response.status_code, 302)
+        self.assertNotContains(self.client.get(url), 'name="supervised_exception"')
+        b.refresh_from_db()
+        self.assertTrue(b.supervised)
+
     def test_inline_receipt_returns_json_and_preserves_unconfirmed_arrival(self):
         b = self.booking()
         verified_owner_login(self.client, self.owner)

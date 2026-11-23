@@ -1,5 +1,17 @@
 # Seventh review — first review round
 
+## Conditional supervised exception and public Continue
+
+The owner-only supervised exception checkbox is absent on a regular edit screen, including when Supervised Play is first selected. It is rendered, unchecked, only after the server returns the relevant supervised-play warning. The approved booking-specific exception remains available after that warning. These v12 images replace the earlier supervised-exception example.
+
+Public Continue currently returns a separate error page with the capacity message and a **Choose a session** link; attendee controls are not shown on that response. This is a capture of existing behavior, with no public-flow change in this follow-up.
+
+| State | Desktop | Phone |
+|---|---|---|
+| Edit before warning — no exception checkbox | [Full image](SEVENTH-v12-edit-before-warning-1440.png) | [Full image](SEVENTH-v12-edit-before-warning-390.png) |
+| Edit after warning — exception checkbox visible | [Full image](SEVENTH-v12-edit-after-warning-1440.png) | [Full image](SEVENTH-v12-edit-after-warning-390.png) |
+| Public capacity error after Continue | [Full image](SEVENTH-v12-public-after-continue-1440.png) | [Full image](SEVENTH-v12-public-after-continue-390.png) |
+
 ## Backend capacity reminder
 
 The owner’s edit screen uses a short reminder with actual capacity/booked counts: “The child capacity for this session is 35, of which 30 slots are already booked. Check the owner override checkbox to proceed.” Non-owner staff are directed to ask the owner. The existing owner-only override and public guidance remain enforced. Form-level errors span the edit form instead of a single narrow grid column. These v11 images replace the earlier v8/v10 edit-capacity examples. The special-price notice is shown only when a special admissions price is saved.

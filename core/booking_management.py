@@ -69,7 +69,8 @@ def assert_capacity(
         raise ValidationError(
             "This session is marked as open play only. Do you want to change this booking only to supervised play?"
             if supervised
-            else "This play type is not enabled for the session."
+            else "This play type is not enabled for the session.",
+            code="supervised_exception_required" if supervised else None,
         )
     now = timezone.now()
     if (
@@ -81,7 +82,10 @@ def assert_capacity(
     ):
         raise ValidationError("This session is blocked for ordinary reservations.")
     if now >= session.ends_at or (supervised and not exception and now >= session.starts_at):
-        raise ValidationError("This session is no longer open for the selected play type.")
+        raise ValidationError(
+            "This session is no longer open for the selected play type.",
+            code="supervised_exception_required" if supervised and now < session.ends_at else None,
+        )
     bookings = session.bookings.exclude(
         attendance__in=[Booking.Attendance.CANCELLED, Booking.Attendance.NO_SHOW]
     )
@@ -92,7 +96,10 @@ def assert_capacity(
     used_adults = sum(row["adults"] for row in counts)
     used_supervised = sum(row["children"] for row in counts if row["supervised"])
     if supervised and not exception and session.supervised_capacity == 0:
-        raise ValidationError("Supervised play is not enabled for this session.")
+        raise ValidationError(
+            "Supervised play is not enabled for this session.",
+            code="supervised_exception_required",
+        )
     over = (
         used_children + children > session.child_capacity
         or used_children + used_adults + children + adults > session.total_capacity
