@@ -1,5 +1,14 @@
 # Seventh review — first review round
 
+## Public capacity recovery — two actions
+
+The capacity-error screen now offers **Adjust the amounts in my booking** and **Choose another session**. Adjust returns to the same selected session with the latest attempted play type, attendee counts, socks and payment method. Those amounts still require a fresh capacity/price check; no booking or capacity hold is created by recovery. Choose another session opens session selection. These v13 screenshots supersede the v12 public error screen below.
+
+| State | Desktop | Phone |
+|---|---|---|
+| Capacity error with both buttons | [Full image](SEVENTH-v13-capacity-recovery-1440.png) | [Full image](SEVENTH-v13-capacity-recovery-390.png) |
+| Returned form with attempted amounts | [Full image](SEVENTH-v13-restored-amounts-1440.png) | [Full image](SEVENTH-v13-restored-amounts-390.png) |
+
 ## Conditional supervised exception and public Continue
 
 The owner-only supervised exception checkbox is absent on a regular edit screen, including when Supervised Play is first selected. It is rendered, unchecked, only after the server returns the relevant supervised-play warning. The approved booking-specific exception remains available after that warning. These v12 images replace the earlier supervised-exception example.

@@ -1054,3 +1054,5 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 
 .price-adjustment{border-top:1px solid #b9c6b9;margin-top:18px;padding-top:16px}.price-adjustment h3{font-size:1rem;margin:0 0 16px}.price-adjustment .adjusted-price-total{border-top:1px solid #cbd4c7;padding-top:12px}.price-adjustment .quote-lines dt{font-weight:500}.price-adjustment .quote-lines dt.adjusted-price-total{font-weight:800}
 .staff-layout .price-adjustment{margin:18px 0 0;padding-top:16px}.price-adjustment .quote-lines{margin-bottom:0}
+
+.capacity-recovery-actions{display:flex;flex-wrap:wrap;gap:14px}.capacity-recovery-actions .button{max-width:100%}

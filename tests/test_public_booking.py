@@ -213,6 +213,56 @@ class PublicBookingTests(TestCase):
         self.assertTrue(Booking.objects.get().supervised)
         self.assertEqual(Booking.objects.get().quotes.get().snapshot["processing_fee"], "0.00")
 
+    def test_capacity_error_offers_adjustment_and_preserves_attempt_without_booking(self):
+        self.slot.child_capacity = 5
+        self.slot.save()
+        for values in (
+            {"children": 6, "adults": 2},
+            {"children": 2, "adults": 50},
+            {"children": 6, "adults": 0, "play_type": "supervised"},
+        ):
+            with self.subTest(values=values):
+                # Start with accepted details so recovery must retain the newer failed attempt.
+                self.new_review()
+                self.client.post(
+                    "/book/revise/",
+                    {
+                        "flow_key": self.client.session["customer_test_booking"]["key"],
+                    },
+                )
+                data = (
+                    dict(
+                        play_type="open",
+                        children=2,
+                        adults=1,
+                        babies=0,
+                        socks=2,
+                        expected_method="cash",
+                    )
+                    | values
+                )
+                response = self.client.post("/book/details/", data)
+                self.assertEqual(response.status_code, 400)
+                self.assertContains(response, "Adjust the amounts in my booking", status_code=400)
+                self.assertContains(response, "Choose another session", status_code=400)
+                self.assertTrue(response.context["capacity_recovery"])
+                form = self.client.get("/book/details/").context["form"]
+                for name in (
+                    "play_type",
+                    "children",
+                    "adults",
+                    "babies",
+                    "socks",
+                    "expected_method",
+                ):
+                    self.assertEqual(str(form[name].value()), str(data[name]))
+                flow = self.client.session["customer_test_booking"]
+                self.assertEqual(flow["stage"], "details")
+                self.assertEqual(flow["session_id"], self.slot.pk)
+                self.assertNotIn("quote", flow)
+                self.assertFalse(Booking.objects.exists())
+                self.assertFalse(Customer.objects.exists())
+
     def test_csrf_is_required_and_feature_off_has_no_customer_write_endpoint(self):
         self.assertEqual(
             Client(enforce_csrf_checks=True).post(f"/book/start/{self.slot.pk}/").status_code, 403

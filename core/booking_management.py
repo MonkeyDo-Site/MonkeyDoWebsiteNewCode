@@ -144,14 +144,17 @@ def assert_capacity(
             raise ValidationError(
                 f"The supervised play capacity for this session is {session.supervised_capacity}, of which {used_supervised} places are already booked. The amount of children you entered goes beyond the available capacity. Please enter a smaller amount, "
                 + ("choose open play, " if session.play_mode != "supervised" else "")
-                + "choose another session time, or call 848-238-5147 for assistance."
+                + "choose another session time, or call 848-238-5147 for assistance.",
+                code="session_capacity",
             )
         if used_children + children > session.child_capacity:
             raise ValidationError(
-                f"The child capacity for this session is {session.child_capacity}, of which {used_children} slots are already booked. The amount of children you entered goes beyond the available capacity. Please enter a smaller amount or choose another session time. You can call 848-238-5147 for further assistance."
+                f"The child capacity for this session is {session.child_capacity}, of which {used_children} slots are already booked. The amount of children you entered goes beyond the available capacity. Please enter a smaller amount or choose another session time. You can call 848-238-5147 for further assistance.",
+                code="session_capacity",
             )
         raise ValidationError(
-            f"The total available capacity for this session is {session.total_capacity}, of which {used_children + used_adults} slots are already booked. The amount of children you entered is within capacity limits, however the amount of adults you entered exceeds total capacity. Please enter a smaller number of adults or call 848-238-5147 for further assistance."
+            f"The total available capacity for this session is {session.total_capacity}, of which {used_children + used_adults} slots are already booked. The amount of children you entered is within capacity limits, however the amount of adults you entered exceeds total capacity. Please enter a smaller number of adults or call 848-238-5147 for further assistance.",
+            code="session_capacity",
         )
 
 
