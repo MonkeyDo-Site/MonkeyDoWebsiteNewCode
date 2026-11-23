@@ -41,3 +41,9 @@ The owner approved a compact Price adjustment section at the bottom of Visit pay
 The supplied example reconciles $55.29 − $15.00 admission + $3.00 fee − $0.99 tax = $42.30; an existing $55.29 Zelle receipt leaves the independently calculated $12.99 refund due. Count changes and play-price changes are distinguished, including mixed additions/removals that offset to zero. The presentation neither creates a cancellation fee nor collects/refunds money. New comparisons are not written into financial snapshots or review proofs.
 
 Focused validation: 34 pricing/arrival/owner-price tests pass, including eight new arithmetic and workflow tests. Six Chromium desktop/phone checks verify the exact comparison in arrival, live edit preview and accepted booking details, one adjusted-total row, responsive layout and no JavaScript errors. Inputs revert to the standard display when the change is undone. [Updated summary screenshots](design-review/seventh-review/README.md).
+
+## Completed-arrival received total
+
+The completed booking’s Payment card shows Total received above the existing tender/operation breakdown instead of the standalone Zelle-received headline. The example is $42.30 total: $32.30 cash plus $10.00 applied advance Zelle. This read-only total includes successful net invoice receipts plus unused advance Zelle; applying a receipt does not count it twice. Pending/declined card requests are excluded. Unreturned excess remains received until an actual manual refund is recorded; the display then says “after refunds.” Upcoming bookings retain their advance Zelle receipt details.
+
+Validation: 28 focused booking/arrival tests pass, including mixed cash/Zelle totals, pending-card exclusion and actual refund completion. Desktop/phone Chromium checks confirm the exact example, no overflow and no JavaScript errors. No schema or financial-write behavior changed. Updated v9 screenshots are in the review gallery.

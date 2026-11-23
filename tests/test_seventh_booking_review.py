@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from core.models import FinancialPosting, PaymentOperation, ZelleReceipt
 from core.payments import zelle
-from core.payments.checkout import confirm, preview
+from core.payments.checkout import confirm, preview, summary
 from core.waivers.coverage_forms import CoverageForm
 from core.waivers.paper import active_customer_waivers, record
 from tests import test_booking_checkout as fixtures
@@ -113,6 +113,48 @@ class SeventhReviewTests(TestCase):
         self.assertLess(card.amount, Decimal("6.47"))
         self.assertGreater(card.amount, Decimal("5.99"))
         self.assertEqual(sum(o.amount for o in ops), result.sale.total)
+
+    def test_completed_payment_card_totals_cash_and_advance_zelle_once(self):
+        b = self.booking()
+        self.receipt(b, value="10")
+        result = self.act(b, self.arrival_inputs(b, method="cash"))
+        b.refresh_from_db()
+        values = summary(b)
+        self.assertEqual(values["status"], "Paid")
+        self.assertEqual(values["total_received"], result.sale.total)
+        self.assertEqual(values["total_received"], Decimal("15.99"))
+        self.assertEqual(result.sale.operations.get(tender="cash").amount, Decimal("5.99"))
+        verified_owner_login(self.client, self.owner)
+        response = self.client.get(reverse("booking_detail", args=[b.pk]))
+        self.assertContains(response, "Total received: $15.99")
+        self.assertNotContains(response, "Zelle received:")
+        self.assertContains(response, "Succeeded · Cash")
+        self.assertContains(response, "Succeeded · Zelle")
+
+    def test_received_total_includes_unused_zelle_until_actual_refund(self):
+        b = self.booking()
+        self.receipt(b, value="20")
+        self.act(b, self.arrival_inputs(b, method="zelle"))
+        b.refresh_from_db()
+        self.assertEqual(summary(b)["total_received"], Decimal("20"))
+        zelle.complete_refund(
+            actor=self.owner,
+            booking_id=b.pk,
+            request_key=uuid.uuid4(),
+            reviewed_amount="4.01",
+            confirmed=True,
+        )
+        self.assertEqual(summary(b)["total_received"], Decimal("15.99"))
+        verified_owner_login(self.client, self.owner)
+        response = self.client.get(reverse("booking_detail", args=[b.pk]))
+        self.assertContains(response, "Total received, after refunds: $15.99")
+
+    def test_pending_card_is_not_included_in_received_total(self):
+        b = self.booking()
+        self.receipt(b, value="10")
+        self.act(b, self.arrival_inputs(b))
+        b.refresh_from_db()
+        self.assertEqual(summary(b)["total_received"], Decimal("10"))
 
     def test_changed_prepayment_invalidates_reviewed_hash_before_any_arrival_charge(self):
         b = self.booking()

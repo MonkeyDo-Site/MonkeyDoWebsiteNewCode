@@ -469,6 +469,7 @@ def summary(booking):
             "zelle": prepaid,
             "status": "Comped" if state.comped else "Awaiting arrival",
             "received": prepaid["received"],
+            "total_received": prepaid["received"] - prepaid["refunded"],
             "due": ZERO if state.comped else None,
             "sale": None,
             "pending": False,
@@ -483,6 +484,7 @@ def summary(booking):
             if state.comped
             else "No fee",
             "received": ZERO,
+            "total_received": prepaid["received"] - prepaid["refunded"],
             "due": ZERO,
             "sale": None,
             "pending": False,
@@ -516,6 +518,8 @@ def summary(booking):
         "zelle": prepaid,
         "status": status,
         "received": paid,
+        # Applied advance receipts are already included in paid; only add the unused balance.
+        "total_received": paid + prepaid["available"],
         "due": None if corrected else due,
         "total": expected,
         "sale": sale,

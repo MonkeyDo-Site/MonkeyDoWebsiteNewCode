@@ -1,5 +1,13 @@
 # Seventh review — first review round
 
+## Completed-arrival payment total
+
+After arrival, Payment shows **Total received: $42.30** above the existing **$32.30 cash** and **$10.00 Zelle** entries, replacing the Zelle-only received headline. Pending/failed operations are excluded; advance receipts count once. Unreturned overpayments remain included until their manual refund is actually recorded, after which the total is labelled “after refunds.”
+
+| Page | Desktop | Phone |
+|---|---|---|
+| Booking after cash/Zelle arrival | [Full image](SEVENTH-v9-booking-total-received-1440.png) | [Full image](SEVENTH-v9-booking-total-received-390.png) |
+
 ## Capacity warnings and override controls
 
 Actual application screens with fictional local records. Public customers see capacity warnings and alternatives; override controls are available only to authorized staff/owners. The arrival override applies to that arrival. The owner’s supervised exception applies only to the selected booking and does not itself override child/combined capacity.
