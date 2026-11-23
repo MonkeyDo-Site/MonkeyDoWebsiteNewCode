@@ -2,11 +2,11 @@
 
 ## Backend capacity reminder
 
-The owner’s edit screen uses a short reminder with actual capacity/booked counts: “The child capacity for this session is 35, of which 30 slots are already booked. Check the owner override checkbox to proceed.” Non-owner staff are directed to ask the owner. The existing owner-only override and public guidance remain enforced. Form-level errors span the edit form instead of a single narrow grid column. These images replace the earlier v8 edit-capacity example.
+The owner’s edit screen uses a short reminder with actual capacity/booked counts: “The child capacity for this session is 35, of which 30 slots are already booked. Check the owner override checkbox to proceed.” Non-owner staff are directed to ask the owner. The existing owner-only override and public guidance remain enforced. Form-level errors span the edit form instead of a single narrow grid column. These v11 images replace the earlier v8/v10 edit-capacity examples. The special-price notice is shown only when a special admissions price is saved.
 
 | Page | Desktop | Phone |
 |---|---|---|
-| Edit capacity reminder | [Full image](SEVENTH-v10-edit-capacity-reminder-1440.png) | [Full image](SEVENTH-v10-edit-capacity-reminder-390.png) |
+| Edit capacity reminder | [Full image](SEVENTH-v11-edit-capacity-reminder-1440.png) | [Full image](SEVENTH-v11-edit-capacity-reminder-390.png) |
 
 ## Completed-arrival payment total
 
