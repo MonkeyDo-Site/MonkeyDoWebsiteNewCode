@@ -301,3 +301,63 @@ class SeventhReviewTests(TestCase):
         other.update(session_id=b.session_id, details={"children": 1, "babies": 0}, stage="waiver")
         other_form = CoverageForm({"use_existing": "on"}, flow=other)
         self.assertFalse(other_form.is_valid())
+
+    def test_arrival_paper_fields_belong_to_separate_waiver_form(self):
+        booking = self.booking()
+        verified_owner_login(self.client, self.owner)
+        response = self.client.get(reverse("booking_arrival", args=[booking.pk]))
+        self.assertContains(response, "Paper waivers signed")
+        self.assertContains(response, "Save paper-waiver record")
+        fields = response.context["arrival_paper_form"].fields
+        for field in fields.values():
+            self.assertEqual(field.widget.attrs["form"], "arrival-paper-record")
+        self.assertFalse(PaymentOperation.objects.exists())
+
+    def test_arrival_can_record_paper_waiver_without_changing_attendees_or_payment(self):
+        from core.waivers.models import PaperWaiver
+
+        booking = self.booking()
+        verified_owner_login(self.client, self.owner)
+        payload = {
+            "paper-request_key": uuid.uuid4(),
+            "paper-paper_signed": "on",
+            "paper-signed_on": timezone.localdate().isoformat(),
+            "paper-signer_name": "Chaya Greenfeld",
+            "paper-relationship": "Parent",
+            "paper-minors": "Mindy\nGoldy",
+        }
+        url = reverse("waiver_paper_review", args=[booking.pk])
+        response = self.client.post(url, payload, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertIn("Chaya Greenfeld", response.json()["html"])
+        self.assertIn("Mindy, Goldy", response.json()["html"])
+        self.assertTrue(response.json()["saved"])
+        self.client.post(url, payload, HTTP_ACCEPT="application/json")
+        self.assertEqual(PaperWaiver.objects.filter(booking=booking).count(), 1)
+        booking.refresh_from_db()
+        self.assertEqual(booking.children, 1)
+        self.assertFalse(booking.attendance)
+        self.assertFalse(PaymentOperation.objects.exists())
+        self.assertFalse(FinancialPosting.objects.exists())
+
+    def test_invalid_inline_paper_names_return_error_without_saving_or_charging(self):
+        from core.waivers.models import PaperWaiver
+
+        booking = self.booking()
+        self.client.force_login(self.staff)
+        response = self.client.post(
+            reverse("waiver_paper_review", args=[booking.pk]),
+            {
+                "paper-request_key": uuid.uuid4(),
+                "paper-paper_signed": "on",
+                "paper-signed_on": timezone.localdate().isoformat(),
+                "paper-signer_name": "Test Guardian",
+                "paper-relationship": "Legal guardian",
+                "paper-minors": "Mindy",
+            },
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("first and last name", str(response.json()))
+        self.assertFalse(PaperWaiver.objects.exists())
+        self.assertFalse(PaymentOperation.objects.exists())

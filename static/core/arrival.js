@@ -19,14 +19,38 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       const data=await response.json();if(serial!==generation)return;
       if(!response.ok)throw new Error(Object.values(data.errors||{}).flat().map(e=>e.message).join(' ')||'Review the details above.');
       form.querySelector('[data-arrival-price]').innerHTML=data.html;
-      form.elements.reviewed_hash.value=data.hash||'';button.textContent=data.label||'Confirm arrival';button.disabled=!data.can_confirm;
-      status.textContent=data.can_confirm?'':'Confirm waiver coverage to finish arrival.';
+      form.elements.reviewed_hash.value=data.hash||'';button.textContent=data.label||'Confirm arrival';const unsavedPaper=Boolean(form.querySelector('[name="paper-paper_signed"]')?.checked);
+      button.disabled=!data.can_confirm||unsavedPaper;
+      status.textContent=unsavedPaper?'Save the paper-waiver details before completing arrival.':data.can_confirm?'':'Confirm waiver coverage to finish arrival.';
     }catch(e){if(e.name!=='AbortError'&&serial===generation)status.textContent=e.message;}
   };
-  form.addEventListener('input',()=>{button.disabled=true;clearTimeout(timer);timer=setTimeout(update,250);});
-  form.addEventListener('change',()=>{sync();button.disabled=true;clearTimeout(timer);timer=setTimeout(update,80);});
+  form.addEventListener('input',event=>{if(event.target.form!==form)return;button.disabled=true;clearTimeout(timer);timer=setTimeout(update,250);});
+  form.addEventListener('change',event=>{if(event.target.form!==form)return;sync();button.disabled=true;clearTimeout(timer);timer=setTimeout(update,80);});
   form.addEventListener('submit',e=>{if(button.disabled||!form.elements.reviewed_hash.value){e.preventDefault();update();}});
   window.addEventListener('focus',()=>update());
+  const paperForm=document.querySelector('[data-arrival-paper-form]');
+  const paperEntry=form.querySelector('[data-arrival-paper-entry]');
+  if(paperForm&&paperEntry){
+    const check=paperForm.elements.namedItem('paper-paper_signed');
+    const fields=paperEntry.querySelector('[data-arrival-paper-fields]');
+    const save=paperEntry.querySelector('[data-save-arrival-paper]');
+    const paperStatus=paperEntry.querySelector('[data-arrival-paper-status]');
+    const syncPaper=()=>{fields.hidden=!check.checked;save.disabled=!check.checked;for(const input of fields.querySelectorAll('input,select,textarea'))input.disabled=!check.checked;if(check.checked){button.disabled=true;status.textContent='Save the paper-waiver details before completing arrival.';}};
+    check.addEventListener('change',()=>{syncPaper();if(!check.checked)update();});syncPaper();
+    paperForm.addEventListener('submit',async event=>{
+      event.preventDefault();save.disabled=true;paperStatus.textContent='Saving paper-waiver record…';
+      try{
+        const response=await fetch(paperForm.action,{method:'POST',body:new FormData(paperForm),headers:{Accept:'application/json'},cache:'no-store'});
+        const data=await response.json();
+        if(!response.ok)throw new Error(Object.values(data.errors||{}).flat().map(e=>e.message).join(' ')||'Review the paper-waiver details.');
+        form.querySelector('[data-arrival-active-waivers]').innerHTML=data.html;
+        paperForm.elements.namedItem('paper-request_key').value=crypto.randomUUID();
+        paperForm.elements.namedItem('paper-signer_name').value='';paperForm.elements.namedItem('paper-minors').value='';
+        check.checked=false;syncPaper();paperStatus.textContent='Paper-waiver record saved. Confirm coverage for everyone before completing arrival.';
+        await update();
+      }catch(error){paperStatus.textContent=error.message;save.disabled=false;}
+    });
+  }
   const receiptDialog=document.querySelector('[data-zelle-receipt-dialog]');
   if(receiptDialog){
     form.querySelector('[data-open-zelle-receipt]').addEventListener('click',()=>receiptDialog.showModal());

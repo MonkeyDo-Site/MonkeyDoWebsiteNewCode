@@ -1,5 +1,17 @@
 # Seventh review — first review round
 
+## Current arrival update — paper-waiver entry
+
+The arrival waiver card includes **Paper waivers signed**. Checking it expands the actual signing date, adult name, relationship and covered minors on this page. Save updates the active-waiver list without losing attendee/payment changes. Arrival confirmation stays disabled until the paper details are saved or the checkbox is cleared.
+
+| State | Desktop | Phone |
+|---|---|---|
+| Arrival, paper entry collapsed | [Full image](SEVENTH-v5-arrival-paper-collapsed-1440.png) | [Full image](SEVENTH-v5-arrival-paper-collapsed-390.png) |
+| Arrival, paper entry expanded | [Full image](SEVENTH-v5-arrival-paper-expanded-1440.png) | [Full image](SEVENTH-v5-arrival-paper-expanded-390.png) |
+
+These arrival images supersede the arrival images from the first review round below. Other page images remain applicable.
+
+
 Actual application screenshots using fictional local records, at 1440px and 390px. Full pages, no cropping. No external payment, email or storage operation was sent. PR #33 remains draft during review.
 
 | Page | Desktop | Phone |

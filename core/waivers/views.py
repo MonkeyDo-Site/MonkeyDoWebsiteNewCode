@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import BooleanField, Case, Q, Value, When
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -482,14 +482,33 @@ def paper_review(request, booking_id):
     from .paper import record
 
     booking = get_object_or_404(Booking, pk=booking_id)
-    form = NamedPaperWaiverForm(request.POST)
+    form = NamedPaperWaiverForm(
+        request.POST, prefix="paper" if "paper-request_key" in request.POST else None
+    )
     if form.is_valid():
         try:
             record(actor=request.user, booking_id=booking_id, **form.cleaned_data)
+            if request.headers.get("Accept") == "application/json":
+                from django.template.loader import render_to_string
+
+                from .paper import active_customer_waivers
+
+                return JsonResponse(
+                    {
+                        "saved": True,
+                        "html": render_to_string(
+                            "core/partials/active_waivers.html",
+                            {"active_waivers": active_customer_waivers(booking)},
+                            request=request,
+                        ),
+                    }
+                )
             messages.success(request, "Named paper-waiver record saved.")
             return redirect("booking_detail", pk=booking_id)
         except ValidationError as error:
             form.add_error(None, error)
+    if request.headers.get("Accept") == "application/json":
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
     return render(request, "core/waivers/paper_form.html", {"form": form, "booking": booking})
 
 

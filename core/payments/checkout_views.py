@@ -340,6 +340,12 @@ def checkout(request, pk, kind="arrival"):
     zelle_form = ZelleReceiptForm(
         initial={"request_key": uuid.uuid4(), "sender_name": booking.zelle_sender}
     )
+    from core.waivers.forms import NamedPaperWaiverForm
+
+    arrival_paper_form = NamedPaperWaiverForm(prefix="paper", initial={"request_key": uuid.uuid4()})
+    for field in arrival_paper_form.fields.values():
+        field.widget.attrs["form"] = "arrival-paper-record"
+
     if request.method == "GET" and kind == "arrival":
         values = {**initial, "waiver_confirmed": "", "zelle_verified": True}
         preview_form = ArrivalForm(values, **args)
@@ -393,6 +399,7 @@ def checkout(request, pk, kind="arrival"):
             "kind": kind,
             "zelle": prepaid,
             "zelle_form": zelle_form,
+            "arrival_paper_form": arrival_paper_form,
             "active_waivers": active_customer_waivers(booking) if kind == "arrival" else [],
         },
     )
