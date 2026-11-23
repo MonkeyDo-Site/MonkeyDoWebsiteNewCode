@@ -101,6 +101,34 @@ def assert_capacity(
         supervised and not exception and used_supervised + children > session.supervised_capacity
     )
     if over and not override:
+        if actor is not None:
+            if (
+                supervised
+                and not exception
+                and used_supervised + children > session.supervised_capacity
+            ):
+                reminder = (
+                    f"The supervised play capacity for this session is {session.supervised_capacity}, "
+                    f"of which {used_supervised} slots are already booked."
+                )
+            elif used_children + children > session.child_capacity:
+                reminder = (
+                    f"The child capacity for this session is {session.child_capacity}, "
+                    f"of which {used_children} slots are already booked."
+                )
+            else:
+                reminder = (
+                    f"The total available capacity for this session is {session.total_capacity}, "
+                    f"of which {used_children + used_adults} slots are already booked."
+                )
+            raise ValidationError(
+                reminder
+                + (
+                    " Check the owner override checkbox to proceed."
+                    if actor.is_superuser
+                    else " Ask the owner to approve a capacity override to proceed."
+                )
+            )
         if (
             supervised
             and not exception

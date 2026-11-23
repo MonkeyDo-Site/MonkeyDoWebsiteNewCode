@@ -1,5 +1,13 @@
 # Seventh review — first review round
 
+## Backend capacity reminder
+
+The owner’s edit screen uses a short reminder with actual capacity/booked counts: “The child capacity for this session is 35, of which 30 slots are already booked. Check the owner override checkbox to proceed.” Non-owner staff are directed to ask the owner. The existing owner-only override and public guidance remain enforced. Form-level errors span the edit form instead of a single narrow grid column. These images replace the earlier v8 edit-capacity example.
+
+| Page | Desktop | Phone |
+|---|---|---|
+| Edit capacity reminder | [Full image](SEVENTH-v10-edit-capacity-reminder-1440.png) | [Full image](SEVENTH-v10-edit-capacity-reminder-390.png) |
+
 ## Completed-arrival payment total
 
 After arrival, Payment shows **Total received: $42.30** above the existing **$32.30 cash** and **$10.00 Zelle** entries, replacing the Zelle-only received headline. Pending/failed operations are excluded; advance receipts count once. Unreturned overpayments remain included until their manual refund is actually recorded, after which the total is labelled “after refunds.”

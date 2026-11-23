@@ -47,3 +47,9 @@ Focused validation: 34 pricing/arrival/owner-price tests pass, including eight n
 The completed booking’s Payment card shows Total received above the existing tender/operation breakdown instead of the standalone Zelle-received headline. The example is $42.30 total: $32.30 cash plus $10.00 applied advance Zelle. This read-only total includes successful net invoice receipts plus unused advance Zelle; applying a receipt does not count it twice. Pending/declined card requests are excluded. Unreturned excess remains received until an actual manual refund is recorded; the display then says “after refunds.” Upcoming bookings retain their advance Zelle receipt details.
 
 Validation: 28 focused booking/arrival tests pass, including mixed cash/Zelle totals, pending-card exclusion and actual refund completion. Desktop/phone Chromium checks confirm the exact example, no overflow and no JavaScript errors. No schema or financial-write behavior changed. Updated v9 screenshots are in the review gallery.
+
+## Backend capacity reminder wording
+
+Staff booking capacity failures now use a concise capacity/booked-count reminder. Owners see “Check the owner override checkbox to proceed.” Non-owner staff see “Ask the owner to approve a capacity override to proceed.” Child, combined and supervised limits use their respective actual counts, excluding the booking currently being edited. Public customer guidance is unchanged. Edit-form errors span the full grid width. No capacity or permission rules changed.
+
+Validation: 57 staff/public/seventh booking tests pass. Desktop/phone checks verify the exact 35/30 owner reminder, no horizontal overflow or JavaScript errors, and rejected edits create no saved booking/arrival/payment. Updated v10 images replace the v8 edit-capacity example.
