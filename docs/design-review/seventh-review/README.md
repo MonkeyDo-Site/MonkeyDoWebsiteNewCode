@@ -1,5 +1,14 @@
 # Seventh review — first review round
 
+## Session date beneath heading
+
+The selected session’s date/time now sits directly beneath **Your play session**, ahead of the staging notice and capacity warning. This heading order applies throughout the shared public booking page. These v14 images supersede the v13 capacity-recovery images below.
+
+| State | Desktop | Phone |
+|---|---|---|
+| Capacity recovery with session date above warnings | [Full image](SEVENTH-v14-capacity-recovery-1440.png) | [Full image](SEVENTH-v14-capacity-recovery-390.png) |
+| Returned attendee form | [Full image](SEVENTH-v14-restored-amounts-1440.png) | [Full image](SEVENTH-v14-restored-amounts-390.png) |
+
 ## Public capacity recovery — two actions
 
 The capacity-error screen now offers **Adjust the amounts in my booking** and **Choose another session**. Adjust returns to the same selected session with the latest attempted play type, attendee counts, socks and payment method. Those amounts still require a fresh capacity/price check; no booking or capacity hold is created by recovery. Choose another session opens session selection. These v13 screenshots supersede the v12 public error screen below.
