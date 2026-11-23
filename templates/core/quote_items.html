@@ -1,4 +1,4 @@
-<dl>{% for item in data.lines %}
+<dl class="quote-lines">{% for item in data.lines %}
 <dt>{{ item.label }} · {{ item.quantity }} × ${{ item.unit_price }}</dt>
 <dd>${{ item.amount }}</dd>{% endfor %}
 <dt>Subtotal</dt>
@@ -7,7 +7,7 @@
 <dd>${{ data.processing_fee }}</dd>
 <dt>Sales tax</dt>
 <dd>${{ data.sales_tax }}</dd>
-<dt>Estimated total at arrival</dt>
+<dt>{% if actual %}Actual total at arrival{% else %}Estimated total at arrival{% endif %}</dt>
 <dd>
 <strong>${{ data.total }}</strong>
 </dd>

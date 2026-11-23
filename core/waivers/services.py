@@ -311,6 +311,17 @@ def bind_booking(*, flow, booking):
         raise ValidationError("Shared parent signing requires a booking that includes minors.")
     selected = []
     for signature_id in ids:
+        from .models import PaperWaiver
+
+        paper = PaperWaiver.objects.filter(
+            pk=signature_id,
+            customer=booking.customer,
+            signed_at__lte=timezone.now(),
+            valid_until__gt=booking.session.starts_at,
+        ).first()
+        if paper:
+            selected.append(paper)
+            continue
         signature = WaiverSignature.objects.get(
             pk=signature_id,
             state="signed",

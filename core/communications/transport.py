@@ -54,6 +54,8 @@ def send(delivery):
     if delivery.template_version == "MD-EMAIL-2026-02" and delivery.kind in {
         "booking_confirmation",
         "booking_waiver",
+        "booking_cancelled",
+        "booking_no_show",
     }:
         from .presentation import confirmation_html
 

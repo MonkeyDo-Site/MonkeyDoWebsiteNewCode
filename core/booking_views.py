@@ -47,24 +47,30 @@ def booking_detail(request, pk):
 
         payment_context["payment_summary"] = summary(booking)
     if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature"):
-        from .waivers.forms import PaperWaiverForm
-        from .waivers.models import BookingWaiverReview
+        from .waivers.forms import NamedPaperWaiverForm
 
-        review = BookingWaiverReview.objects.filter(booking=booking).first()
         waiver_context = {
             "waiver_links": booking.waiver_links.select_related("signature"),
-            "paper_form": PaperWaiverForm(
-                initial={
-                    "revision": review.revision if review else 0,
-                    "paper_signed": review.paper_signed if review else False,
-                }
-            ),
+            "paper_form": NamedPaperWaiverForm(initial={"request_key": __import__("uuid").uuid4()}),
+            "paper_waivers": booking.customer.paper_waivers.all().order_by("-signed_at"),
         }
+    from .waivers.paper import active_customer_waivers
+
+    actual_breakdown = None
+    checkout = booking.checkouts.select_related("sale").order_by("-created_at").first()
+    if checkout and checkout.sale:
+        from .payments.presentation import invoice_breakdown
+
+        actual_breakdown = invoice_breakdown(checkout.sale)
     return render(
         request,
         "core/booking_detail.html",
         {
             "booking": booking,
+            "actual_breakdown": actual_breakdown,
+            "active_waivers": active_customer_waivers(booking)
+            if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature")
+            else [],
             **waiver_context,
             **payment_context,
             "booking_messages": booking.messages.exclude(
@@ -230,7 +236,7 @@ def booking_move(request, pk):
     return render(
         request,
         "core/booking_form.html",
-        {"form": form, "heading": "Change timing", "booking": booking},
+        {"form": form, "heading": "Change timing", "booking": booking, "timing_only": True},
     )
 
 
@@ -314,7 +320,21 @@ def dated_sessions(request):
             raise PermissionDenied
         booking = get_object_or_404(Booking, pk=request.GET["booking"])
     rows = selectable_sessions(booking).filter(starts_at__date=day)
+
+    def item(row):
+        others = row.bookings.exclude(attendance__in=["cancelled", "no_show"])
+        if booking:
+            others = others.exclude(pk=booking.pk)
+        children = sum(others.values_list("children", flat=True))
+        adults = sum(others.values_list("adults", flat=True))
+        supervised = sum(others.filter(supervised=True).values_list("children", flat=True))
+        return {
+            "id": row.pk,
+            "label": str(row),
+            "capacity": f"Children: {max(0, row.child_capacity - children)} of {row.child_capacity} available · Total: {max(0, row.total_capacity - children - adults)} of {row.total_capacity} available · Supervised: {max(0, row.supervised_capacity - supervised)} of {row.supervised_capacity} available",
+        }
+
     return JsonResponse(
-        {"sessions": [{"id": row.pk, "label": str(row)} for row in rows]},
+        {"sessions": [item(row) for row in rows]},
         headers={"Cache-Control": "private, no-store"},
     )

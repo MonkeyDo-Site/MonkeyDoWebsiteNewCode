@@ -24,6 +24,8 @@ from .permissions import staff_permission
 @staff_permission("core.view_booking")
 @require_safe
 def dashboard(request):
+    from .payments.zelle import refund_notices
+
     alerts = (
         SecurityAlert.objects.filter(resolved_at__isnull=True) if request.user.is_superuser else []
     )
@@ -85,6 +87,9 @@ def dashboard(request):
             else [],
             "blocked_jobs": DurableJob.objects.filter(state="blocked").order_by("created_at")[:20]
             if settings.PAYMENT_SANDBOX_ENABLED and request.user.is_superuser
+            else [],
+            "zelle_refunds": refund_notices()
+            if settings.BOOKING_COMPLETION_ENABLED and request.user.is_superuser
             else [],
             "notices": OwnerNotice.objects.filter(reviewed_at__isnull=True).select_related(
                 "customer"

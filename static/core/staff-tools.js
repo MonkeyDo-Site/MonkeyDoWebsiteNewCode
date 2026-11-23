@@ -212,7 +212,9 @@ for (const date of document.querySelectorAll('[data-session-date]')) {
       if (!response.ok) throw new Error('Sessions could not be loaded. Reload and try again.');
       const data = await response.json();
       select.replaceChildren(new Option(data.sessions.length ? 'Choose a session' : 'No available sessions for this date', ''));
-      for (const session of data.sessions) select.add(new Option(session.label, session.id));
+      for (const session of data.sessions) {
+        const option=new Option(session.label,session.id);option.dataset.capacity=session.capacity||'';select.add(option);
+      }
       select.dispatchEvent(new Event('change', {bubbles: true}));
     } catch (error) {
       if (error.name !== 'AbortError') select.replaceChildren(new Option(error.message, ''));
@@ -389,4 +391,9 @@ for (const notice of document.querySelectorAll('[data-special-price-notice]')) {
   form.addEventListener('input', changed);
   form.addEventListener('change', changed);
   changed();
+}
+
+for(const select of document.querySelectorAll('[data-dated-sessions]')){
+ const box=document.createElement('p');box.className='caption session-capacity-info';box.setAttribute('role','status');select.after(box);
+ select.addEventListener('change',()=>{box.textContent=select.selectedOptions[0]?.dataset.capacity||'';});
 }

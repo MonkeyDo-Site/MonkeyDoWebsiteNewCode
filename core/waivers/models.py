@@ -111,3 +111,28 @@ class BookingWaiverReview(models.Model):
     revision = models.PositiveIntegerField(default=1)
     # Owner/staff audit contains actors/times for actual paper/coverage confirmations.
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class PaperWaiver(FinancialFact):
+    """Staff's record of an actual signed paper form; never electronic evidence."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    request_key = models.UUIDField(unique=True)
+    customer = models.ForeignKey(
+        "core.Customer", on_delete=models.PROTECT, related_name="paper_waivers"
+    )
+    booking = models.ForeignKey(
+        "core.Booking", on_delete=models.PROTECT, related_name="paper_waivers"
+    )
+    signer_name = models.CharField(max_length=180)
+    relationship = models.CharField(max_length=40)
+    minors = models.JSONField(default=list)
+    signed_at = models.DateTimeField()
+    valid_until = models.DateTimeField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    signature_method = "paper"
+    state = "signed"
+
+    def get_state_display(self):
+        return "Signed paper"

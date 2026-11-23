@@ -7,7 +7,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
@@ -20,7 +20,7 @@ from .checkout import charge_state, confirm, preview
 class ReceiptForm(forms.Form):
     received_on = forms.DateField(
         required=False,
-        label="Actual non-card receipt date",
+        label="Zelle bank receipt date",
         widget=forms.DateInput(attrs={"type": "date"}),
         help_text="For an earlier Zelle transfer, use the bank receipt date. Leave blank for today.",
     )
@@ -38,12 +38,10 @@ class ArrivalForm(ReceiptForm):
     request_key = forms.UUIDField(widget=forms.HiddenInput)
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     reviewed_hash = forms.CharField(required=False, max_length=64, widget=forms.HiddenInput)
-    children = forms.IntegerField(min_value=0, max_value=32767, label="Children attending")
-    adults = forms.IntegerField(min_value=0, max_value=32767, label="Adults attending")
-    babies = forms.IntegerField(min_value=0, max_value=32767, label="Babies attending")
-    socks = forms.IntegerField(
-        min_value=0, max_value=2147483647, label="Grip socks being purchased"
-    )
+    children = forms.IntegerField(min_value=0, max_value=32767, label="Children")
+    adults = forms.IntegerField(min_value=0, max_value=32767, label="Adults")
+    babies = forms.IntegerField(min_value=0, max_value=32767, label="Babies")
+    socks = forms.IntegerField(min_value=0, max_value=2147483647, label="Grip socks")
     waiver_confirmed = forms.ChoiceField(
         choices=[("", "Choose Yes or No"), ("yes", "Yes"), ("no", "No")],
         label="Was a waiver signed for everyone in this booking?",
@@ -116,9 +114,13 @@ class ArrivalForm(ReceiptForm):
         if self.errors:
             return data
         method = data["method"]
-        if (method == "zelle" or (method == "split" and data.get("zelle_amount"))) and not data[
-            "zelle_verified"
-        ]:
+        from .zelle import facts
+
+        prepaid = facts(self.booking)["available"]
+        needs_zelle = (
+            method == "zelle" and prepaid == 0 or method == "split" and data.get("zelle_amount")
+        )
+        if needs_zelle and not data["zelle_verified"]:
             self.add_error(
                 "zelle_verified", "Verify the received Zelle payment in the business bank account."
             )
@@ -158,6 +160,10 @@ class ClosureForm(ReceiptForm):
         required=False, label="The physical gift card has been presented and verified."
     )
 
+    send_email = forms.ChoiceField(
+        choices=[("", "Choose Yes or No"), ("yes", "Yes"), ("no", "No")],
+        label="Send customer email?",
+    )
     reopen_affected_sessions = forms.BooleanField(
         required=False,
         label="Reopen affected sessions",
@@ -166,6 +172,9 @@ class ClosureForm(ReceiptForm):
 
     def __init__(self, *args, booking, kind, owner=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.booking = booking
+        if not booking.customer.email:
+            self.fields["send_email"].help_text = "Add a customer email before selecting Yes."
         if not owner or kind != "cancellation":
             self.fields.pop("reopen_affected_sessions")
         if kind == "no_show":
@@ -176,6 +185,9 @@ class ClosureForm(ReceiptForm):
 
     def clean(self):
         data = super().clean()
+        data["send_email"] = data.get("send_email") == "yes"
+        if data["send_email"] and not self.booking.customer.email:
+            self.add_error("send_email", "Add a current customer email or choose No.")
         data["charge_fee"] = data.get("charge_fee") == "yes"
         data["method"] = data.get("method") or "card"
         if (
@@ -248,6 +260,9 @@ def checkout(request, pk, kind="arrival"):
     form = form_type(request.POST if request.method == "POST" else None, initial=initial, **args)
     reviewed = None
     label = None
+    is_live = request.headers.get("Accept") == "application/json"
+    if is_live and kind == "arrival":
+        form.fields["waiver_confirmed"].required = False
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         try:
@@ -279,7 +294,11 @@ def checkout(request, pk, kind="arrival"):
                     "The booking changed. Reload it and review the current details."
                 )
             _, _, quote, plan, _, digest = preview(
-                actor=request.user, booking_id=pk, kind=kind, data=data
+                actor=request.user,
+                booking_id=pk,
+                kind=kind,
+                data=data,
+                validate_waivers=not is_live,
             )
             values = request.POST.copy()
             values["reviewed_hash"] = digest
@@ -289,6 +308,51 @@ def checkout(request, pk, kind="arrival"):
             label = confirm_label(kind, quote, plan)
         except ValidationError as error:
             form.add_error(None, " ".join(error.messages))
+    from core.waivers.paper import active_customer_waivers
+
+    from .zelle import facts as zelle_facts
+
+    prepaid = zelle_facts(booking)
+    if request.method == "GET" and kind == "arrival":
+        values = {**initial, "waiver_confirmed": "", "zelle_verified": True}
+        preview_form = ArrivalForm(values, **args)
+        preview_form.fields["waiver_confirmed"].required = False
+        if preview_form.is_valid():
+            try:
+                _, _, quote, plan, _, _ = preview(
+                    actor=request.user,
+                    booking_id=pk,
+                    kind=kind,
+                    data=preview_form.cleaned_data,
+                    validate_waivers=False,
+                )
+                reviewed = {"quote": quote, "plan": plan}
+            except ValidationError as error:
+                form.add_error(None, error)
+    if reviewed:
+        reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"]
+        reviewed["refund_due"] = max(
+            0, prepaid["available"] - __import__("decimal").Decimal(reviewed["quote"]["total"])
+        )
+        reviewed["remaining"] = max(
+            0, __import__("decimal").Decimal(reviewed["quote"]["total"]) - prepaid["available"]
+        )
+    if is_live:
+        from django.template.loader import render_to_string
+
+        if form.errors or reviewed is None:
+            return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+        return JsonResponse(
+            {
+                "html": render_to_string(
+                    "core/partials/arrival_price.html", {"reviewed": reviewed}, request=request
+                ),
+                "hash": form["reviewed_hash"].value(),
+                "label": label,
+                "can_confirm": form.cleaned_data.get("waiver_confirmed") is True,
+            },
+            headers={"Cache-Control": "no-store"},
+        )
     heading = {
         "arrival": "Start arrival",
         "cancellation": "Cancel booking",
@@ -304,6 +368,8 @@ def checkout(request, pk, kind="arrival"):
             "confirm_label": label,
             "heading": heading,
             "kind": kind,
+            "zelle": prepaid,
+            "active_waivers": active_customer_waivers(booking) if kind == "arrival" else [],
         },
     )
 

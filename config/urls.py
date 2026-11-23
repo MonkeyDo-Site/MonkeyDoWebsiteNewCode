@@ -19,7 +19,7 @@ from core import (
 from core.backups import views as backup_views
 from core.communications import views as message_views
 from core.communications.webhooks import endpoint as email_webhook
-from core.payments import staff_setup
+from core.payments import staff_setup, zelle_views
 from core.payments import views as payment_views
 from core.payments.checkout_views import checkout as booking_checkout
 from core.payments.checkout_views import complimentary, remaining_payment
@@ -30,6 +30,8 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path("staff/bookings/<int:pk>/zelle/", zelle_views.receipt, name="booking_zelle_receipt"),
+    path("staff/bookings/<int:pk>/zelle/refund/", zelle_views.refund, name="booking_zelle_refund"),
     path("staff/backups/<uuid:pk>/review/", backup_views.review_issue, name="backup_review_issue"),
     path("staff/background/<uuid:pk>/", payment_views.background_job, name="background_job"),
     path("staff/cards/<uuid:pk>/retire/", payment_views.retire_card, name="retire_card"),

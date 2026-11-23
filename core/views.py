@@ -44,7 +44,19 @@ def schedule(request):
         }
         for day, slots in days.items()
     ]
-    return render(request, "core/schedule.html", {"dates": dates, "progress_steps": progress(1)})
+    return render(
+        request,
+        "core/schedule.html",
+        {
+            "dates": dates,
+            "progress_steps": progress(
+                1,
+                waivers=__import__(
+                    "django.conf", fromlist=["settings"]
+                ).settings.BOOKING_COMPLETION_ENABLED,
+            ),
+        },
+    )
 
 
 @login_required

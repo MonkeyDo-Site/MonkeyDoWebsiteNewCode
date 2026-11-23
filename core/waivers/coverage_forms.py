@@ -21,7 +21,15 @@ def available_signatures(flow):
     scope = Q(flow_hash=digest)
     if customer:
         scope |= Q(customer_links__customer=customer)
-    return WaiverSignature.objects.filter(scope, state="signed").distinct().order_by("-signed_at")
+    electronic = (
+        WaiverSignature.objects.filter(scope, state="signed").distinct().order_by("-signed_at")
+    )
+    from .paper import SignatureList
+
+    paper = customer.paper_waivers.all() if customer else []
+    return SignatureList(
+        sorted([*electronic, *paper], key=lambda item: item.signed_at, reverse=True)
+    )
 
 
 def current_signatures(flow):

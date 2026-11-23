@@ -94,3 +94,22 @@ class PaperWaiverForm(forms.Form):
         label="Paper waivers signed",
         help_text="Mark only after all required paper waivers have actually been signed. This does not create an electronic signature.",
     )
+
+
+class NamedPaperWaiverForm(forms.Form):
+    request_key = forms.UUIDField(widget=forms.HiddenInput)
+    paper_signed = forms.BooleanField(label="Paper waiver signed")
+    signed_on = forms.DateField(label="Date signed", widget=forms.DateInput(attrs={"type": "date"}))
+    signer_name = forms.CharField(max_length=180, label="Full name of person signing")
+    relationship = forms.ChoiceField(
+        required=False,
+        choices=[("", "Select one"), ("Parent", "Parent"), ("Legal guardian", "Legal guardian")],
+        label="Relationship to minors",
+    )
+    minors = forms.CharField(
+        required=False,
+        max_length=18000,
+        label="Covered minors",
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text="Parent: first names. Legal guardian: first and last names. Enter one minor per line; leave blank for an adult-only waiver.",
+    )

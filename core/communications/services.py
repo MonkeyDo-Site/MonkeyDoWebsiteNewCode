@@ -231,3 +231,59 @@ def notify_issue(message):
     except Exception:
         # Message state/history is the persistent fallback if the alert cannot queue.
         pass
+
+
+@transaction.atomic
+def enqueue_closure(*, booking, checkout, actor):
+    from core.date_display import display_date
+    from core.payments.checkout import summary
+    from core.payments.zelle import facts
+
+    state = summary(booking)
+    zelle = facts(booking)
+    cancelled = checkout.kind == "cancellation"
+    lines = [
+        f"Dear Family {booking.customer.last_name},",
+        "",
+        "Your Monkey Do booking has been cancelled."
+        if cancelled
+        else "Your Monkey Do visit was recorded as a no-show.",
+        "Appointment: " + display_date(booking.session.starts_at, "l, F j, Y g:i A"),
+        "",
+    ]
+    if checkout.sale:
+        lines.append(f"Applicable fee total: ${checkout.sale.total:.2f}")
+        if state["pending"]:
+            lines.append(
+                "Your card payment is pending confirmation; it has not yet been confirmed as received."
+            )
+        elif state["due"]:
+            lines.append(f"Balance unpaid: ${state['due']:.2f}")
+        else:
+            lines.append("The applicable fee has been paid.")
+    else:
+        lines.append("No cancellation/no-show fee was charged.")
+    if zelle["received"]:
+        lines.append(f"Zelle previously received: ${zelle['received']:.2f}")
+    if zelle["refund_due"]:
+        lines.append(
+            f"Zelle refund due: ${zelle['refund_due']:.2f}. The owner will return this manually; it has not yet been refunded."
+        )
+    lines += [
+        "",
+        "Please call or text us at 848-238-5147 if you need assistance.",
+        "",
+        "The Monkey Do team",
+    ]
+    return enqueue(
+        key="booking-closure:" + str(checkout.pk),
+        kind="booking_cancelled" if cancelled else "booking_no_show",
+        recipient=booking.customer.email,
+        subject="Your Monkey Do booking cancellation"
+        if cancelled
+        else "Your Monkey Do visit update",
+        text="\n".join(lines),
+        customer=booking.customer,
+        booking=booking,
+        actor=actor,
+    )

@@ -65,6 +65,10 @@ class TestBookingForm(forms.Form):
     )
     session = forms.ModelChoiceField(queryset=Session.objects.none())
     supervised = forms.BooleanField(required=False, label="Supervised Play")
+    supervised_exception = forms.BooleanField(
+        required=False,
+        label="This session is marked as open play only. Change this booking only to supervised play (owner override).",
+    )
     children = forms.IntegerField(
         min_value=0, max_value=32767, initial=1, label="Children ages 1–11"
     )
@@ -143,6 +147,8 @@ class TestBookingForm(forms.Form):
         self.fields["expected_method"].choices = payment_method_choices(
             old_quote.policy if old_quote else PricingPolicy.objects.first()
         )
+        if not owner or not booking:
+            self.fields.pop("supervised_exception")
         if not booking:
             self.fields.pop("reopen_affected_sessions", None)
         if (booking and booking.workflow != "integrated_v1") or (

@@ -434,25 +434,16 @@ def unsigned_pdf(request):
 @enabled_view
 @require_POST
 def paper_review(request, booking_id):
-    from .forms import PaperWaiverForm
-    from .services import set_paper
+    from .forms import NamedPaperWaiverForm
+    from .paper import record
 
-    form = PaperWaiverForm(request.POST)
+    booking = get_object_or_404(Booking, pk=booking_id)
+    form = NamedPaperWaiverForm(request.POST)
     if form.is_valid():
         try:
-            set_paper(
-                actor=request.user,
-                booking_id=booking_id,
-                **{
-                    "revision": form.cleaned_data["revision"],
-                    "signed": form.cleaned_data["paper_signed"],
-                },
-            )
-            messages.success(
-                request, "Paper-waiver record saved. Electronic signatures were not created."
-            )
+            record(actor=request.user, booking_id=booking_id, **form.cleaned_data)
+            messages.success(request, "Named paper-waiver record saved.")
+            return redirect("booking_detail", pk=booking_id)
         except ValidationError as error:
-            messages.error(request, " ".join(error.messages))
-    else:
-        messages.error(request, "Review the current paper-waiver form before saving.")
-    return redirect("booking_detail", pk=booking_id)
+            form.add_error(None, error)
+    return render(request, "core/waivers/paper_form.html", {"form": form, "booking": booking})
