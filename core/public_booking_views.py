@@ -613,7 +613,28 @@ def wizard(request):
                 ):
                     flow.pop("payment_consent", None)
                     flow["payment_method_changed"] = True
-                flow["quote"] = review_quote(flow, data)
+                try:
+                    flow["quote"] = review_quote(flow, data)
+                except ValidationError as exc:
+                    if getattr(exc, "code", None) != "session_capacity":
+                        raise
+                    # Preserve this attempt for the explicit return-to-amounts action.
+                    # It remains at details and must pass a fresh quote before continuing.
+                    flow["details"] = data
+                    flow.pop("quote", None)
+                    save(request, flow)
+                    return render(
+                        request,
+                        "core/customer_booking.html",
+                        {
+                            "error": " ".join(exc.messages),
+                            "capacity_recovery": True,
+                            "flow": flow,
+                            "session": session,
+                            "progress_steps": progress(3, waivers=completing),
+                        },
+                        status=400,
+                    )
                 flow["details"] = data
                 flow["stage"] = "waiver" if completing else "review"
             elif stage == "waiver":

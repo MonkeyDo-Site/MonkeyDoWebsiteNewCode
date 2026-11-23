@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import BooleanField, Case, Q, Value, When
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -318,12 +318,56 @@ def waivers(request):
             records = records.filter(signed_at__date__lte=data["before"])
     else:
         records = records.none()
+    from .models import PaperWaiver
+
+    papers = PaperWaiver.objects.select_related("customer")
+    if form.is_valid():
+        if data["customer"]:
+            papers = papers.filter(customer_id=data["customer"])
+        if data["q"]:
+            query = data["q"].strip()
+            exact, possible = name_candidates(query)
+            match = (
+                Q(signer_name__icontains=query)
+                | Q(minors__icontains=query)
+                | Q(customer__email__icontains=query)
+                | Q(customer_id__in=exact + possible)
+            )
+            digits = phone_search_digits(query)
+            if digits:
+                match |= Q(customer__phone__contains=digits) | Q(
+                    customer__previous_phone__contains=digits
+                )
+            papers = papers.filter(match)
+        if data["status"] == "valid":
+            papers = papers.filter(
+                version_code__in=COVERAGE_VERSIONS,
+                signed_at__lte=timezone.now(),
+                valid_until__gt=timezone.now(),
+            )
+        elif data["status"] == "expired":
+            papers = papers.filter(valid_until__lte=timezone.now())
+        elif data["status"] == "superseded":
+            papers = papers.exclude(version_code__in=COVERAGE_VERSIONS)
+        elif data["status"] in {"pending", "removed"}:
+            papers = papers.none()
+        if data["after"]:
+            papers = papers.filter(signed_at__date__gte=data["after"])
+        if data["before"]:
+            papers = papers.filter(signed_at__date__lte=data["before"])
+    else:
+        papers = papers.none()
+    combined = sorted(
+        [*records.distinct(), *papers],
+        key=lambda item: (item.signed_at, str(item.pk)),
+        reverse=True,
+    )
     return render(
         request,
         "core/waivers/list.html",
         {
             "form": form,
-            "signatures": paginate(request, records.distinct()),
+            "signatures": paginate(request, combined),
             "waiver_now": timezone.now(),
             "current_version": VERSION,
             "coverage_versions": COVERAGE_VERSIONS,
@@ -434,25 +478,46 @@ def unsigned_pdf(request):
 @enabled_view
 @require_POST
 def paper_review(request, booking_id):
-    from .forms import PaperWaiverForm
-    from .services import set_paper
+    from .forms import NamedPaperWaiverForm
+    from .paper import record
 
-    form = PaperWaiverForm(request.POST)
+    booking = get_object_or_404(Booking, pk=booking_id)
+    form = NamedPaperWaiverForm(
+        request.POST, prefix="paper" if "paper-request_key" in request.POST else None
+    )
     if form.is_valid():
         try:
-            set_paper(
-                actor=request.user,
-                booking_id=booking_id,
-                **{
-                    "revision": form.cleaned_data["revision"],
-                    "signed": form.cleaned_data["paper_signed"],
-                },
-            )
-            messages.success(
-                request, "Paper-waiver record saved. Electronic signatures were not created."
-            )
+            record(actor=request.user, booking_id=booking_id, **form.cleaned_data)
+            if request.headers.get("Accept") == "application/json":
+                from django.template.loader import render_to_string
+
+                from .paper import active_customer_waivers
+
+                return JsonResponse(
+                    {
+                        "saved": True,
+                        "html": render_to_string(
+                            "core/partials/active_waivers.html",
+                            {"active_waivers": active_customer_waivers(booking)},
+                            request=request,
+                        ),
+                    }
+                )
+            messages.success(request, "Named paper-waiver record saved.")
+            return redirect("booking_detail", pk=booking_id)
         except ValidationError as error:
-            messages.error(request, " ".join(error.messages))
-    else:
-        messages.error(request, "Review the current paper-waiver form before saving.")
-    return redirect("booking_detail", pk=booking_id)
+            form.add_error(None, error)
+    if request.headers.get("Accept") == "application/json":
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    return render(request, "core/waivers/paper_form.html", {"form": form, "booking": booking})
+
+
+@staff_permission("core.view_waiversignature")
+@enabled_view
+@require_safe
+def paper_detail(request, pk):
+    staff_access(request)
+    from .models import PaperWaiver
+
+    signature = get_object_or_404(PaperWaiver.objects.select_related("customer"), pk=pk)
+    return render(request, "core/waivers/paper_detail.html", {"signature": signature})

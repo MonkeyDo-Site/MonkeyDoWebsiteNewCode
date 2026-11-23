@@ -9,7 +9,7 @@
 {% for method in card_methods %}<label><input type="radio" name="method" value="{{ method.pk }}"> Saved payment method ending in {{ method.last_four }}</label>{% endfor %}
 <label><input type="radio" name="method" value="new" checked> Enter a new card</label></fieldset>
 <div data-new-card><div id="provider-card-frame" aria-label="Secure provider card entry"></div>
-<label><input type="checkbox" name="retain"> {% if card_staff %}The customer wants to keep this card for future MonkeyDo visits.{% else %}Keep this card for future MonkeyDo visits.{% endif %} If there is already a saved card, this replaces it for future use after this booking is completed.</label></div>
+<label><input type="checkbox" name="retain"> {% if card_staff %}The customer wants to keep this card for future MonkeyDo visits.{% else %}Keep this card for future MonkeyDo visits.{% endif %} If there is already a saved card, this will replace it for future use.</label></div>
 {% if card_staff %}<label><input type="checkbox" name="agree_payment" required> The payment and cancellation policies have been reviewed with the customer.</label><input type="hidden" name="agree_cancellation" value="1">
 {% else %}<input type="hidden" name="agree_payment" value="1">
 <h3>Cancellation policy</h3><p>{% if card_public_booking %}{% if card_primary %}{{ card_cancellation_policy }}{% else %}{{ card_backup_cancellation }}{% endif %}{% else %}{{ card_cancellation_policy }} {{ card_cancellation_scope }}{% endif %}</p>

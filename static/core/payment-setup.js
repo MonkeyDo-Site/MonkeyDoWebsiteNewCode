@@ -10,7 +10,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   const confirmedChoice = document.querySelector('#customer-booking-form input[name="payment_consent"]');
   let statusUrl = section.dataset.statusUrl;
   let uncertain = false;
-  const report = message => { if (publicStatus) publicStatus.textContent = message; else status.textContent = message; };
+  const report = message => { const target=publicStatus||status; if(target){target.textContent=message;target.classList.toggle('card-error', !message.startsWith('Your card is saved') && !message.startsWith('Save your') && !message.startsWith('Saving') && !message.startsWith('Card will'));target.setAttribute('role',target.classList.contains('card-error')?'alert':'status');} };
   const invalidate = () => {
     if (confirmedChoice) confirmedChoice.value = '';
     if (confirm) confirm.disabled = true;
@@ -58,7 +58,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   let hosted;
   try {
     const key = JSON.parse(document.querySelector('#card-tokenization-key').textContent);
-    hosted = new window.HostedTokenization(key, {target: '#provider-card-frame'});
+    hosted = new window.HostedTokenization(key, {target: '#provider-card-frame', showFieldErrors: true, styles: {container:'margin:0;padding:0;min-height:0',cardContainer:'margin:0 8px 0 0',expiryContainer:'margin:0 8px 0 0',cvv2Container:'margin:0',fieldErrors:'color:#9b3650;font-size:12px;margin:4px 0 0'}});
   } catch {
     report('Secure card entry is unavailable. Please reload this page or call/text 848-238-5147.');
   }

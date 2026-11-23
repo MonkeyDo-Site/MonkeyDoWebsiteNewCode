@@ -82,7 +82,11 @@ class CheckoutViewTests(TestCase):
         booking = self.booking()
         self.client.force_login(self.staff)
         url = reverse("booking_cancel", args=[booking.pk])
-        values = {"request_key": str(uuid.uuid4()), "version": booking.edit_version}
+        values = {
+            "request_key": str(uuid.uuid4()),
+            "version": booking.edit_version,
+            "send_email": "no",
+        }
         response = self.client.post(url, values)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(BookingCheckout.objects.exists())

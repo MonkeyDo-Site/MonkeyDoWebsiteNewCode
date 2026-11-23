@@ -38,8 +38,11 @@ def edit_estimate(booking, data):
     }
     fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     token = signing.dumps({"fingerprint": fingerprint}, salt=SALT)
+    from .price_adjustments import booking_price_adjustment
+
     return {
         "quote": quote,
+        "adjustment": booking_price_adjustment(booking, quote),
         "original_total": saved.snapshot["total"],
         "amount_changed": quote["total"] != saved.snapshot["total"],
         "token": token,

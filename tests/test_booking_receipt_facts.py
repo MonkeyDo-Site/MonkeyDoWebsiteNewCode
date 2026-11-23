@@ -41,31 +41,43 @@ class ReceiptFactsTests(TestCase):
         with self.assertRaises(ValidationError):
             preview(actor=self.staff, booking_id=booking.pk, kind="arrival", data=values)
         yesterday = timezone.localdate(timezone=NEW_YORK) - timedelta(days=1)
-        values.update(zelle_sender="Guardian bank account", received_on=yesterday)
+        from core.payments.zelle import record_receipt
+
+        record_receipt(
+            actor=self.staff,
+            booking_id=booking.pk,
+            request_key=uuid.uuid4(),
+            value="15.99",
+            received_on=yesterday,
+            sender_name="Guardian bank account",
+            verified=True,
+        )
         result = self.act(booking, values)
         operation = result.sale.operations.get()
         self.assertEqual(operation.manual_received_on, yesterday)
         self.assertEqual(operation.amount, Decimal("15.99"))
-        self.assertEqual(result.details["zelle_sender"], "Guardian bank account")
+        self.assertEqual(operation.zelle_application.receipt.sender, "Guardian bank account")
         self.assertIsNone(FinancialPosting.objects.get().occurred_at)
         with self.assertRaises(DatabaseError), transaction.atomic():
             PaymentOperation.objects.filter(pk=operation.pk).update(
                 manual_received_on=yesterday - timedelta(days=1)
             )
 
-    def test_changing_receipt_date_after_review_requires_fresh_review_without_recording_money(self):
+    def test_cash_receipt_date_is_automatic_and_cannot_be_backdated_from_hidden_inputs(self):
         booking = self.booking()
         values = self.arrival_inputs(booking, method="cash")
         reviewed = preview(actor=self.staff, booking_id=booking.pk, kind="arrival", data=values)
         values["received_on"] = timezone.localdate(timezone=NEW_YORK) - timedelta(days=1)
-        with self.assertRaises(ValidationError):
-            confirm(
-                actor=self.staff,
-                booking_id=booking.pk,
-                kind="arrival",
-                data=values,
-                request_key=uuid.uuid4(),
-                reviewed_hash=reviewed[-1],
-                confirmed=True,
-            )
-        self.assertFalse(FinancialPosting.objects.exists())
+        result = confirm(
+            actor=self.staff,
+            booking_id=booking.pk,
+            kind="arrival",
+            data=values,
+            request_key=uuid.uuid4(),
+            reviewed_hash=reviewed[-1],
+            confirmed=True,
+        )
+        self.assertEqual(
+            result.sale.operations.get().manual_received_on, timezone.localdate(timezone=NEW_YORK)
+        )
+        self.assertEqual(FinancialPosting.objects.count(), 1)

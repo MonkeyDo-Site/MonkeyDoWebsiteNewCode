@@ -35,9 +35,17 @@ REVIEWED_NAMES = (
     "0045_mail_delivery_status_guards",
     "0046_mail_attempt_reconciliation",
     "0047_backup_issue_review",
+    "0048_seventh_booking_records",
+    "0049_seventh_booking_controls",
+    "0050_seventh_record_guards",
+    "0051_paper_waiver_version",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "paperwaiver",
+    "zellereceipt",
+    "zelleapplication",
+    "zellerefund",
     "financialsale",
     "financialline",
     "financialposting",
@@ -92,7 +100,7 @@ def reviewed_plan():
     ]
     if plan not in allowed:
         raise CommandError(
-            "Unexpected migration plan. Only the reviewed ordinary-booking stage 0027–0047 is allowed."
+            "Unexpected migration plan. Only the reviewed ordinary-booking stage 0027–0051 is allowed."
         )
     return plan
 

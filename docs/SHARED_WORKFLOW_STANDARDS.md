@@ -195,3 +195,7 @@ after staging deployment, without an owner screenshot review for this stage.
   checkbox is not proof of payment, delivery or a saved electronic signature.
 - Earlier test bookings remain identified by stored workflow, with stable IDs and
   history, and are never automatically charged, signed, emailed or upgraded.
+
+## Booking price-change explanations
+
+Reuse the same exact-cent comparison in staff arrival, pre-arrival edit preview and saved booking breakdown. The baseline is the first saved booking quote throughout successive edits. Group additions/removals separately; identify owner pricing and existing fee/tax changes; show one adjusted total ahead of payment/balance facts. Unchanged prices stay compact. Display calculations cannot mutate immutable quotes, create receipts/cancellation charges or imply that a refund has been sent.

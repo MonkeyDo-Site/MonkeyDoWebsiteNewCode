@@ -37,15 +37,41 @@ def snapshot(booking):
 
 
 def assert_capacity(
-    session, *, booking_id=None, children, adults, supervised, override=False, actor
+    session,
+    *,
+    booking_id=None,
+    children,
+    adults,
+    supervised,
+    override=False,
+    actor,
+    supervised_exception=False,
 ):
     if override:
         if not actor.is_superuser:
             raise ValidationError("Only the owner may override advance capacity.")
-    if (supervised and session.play_mode == "accompanied") or (
+    from .payments.models import BookingChargeState
+
+    existing_exception = (
+        booking_id
+        and BookingChargeState.objects.filter(
+            booking_id=booking_id, supervised_exception_session=session
+        ).exists()
+    )
+    if type(supervised_exception) is not bool:
+        raise ValidationError("Review the booking-specific supervised exception.")
+    if supervised_exception and (not booking_id or actor is None or not actor.is_superuser):
+        raise ValidationError("Only the owner may approve a supervised exception for this booking.")
+    exception = supervised and (supervised_exception or existing_exception)
+    if (supervised and session.play_mode == "accompanied" and not exception) or (
         not supervised and session.play_mode == "supervised"
     ):
-        raise ValidationError("This play type is not enabled for the session.")
+        raise ValidationError(
+            "This session is marked as open play only. Do you want to change this booking only to supervised play?"
+            if supervised
+            else "This play type is not enabled for the session.",
+            code="supervised_exception_required" if supervised else None,
+        )
     now = timezone.now()
     if (
         session.closed
@@ -55,8 +81,11 @@ def assert_capacity(
         or session.kind != Session.Kind.ORDINARY
     ):
         raise ValidationError("This session is blocked for ordinary reservations.")
-    if now >= session.ends_at or (supervised and now >= session.starts_at):
-        raise ValidationError("This session is no longer open for the selected play type.")
+    if now >= session.ends_at or (supervised and not exception and now >= session.starts_at):
+        raise ValidationError(
+            "This session is no longer open for the selected play type.",
+            code="supervised_exception_required" if supervised and now < session.ends_at else None,
+        )
     bookings = session.bookings.exclude(
         attendance__in=[Booking.Attendance.CANCELLED, Booking.Attendance.NO_SHOW]
     )
@@ -66,15 +95,67 @@ def assert_capacity(
     used_children = sum(row["children"] for row in counts)
     used_adults = sum(row["adults"] for row in counts)
     used_supervised = sum(row["children"] for row in counts if row["supervised"])
-    if supervised and session.supervised_capacity == 0:
-        raise ValidationError("Supervised play is not enabled for this session.")
+    if supervised and not exception and session.supervised_capacity == 0:
+        raise ValidationError(
+            "Supervised play is not enabled for this session.",
+            code="supervised_exception_required",
+        )
     over = (
         used_children + children > session.child_capacity
         or used_children + used_adults + children + adults > session.total_capacity
     )
-    over = over or (supervised and used_supervised + children > session.supervised_capacity)
+    over = over or (
+        supervised and not exception and used_supervised + children > session.supervised_capacity
+    )
     if over and not override:
-        raise ValidationError("The requested attendees exceed available capacity.")
+        if actor is not None:
+            if (
+                supervised
+                and not exception
+                and used_supervised + children > session.supervised_capacity
+            ):
+                reminder = (
+                    f"The supervised play capacity for this session is {session.supervised_capacity}, "
+                    f"of which {used_supervised} slots are already booked."
+                )
+            elif used_children + children > session.child_capacity:
+                reminder = (
+                    f"The child capacity for this session is {session.child_capacity}, "
+                    f"of which {used_children} slots are already booked."
+                )
+            else:
+                reminder = (
+                    f"The total available capacity for this session is {session.total_capacity}, "
+                    f"of which {used_children + used_adults} slots are already booked."
+                )
+            raise ValidationError(
+                reminder
+                + (
+                    " Check the owner override checkbox to proceed."
+                    if actor.is_superuser
+                    else " Ask the owner to approve a capacity override to proceed."
+                )
+            )
+        if (
+            supervised
+            and not exception
+            and used_supervised + children > session.supervised_capacity
+        ):
+            raise ValidationError(
+                f"The supervised play capacity for this session is {session.supervised_capacity}, of which {used_supervised} places are already booked. The amount of children you entered goes beyond the available capacity. Please enter a smaller amount, "
+                + ("choose open play, " if session.play_mode != "supervised" else "")
+                + "choose another session time, or call 848-238-5147 for assistance.",
+                code="session_capacity",
+            )
+        if used_children + children > session.child_capacity:
+            raise ValidationError(
+                f"The child capacity for this session is {session.child_capacity}, of which {used_children} slots are already booked. The amount of children you entered goes beyond the available capacity. Please enter a smaller amount or choose another session time. You can call 848-238-5147 for further assistance.",
+                code="session_capacity",
+            )
+        raise ValidationError(
+            f"The total available capacity for this session is {session.total_capacity}, of which {used_children + used_adults} slots are already booked. The amount of children you entered is within capacity limits, however the amount of adults you entered exceeds total capacity. Please enter a smaller number of adults or call 848-238-5147 for further assistance.",
+            code="session_capacity",
+        )
 
 
 def check_editable(booking, version):
@@ -317,6 +398,7 @@ def edit_test_booking(
     reopen_affected_sessions=False,
     zelle_sender=None,
     special_admissions=None,
+    supervised_exception=False,
 ):
     lock_calendar(exclusive=close_session or reopen_affected_sessions)
     if close_session or reopen_affected_sessions:
@@ -345,6 +427,7 @@ def edit_test_booking(
         supervised=supervised,
         override=override_capacity,
         actor=actor,
+        supervised_exception=supervised_exception,
     )
     current = booking.quotes.first()
     if not current:
@@ -380,6 +463,10 @@ def edit_test_booking(
         from .waivers.models import BookingWaiverReview
 
         state, _ = BookingChargeState.objects.get_or_create(booking=booking)
+        if supervised_exception:
+            require_actor(actor, "core.change_booking", owner=True)
+            state.supervised_exception_session = session
+            state.save(update_fields=["supervised_exception_session"])
         old_special = state.special_subtotal
         if special_admissions is not None:
             from .payments.amounts import amount
@@ -441,6 +528,7 @@ def edit_test_booking(
             "after": snapshot(booking),
             "quote_id": quote.pk,
             "capacity_override": override_capacity,
+            "supervised_exception": supervised_exception,
         },
     )
     if reopen_affected_sessions:

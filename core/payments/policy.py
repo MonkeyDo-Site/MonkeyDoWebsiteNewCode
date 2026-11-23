@@ -2,7 +2,7 @@
 
 import hashlib
 
-VERSION = "MD-PAYMENT-2026-02"
+VERSION = "MD-PAYMENT-2026-03"
 PAYMENT = (
     "You're almost done with your booking. Please enter your payment method. "
     "Please note: Payment will be processed after you arrive. For cash, check, "
@@ -26,7 +26,7 @@ CANCELLATION_SCOPE = (
     "A required baby-only or adult-only admission also has a $3 fee; extra adult "
     "admissions do not. Owner-comped $0 bookings have no cancellation fee."
 )
-PRIMARY_PAYMENT = "You’re almost done with your booking. You chose to pay by credit card. Payment will be processed after you arrive."
+PRIMARY_PAYMENT = "You’re almost done with your booking. You chose to pay by credit card. Please enter your credit card info. Payment will be processed at your visit."
 BACKUP_PAYMENT = "Please note: MonkeyDo requires a backup credit card for each booking by cash, check or Zelle. Please enter your credit card info. The card will only be charged in the event the form of payment you chose isn’t received."
 PUBLIC_PAYMENT_ACCEPTANCE = "The customer accepts the displayed payment terms by explicitly selecting Save card securely; no separate payment-policy checkbox is presented. Cancellation acknowledgment and optional future-use consent remain separate."
 BACKUP_CANCELLATION = CANCELLATION.replace(

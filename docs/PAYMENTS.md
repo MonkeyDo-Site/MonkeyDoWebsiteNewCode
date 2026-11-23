@@ -1,5 +1,20 @@
 # Payments, tax, card lifecycle, and Banquest evidence
 
+## Adjusted-price explanation
+
+When a saved booking's price changes, show a compact comparison immediately after its current itemized details and before received funds/balance. Start with the first saved booking total, then combined added admissions/adults/socks, combined removals, existing cancellation fees, tax/processing-fee differences and explicit owner-price changes. Show additions and removals independently even if they offset. One Adjusted total replaces the ordinary total row. This applies to arrival, read-only edit preview before saving, and resulting booking details; quote history and accounting records remain immutable. This is presentation only and cannot create fees, receipts or refunds.
+
+## Seventh review: actual advance Zelle and one-page arrival
+
+PR #33 implements the owner's revised arrival and receipt workflow. Counts, participant coverage, the cream itemized total, recorded Zelle and remaining/refund balance update on one page. Only the explicit final action saves arrival and queues a card charge or records actual tender. Cash/check receipt dates are automatic at arrival; no date-entry step is shown. Zelle uses its verified bank amount/date and sender, recorded before arrival or in the arrival dialog without changing attendance.
+
+An advance Zelle receipt is not an accepted admission invoice. Immutable receipt records are allocated once to the final visit/cancellation/no-show invoice, preserving the actual bank date. Only the remaining card-funded amount receives the applicable fee/tax calculation. A partial Zelle receipt cannot silently become a full payment. The owner may explicitly choose the cancellation/no-show fee or no fee; any remaining Zelle prepayment becomes a manually returned refund. The refund amount is calculated, never transmitted automatically. A persistent Dashboard entry links to the booking until the owner confirms the money was actually returned. Original receipts, applications and completed refund dates remain separate.
+
+Future accountant reporting must count `ZelleReceipt` as receipt of money and `ZelleRefund` as its actual return. A payment operation linked by `ZelleApplication` is the allocation of that same receipt to an invoice, not a second incoming transfer. Do not add both records into cash received. Keep service, bank receipt, allocation and refund dates distinct. This does not introduce membership credit, a general admission refund program, or a card-refund API.
+
+An owner can approve a booking-specific supervised exception to Open-Play-only mode, zero supervised allocation and the supervised cutoff until session end. Normal child/total capacity checks still apply unless separately overridden. Public session settings are unchanged. Cancellation/no-show customer email is an explicit Yes/No choice without a default; payment and refund wording states the actual current outcome. See [batch review](SEVENTH_BATCH_REVIEW.md).
+
+
 ## Sixth review clarification
 
 PR #32 adds an explicit owner Retry card action for a verified decline, using the existing reviewed unpaid-balance service. No automatic retry and no retry of a pending/unknown outcome. Payment Details now has separate primary-card and backup-card instructions, the owner's supplied $15/$18 cancellation display wording plus membership sentence, and adjacent Save card / Confirm booking controls. Public wording does not change any cancellation, minimum-admission, tax or processing-fee calculation. Card saving is not an issuer approval or verification hold. Public payment-policy acceptance is recorded by the explicit Save card action for both primary and backup cards; there is no separate public payment-policy checkbox or booking-only-card disclaimer. The cancellation acknowledgment, optional future-use consent and existing retention rules remain. New consent wording is versioned, with historical consent preserved. See [sixth batch](SIXTH_BATCH_REVIEW.md).

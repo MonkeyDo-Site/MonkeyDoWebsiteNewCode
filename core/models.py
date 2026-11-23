@@ -643,9 +643,13 @@ from .payments.models import (  # noqa: E402,F401
     PaymentSetup,
     ProviderEvent,
     ProviderObservation,
+    ZelleApplication,
+    ZelleReceipt,
+    ZelleRefund,
 )
 from .waivers.models import (  # noqa: E402,F401
     BookingWaiverReview,
+    PaperWaiver,
     WaiverBookingLink,
     WaiverCustomerLink,
     WaiverShareLink,

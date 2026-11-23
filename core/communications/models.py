@@ -22,6 +22,8 @@ class MessageDelivery(models.Model):
             ("booking_confirmation", "Booking Confirmation"),
             ("booking_waiver", "Booking Confirmation with Waiver Link"),
             ("waiver_completed", "Waiver Completed Notification"),
+            ("booking_cancelled", "Booking Cancellation"),
+            ("booking_no_show", "Booking No-show"),
             ("payment_issue", "Owner Payment Alert"),
             ("backup_alert", "Owner Backup Alert"),
             ("email_issue", "Owner Email Alert"),

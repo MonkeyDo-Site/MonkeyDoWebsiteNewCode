@@ -1,5 +1,12 @@
 # MonkeyDo waiver source and status
 
+## Seventh review: named paper forms and arrival summaries
+
+PR #33 records a real paper signature per adult: signing date, legal name, relationship and named minors. Parent first-name and guardian full-name rules match electronic signing. An adult-only waiver uses the same form with no minors. No upload, electronic signature, fabricated electronic consent or source evidence is created by recording a paper form. The named record is immutable; original electronic evidence and prior unnamed paper marks remain intact.
+
+Paper records are scoped to the same customer and checked at the visit date against one-year validity and accepted waiver versions. They can be reused in public booking and staff setup and appear in customer history, staff waiver search, booking details and active arrival waivers. Public summaries say Signed by … for … without distinguishing medium; backend records say Signed paper or Signed electronically. Appearance-only capitalization never rewrites stored signed names. The minor-entry instructions appear above the textarea. See [seventh review](../SEVENTH_BATCH_REVIEW.md).
+
+
 ## Current sixth-review update
 
 PR #32 implements the approved conditional coverage screens, separate post-signing completion, same adult-only form, and removal of signer contact fields and Self choices. Approved follow-up: customer selection headings say “Sign Waiver”; summaries use “Signed by … for …”. Parent signers enter minors’ first names; legal guardians enter first and last names, with relationship-specific instructions and server validation. Existing signed names are preserved. No active email/verification flow used the shared parent's contact; the completion notice goes to the booking customer. The legal release and source PDF remain unchanged. MD-WAIVER-2026-02 records the shorter age acknowledgment for new signatures; unexpired MD-WAIVER-2026-01 coverage remains usable. Existing evidence is unchanged. New/all-expired customers must sign now and may also request the shared link. See [accepted scope](../SIXTH_BATCH_REVIEW.md) and [testing guide](../SIXTH_BATCH_TEST_GUIDE.md). Historical planning/prototype notes below describe earlier checkpoints.

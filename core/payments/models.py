@@ -418,6 +418,12 @@ class FinancialLineAdjustment(FinancialFact):
 
 
 class BookingChargeState(models.Model):
+    supervised_exception_session = models.ForeignKey(
+        "core.Session",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="supervised_booking_exceptions",
+    )
     booking = models.OneToOneField(
         "core.Booking", on_delete=models.PROTECT, related_name="charge_state"
     )
@@ -466,3 +472,51 @@ class PaymentFollowup(models.Model):
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True)
+
+
+class ZelleReceipt(FinancialFact):
+    """Bank-verified cash receipt, independent of an arrival invoice."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    request_key = models.UUIDField(unique=True)
+    booking = models.ForeignKey(
+        "core.Booking", on_delete=models.PROTECT, related_name="zelle_receipts"
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    received_on = models.DateField()
+    sender = models.CharField(max_length=160)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="zelle_receipt_positive")
+        ]
+
+
+class ZelleApplication(FinancialFact):
+    receipt = models.ForeignKey(ZelleReceipt, on_delete=models.PROTECT, related_name="applications")
+    operation = models.OneToOneField(
+        PaymentOperation, on_delete=models.PROTECT, related_name="zelle_application"
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="zelle_application_positive")
+        ]
+
+
+class ZelleRefund(FinancialFact):
+    request_key = models.UUIDField(unique=True)
+    receipt = models.ForeignKey(ZelleReceipt, on_delete=models.PROTECT, related_name="refunds")
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    completed_on = models.DateField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="zelle_refund_positive")
+        ]

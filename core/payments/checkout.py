@@ -17,7 +17,7 @@ from core.pricing import Line, quote_lines, validate_attendees
 from core.waivers.models import BookingWaiverReview
 
 from .amounts import COMPONENTS, ZERO, amount
-from .checkout_pricing import tender_plan, visit_lines
+from .checkout_pricing import visit_lines
 from .invoices import received, total
 from .jobs import enqueue
 from .ledger import accept_booking_sale, fingerprint, lock_request, record_manual, request_operation
@@ -74,6 +74,9 @@ def check_arrival_capacity(booking, counts, override, actor):
         > booking.session.total_capacity
         or (
             booking.supervised
+            and not BookingChargeState.objects.filter(
+                booking=booking, supervised_exception_session=booking.session
+            ).exists()
             and supervised + counts["children"] > booking.session.supervised_capacity
         )
     )
@@ -94,12 +97,9 @@ def verify_coverage(booking, counts, confirmed):
     review = BookingWaiverReview.objects.filter(booking=booking).first()
     if review and review.paper_signed:
         return
-    signatures = [
-        link.signature
-        for link in booking.waiver_links.select_related("signature")
-        if link.signature.state == "signed"
-        and link.signature.valid_until > booking.session.starts_at
-    ]
+    from core.waivers.paper import active_customer_waivers
+
+    signatures = active_customer_waivers(booking)
     minors = {name.strip().casefold() for signature in signatures for name in signature.minors}
     if not signatures or len(minors) < counts["children"] + counts["babies"]:
         raise ValidationError(
@@ -108,11 +108,13 @@ def verify_coverage(booking, counts, confirmed):
         )
 
 
-def preview(*, actor, booking_id, kind, data):
+def preview(*, actor, booking_id, kind, data, validate_waivers=True):
     authorize(actor)
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
     require_current(booking, kind)
     state = charge_state(booking)
+    if kind != "arrival" and type(data.get("send_email", False)) is not bool:
+        raise ValidationError("Choose whether to send a customer email.")
     reopen = data.get("reopen_affected_sessions", False)
     if type(reopen) is not bool or (reopen and kind != "cancellation"):
         raise ValidationError("Review the cancellation reopening choice.")
@@ -137,7 +139,8 @@ def preview(*, actor, booking_id, kind, data):
             )
         validate_attendees(**counts, supervised=booking.supervised)
         check_arrival_capacity(booking, counts, override, actor)
-        verify_coverage(booking, counts, data.get("waiver_confirmed"))
+        if validate_waivers:
+            verify_coverage(booking, counts, data.get("waiver_confirmed"))
         special = state.special_subtotal
         if data.get("special_admissions") is not None:
             require_actor(actor, "core.change_booking", owner=True)
@@ -172,7 +175,16 @@ def preview(*, actor, booking_id, kind, data):
         plan = []
     else:
         method = data.get("method", "card")
-        quote, plan = tender_plan(saved.policy, lines, method=method, split=data.get("split"))
+        from .zelle import facts as zelle_facts
+        from .zelle import plan_with_prepayment
+
+        prepaid = zelle_facts(booking)
+        quote, plan, _ = plan_with_prepayment(
+            saved.policy, lines, method, data.get("split"), prepaid["available"]
+        )
+    from .zelle import facts as zelle_facts
+
+    prepaid = zelle_facts(booking)
     if any(part["tender"] == "card" for part in plan):
         try:
             agreement = booking.card_agreement
@@ -187,13 +199,15 @@ def preview(*, actor, booking_id, kind, data):
         card_identity = None
     from .receipts import receipt_date, sender
 
-    manual = any(part["tender"] != "card" for part in plan)
-    zelle = any(part["tender"] == "zelle" for part in plan)
-    received_on = receipt_date(data.get("received_on")) if manual else None
+    manual = any(part["tender"] != "card" and not part.get("advance") for part in plan)
+    zelle = any(part["tender"] == "zelle" and not part.get("advance") for part in plan)
+    received_on = receipt_date(data.get("received_on") if zelle else None) if manual else None
     zelle_sender = (
         sender(data.get("zelle_sender", booking.zelle_sender), required=zelle) if zelle else ""
     )
     facts = {
+        "prepayments": prepaid["identity"],
+        "send_email": data.get("send_email", False),
         "received_on": received_on.isoformat() if received_on else None,
         "zelle_sender": zelle_sender,
         "booking": booking.pk,
@@ -212,7 +226,10 @@ def preview(*, actor, booking_id, kind, data):
         else None,
         "charge_fee": data.get("charge_fee"),
         "quote": quote,
-        "plan": [{"tender": p["tender"], "amount": p["amount"]} for p in plan],
+        "plan": [
+            {"tender": p["tender"], "amount": p["amount"], "advance": bool(p.get("advance"))}
+            for p in plan
+        ],
     }
     return booking, state, quote, plan, facts, fingerprint(facts)
 
@@ -325,6 +342,11 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
     if sale:
         lines = list(sale.lines.all())
         for position, part in enumerate(plan):
+            if part.get("advance"):
+                from .zelle import apply_receipts
+
+                apply_receipts(actor=actor, booking=booking, sale=sale, part=part, key=key)
+                continue
             allocation = [
                 {
                     "line": str(line.pk),
@@ -365,6 +387,10 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
             "fee_charged": kind != "arrival" and bool(sale),
         },
     )
+    if kind != "arrival" and facts["send_email"]:
+        from core.communications.services import enqueue_closure
+
+        enqueue_closure(booking=booking, checkout=checkout, actor=actor)
     resolve_if_settled(booking.pk)
     return checkout
 
@@ -380,6 +406,10 @@ def resolve_if_settled(booking_id):
     if PaymentOperation.objects.filter(
         sale__booking=booking, state__in=["ready", "sending", "unknown", "action"]
     ).exists():
+        return False
+    from .zelle import facts as zelle_facts
+
+    if zelle_facts(booking)["refund_due"]:
         return False
     if checkout.sale and received(checkout.sale) < total(checkout.sale):
         return False
@@ -429,12 +459,17 @@ def note_followup(*, actor, operation_id, plan):
 
 
 def summary(booking):
+    from .zelle import facts as zelle_facts
+
+    prepaid = zelle_facts(booking)
     state = charge_state(booking)
     checkout = booking.checkouts.select_related("sale").order_by("-created_at").first()
     if checkout is None:
         return {
-            "status": "Comped" if state.comped else "Due at arrival",
-            "received": ZERO,
+            "zelle": prepaid,
+            "status": "Comped" if state.comped else "Awaiting arrival",
+            "received": prepaid["received"],
+            "total_received": prepaid["received"] - prepaid["refunded"],
             "due": ZERO if state.comped else None,
             "sale": None,
             "pending": False,
@@ -442,8 +477,14 @@ def summary(booking):
     sale = checkout.sale
     if sale is None:
         return {
-            "status": "Comped" if state.comped else "No fee",
+            "zelle": prepaid,
+            "status": "Zelle refund due"
+            if prepaid["refund_due"]
+            else "Comped"
+            if state.comped
+            else "No fee",
             "received": ZERO,
+            "total_received": prepaid["received"] - prepaid["refunded"],
             "due": ZERO,
             "sale": None,
             "pending": False,
@@ -471,9 +512,14 @@ def summary(booking):
         status = "Card declined — balance unpaid"
     else:
         status = "Partially paid" if paid else "Unpaid"
+    if prepaid["refund_due"]:
+        status = "Zelle refund due"
     return {
+        "zelle": prepaid,
         "status": status,
         "received": paid,
+        # Applied advance receipts are already included in paid; only add the unused balance.
+        "total_received": paid + prepaid["available"],
         "due": None if corrected else due,
         "total": expected,
         "sale": sale,

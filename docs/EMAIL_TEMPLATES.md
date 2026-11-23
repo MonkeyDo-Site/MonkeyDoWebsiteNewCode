@@ -1,5 +1,12 @@
 # Customer email requirements and wording
 
+## Seventh review: ordinary cancellation and no-show notices
+
+On the cancellation/no-show screen ask **Send customer email? Yes / No**, with neither selected. Do not send without Yes. This is independent of charging or waiving the fee. No usable email: explain that an address is needed for Yes and allow No. The original explicit complimentary-membership Yes/No rule remains independent.
+
+Cancellation subject: **Your Monkey Do booking cancellation**. Introduction: **Your Monkey Do booking has been cancelled.** No-show subject: **Your Monkey Do visit update**. Introduction: **Your Monkey Do visit was recorded as a no-show.** Include the appointment, applicable fee/no-fee result, truthful pending/paid/unpaid information and any recorded Zelle/refund due. A calculated refund must say it has not yet been returned. Use the approved branded HTML with a plain-text alternative and durable message history. No automated second refund-only notice is introduced. Original frozen messages remain unchanged.
+
+
 ## Sixth review: ordinary booking confirmations
 
 PR #32 supersedes the older ordinary-booking copy below: one total after the itemized breakdown, followed by the selected method and its arrival/Zelle instructions; no repeated no-admission/staff-review paragraph; no duplicate socks pickup sentence; bring-your-grip-socks reminder only when no socks were ordered. New booking confirmations include branded HTML (logo, cream/green background, bold rose adventure heading, bold appointment and total/method) plus plain text. Paid/corrected resends must still state actual received/remaining amounts. Staging test labels and prior frozen messages remain. See [sixth batch](SIXTH_BATCH_REVIEW.md).

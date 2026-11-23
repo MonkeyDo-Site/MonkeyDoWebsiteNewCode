@@ -1,9 +1,11 @@
 {{ form.non_field_errors }}
 {% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
 {% for field in form.visible_fields %}
+{% if field.name != 'supervised_exception' or form.show_supervised_exception %}
 <div data-field="{{ field.name }}" class="form-field{% if field.widget_type == 'checkbox' %} checkbox-field{% endif %}">
 {{ field.errors }}
-{% if field.widget_type == 'checkbox' %}<label for="{{ field.id_for_label }}">{{ field }} <span>{{ field.label }}</span></label>{% else %}{% if field.name == 'customer' %}<label for="customer-picker-search">Search customer by name or phone</label><input type="search" id="customer-picker-search" data-customer-search aria-controls="{{ field.id_for_label }}" autocomplete="off" placeholder="Type at least two characters"><span class="caption" data-picker-status role="status"></span>{% endif %}{{ field.label_tag }}{{ field }}{% if field.name == 'session_date' %}<button class="text-button" type="submit" name="load_sessions" value="1" data-session-fallback formnovalidate>Show sessions for this date</button>{% endif %}{% endif %}
-{% if field.help_text %}<p class="field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}
+{% if field.widget_type == 'checkbox' %}<label for="{{ field.id_for_label }}">{{ field }} <span>{{ field.label }}</span></label>{% else %}{% if field.name == 'customer' %}<label for="customer-picker-search">Search customer by name or phone</label><input type="search" id="customer-picker-search" data-customer-search aria-controls="{{ field.id_for_label }}" autocomplete="off" placeholder="Type at least two characters"><span class="caption" data-picker-status role="status"></span>{% endif %}{{ field.label_tag }}{% if field.name == 'minors' and field.help_text %}<p class="field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}{{ field }}{% if field.name == 'session_date' %}<button class="text-button" type="submit" name="load_sessions" value="1" data-session-fallback formnovalidate>Show sessions for this date</button>{% endif %}{% endif %}
+{% if field.help_text and field.name != 'minors' %}<p class="field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}
 </div>
+{% endif %}
 {% endfor %}
