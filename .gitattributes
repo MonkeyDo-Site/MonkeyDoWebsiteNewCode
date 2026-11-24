@@ -1,2 +1,5 @@
 # Review screenshots remain in GitHub; omit them from deployable source archives.
 docs/design-review/seventh-review/*.png export-ignore
+
+# Eighth review screenshots remain viewable in GitHub, outside release exports.
+docs/design-review/eighth-review/*.png export-ignore
