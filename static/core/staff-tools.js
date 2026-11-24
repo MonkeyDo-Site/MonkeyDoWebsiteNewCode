@@ -251,14 +251,18 @@ for (const form of document.querySelectorAll('[data-public-estimate]')) {
       field.readOnly = supervised;
       field.setAttribute('aria-readonly', String(supervised));
       field.max = supervised ? '0' : '50';
+      field.min = supervised || field === babies ? '0' : '1';
       if (supervised) field.value = '0';
-      else if (wasSupervised) field.value = oldValue;
+      else if (wasSupervised) field.value = field === adults ? String(Math.max(1, Number(oldValue))) : oldValue;
     }
     wasSupervised = supervised;
   };
   // For supervised-only sessions, switching is unavailable; quantities still start at zero.
   if (selected()) wasSupervised = true;
   sync();
+  adults.addEventListener('input', () => {
+    if (!selected() && adults.value !== '' && Number(adults.value) < 1) adults.value = '1';
+  });
   for (const radio of form.querySelectorAll('[name=play_type]')) radio.addEventListener('change', sync);
 }
 for (const form of document.querySelectorAll('[data-public-estimate]')) {

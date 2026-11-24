@@ -1,5 +1,12 @@
 # Shared workflow and screen standards for the remaining stages
 
+## Eighth review carry-forward
+
+Reuse display-only phone formatting (for example 732-555-0147), correct participant/sock pluralization, required indicators only on genuinely required fields, and validation that focuses/scrolls to visible errors without disturbing normal live estimates. Mouse-wheel scrolling must not change focused numeric quantities. Open Play keeps at least one adult; Supervised Play retains zero adults/babies, and approved baby-only/adult-only visits remain available.
+
+Public ordinary bookings use one explicit Confirm booking action with visible processing and errors; this saves the card then confirms without collecting admission online. The customer sees accurate saved-card selection after recovery. Reuse this clear action/state pattern in later workflows while retaining their own payment timing and explicit financial approval rules. Current context-specific wording and reviewed screenshots are in [the eighth review](EIGHTH_BATCH_REVIEW.md). Active membership planning still awaits the owner's go-ahead.
+
+
 ## Sixth review carry-forward
 
 The current ordinary-booking navigation, waiver and payment presentation is described in [SIXTH_BATCH_REVIEW.md](SIXTH_BATCH_REVIEW.md). Reuse applicable compact totals, responsive five-step progress, preserved inputs/signatures, explicit consent/confirmation, browser-history protections and truthful method-specific payment/email facts in later features. Do not carry ordinary arrival-charge wording into membership purchases charged at purchase. For waiver signing specifically, use the approved Sign Waiver wording and signer/participant summary; parents may enter first names, while legal guardians provide first and last names. Do not infer children’s surnames or rewrite historical names. All financial rules and historical evidence remain as previously approved.

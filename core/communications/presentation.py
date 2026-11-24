@@ -12,7 +12,10 @@ def confirmation_html(text):
         lines = []
         for line in paragraph.splitlines():
             safe = mark_safe(urlize(escape(line), autoescape=False))
-            if line == "You're all set for your Monkey Do adventure!":
+            if line in {
+                "You're all set for your Monkey Do adventure!",
+                "You're all set for your MonkeyDo adventure!",
+            }:
                 safe = format_html('<strong style="color:#ad415d;font-size:24px">{}</strong>', safe)
             elif line.startswith(
                 ("We look forward to seeing you ", "Your total is $", "You selected to pay via ")

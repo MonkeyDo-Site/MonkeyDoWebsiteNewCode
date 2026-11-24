@@ -1,19 +1,20 @@
 {% load static %}
-<section class="{% if not card_public_booking %}panel {% endif %}card-setup" aria-labelledby="card-heading" data-card-setup data-endpoint="{{ card_endpoint }}" data-status-url="{{ card_status_url }}" data-status-prefix="{{ card_endpoint }}" data-ready="{% if card_ready %}1{% else %}0{% endif %}">
+<section class="{% if not card_public_booking %}panel {% endif %}card-setup" aria-labelledby="card-heading" data-card-setup{% if card_public_booking %} data-single-confirm="1"{% endif %} data-endpoint="{{ card_endpoint }}" data-status-url="{{ card_status_url }}" data-status-prefix="{{ card_endpoint }}" data-ready="{% if card_ready %}1{% else %}0{% endif %}">
 <h3 id="card-heading">{% if card_public_booking %}{% if card_primary %}Your credit card{% else %}Your backup credit card{% endif %}{% else %}Secure card setup{% endif %}</h3>
 {% if not card_public_booking %}<p>{{ card_payment_policy }}</p><p>{{ card_retention_policy }}</p><p>{{ card_cancellation_policy }} {{ card_cancellation_scope }}</p>{% endif %}
+{% if card_public_booking %}<p class="caption" data-selected-card{% if not card_ready %} hidden{% endif %}>{% if card_ready %}Saved payment method ending in {{ card_accepted_last_four }}. No admission payment has been collected.{% endif %}</p>{% endif %}
 {% if card_configured %}
 <form data-card-form{% if card_public_booking %} id="public-card-form"{% endif %}>
 {% include 'core/partials/wizard_identity.html' %}<input type="hidden" name="policy_version" value="{{ card_policy_version }}"><input type="hidden" name="request_key" value="{{ card_setup_key }}">
 <fieldset><legend>Choose a card</legend>
-{% for method in card_methods %}<label><input type="radio" name="method" value="{{ method.pk }}"> Saved payment method ending in {{ method.last_four }}</label>{% endfor %}
-<label><input type="radio" name="method" value="new" checked> Enter a new card</label></fieldset>
+{% for method in card_methods %}<label><input type="radio" name="method" value="{{ method.pk }}"{% if method.pk == card_accepted_method_id %} checked{% endif %}> Saved payment method ending in {{ method.last_four }}</label>{% endfor %}
+<label><input type="radio" name="method" value="new"{% if not card_ready %} checked{% endif %}> Enter a new card</label></fieldset>
 <div data-new-card><div id="provider-card-frame" aria-label="Secure provider card entry"></div>
-<label><input type="checkbox" name="retain"> {% if card_staff %}The customer wants to keep this card for future MonkeyDo visits.{% else %}Keep this card for future MonkeyDo visits.{% endif %} If there is already a saved card, this will replace it for future use.</label></div>
+<label><input type="checkbox" name="retain"> {% if card_staff %}The customer wants to keep this card for future MonkeyDo bookings.{% else %}Keep this card for future MonkeyDo bookings.{% endif %} {% if card_has_saved %}This card will replace the currently saved card.{% endif %}</label></div>
 {% if card_staff %}<label><input type="checkbox" name="agree_payment" required> The payment and cancellation policies have been reviewed with the customer.</label><input type="hidden" name="agree_cancellation" value="1">
 {% else %}<input type="hidden" name="agree_payment" value="1">
 <h3>Cancellation policy</h3><p>{% if card_public_booking %}{% if card_primary %}{{ card_cancellation_policy }}{% else %}{{ card_backup_cancellation }}{% endif %}{% else %}{{ card_cancellation_policy }} {{ card_cancellation_scope }}{% endif %}</p>
-<label><input type="checkbox" name="agree_cancellation" required> I understand the Monkey Do cancellation policy.</label>{% endif %}
+<label><input type="checkbox" name="agree_cancellation" required{% if card_ready %} checked{% endif %}> I understand the MonkeyDo cancellation policy.</label>{% endif %}
 {% if not card_public_booking %}<button type="submit" class="button" data-save-card>Save card securely</button>{% endif %}
 <button type="button" class="text-button" data-check-card hidden>Check card setup</button>
 {% if not card_public_booking %}<p class="caption" role="status" data-card-status>Saving a card does not charge your admission or create a verification hold.</p>{% endif %}

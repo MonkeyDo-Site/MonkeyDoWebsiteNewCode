@@ -18,7 +18,7 @@
 </a>
 <nav aria-label="Main navigation">
 <a href="{% url 'about' %}">About</a>
-<a href="{% url 'memberships' %}">Memberships</a>
+<a href="{% url 'memberships' %}">Membership</a>
 <a href="{% url 'clubs_parties' %}">{% if clubs_visible %}Clubs &amp; Parties{% else %}Parties{% endif %}</a>
 <a href="{% url 'contact' %}">Contact Us</a>
 <a class="button small" href="{% url 'schedule' %}">Book Now</a>
@@ -30,7 +30,7 @@
 <div>
 <strong>Every little monkey needs a jungle.</strong>
 <p>Budleman Way, Lakewood, New Jersey</p>
-<p>Open Sunday through Friday by reservation, with four daily time slots.</p>
+<p>Open Sunday through Friday - by reservation only.</p>
 </div>
 <div>
 <a href="tel:8482385147">848-238-5147</a>
@@ -42,5 +42,6 @@
 <script src="{% static 'core/staff-tools.js' %}" defer></script>
 <script src="{% static 'core/booking-navigation.js' %}" defer></script>
 <script src="{% static 'core/arrival.js' %}" defer></script>
+<script src="{% static 'core/form-feedback.js' %}" defer></script>
 </body>
 </html>

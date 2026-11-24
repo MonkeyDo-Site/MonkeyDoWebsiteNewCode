@@ -510,7 +510,7 @@ class PublicBatchTests(TestCase):
     def test_returning_no_match_offers_previous_phone_before_new_customer(self):
         self.begin(visited="yes")
         response = self.client.get("/book/details/")
-        self.assertContains(response, "No customer was found with 2025550191")
+        self.assertContains(response, "No customer was found with 202-555-0191")
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "retry_phone")
         customer = Customer.objects.create(
             last_name="Other",

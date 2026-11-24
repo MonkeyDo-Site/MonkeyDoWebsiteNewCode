@@ -36,7 +36,7 @@ def enqueue(
         "unsigned_waiver": unsigned_waiver,
         "customer_id": customer.pk if customer else None,
         "booking_id": booking.pk if booking else None,
-        "template_version": "MD-EMAIL-2026-02",
+        "template_version": "MD-EMAIL-2026-03",
     }
     message, created = MessageDelivery.objects.get_or_create(
         dedupe_key=key, defaults=data | {"fingerprint": fingerprint(data), "actor": actor}
@@ -161,7 +161,7 @@ def resend_confirmation(*, actor, message_id, request_key):
     from core.permissions import require_actor
     from core.waivers.services import create_share
 
-    from .content import booking_confirmation
+    from .content import booking_confirmation, session_subject
 
     enabled()
     for permission in (
@@ -202,7 +202,7 @@ def resend_confirmation(*, actor, message_id, request_key):
         key=dedupe,
         kind=original.kind,
         recipient=customer.email,
-        subject=original.subject,
+        subject=session_subject(original.booking),
         text=booking_confirmation(original.booking, waiver_url=waiver_url, waiver_type=waiver_type),
         customer=customer,
         booking=original.booking,
@@ -245,9 +245,9 @@ def enqueue_closure(*, booking, checkout, actor):
     lines = [
         f"Dear Family {booking.customer.last_name},",
         "",
-        "Your Monkey Do booking has been cancelled."
+        "Your MonkeyDo booking has been cancelled."
         if cancelled
-        else "Your Monkey Do visit was recorded as a no-show.",
+        else "Your MonkeyDo visit was recorded as a no-show.",
         "Appointment: " + display_date(booking.session.starts_at, "l, F j, Y g:i A"),
         "",
     ]
@@ -273,15 +273,13 @@ def enqueue_closure(*, booking, checkout, actor):
         "",
         "Please call or text us at 848-238-5147 if you need assistance.",
         "",
-        "The Monkey Do team",
+        "The MonkeyDo team",
     ]
     return enqueue(
         key="booking-closure:" + str(checkout.pk),
         kind="booking_cancelled" if cancelled else "booking_no_show",
         recipient=booking.customer.email,
-        subject="Your Monkey Do booking cancellation"
-        if cancelled
-        else "Your Monkey Do visit update",
+        subject="Your MonkeyDo booking cancellation" if cancelled else "Your MonkeyDo visit update",
         text="\n".join(lines),
         customer=booking.customer,
         booking=booking,

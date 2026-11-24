@@ -9,6 +9,7 @@ from django.test import Client, TestCase, override_settings
 
 from core.models import AuditEvent, Booking, BookingQuote, Customer, PricingPolicy, Session
 from core.public_booking import submit_booking
+from core.templatetags.booking_display import phone_display
 from tests.test_customers import staff_user
 from tests.test_owner_accounts import STORAGES
 
@@ -117,7 +118,7 @@ class PublicBookingTests(TestCase):
             email="prior@example.invalid",
         )
         self.begin(c.previous_phone, "yes")
-        self.assertContains(self.client.get("/book/details/"), c.phone)
+        self.assertContains(self.client.get("/book/details/"), phone_display(c.phone))
         self.assertNotContains(self.client.get("/book/details/"), c.email)
         self.client.post("/book/details/", {"confirm_phone": "yes"})
         response = self.client.get("/book/details/")
@@ -372,7 +373,7 @@ class PublicBookingTests(TestCase):
         self.assertContains(response, "Is this you?")
         self.assertNotContains(response, c.email)
         self.assertContains(response, c.last_name)
-        self.assertContains(response, c.phone)
+        self.assertContains(response, phone_display(c.phone))
         self.assertNotContains(response, "confirm_similar_name")
         self.client.post("/book/details/", {})
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "details")

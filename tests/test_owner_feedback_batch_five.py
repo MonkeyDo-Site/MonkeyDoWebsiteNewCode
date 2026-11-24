@@ -71,7 +71,7 @@ class FifthBookingTests(TestCase):
         self.customers()
         self.begin("2025550191", "yes")
         response = self.post({"phone": "2025550192"})
-        self.assertContains(response, "No customer was found with 2025550192.")
+        self.assertContains(response, "No customer was found with 202-555-0192.")
         self.assertContains(response, "You can continue below as a new customer")
         self.assertNotContains(response, "2025550191")
         response = self.post({"last_name": "New", "email": self.other.email})
@@ -91,9 +91,7 @@ class FifthBookingTests(TestCase):
                 self.assertContains(response, 'name="email"')
                 self.assertNotContains(response, "Find my customer details by email")
                 if route == "no":
-                    self.assertContains(
-                        response, "Looks like you've been to Monkey Do in the past."
-                    )
+                    self.assertContains(response, "Looks like you've been to MonkeyDo in the past.")
                 else:
                     self.assertNotContains(response, "Looks like you've been")
                 response = self.post({"last_name": "Unrelated", "email": "missing@example.invalid"})

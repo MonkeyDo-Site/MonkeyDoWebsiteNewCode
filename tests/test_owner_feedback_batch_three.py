@@ -289,7 +289,7 @@ class PublicThirdBatchTests(TestCase):
         response = self.client.post("/book/details/", {"last_name": "Different"}, follow=True)
         self.assertNotContains(response, 'name="last_name"')
         self.assertContains(
-            response, "We couldn't match the name ‘Different’ with phone number ‘2025550100’."
+            response, "We couldn't match the name ‘Different’ with phone number ‘202-555-0100’."
         )
         self.assertContains(
             response, "You can try finding your customer profile by entering your email address."

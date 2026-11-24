@@ -38,7 +38,11 @@ def enabled(view):
     def wrapped(request, *args, **kwargs):
         if not settings.CUSTOMER_TEST_BOOKING or settings.DESIGN_REVIEW_ONLY:
             raise Http404
-        if settings.RECOVERY_HOLD:
+        if settings.RECOVERY_HOLD or (
+            settings.APP_ENV == "staging"
+            and not settings.BOOKING_COMPLETION_ENABLED
+            and view.__name__ in {"start", "wizard"}
+        ):
             return render(request, "core/booking_paused.html", status=503)
         response = view(request, *args, **kwargs)
         add_never_cache_headers(response)
@@ -57,6 +61,19 @@ def save(request, flow):
 def current(request):
     flow = request.session.get(SESSION_KEY)
     assert_flow(flow)
+    if (
+        settings.BOOKING_COMPLETION_ENABLED
+        and flow.get("workflow") != "integrated_v1"
+        and flow.get("stage") != "done"
+    ):
+        # A stale pre-integration browser flow must not create a new legacy reservation.
+        flow["workflow"] = "integrated_v1"
+        flow["stage"] = (
+            "details" if flow.get("details") else "contact" if flow.get("contact") else "phone"
+        )
+        flow.pop("quote", None)
+        flow["navigation_revision"] = flow.get("navigation_revision", 0) + 1
+        save(request, flow)
     return flow
 
 
@@ -119,6 +136,8 @@ def recovery_match_kind(flow, customer):
 
 
 class ContactForm(forms.Form):
+    show_required_contact = True
+
     last_name = forms.CharField(max_length=120, label="Last Name")
     email = forms.EmailField(label="Email address")
     referral_source = forms.CharField(
@@ -232,9 +251,13 @@ class DetailsForm(forms.Form):
         self.supervised_available = self.available_play["supervised"]
         if not self.available_play["open"] and self.supervised_available:
             self.fields["adults"].initial = self.fields["babies"].initial = 0
-        self.fields[
-            "socks"
-        ].help_text = "Grip socks are required for play at MonkeyDo. You can pay for them now or bring your own. Select the number of pairs you want to purchase."
+        policy = PricingPolicy.objects.first()
+        sock_price = policy.sock_price if policy else "1.99"
+        self.fields["socks"].help_text = (
+            "Grip socks are required for play at MonkeyDo. You can pay for them now or bring your own. "
+            f"Select the number of pairs you want to purchase. Grip socks are ${sock_price} a pair."
+        )
+        self.fields["adults"].widget.attrs["min"] = 1 if self.available_play["open"] else 0
         self.fields["expected_method"].choices = payment_method_choices(
             PricingPolicy.objects.first()
         )
@@ -717,12 +740,22 @@ def receipt(request):
     )
     if not booking:
         raise Http404
+    from .communications.content import zelle_instructions
+
+    quote = booking.quotes.first()
     return render(
         request,
         "core/customer_booking_receipt.html",
         {
             "booking": booking,
-            "quote": booking.quotes.first(),
+            "zelle_instructions": zelle_instructions()
+            if booking.workflow == "integrated_v1"
+            and booking.expected_method == "zelle"
+            and not booking.attendance
+            and quote is not None
+            and not quote.snapshot.get("owner_comped")
+            else "",
+            "quote": quote,
             "progress_steps": progress(
                 5 if booking.workflow == "integrated_v1" else 4,
                 done=True,

@@ -1,5 +1,10 @@
 # Staging build status
 
+## Current: eighth review — draft PR #34
+
+The owner reports PR #33 deployed and authorized the complete eighth feedback batch. PR #34 refines public wording, quantity/error handling, email subjects and confirmations, and combines secure card setup/booking into one explicit public action. Its [labelled screenshot gallery](design-review/eighth-review/README.md) is for owner review; update this same draft PR for each comment. Merge and the browser ZIP/single deployment block follow completed review. No new schema migrations, hosted changes, live-payment activation, credential changes or backup activation are included. Active membership planning/design remains on hold. Historical status snapshots below describe earlier checkpoints. See [accepted scope and evidence](EIGHTH_BATCH_REVIEW.md).
+
+
 ## Seventh review — draft PR #33 and screenshot review
 
 PR #32 is merged and the owner reports it deployed. PR #33 implements the seventh feedback batch; it is a draft during owner screenshot review. See [scope](SEVENTH_BATCH_REVIEW.md) and [arrival/booking/edit screenshots](design-review/seventh-review/README.md). New additive schema 0048–0051 requires the checksum-pinned reviewed booking upgrade with a private checkpoint and restricted runtime grants; no hosted migration is performed by the agent. Integration flags, credentials, backups, homepage and active memberships are unchanged. The owner will ask Banquest about automatic month-to-year focus. Final testing guide and deployment ZIP/one command follow completed implementation and review.

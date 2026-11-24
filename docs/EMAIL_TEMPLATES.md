@@ -1,5 +1,12 @@
 # Customer email requirements and wording
 
+## Eighth review: current branding, subjects and appointment detail
+
+New customer-facing copy consistently uses MonkeyDo. Confirmation subjects are **Your MonkeyDo adventure is booked! - [weekday, month day], [start time]–[end time]** in New York time: no year or booking reference. There is no booking reference in the email body and no date/time preheader repeating the subject. The body still includes the appointment date, year, start and end times. Fresh resends and email corrections use the current subject; existing frozen messages are unchanged. Same-session emails may still be grouped by the recipient's mail client because the owner explicitly excluded a unique reference from the subject.
+
+Zelle wording begins **Please send payment by Zelle at any time.** The destination and existing backup-card explanation remain. The same instructions appear on a newly confirmed Zelle booking, without asking complimentary/already-arrived bookings to send another payment. Participant counts use child/adult/baby for one, children/adults/babies for zero or multiple; sock quantities use pair/pairs of socks. These are display changes, not changes to receipts or saved financial facts. New messages use MD-EMAIL-2026-03; historical template versions remain renderable.
+
+
 ## Seventh review: ordinary cancellation and no-show notices
 
 On the cancellation/no-show screen ask **Send customer email? Yes / No**, with neither selected. Do not send without Yes. This is independent of charging or waiving the fee. No usable email: explain that an address is needed for Yes and allow No. The original explicit complimentary-membership Yes/No rule remains independent.

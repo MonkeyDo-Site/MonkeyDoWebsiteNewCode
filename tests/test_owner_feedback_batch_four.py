@@ -104,7 +104,7 @@ class FourthMatchingTests(TestCase):
         self.begin(self.original.phone, "yes")
         response = self.post({"last_name": "Unrelated"})
         self.assertContains(
-            response, "We couldn't match the name ‘Unrelated’ with phone number ‘2025550100’."
+            response, "We couldn't match the name ‘Unrelated’ with phone number ‘202-555-0100’."
         )
         self.assertNotContains(response, 'name="last_name"')
         response = self.post({"email": "missing@example.invalid"})

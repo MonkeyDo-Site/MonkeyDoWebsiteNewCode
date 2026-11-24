@@ -137,6 +137,8 @@ class CustomerMailTests(TestCase):
         body = booking_confirmation(self.booking)
         self.assertIn("Your total is $", body)
         self.assertNotIn("Actual payment received", body)
-        self.assertIn("Please Zelle payment at any time to monkeydoplay@gmail.com.", body)
+        self.assertIn(
+            "Please send payment by Zelle at any time. Send to monkeydoplay@gmail.com.", body
+        )
         self.assertIn("Sales tax:", body)
         self.assertIn("pick up upon arrival", body)
