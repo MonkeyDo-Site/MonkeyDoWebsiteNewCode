@@ -41,6 +41,10 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     if (!target) return;
     const error = !['Your card is saved', 'Save your', 'Saving', 'Card will', 'Your card will', 'Confirming'].some(prefix => message.startsWith(prefix));
     target.textContent = single && error ? 'Your booking is not confirmed. ' + message : message;
+    if (single && error && uncertain) {
+      target.append(' ', check);
+      check.hidden = false;
+    }
     target.classList.toggle('card-error', error);
     target.setAttribute('role', error ? 'alert' : 'status');
     if (single && error) {
@@ -90,7 +94,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   };
   const recover = async () => {
     if (!statusUrl) return false;
-    check.hidden = false;
+    check.hidden = single && !check.closest('[role="alert"]');
     const response = await fetch(statusUrl, {headers: {'Accept': 'application/json'}, cache: 'no-store'});
     if (!response.headers.get('content-type')?.includes('application/json')) throw new Error();
     const data = await response.json();
@@ -102,11 +106,12 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     report(data.error || 'Card setup still needs review. Please call/text 848-238-5147.');
     return false;
   };
-  check.addEventListener('click', () => {
+  check.addEventListener('click', event => {
+    event.preventDefault();
     // Saved-card selection has no new token exchange to query. Reload its durable session choice.
     if (!statusUrl) { window.location.reload(); return; }
     recover().catch(() => {
-      report('Card setup could not yet be confirmed. Please check again or call/text 848-238-5147.');
+      report(single ? "We couldn't confirm your card selection for this booking," : 'Card setup could not yet be confirmed. Please check again or call/text 848-238-5147.');
     });
   });
   let hosted;
@@ -179,7 +184,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
         report('Please check the card number, expiration date and security code in the secure fields. Complete any missing information, or enter another card, then try again.');
         button.disabled = false;
       } else {
-        report('We could not yet confirm whether your card was saved. Use Check card setup before trying another card, or call/text 848-238-5147.');
+        report(single ? "We couldn't confirm your card selection for this booking," : 'We could not yet confirm whether your card was saved. Use Check card setup before trying another card, or call/text 848-238-5147.');
         check.hidden = false;
         button.disabled = true;
         try { await recover(); } catch { /* Never repeat an uncertain exchange. */ }
@@ -205,6 +210,6 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   } else if (statusUrl) {
     button.disabled = true;
     uncertain = true;
-    recover().catch(() => { check.hidden = false; report('Please check card setup before continuing.'); });
+    recover().catch(() => { check.hidden = false; report(single ? "We couldn't confirm your card selection for this booking," : 'Please check card setup before continuing.'); });
   }
 }

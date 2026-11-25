@@ -55,3 +55,8 @@ Reviewed the complete follow-up Word document and all 12 screenshots before edit
 | 12 | Shared live time-range formatting uses 2:30–3:45 PM / 9:00–10:15 AM, while crossing noon retains 11:30 AM–12:45 PM. New emails and live schedule/booking summaries use it. Historical frozen emails and signed evidence are unchanged. |
 
 The refreshed gallery keeps all 21 screen numbers and desktop/phone widths. Its explanations distinguish ordinary confirmation from deliberately simulated connection interruption. Screenshots await complete image decoding so lazily loaded photos are present. Card inputs are simulated in local review; no real card or external provider request is used.
+
+
+## Final approval and release preparation
+
+The owner approved PR #34 for merge and requested the pinned ZIP and single PowerShell deployment block. The final public interrupted-response message reads: **Your booking is not confirmed. We couldn't confirm your card selection for this booking, please try again**. The final phrase is an inline link to the existing read-only status/reload recovery. It never submits the card or confirms a booking automatically. Staff setup retains its separate Check card setup control. This release adds no migrations beyond the already deployed seventh-batch schema.

@@ -16,7 +16,7 @@
 <h3>Cancellation policy</h3><p>{% if card_public_booking %}{% if card_primary %}{{ card_cancellation_policy }}{% else %}{{ card_backup_cancellation }}{% endif %}{% else %}{{ card_cancellation_policy }} {{ card_cancellation_scope }}{% endif %}</p>
 <label><input type="checkbox" name="agree_cancellation" required{% if card_ready %} checked{% endif %}> I understand the MonkeyDo cancellation policy.</label>{% endif %}
 {% if not card_public_booking %}<button type="submit" class="button" data-save-card>Save card securely</button>{% endif %}
-<button type="button" class="text-button" data-check-card hidden>Check card setup</button>
+{% if card_public_booking %}<a href="#" data-check-card hidden>please try again</a>{% else %}<button type="button" class="text-button" data-check-card hidden>Check card setup</button>{% endif %}
 {% if not card_public_booking %}<p class="caption" role="status" data-card-status>Saving a card does not charge your admission or create a verification hold.</p>{% endif %}
 </form>
 {{ card_public_key|json_script:'card-tokenization-key' }}

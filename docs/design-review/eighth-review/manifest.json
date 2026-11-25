@@ -1,5 +1,5 @@
 {
-  "version": "v4",
+  "version": "v4 with final approved retry wording (screens 19\u201320 v5)",
   "viewports": [
     1440,
     390
@@ -135,15 +135,15 @@
       "number": "19",
       "title": "Interrupted response: clear unconfirmed state and safe Check card setup",
       "comments": "27",
-      "desktop": "EIGHTH-v4-19-card-response-uncertain-1440.png",
-      "phone": "EIGHTH-v4-19-card-response-uncertain-390.png"
+      "desktop": "EIGHTH-v5-19-card-response-uncertain-1440.png",
+      "phone": "EIGHTH-v5-19-card-response-uncertain-390.png"
     },
     {
       "number": "20",
       "title": "Recovery: saved card selected; explicit confirmation still required",
       "comments": "27",
-      "desktop": "EIGHTH-v4-20-recovered-card-still-needs-confirmation-1440.png",
-      "phone": "EIGHTH-v4-20-recovered-card-still-needs-confirmation-390.png"
+      "desktop": "EIGHTH-v5-20-recovered-card-still-needs-confirmation-1440.png",
+      "phone": "EIGHTH-v5-20-recovered-card-still-needs-confirmation-390.png"
     },
     {
       "number": "21",
