@@ -6,7 +6,7 @@
 {% if embedded %}<h2>About MonkeyDo</h2>{% else %}<h1>Little explorers.<br>
 <em>Big adventures.</em>
 </h1>{% endif %}
-<p class="lead">Have you been looking for a place where your children can spread their wings and engage in a combination of stimulating, energizing and relaxing play spaces, in a warm and welcoming setting? Monkey Do is that place. Designed by mothers and professionals who get kids.</p>
+<p class="lead">Have you been looking for a place where your children can spread their wings and engage in a combination of stimulating, energizing and relaxing play spaces, in a warm and welcoming setting? MonkeyDo is that place. Designed by mothers and professionals who get kids.</p>
 </section>
 <section class="area-grid">
 <article class="scroll-reveal">
@@ -47,6 +47,7 @@ $15 per child<br>
 Additional adults ages 12 and up: $5 each<br>
 Babies under 1 are free</p>
 <p>If you are coming just with a baby, there is a $15 admission.</p>
+{% if not embedded %}<p>Subscription and Unlimited Members receive membership pricing and benefits for open play sessions.</p>{% endif %}
 <a class="button" href="{% url 'schedule' %}">Book your session now <span aria-hidden="true">→</span></a>
 </article>
 <article class="panel coral play-card supervised-play-card scroll-reveal">
@@ -56,7 +57,7 @@ Babies under 1 are free</p>
 <p class="play-subtitle">Your child plays and our capable staff supervises</p>
 <p>For children ages 3-11<br>
 $18.99 per child</p>
-<p class="supervised-benefit">Subscription members enjoy 25% off supervised play</p>
+<p class="supervised-benefit">Subscription Members enjoy 25% off supervised play</p>
 <p class="supervised-availability">Supervised play is available for select sessions. Check the booking page to see which sessions offer it.</p>
 <a class="button" href="{% url 'schedule' %}">See available sessions <span aria-hidden="true">→</span></a>
 </article>

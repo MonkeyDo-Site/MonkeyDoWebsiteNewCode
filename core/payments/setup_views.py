@@ -68,8 +68,8 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
         data = json.loads(request.body)
         if not isinstance(data, dict) or set(data) - set(SetupForm.base_fields):
             raise ValidationError("Use the secure card-entry form.")
-        # Public customers accept displayed payment terms by explicitly saving
-        # the card. Staff still record their separate policy-reviewed checkbox.
+        # Public customers accept displayed payment terms through the explicit
+        # Confirm booking action, which first saves the selected card. Staff still record their separate policy-reviewed checkbox.
         if actor is None:
             data["agree_payment"] = True
         form = SetupForm(data)
@@ -197,6 +197,14 @@ def card_context(flow):
     except ValidationError:
         accepted = None
     methods = reusable_methods(flow)
+    saved_setup = (
+        PaymentSetup.objects.filter(
+            pk=flow.get("payment_setup_key"), flow_hash=flow_identity(flow)[0], state="succeeded"
+        ).first()
+        if flow.get("payment_setup_key")
+        else None
+    )
+    needs_policy_review = bool(saved_setup and saved_setup.consent.version != VERSION)
     if flow.get("payment_method_changed") and flow.get("payment_setup_key"):
         previous = PaymentSetup.objects.filter(
             pk=flow["payment_setup_key"], flow_hash=flow_identity(flow)[0], state="succeeded"
@@ -213,16 +221,20 @@ def card_context(flow):
         "card_is_zelle": method == "zelle",
         "card_ready": accepted is not None,
         "card_accepted_consent": str(accepted.pk) if accepted else "",
+        "card_accepted_method_id": accepted.method_id if accepted else None,
         "card_accepted_last_four": accepted.method.last_four if accepted else "",
         "card_public_booking": not bool(flow.get("staff_actor")),
         "card_setup_key": uuid.uuid4()
-        if flow.get("payment_method_changed")
+        if flow.get("payment_method_changed") or needs_policy_review
         else (flow.get("payment_setup_key") or uuid.uuid4()),
         "card_endpoint": reverse("customer_card_setup"),
         "card_status_url": reverse("customer_card_status", args=[flow["payment_setup_key"]])
-        if flow.get("payment_setup_key") and not flow.get("payment_method_changed")
+        if flow.get("payment_setup_key")
+        and not flow.get("payment_method_changed")
+        and not needs_policy_review
         else "",
         "card_methods": methods,
+        "card_has_saved": methods.filter(reusable=True).exists(),
         "card_policy_version": VERSION,
         "card_payment_policy": PAYMENT,
         "card_retention_policy": RETENTION,

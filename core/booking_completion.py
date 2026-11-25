@@ -36,7 +36,7 @@ def complete(flow, booking):
 
 
 def confirmation(booking, *, flow=None):
-    from core.communications.content import booking_confirmation
+    from core.communications.content import booking_confirmation, session_subject
     from core.communications.services import enqueue
 
     payload = confirmation_payload(booking, flow=flow)
@@ -44,7 +44,7 @@ def confirmation(booking, *, flow=None):
         key=f"booking-confirmation:{booking.pk}",
         kind=payload["kind"],
         recipient=booking.customer.email,
-        subject="Your Monkey Do adventure is booked!",
+        subject=session_subject(booking),
         text=booking_confirmation(
             booking, waiver_url=payload["waiver_url"], waiver_type=payload["waiver_type"]
         ),

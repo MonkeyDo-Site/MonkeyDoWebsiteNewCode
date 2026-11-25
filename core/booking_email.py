@@ -5,7 +5,7 @@ from django.core.validators import validate_email
 from django.db import transaction
 
 from .booking_completion import confirmation_payload, enabled
-from .communications.content import booking_confirmation
+from .communications.content import booking_confirmation, session_subject
 from .communications.models import MessageDelivery
 from .communications.services import enqueue
 from .customers import historical_email_customers, new_comment, public_duplicate_email_message
@@ -80,7 +80,7 @@ def correct_email(*, flow, email, version, request_key):
         key=dedupe,
         kind=payload["kind"],
         recipient=email,
-        subject="Your Monkey Do adventure is booked!",
+        subject=session_subject(booking),
         text=booking_confirmation(
             booking, waiver_url=payload["waiver_url"], waiver_type=payload["waiver_type"]
         ),

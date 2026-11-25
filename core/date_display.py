@@ -36,3 +36,11 @@ def display_date(value, format_string=None):
 def display_strftime(value, format_string):
     value = local_value(value)
     return weekday_wording(value.strftime(format_string), value)
+
+
+def display_time_range(starts_at, ends_at):
+    """Omit a repeated meridiem, using the business timezone for both endpoints."""
+    start = local_value(starts_at)
+    end = local_value(ends_at)
+    start_format = "g:i" if (start.hour < 12) == (end.hour < 12) else "g:i A"
+    return f"{display_date(start, start_format)}–{display_date(end, 'g:i A')}"

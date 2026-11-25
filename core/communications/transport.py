@@ -51,7 +51,7 @@ def send(delivery):
         "text": "MONKEYDO STAGING TEST — This is a test booking, not a real visit or payment.\n\n"
         + delivery.text_body,
     }
-    if delivery.template_version == "MD-EMAIL-2026-02" and delivery.kind in {
+    if delivery.template_version in {"MD-EMAIL-2026-02", "MD-EMAIL-2026-03"} and delivery.kind in {
         "booking_confirmation",
         "booking_waiver",
         "booking_cancelled",

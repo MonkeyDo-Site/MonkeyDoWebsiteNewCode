@@ -5,12 +5,26 @@ from decimal import Decimal
 from django.conf import settings
 from django.urls import reverse
 
-from core.date_display import display_date
+from core.date_display import display_date, display_time_range
 from core.payments.policy import CANCELLATION, CANCELLATION_SCOPE
 
 
 def plural(count, singular, multiple):
     return f"{count} {singular if count == 1 else multiple}"
+
+
+def session_subject(booking, title="Your MonkeyDo adventure is booked!"):
+    day = display_date(booking.session.starts_at, "l, F j")
+    times = display_time_range(booking.session.starts_at, booking.session.ends_at)
+    return f"{title} - {day}, {times}"
+
+
+def zelle_instructions():
+    return (
+        "Please send payment by Zelle at any time to monkeydoplay@gmail.com. "
+        "If the Zelle isn’t received before the visit and cannot be taken care of upon arrival, "
+        "your backup card will be charged."
+    )
 
 
 def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comped=False):
@@ -37,12 +51,12 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
     lines = [
         f"Dear Family {booking.customer.last_name},",
         "",
-        "You're all set for your Monkey Do adventure!",
+        "You're all set for your MonkeyDo adventure!",
         "",
         "We look forward to seeing you "
         + display_date(booking.session.starts_at, "l, F j, Y")
         + " at "
-        + display_date(booking.session.starts_at, "g:i A")
+        + display_time_range(booking.session.starts_at, booking.session.ends_at)
         + ".",
         " · ".join(
             [
@@ -56,7 +70,7 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
     ]
     for item in quote["lines"]:
         lines.append(
-            f"{item['label']}: {item['quantity']} × ${item['unit_price']} = ${item['amount']}"
+            f"{item['label']}: {plural(item['quantity'], 'pair of socks', 'pairs of socks') if item['label'].startswith('Grip socks') else item['quantity']} × ${item['unit_price']} = ${item['amount']}"
         )
     lines.append(f"Subtotal: ${quote['subtotal']}")
     if Decimal(quote["processing_fee"]):
@@ -91,10 +105,7 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
         lines.extend(
             [
                 "",
-                (
-                    "You selected to pay via Zelle. Please Zelle payment at any time to monkeydoplay@gmail.com. "
-                    "If the Zelle isn’t received before the visit and cannot be taken care of upon arrival, your backup card will be charged."
-                )
+                ("You selected to pay via Zelle. " + zelle_instructions())
                 if actual is None
                 else "You selected Zelle as your form of payment. Please Zelle payment to monkeydoplay@gmail.com only for any verified remaining balance.",
             ]
@@ -130,7 +141,7 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
     )
     if booking.source == "staff" and not comped:
         lines.append(CANCELLATION + " " + CANCELLATION_SCOPE)
-    lines.extend(["", "Get ready to go bananas,", "The Monkey Do team"])
+    lines.extend(["", "Get ready to go bananas,", "The MonkeyDo team"])
     body = "\n".join(lines)
     while "\n\n\n" in body:
         body = body.replace("\n\n\n", "\n\n")
@@ -147,7 +158,7 @@ def waiver_completed(signature, booking):
             "Signing adult: " + signature.signer_name,
             "Minors covered: " + (", ".join(signature.minors) or "Signing for self only"),
             "",
-            "The Monkey Do team",
+            "The MonkeyDo team",
         ]
     )
 

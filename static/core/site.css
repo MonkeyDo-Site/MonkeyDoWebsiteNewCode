@@ -238,9 +238,9 @@ p {
 .slot {
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:16px;
   background:#e5ebe1;
-  padding:20px;
+  padding:24px;
   border-radius:22px;
   font-size:14px
 }
@@ -543,7 +543,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   }
 }
 @keyframes home-scroll-welcome {
-  from { opacity:.6; transform:translateY(20px) }
+  from { opacity:1; transform:translateY(20px) }
   to { opacity:1; transform:translateY(0) }
 }
 
@@ -629,7 +629,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
   }
 }
 @keyframes photo-welcome {
-  from { opacity:.65; transform:translateY(12px) scale(.97) }
+  from { opacity:1; transform:translateY(12px) scale(.97) }
   to { opacity:1; transform:translateY(0) scale(1) }
 }
 @media(max-width:1050px) {
@@ -745,7 +745,7 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .contact-section .contact-actions { display:flex; gap:12px; flex-wrap:wrap; margin:22px 0 26px }
 .contact-section .contact-actions .button { gap:14px; padding:14px 22px }
 .contact-section .contact-actions .email-action { background:transparent; border:1px solid var(--ink); color:var(--ink) }
-.contact-section .contact-address { padding-top:22px; border-top:1px solid var(--line) }
+.contact-section .contact-address { padding-top:38px; border-top:1px solid var(--line) }
 .contact-section .contact-address p { margin:0 0 12px }
 .contact-section .contact-info .contact-direct { margin:0 0 8px; overflow-wrap:anywhere }
 .contact-section .contact-info .contact-direct a { text-decoration:none }
@@ -1056,3 +1056,30 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .staff-layout .price-adjustment{margin:18px 0 0;padding-top:16px}.price-adjustment .quote-lines{margin-bottom:0}
 
 .capacity-recovery-actions{display:flex;flex-wrap:wrap;gap:14px}.capacity-recovery-actions .button{max-width:100%}
+
+/* Eighth review: shared feedback, compact confirmation and clear optional actions. */
+.rose-text{color:var(--rose-ink)}
+.required-mark{color:var(--rose-ink);font-weight:800;margin-left:5px}
+.session-date-highlight{display:table;background:#e4ebdf;border-radius:7px;padding:7px 12px;box-decoration-break:clone}
+.waiver-coverage .button:disabled{background:#becbbd;color:#3b5041;cursor:not-allowed;opacity:1}
+.waiver-coverage .button:disabled:hover{transform:none}
+.single-confirm-actions .button{display:inline-flex;align-items:center;justify-content:center;gap:14px;min-width:190px}
+.processing-dots{display:inline-flex;gap:5px}.processing-dots[hidden]{display:none}
+.processing-dots span{width:6px;height:6px;background:currentColor;border-radius:50%;animation:confirmation-dot 1s infinite}
+.processing-dots span:nth-child(2){animation-delay:.15s}.processing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes confirmation-dot{0%,70%,100%{opacity:.3;transform:translateY(0)}35%{opacity:1;transform:translateY(-3px)}}
+[data-public-card-status].card-error{color:#9b3650;font-weight:800;padding:8px 12px;border-left:3px solid #9b3650;background:#f8e8e4}
+@media(prefers-reduced-motion:reduce){.processing-dots span{animation:none;opacity:1}}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Eighth gallery responses: clear feedback and compact phone layouts. */
+.error-feedback-focus:focus { outline:none }
+.zelle-instructions { background:var(--cream); border:1px solid var(--line); border-radius:18px; padding:20px; margin-top:24px }
+.zelle-instructions h3 { margin-top:0 }
+@media(max-width:650px) {
+ .membership-gallery { grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; padding-bottom:0 }
+ .booking-progress.five-steps ol { grid-template-rows:repeat(3,auto); grid-auto-flow:column }
+ .booking-progress.five-steps li { align-items:flex-start }
+ .slot { gap:8px; padding:20px }
+ .slot-description { padding-top:8px }
+}

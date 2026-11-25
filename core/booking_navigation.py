@@ -40,7 +40,7 @@ def restore(request, flow):
         return flow, None
     history = request.session.get(CHECKPOINTS, {})
     saved = history.get("steps", {}).get(step) if history.get("key") == flow["key"] else None
-    if saved is None or step == "done":
+    if saved is None or step == "done" or saved.get("workflow") != flow.get("workflow"):
         return flow, redirect("customer_booking")
     if saved.get("navigation_revision", 0) != flow.get("navigation_revision", 0) and RANK.get(
         step, 2

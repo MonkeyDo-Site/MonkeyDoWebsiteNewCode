@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.booking_completion import enabled
-from core.communications.content import booking_confirmation
+from core.communications.content import booking_confirmation, session_subject
 from core.communications.services import enqueue
 from core.models import AuditEvent, Booking
 from core.permissions import staff_permission
@@ -204,7 +204,7 @@ def finalize(*, actor, booking_id, flow, values):
             key=f"booking-confirmation:{booking.pk}",
             kind="booking_waiver" if waiver_url else "booking_confirmation",
             recipient=booking.customer.email,
-            subject="Your Monkey Do adventure is booked!",
+            subject=session_subject(booking),
             text=booking_confirmation(
                 booking, waiver_url=waiver_url, waiver_type=values["waiver_type"], comped=comped
             ),

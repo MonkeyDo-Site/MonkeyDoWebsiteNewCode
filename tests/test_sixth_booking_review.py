@@ -189,7 +189,7 @@ class SixthBookingTests(TestCase):
         self.assertEqual(changed["waiver_signatures"], flow["waiver_signatures"])
         self.assertEqual(changed["quote"]["processing_fee"], "0.00")
         self.assertTrue(changed["payment_method_changed"])
-        self.assertContains(response, "data-confirm-booking disabled")
+        self.assertContains(response, "data-confirm-booking>")
         with patch("core.payments.setup.Gateway") as gateway:
             self.gateway(gateway)
             page = self.client.post(
@@ -208,7 +208,7 @@ class SixthBookingTests(TestCase):
         self.assertNotIn("payment_method_changed", self.client.session[SESSION_KEY])
         self.assertFalse(FinancialPosting.objects.exists())
 
-    def test_primary_card_has_no_alternate_payment_checkbox_and_confirm_is_initially_disabled(self):
+    def test_primary_card_has_single_confirmation_action_without_alternate_policy_checkbox(self):
         flow = self.bare_flow()
         flow["stage"] = "review"
         self.store(flow)
@@ -216,13 +216,14 @@ class SixthBookingTests(TestCase):
         self.assertContains(page, 'type="hidden" name="agree_payment"')
         self.assertNotContains(page, "I agree to this payment policy")
         self.assertNotContains(page, "backup credit card for each booking")
-        self.assertContains(page, "data-confirm-booking disabled")
+        self.assertContains(page, "data-confirm-booking>")
         self.assertContains(page, "Total due at arrival")
         self.assertContains(
             page,
-            "Card will be charged at arrival. Save your card first, then confirm your booking.",
+            "Your card will be charged at arrival.",
         )
-        self.assertContains(page, "Save card securely", count=1)
+        self.assertNotContains(page, "Save card securely")
+        self.assertContains(page, "Confirm booking", count=1)
         self.assertNotContains(page, "Estimated total at arrival")
         self.assertIn("no-store", page.headers["Cache-Control"])
 
@@ -237,8 +238,9 @@ class SixthBookingTests(TestCase):
         self.assertNotContains(page, "I agree to this payment policy")
         self.assertNotContains(page, "create a verification hold")
         self.assertContains(page, "Saving a backup card does not charge it.")
-        self.assertContains(page, "I understand the Monkey Do cancellation policy")
-        self.assertContains(page, "Save card securely", count=1)
+        self.assertContains(page, "I understand the MonkeyDo cancellation policy")
+        self.assertNotContains(page, "Save card securely")
+        self.assertContains(page, "Confirm booking", count=1)
         with patch("core.payments.setup.Gateway") as gateway:
             self.gateway(gateway)
             payload = {
@@ -263,7 +265,7 @@ class SixthBookingTests(TestCase):
         self.assertTrue(accepted.payment_accepted)
         self.assertTrue(accepted.cancellation_accepted)
         self.assertIn(
-            "explicitly selecting Save card securely",
+            "explicitly selecting Confirm booking",
             accepted.policy.text["public_payment_acceptance"],
         )
         self.assertFalse(FinancialPosting.objects.exists())

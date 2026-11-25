@@ -2,7 +2,7 @@
 
 import hashlib
 
-VERSION = "MD-PAYMENT-2026-03"
+VERSION = "MD-PAYMENT-2026-04"
 PAYMENT = (
     "You're almost done with your booking. Please enter your payment method. "
     "Please note: Payment will be processed after you arrive. For cash, check, "
@@ -18,8 +18,8 @@ RETENTION = (
     "cannot be removed until that responsibility has been resolved or replaced."
 )
 CANCELLATION = (
-    "If the booking is cancelled, or the customer doesn’t arrive, the fee is $3 per each $15 or $18 admission. "
-    "The customer’s credit card will be charged. The cancellation policy applies to members as specified in the membership agreement."
+    "A cancelled booking or a no-show incurs a $3 fee per each $15 or $18.99 admission in the booking. "
+    "The customer’s backup card will be charged. The cancellation policy applies to Members as specified in the membership agreement."
 )
 CANCELLATION_SCOPE = (
     "The approved fee is $3 per child admission, including Supervised Play. "
@@ -27,11 +27,9 @@ CANCELLATION_SCOPE = (
     "admissions do not. Owner-comped $0 bookings have no cancellation fee."
 )
 PRIMARY_PAYMENT = "You’re almost done with your booking. You chose to pay by credit card. Please enter your credit card info. Payment will be processed at your visit."
-BACKUP_PAYMENT = "Please note: MonkeyDo requires a backup credit card for each booking by cash, check or Zelle. Please enter your credit card info. The card will only be charged in the event the form of payment you chose isn’t received."
-PUBLIC_PAYMENT_ACCEPTANCE = "The customer accepts the displayed payment terms by explicitly selecting Save card securely; no separate payment-policy checkbox is presented. Cancellation acknowledgment and optional future-use consent remain separate."
-BACKUP_CANCELLATION = CANCELLATION.replace(
-    "credit card will be charged", "backup card will be charged"
-)
+BACKUP_PAYMENT = "Please note: MonkeyDo requires a backup credit card for each booking by cash, check or Zelle. Please enter your credit card info. The card will only be charged in the event the form of payment you chose isn’t received at the time of arrival."
+PUBLIC_PAYMENT_ACCEPTANCE = "The customer accepts the displayed payment terms by explicitly selecting Confirm booking; no separate payment-policy checkbox is presented. Cancellation acknowledgment and optional future-use consent remain separate."
+BACKUP_CANCELLATION = CANCELLATION
 POLICY_HASH = hashlib.sha256(
     "\n".join(
         [

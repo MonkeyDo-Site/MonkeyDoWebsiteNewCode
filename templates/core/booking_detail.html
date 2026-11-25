@@ -3,7 +3,7 @@
 <h1>{% if perms.core.view_customer %}<a href="{% url 'customer_detail' booking.customer_id %}">{{ booking.customer.last_name }}</a>{% else %}{{ booking.customer.last_name }}{% endif %}</h1>
 <p class="eyebrow">Booking #{{ booking.pk }} · {{ booking.status_label }}</p>{% if booking.workflow == 'legacy_test' %}<p class="caption">Old test booking · Its original records and history are preserved.</p>{% endif %}
 {% if booking.workflow == 'integrated_v1' and booking.setup_pending and perms.core.change_booking %}<p><a class="button" href="{% url 'staff_booking_setup' booking.pk %}">Complete booking setup</a></p>{% endif %}
-<p>{{ booking.session.starts_at|date:'l, F j, Y' }} · {{ booking.session.starts_at|date:'g:i A' }} – {{ booking.session.ends_at|date:'g:i A' }}</p>
+<p>{{ booking.session.starts_at|date:'l, F j, Y' }} · {{ booking.session.starts_at|time_range:booking.session.ends_at }}</p>
 {% if booking.workflow == 'integrated_v1' and booking_completion_enabled and not booking.attendance and perms.core.collect_payment and perms.core.change_booking %}<div class="filter-actions"><a class="button" href="{% url 'booking_arrival' booking.pk %}">Start arrival</a><a href="{% url 'booking_no_show' booking.pk %}">Mark as no show</a><a href="{% url 'booking_cancel' booking.pk %}">Cancel booking</a><a href="{% url 'booking_edit' booking.pk %}">Edit booking</a><a href="{% url 'booking_move' booking.pk %}">Change timing</a></div>{% endif %}
 <div class="booking-detail-grid"><article class="panel">
 <h2>Visit details</h2>

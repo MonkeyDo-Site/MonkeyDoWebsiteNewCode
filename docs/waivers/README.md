@@ -1,5 +1,10 @@
 # MonkeyDo waiver source and status
 
+## Eighth public-waiver presentation
+
+Hide the internal waiver version label on customer signing pages, retaining version metadata, source documents and original evidence in staff/storage records. A visible disabled state accompanies Continue to payment when signing additional minors is selected. Required server errors scroll into view and receive keyboard focus. No waiver release, coverage rule, saved signature or source PDF is rewritten.
+
+
 ## Seventh review: named paper forms and arrival summaries
 
 PR #33 records a real paper signature per adult: signing date, legal name, relationship and named minors. Parent first-name and guardian full-name rules match electronic signing. An adult-only waiver uses the same form with no minors. No upload, electronic signature, fabricated electronic consent or source evidence is created by recording a paper form. The named record is immutable; original electronic evidence and prior unnamed paper marks remain intact.

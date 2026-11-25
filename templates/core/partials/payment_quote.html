@@ -1,5 +1,6 @@
+{% load booking_display %}
 <aside class="payment-quote" aria-label="Visit payment details"><h3>Visit payment details</h3><dl class="quote-items">
-{% for item in data.lines %}<div><dt>{{ item.label }} · {{ item.quantity }} × ${{ item.unit_price }}</dt><dd>${{ item.amount }}</dd></div>{% endfor %}
+{% for item in data.lines %}<div><dt>{{ item.label }} · {% if item.label|slice:':10' == 'Grip socks' %}{{ item.quantity|count_words:'socks' }}{% else %}{{ item.quantity }}{% endif %} × ${{ item.unit_price }}</dt><dd>${{ item.amount }}</dd></div>{% endfor %}
 <div><dt>Subtotal</dt><dd>${{ data.subtotal }}</dd></div>
 {% if data.processing_fee != '0.00' %}<div><dt>Credit-card processing fee</dt><dd>${{ data.processing_fee }}</dd></div>{% endif %}
 <div><dt>Sales tax</dt><dd>${{ data.sales_tax }}</dd></div>

@@ -141,6 +141,11 @@ def submit_booking(flow):
     from . import booking_completion
 
     completing = booking_completion.integrated(flow)
+    if not completing and (settings.BOOKING_COMPLETION_ENABLED or settings.APP_ENV == "staging"):
+        raise ValidationError(
+            "Restart this booking to complete the current waiver and card setup.",
+            code="legacy_booking_flow",
+        )
     if completing:
         booking_completion.enabled()
         from .payments.setup import selected_consent

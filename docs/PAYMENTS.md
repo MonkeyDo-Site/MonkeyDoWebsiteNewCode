@@ -1,5 +1,12 @@
 # Payments, tax, card lifecycle, and Banquest evidence
 
+## Eighth review: one public confirmation action
+
+Public Payment Details has one Confirm booking button. Its explicit click accepts displayed payment terms and first saves/chooses the secure card, then submits the booking after successful setup. Processing dots and status explicitly say the booking is not confirmed yet. Card/setup errors appear in rose at the action and receive focus. Nothing charges ordinary admission online or creates an issuer hold. Duplicate clicks cannot repeat the exchange or booking; an uncertain setup is checked/recovered rather than exchanged again. A recovered response still requires an explicit confirmation when its original outcome was uncertain. Staff card setup retains its separate controls.
+
+New consent wording uses MD-PAYMENT-2026-04, including arrival-specific backup-card language, the approved $15/$18.99 cancellation display wording and acceptance through Confirm booking. Prior policy versions and signed consent records remain immutable. Cancellation/minimum-admission/member/comped calculations and card-retention rules are unchanged. Future-use wording says bookings, and its replacement sentence is shown only when an existing reusable card is available. Card saving does not guarantee a later issuer charge succeeds.
+
+
 ## Adjusted-price explanation
 
 When a saved booking's price changes, show a compact comparison immediately after its current itemized details and before received funds/balance. Start with the first saved booking total, then combined added admissions/adults/socks, combined removals, existing cancellation fees, tax/processing-fee differences and explicit owner-price changes. Show additions and removals independently even if they offset. One Adjusted total replaces the ordinary total row. This applies to arrival, read-only edit preview before saving, and resulting booking details; quote history and accounting records remain immutable. This is presentation only and cannot create fees, receipts or refunds.

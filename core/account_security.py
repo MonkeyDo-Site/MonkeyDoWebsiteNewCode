@@ -59,7 +59,7 @@ def owner_message(address, code):
         return (
             send_mail(
                 "[MONKEYDO TEST] Your owner sign-in code",
-                f"This is a test message from the MonkeyDo staging website.\n\nYour sign-in code is {code}. It expires in ten minutes.\n\nThe Monkey Do team",
+                f"This is a test message from the MonkeyDo staging website.\n\nYour sign-in code is {code}. It expires in ten minutes.\n\nThe MonkeyDo team",
                 None,
                 [address],
                 fail_silently=False,

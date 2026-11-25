@@ -1,5 +1,10 @@
 # MonkeyDo current website requirements
 
+## Eighth feedback batch — current public presentation and confirmation
+
+The owner authorized PR #34 after all 28 comments/27 screenshots were reviewed. The latest accepted scope is [EIGHTH_BATCH_REVIEW.md](EIGHTH_BATCH_REVIEW.md). It supersedes earlier two-button public card/booking controls with one explicit Confirm booking action, visible pending/error states and safe interrupted-response recovery; ordinary admission collection remains at reviewed arrival. New legacy pending-test confirmations are blocked when the completed workflow is required. Historical bookings/evidence/messages remain intact. Approved public copy/branding, member/party descriptions, singular/plural quantities, phone formatting, required/error handling, Zelle confirmation instructions and year-free/reference-free email subjects apply together. Homepage layout/assets, live integration configuration, pricing/fee formulas and active membership development remain unchanged. Screenshot review precedes merging/deployment.
+
+
 ## Seventh owner-review supersessions
 
 The [seventh batch](SEVENTH_BATCH_REVIEW.md) supersedes older paper-checkbox-only and two-step arrival descriptions below. Use one live arrival workspace, automatic cash/check dates, named reusable paper waiver records, booking-specific owner supervised exceptions and verified advance Zelle receipts. Apply each advance receipt once to the final invoice, calculate excess refunds for arrival/cancellation/no-show, and keep an owner Dashboard notice until the actual manual Zelle return is recorded. Keep payments and waivers side by side in booking details, truthful accepted price breakdowns and historical source records. Cancellation/no-show email requires explicit Yes/No with no default. Banquest month-to-year auto-advance remains a provider question, with the owner seeking confirmation; it is not claimed as implemented. Public homepage and membership scope are unchanged.
