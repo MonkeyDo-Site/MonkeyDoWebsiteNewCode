@@ -155,7 +155,7 @@ class SixthBookingTests(TestCase):
         self.assertContains(response, "Payment Details")
         self.assertFalse(FinancialPosting.objects.exists())
 
-    def test_adult_only_signs_the_same_form_without_self_choice_or_contact_fields(self):
+    def test_adult_only_signing_requires_minor_names_without_self_or_contact_fields(self):
         flow = self.bare_flow()
         flow["details"].update(children=0, adults=1)
         flow["quote"] = review_quote(flow, flow["details"])
@@ -171,8 +171,13 @@ class SixthBookingTests(TestCase):
             "wizard_stage": "waiver",
         }
         with patch("core.waivers.services.EvidenceStore", return_value=MemoryEvidence()):
+            response = self.client.post(reverse("customer_waiver"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(WaiverSignature.objects.exists())
+        data.update(relationship="Parent", minors="Test Child")
+        with patch("core.waivers.services.EvidenceStore", return_value=MemoryEvidence()):
             self.assertEqual(self.client.post(reverse("customer_waiver"), data).status_code, 302)
-        self.assertEqual(WaiverSignature.objects.get().relationship, "Attending adult")
+        self.assertEqual(WaiverSignature.objects.get().relationship, "Parent")
 
     def test_payment_method_switch_preserves_signatures_but_requires_fresh_policy_acceptance(self):
         flow = self.ready()

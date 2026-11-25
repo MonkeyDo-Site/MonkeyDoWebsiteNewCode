@@ -28,6 +28,7 @@ from .policy import (
     BACKUP_CANCELLATION,
     BACKUP_PAYMENT,
     CANCELLATION,
+    CANCELLATION_PRICE_RULE,
     CANCELLATION_SCOPE,
     PAYMENT,
     POLICY_HASH,
@@ -93,7 +94,7 @@ def authorize_actor(flow, actor):
             raise ValidationError("Resolve the pending payment before replacing its source.")
 
 
-def consent(*, method, digest, retain, actor=None, accepted_at=None):
+def consent(*, method, digest, retain, actor=None, accepted_at=None, flow=None, terms=None):
     policy, _ = PaymentPolicyVersion.objects.get_or_create(
         version=VERSION,
         defaults={
@@ -103,6 +104,7 @@ def consent(*, method, digest, retain, actor=None, accepted_at=None):
                 "retention": RETENTION,
                 "cancellation": CANCELLATION,
                 "scope": CANCELLATION_SCOPE,
+                "cancellation_price_rule": CANCELLATION_PRICE_RULE,
                 "primary_card_payment": PRIMARY_PAYMENT,
                 "backup_card_payment": BACKUP_PAYMENT,
                 "public_payment_acceptance": PUBLIC_PAYMENT_ACCEPTANCE,
@@ -112,7 +114,7 @@ def consent(*, method, digest, retain, actor=None, accepted_at=None):
     )
     if policy.content_hash != POLICY_HASH:
         raise ValidationError("The policy text changed without a new version.")
-    return PaymentConsent.objects.create(
+    accepted = PaymentConsent.objects.create(
         policy=policy,
         method=method,
         flow_hash=digest,
@@ -125,6 +127,24 @@ def consent(*, method, digest, retain, actor=None, accepted_at=None):
         accepted_at=accepted_at or timezone.now(),
         actor=actor,
     )
+    from .policy import displayed_cancellation
+
+    wording, pricing_id = (
+        (terms["cancellation"], terms["pricing_policy"]) if terms else displayed_cancellation(flow)
+    )
+    AuditEvent.objects.create(
+        actor=actor,
+        action="payment.displayed_terms_accepted",
+        record_type="payment_consent",
+        record_id=str(accepted.pk),
+        changes={
+            "cancellation": wording,
+            "retention": RETENTION,
+            "pricing_policy": pricing_id,
+            "policy_version": VERSION,
+        },
+    )
+    return accepted
 
 
 @transaction.atomic
@@ -176,10 +196,26 @@ def prepare(
         setup.flow_hash != digest or setup.nonce_hash != hashed or setup.reusable != retain
     ):
         raise ValidationError("This card setup request has already been used.")
+    from .policy import displayed_cancellation
+
+    wording, pricing_id = displayed_cancellation(flow)
+    AuditEvent.objects.get_or_create(
+        action="payment.setup_terms_reviewed",
+        record_type="payment_setup",
+        record_id=str(setup.pk),
+        defaults={
+            "actor": actor,
+            "changes": {
+                "cancellation": wording,
+                "pricing_policy": pricing_id,
+                "policy_version": VERSION,
+            },
+        },
+    )
     return setup
 
 
-def persist_method(setup, data):
+def persist_method(setup, data, flow=None):
     if not isinstance(data, dict) or data.get("payment_method_type") != "card":
         raise ProviderFailure("invalid_saved_method")
     method_id = reference(data.get("id"))
@@ -219,11 +255,18 @@ def persist_method(setup, data):
             consent_version=VERSION,
             consent_at=setup.created_at,
         )
+        reviewed_terms = AuditEvent.objects.filter(
+            action="payment.setup_terms_reviewed",
+            record_type="payment_setup",
+            record_id=str(setup.pk),
+        ).first()
         accepted = consent(
+            terms=reviewed_terms.changes if reviewed_terms else None,
             method=method,
             digest=setup.flow_hash,
             retain=setup.reusable,
             accepted_at=setup.created_at,
+            flow=flow,
             actor=setup.actor,
         )
         setup.method = method
@@ -288,7 +331,7 @@ def exchange(
             setup.save(update_fields=["provider_customer", "state"])
         saved = gateway.save_card(provider_customer, nonce, expiry_month, expiry_year)
         saved_id = reference(saved.get("id"))
-        return persist_method(setup, gateway.method(saved_id))
+        return persist_method(setup, gateway.method(saved_id), flow=flow)
     except (ProviderFailure, ValidationError, TypeError, ValueError, AttributeError):
         with transaction.atomic():
             setup = PaymentSetup.objects.select_for_update().get(pk=setup.pk)
@@ -350,7 +393,7 @@ def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted, ac
         method = reusable_methods(flow).select_for_update().get(pk=method_id)
         method.brand, method.last_four = brand, last_four
         method.save(update_fields=["brand", "last_four"])
-        return consent(method=method, digest=digest, retain=method.reusable, actor=actor)
+        return consent(method=method, digest=digest, retain=method.reusable, actor=actor, flow=flow)
 
 
 def selected_consent(flow):

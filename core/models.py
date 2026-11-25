@@ -257,6 +257,9 @@ class AuditEvent(models.Model):
 
 
 class CustomerComment(models.Model):
+    booking = models.ForeignKey(
+        "Booking", null=True, blank=True, on_delete=models.PROTECT, related_name="comments"
+    )
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="comments")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     body = models.TextField(max_length=4000)

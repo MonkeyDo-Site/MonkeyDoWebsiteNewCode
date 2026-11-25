@@ -39,6 +39,7 @@ REVIEWED_NAMES = (
     "0049_seventh_booking_controls",
     "0050_seventh_record_guards",
     "0051_paper_waiver_version",
+    "0052_booking_comment_scope",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
@@ -100,7 +101,7 @@ def reviewed_plan():
     ]
     if plan not in allowed:
         raise CommandError(
-            "Unexpected migration plan. Only the reviewed ordinary-booking stage 0027–0051 is allowed."
+            "Unexpected migration plan. Only the reviewed ordinary-booking stage 0027–0052 is allowed."
         )
     return plan
 

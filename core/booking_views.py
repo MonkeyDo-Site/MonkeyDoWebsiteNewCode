@@ -65,19 +65,49 @@ def booking_detail(request, pk):
         from .payments.presentation import invoice_breakdown
 
         actual_breakdown = invoice_breakdown(checkout.sale)
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+
+    from core.forms import CommentForm, phone_search_digits
+
     from .price_adjustments import booking_price_adjustment
 
+    comments = (
+        booking.comments.select_related("author")
+        if request.user.has_perm("core.view_customercomment")
+        and request.user.has_perm("core.view_customer")
+        else booking.comments.none()
+    )
+    comment_query = request.GET.get("comment_q", "").strip()[:120]
+    if comment_query:
+        comment_filter = Q(body__icontains=comment_query)
+        digits = phone_search_digits(comment_query)
+        if digits:
+            comment_filter |= Q(search_digits__contains=digits)
+        comments = comments.filter(comment_filter)
+    comment_page = Paginator(comments, 20).get_page(request.GET.get("comments_page"))
     latest_quote = booking.quotes.first()
     booking_adjustment = (
         booking_price_adjustment(booking, actual_breakdown or latest_quote.snapshot)
         if latest_quote
         else None
     )
+    history = AuditEvent.objects.filter(
+        record_type="booking", record_id=str(booking.reference)
+    ).select_related("actor")
+    if not (
+        request.user.has_perm("core.view_customercomment")
+        and request.user.has_perm("core.view_customer")
+    ):
+        history = history.exclude(action__in=["booking.comment_added", "booking.comment_updated"])
     return render(
         request,
         "core/booking_detail.html",
         {
             "booking": booking,
+            "booking_comments": comment_page,
+            "booking_comment_query": comment_query,
+            "booking_comment_form": CommentForm(),
             "actual_breakdown": actual_breakdown,
             "booking_adjustment": booking_adjustment,
             "active_waivers": active_customer_waivers(booking)
@@ -93,9 +123,7 @@ def booking_detail(request, pk):
             "quote": booking.quotes.first(),
             "quotes": booking.quotes.select_related("policy", "actor"),
             "has_reservation_blocks": booking_has_blocks(booking),
-            "history": AuditEvent.objects.filter(
-                record_type="booking", record_id=str(booking.reference)
-            ).select_related("actor"),
+            "history": history,
         },
     )
 

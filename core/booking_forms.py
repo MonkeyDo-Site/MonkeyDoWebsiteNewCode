@@ -228,11 +228,17 @@ class TimingForm(forms.Form):
         session_date_picker(self, booking)
 
 
+class PercentageField(forms.DecimalField):
+    def to_python(self, value):
+        number = super().to_python(value)
+        return number.normalize() if number is not None and number.is_finite() else number
+
+
 class PricingPolicyForm(forms.ModelForm):
-    tax_percent = forms.DecimalField(
+    tax_percent = PercentageField(
         min_value=0, max_value=100, decimal_places=2, label="Staging sales tax (%)"
     )
-    fee_percent = forms.DecimalField(
+    fee_percent = PercentageField(
         min_value=0, max_value=100, decimal_places=2, label="Card processing fee (%)"
     )
 
@@ -250,7 +256,8 @@ class PricingPolicyForm(forms.ModelForm):
         initial = {name: getattr(policy, name) for name in self.Meta.fields} if policy else {}
         if policy:
             initial.update(
-                tax_percent=policy.tax_rate * 100, fee_percent=policy.card_fee_rate * 100
+                tax_percent=(policy.tax_rate * 100).quantize(Decimal(".01")),
+                fee_percent=(policy.card_fee_rate * 100).quantize(Decimal(".01")),
             )
         # Never bind an existing immutable policy as this ModelForm's instance.
         super().__init__(*args, initial=initial, **kwargs)

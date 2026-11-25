@@ -1,0 +1,157 @@
+{
+  "version": "v1",
+  "pull_request": 35,
+  "viewports": [
+    1440,
+    390
+  ],
+  "screens": [
+    {
+      "number": "01",
+      "title": "Arrival: live estimate before answering the waiver question",
+      "comments": "1, 7\u20139, 14",
+      "desktop": "NINTH-v1-01-arrival-live-before-waiver-1440.png",
+      "phone": "NINTH-v1-01-arrival-live-before-waiver-390.png"
+    },
+    {
+      "number": "02",
+      "title": "Waivers: explicit warning when there are more visiting minors than recorded names",
+      "comments": "8\u20139, 14",
+      "desktop": "NINTH-v1-02-waiver-count-warning-1440.png",
+      "phone": "NINTH-v1-02-waiver-count-warning-390.png"
+    },
+    {
+      "number": "03",
+      "title": "Waivers: staff acknowledgment enables the rose final action",
+      "comments": "8, 14",
+      "desktop": "NINTH-v1-03-waiver-count-acknowledged-1440.png",
+      "phone": "NINTH-v1-03-waiver-count-acknowledged-390.png"
+    },
+    {
+      "number": "04",
+      "title": "Change booking card: required Yes/No retention and one Save and use this card action",
+      "comments": "2, 4\u20136, 9",
+      "desktop": "NINTH-v1-04-one-action-change-card-1440.png",
+      "phone": "NINTH-v1-04-one-action-change-card-390.png"
+    },
+    {
+      "number": "05",
+      "title": "Return from card change: five children, selected card and waiver choices retained",
+      "comments": "6\u20139",
+      "desktop": "NINTH-v1-05-return-from-card-preserves-arrival-1440.png",
+      "phone": "NINTH-v1-05-return-from-card-preserves-arrival-390.png"
+    },
+    {
+      "number": "06",
+      "title": "Staff signing: every new waiver requires minor names",
+      "comments": "10, 14; final clarification",
+      "desktop": "NINTH-v1-06-sign-waiver-requires-minor-names-1440.png",
+      "phone": "NINTH-v1-06-sign-waiver-requires-minor-names-390.png"
+    },
+    {
+      "number": "07",
+      "title": "Return from signing: entered counts retained and newly covered names shown",
+      "comments": "9\u201310, 14",
+      "desktop": "NINTH-v1-07-return-from-signing-preserves-arrival-1440.png",
+      "phone": "NINTH-v1-07-return-from-signing-preserves-arrival-390.png"
+    },
+    {
+      "number": "08",
+      "title": "Split payment: $10 gift card + exact cash remainder, no card charge or fee",
+      "comments": "13",
+      "desktop": "NINTH-v1-08-gift-card-and-cash-no-card-charge-1440.png",
+      "phone": "NINTH-v1-08-gift-card-and-cash-no-card-charge-390.png"
+    },
+    {
+      "number": "09",
+      "title": "Split payment: partial gift card and explicit remaining card charge",
+      "comments": "13",
+      "desktop": "NINTH-v1-09-partial-gift-card-card-remainder-1440.png",
+      "phone": "NINTH-v1-09-partial-gift-card-card-remainder-390.png"
+    },
+    {
+      "number": "10",
+      "title": "Split payment: clear excess-allocation error and disabled confirmation",
+      "comments": "13, 15",
+      "desktop": "NINTH-v1-10-excess-payment-clear-error-1440.png",
+      "phone": "NINTH-v1-10-excess-payment-clear-error-390.png"
+    },
+    {
+      "number": "11",
+      "title": "Switch payment choice: abandoned split amounts cleared and price recalculated",
+      "comments": "16",
+      "desktop": "NINTH-v1-11-method-switch-clears-unsaved-split-1440.png",
+      "phone": "NINTH-v1-11-method-switch-clears-unsaved-split-390.png"
+    },
+    {
+      "number": "12",
+      "title": "Final arrival: processing dots while the provider outcome is pending",
+      "comments": "11",
+      "desktop": "NINTH-v1-12-arrival-card-processing-1440.png",
+      "phone": "NINTH-v1-12-arrival-card-processing-390.png"
+    },
+    {
+      "number": "13",
+      "title": "Final arrival: approved payment and actual total received",
+      "comments": "11",
+      "desktop": "NINTH-v1-13-arrival-card-approved-1440.png",
+      "phone": "NINTH-v1-13-arrival-card-approved-390.png"
+    },
+    {
+      "number": "14",
+      "title": "Final arrival: declined payment, no automatic retry",
+      "comments": "11",
+      "desktop": "NINTH-v1-14-arrival-card-declined-1440.png",
+      "phone": "NINTH-v1-14-arrival-card-declined-390.png"
+    },
+    {
+      "number": "15",
+      "title": "Booking details: Payment and Waivers left; price and Messages right",
+      "comments": "12",
+      "desktop": "NINTH-v1-15-booking-compact-payment-waiver-messages-1440.png",
+      "phone": "NINTH-v1-15-booking-compact-payment-waiver-messages-390.png"
+    },
+    {
+      "number": "16",
+      "title": "Booking comments: staff author/time, search and editing",
+      "comments": "18",
+      "desktop": "NINTH-v1-16-booking-comments-search-and-history-1440.png",
+      "phone": "NINTH-v1-16-booking-comments-search-and-history-390.png"
+    },
+    {
+      "number": "17",
+      "title": "Dashboard: compact notice rows, expandable details and Mark reviewed beside each",
+      "comments": "17",
+      "desktop": "NINTH-v1-17-dashboard-compact-notices-1440.png",
+      "phone": "NINTH-v1-17-dashboard-compact-notices-390.png"
+    },
+    {
+      "number": "18",
+      "title": "Pricing settings: clean percentage values and editable current prices",
+      "comments": "3",
+      "desktop": "NINTH-v1-18-pricing-clean-percentages-1440.png",
+      "phone": "NINTH-v1-18-pricing-clean-percentages-390.png"
+    },
+    {
+      "number": "19",
+      "title": "About/public prices after a new pricing version; existing bookings keep their policy",
+      "comments": "3",
+      "desktop": "NINTH-v1-19-public-current-prices-1440.png",
+      "phone": "NINTH-v1-19-public-current-prices-390.png"
+    },
+    {
+      "number": "20",
+      "title": "Paper waiver entry: missing minor names rejected without recording arrival",
+      "comments": "14; final clarification",
+      "desktop": "NINTH-v1-20-paper-waiver-requires-minor-names-1440.png",
+      "phone": "NINTH-v1-20-paper-waiver-requires-minor-names-390.png"
+    },
+    {
+      "number": "21",
+      "title": "Pricing validation: a genuine excess-precision error receives focus and scrolls into view",
+      "comments": "3",
+      "desktop": "NINTH-v1-21-pricing-error-focused-1440.png",
+      "phone": "NINTH-v1-21-pricing-error-focused-390.png"
+    }
+  ]
+}

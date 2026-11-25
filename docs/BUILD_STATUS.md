@@ -1,8 +1,8 @@
 # Staging build status
 
-## Current: eighth review — draft PR #34
+## Current: ninth review — draft PR #35
 
-The owner reports PR #33 deployed and authorized the complete eighth feedback batch. PR #34 refines public wording, quantity/error handling, email subjects and confirmations, and combines secure card setup/booking into one explicit public action. Its [labelled screenshot gallery](design-review/eighth-review/README.md) is for owner review; update this same draft PR for each comment. Merge and the browser ZIP/single deployment block follow completed review. No new schema migrations, hosted changes, live-payment activation, credential changes or backup activation are included. Active membership planning/design remains on hold. Historical status snapshots below describe earlier checkpoints. See [accepted scope and evidence](EIGHTH_BATCH_REVIEW.md).
+PR #34 is merged; the ninth source screenshots predate that deployment. The owner authorized the complete ninth batch and a concurrent draft PR, followed by a labelled GitHub gallery. PR #35 covers preserved staff arrival/card/signing flows, named waivers and audited discrepancy confirmation, non-card splits/card remainders, true processing/results, pricing fixes, compact backend notices/cards and booking comments. The [gallery](design-review/ninth-review/README.md) and [scope/validation](NINTH_BATCH_REVIEW.md) are ready for owner review. All 678 local PostgreSQL tests pass. Migration 0052 adds nullable booking comment scope; no hosted migration or deployment has been performed. Merge and the ZIP/single deployment command wait for the owner's completed screenshot review. Cash change is deferred, and active membership stage work remains on hold.
 
 
 ## Seventh review — draft PR #33 and screenshot review

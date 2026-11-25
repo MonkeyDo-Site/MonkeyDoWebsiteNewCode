@@ -295,9 +295,7 @@ def staff_card_status(request, pk, setup_id):
 class ReplaceCardForm(forms.Form):
     wizard_key = forms.UUIDField(widget=forms.HiddenInput)
     payment_consent = forms.UUIDField(widget=forms.HiddenInput)
-    confirm = forms.BooleanField(
-        label="Use this reviewed card for this booking. No payment is collected by this change."
-    )
+    confirm = forms.BooleanField(widget=forms.HiddenInput, initial=True)
 
 
 @staff_permission("core.view_booking")
@@ -323,9 +321,28 @@ def replace_card(request, pk):
             raise ValidationError("Open the replacement form.")
     except ValidationError:
         flow = new_flow(request, booking, action="replace")
+    from . import arrival_drafts
+
+    draft_token = request.GET.get("draft") or flow.get("arrival_draft")
+    if draft_token:
+        try:
+            arrival_drafts.get(request, booking, draft_token)
+        except ValidationError:
+            raise Http404 from None
+        flow["arrival_draft"] = draft_token
+        save_flow(request, flow)
+    return_url = (
+        arrival_drafts.url(booking, draft_token)
+        if draft_token
+        else reverse("booking_detail", args=[pk])
+    )
     form = ReplaceCardForm(
         request.POST if request.method == "POST" else None,
-        initial={"wizard_key": flow["key"], "payment_consent": flow.get("payment_consent")},
+        initial={
+            "wizard_key": flow["key"],
+            "payment_consent": flow.get("payment_consent"),
+            "confirm": True,
+        },
     )
     if request.method == "POST" and form.is_valid():
         try:
@@ -335,7 +352,7 @@ def replace_card(request, pk):
                 raise ValidationError("Card setup changed. Review the current replacement source.")
             replace_booking_card(actor=request.user, flow=flow, booking_id=pk)
             messages.success(request, "Booking card updated. No payment was charged.")
-            return redirect("booking_detail", pk=pk)
+            return redirect(return_url)
         except ValidationError as error:
             form.add_error(None, " ".join(error.messages))
     from .checkout import charge_state
@@ -352,5 +369,12 @@ def replace_card(request, pk):
     return render(
         request,
         "core/replace_booking_card.html",
-        context | {"booking": booking, "flow": flow, "form": form},
+        context
+        | {
+            "booking": booking,
+            "flow": flow,
+            "form": form,
+            "card_replacement": True,
+            "return_url": return_url,
+        },
     )

@@ -1,0 +1,6 @@
+{% extends 'core/staff_base.html' %}{% load static %}{% block staff_content %}
+<h1>Sign Waiver</h1><p>Booking #{{ staff_booking.pk }} · {{ staff_booking.customer.last_name }} · {{ appointment|date:'l, F j, Y g:i A' }}</p>
+<section class="panel waiver-legal" tabindex="0" aria-label="Complete liability waiver text">{{ legal_html|safe }}</section>
+<form method="post" class="panel record-form" data-waiver-signing>{% csrf_token %}<p>Every participating minor needs a signed waiver.</p>{% include 'core/partials/form_fields.html' %}<button class="button">Sign waiver and return</button></form>
+<p><a href="{{ staff_return }}">Return without signing</a></p><script src="{% static 'core/waiver-signing.js' %}" defer></script>
+{% endblock %}

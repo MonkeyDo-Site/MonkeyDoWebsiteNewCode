@@ -10,12 +10,13 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from core.models import Booking
 from core.permissions import staff_permission
 
-from .checkout import charge_state, confirm, preview
+from .checkout import charge_state, confirm, coverage_facts, preview
 
 
 class ReceiptForm(forms.Form):
@@ -46,6 +47,13 @@ class ArrivalForm(ReceiptForm):
     waiver_confirmed = forms.ChoiceField(
         choices=[("", "Choose Yes or No"), ("yes", "Yes"), ("no", "No")],
         label="Was a waiver signed for everyone in this booking?",
+        error_messages={"required": "The waiver confirmation field is required."},
+    )
+    waiver_mismatch_accepted = forms.ChoiceField(
+        required=False,
+        choices=[("yes", "Yes, go ahead"), ("no", "No, review waivers")],
+        widget=forms.RadioSelect,
+        label="Do you want to go ahead?",
     )
     method = forms.ChoiceField(choices=[], label="Actual payment")
     cash_amount = forms.DecimalField(
@@ -86,8 +94,10 @@ class ArrivalForm(ReceiptForm):
         help_text="Attendee counts changed? Keep or adjust the agreed total. Socks stay separate; no automatic partial cancellation fee is added.",
     )
 
-    def __init__(self, *args, booking, owner=False, **kwargs):
+    def __init__(self, *args, booking, owner=False, previewing=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.previewing = previewing
+        self.fields["waiver_confirmed"].required = not previewing
         self.booking = booking
         special = charge_state(booking)
         if not owner or special.special_subtotal is None or special.comped:
@@ -105,7 +115,7 @@ class ArrivalForm(ReceiptForm):
             ("check", "Check received"),
             ("zelle", "Zelle received"),
             ("gift_card", "Physical gift card presented"),
-            ("split", "Split payment — record received amounts and charge the balance"),
+            ("split", "Split payment"),
         ]
         from .zelle import facts
 
@@ -130,18 +140,21 @@ class ArrivalForm(ReceiptForm):
             return data
         method = data["method"]
         needs_zelle = method == "split" and data.get("zelle_amount")
-        if needs_zelle and not data["zelle_verified"]:
+        if not self.previewing and needs_zelle and not data["zelle_verified"]:
             self.add_error(
                 "zelle_verified", "Verify the received Zelle payment in the business bank account."
             )
         if (
-            method == "gift_card" or (method == "split" and data.get("gift_card_amount"))
-        ) and not data["gift_card_verified"]:
+            (method == "gift_card" or (method == "split" and data.get("gift_card_amount")))
+            and not self.previewing
+            and not data["gift_card_verified"]
+        ):
             self.add_error(
                 "gift_card_verified",
                 "Present and verify the physical gift card before recording this tender.",
             )
-        data["waiver_confirmed"] = data["waiver_confirmed"] == "yes"
+        data["waiver_confirmed"] = data.get("waiver_confirmed") == "yes"
+        data["waiver_mismatch_accepted"] = data.get("waiver_mismatch_accepted") == "yes"
         data["split"] = {
             kind: str(data.get(kind + "_amount") or "0.00")
             for kind in ("cash", "check", "zelle", "gift_card")
@@ -279,12 +292,45 @@ def checkout(request, pk, kind="arrival"):
     if kind != "arrival":
         args["kind"] = kind
         args["owner"] = request.user.is_superuser
+    is_live = request.headers.get("Accept") == "application/json"
+    draft_token = None
+    draft = None
+    if kind == "arrival":
+        from . import arrival_drafts
+
+        if booking.attendance:
+            return redirect("booking_detail", pk=pk)
+        draft_token = request.POST.get("arrival_draft") or request.GET.get("draft")
+        if draft_token:
+            try:
+                draft = arrival_drafts.get(request, booking, draft_token)
+            except ValidationError as error:
+                if is_live:
+                    return JsonResponse(
+                        {"errors": {"__all__": [{"message": " ".join(error.messages)}]}}, status=409
+                    )
+                messages.warning(request, " ".join(error.messages))
+                return redirect("booking_arrival", pk=pk)
+            if request.method == "GET":
+                initial.update(draft["fields"])
+        else:
+            draft_token = arrival_drafts.create(request, booking, initial)
+            draft = arrival_drafts.get(request, booking, draft_token)
+        if request.method == "POST":
+            draft = arrival_drafts.save(request, booking, draft_token, request.POST)
+            departure = request.POST.get("continue_to")
+            if departure == "card":
+                return redirect(reverse("booking_card_change", args=[pk]) + "?draft=" + draft_token)
+            if departure == "waiver":
+                from core.waivers.services import create_share
+
+                _, share_token = create_share(actor=request.user, booking_id=pk)
+                arrival_drafts.set_waiver(request, booking, draft_token, share_token)
+                return redirect(reverse("booking_waiver_sign", args=[pk]) + "?draft=" + draft_token)
+        args["previewing"] = request.method == "POST" and request.POST.get("confirm_review") != "1"
     form = form_type(request.POST if request.method == "POST" else None, initial=initial, **args)
     reviewed = None
     label = None
-    is_live = request.headers.get("Accept") == "application/json"
-    if is_live and kind == "arrival":
-        form.fields["waiver_confirmed"].required = False
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         try:
@@ -304,6 +350,21 @@ def checkout(request, pk, kind="arrival"):
                         tender="card", state__in=["ready", "sending", "unknown", "action"]
                     ).exists()
                 )
+                if kind == "arrival":
+                    from . import arrival_drafts
+
+                    arrival_drafts.discard(request, draft_token)
+                    if is_live:
+                        return JsonResponse(
+                            {
+                                "confirmed": True,
+                                "status_url": reverse(
+                                    "booking_arrival_status", args=[pk, result.pk]
+                                ),
+                                "booking_url": reverse("booking_detail", args=[pk]),
+                            },
+                            headers={"Cache-Control": "no-store"},
+                        )
                 messages.success(
                     request,
                     "Attendance/action saved. Card payment is pending provider confirmation."
@@ -342,17 +403,23 @@ def checkout(request, pk, kind="arrival"):
     )
     from core.waivers.forms import NamedPaperWaiverForm
 
-    arrival_paper_form = NamedPaperWaiverForm(prefix="paper", initial={"request_key": uuid.uuid4()})
+    arrival_paper_form = NamedPaperWaiverForm(
+        prefix="paper",
+        initial={
+            **(draft.get("paper", {}) if draft else {}),
+            "request_key": (draft.get("paper", {}).get("request_key") if draft else None)
+            or uuid.uuid4(),
+        },
+    )
     for field in arrival_paper_form.fields.values():
         field.widget.attrs["form"] = "arrival-paper-record"
 
     if request.method == "GET" and kind == "arrival":
-        values = {**initial, "waiver_confirmed": "", "zelle_verified": True}
-        preview_form = ArrivalForm(values, **args)
-        preview_form.fields["waiver_confirmed"].required = False
+        values = {**initial, "waiver_confirmed": initial.get("waiver_confirmed", "")}
+        preview_form = ArrivalForm(values, **(args | {"previewing": True}))
         if preview_form.is_valid():
             try:
-                _, _, quote, plan, _, _ = preview(
+                _, _, quote, plan, _, digest = preview(
                     actor=request.user,
                     booking_id=pk,
                     kind=kind,
@@ -360,7 +427,10 @@ def checkout(request, pk, kind="arrival"):
                     validate_waivers=False,
                 )
                 reviewed = {"quote": quote, "plan": plan}
+                form.initial["reviewed_hash"] = digest
+                label = confirm_label(kind, quote, plan)
             except ValidationError as error:
+                form = preview_form
                 form.add_error(None, error)
     if reviewed:
         from core.price_adjustments import booking_price_adjustment
@@ -369,11 +439,70 @@ def checkout(request, pk, kind="arrival"):
         reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"]
         reviewed["refund_due"] = max(0, prepaid["available"] - Decimal(reviewed["quote"]["total"]))
         reviewed["remaining"] = max(0, Decimal(reviewed["quote"]["total"]) - prepaid["available"])
+    waiver = (
+        coverage_facts(
+            booking,
+            {
+                name: (form.cleaned_data.get(name, 0) if form.is_bound else initial.get(name, 0))
+                for name in ("children", "babies")
+            },
+        )
+        if kind == "arrival"
+        else None
+    )
     if is_live:
         from django.template.loader import render_to_string
 
         if form.errors or reviewed is None:
-            return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+            payload = {
+                "errors": form.errors.get_json_data(),
+                "hash": "",
+                "can_confirm": False,
+                "waiver": waiver,
+            }
+            if kind == "arrival":
+                try:
+                    from core.pricing import Line, quote_lines
+
+                    valid = dict(form.cleaned_data, method="cash", split={})
+                    _, _, safe_quote, _, _, _ = preview(
+                        actor=request.user,
+                        booking_id=pk,
+                        kind=kind,
+                        data=valid,
+                        validate_waivers=False,
+                    )
+                    lines = [
+                        Line(
+                            row["label"],
+                            row["quantity"],
+                            Decimal(row["unit_price"]),
+                            row["taxable"],
+                        )
+                        for row in safe_quote["lines"]
+                    ]
+                    no_card = quote_lines(
+                        lines, booking.quotes.first().policy, card_base=Decimal("0")
+                    )
+                    payload.update(
+                        noncard_total=no_card["total"],
+                        prepaid_available=str(prepaid["available"]),
+                        html=render_to_string(
+                            "core/partials/arrival_price.html",
+                            {"reviewed": {"quote": safe_quote}},
+                            request=request,
+                        ),
+                    )
+                except ValidationError:
+                    pass
+            return JsonResponse(payload, status=400)
+        from core.pricing import Line, quote_lines
+
+        lines = [
+            Line(row["label"], row["quantity"], Decimal(row["unit_price"]), row["taxable"])
+            for row in quote["lines"]
+        ]
+        noncard = quote_lines(lines, booking.quotes.first().policy, card_base=Decimal("0"))
         return JsonResponse(
             {
                 "html": render_to_string(
@@ -381,7 +510,30 @@ def checkout(request, pk, kind="arrival"):
                 ),
                 "hash": form["reviewed_hash"].value(),
                 "label": label,
-                "can_confirm": form.cleaned_data.get("waiver_confirmed") is True,
+                "can_confirm": form.cleaned_data.get("waiver_confirmed") is True
+                and (
+                    not waiver["mismatch"]
+                    or form.cleaned_data.get("waiver_mismatch_accepted") is True
+                )
+                and (
+                    not any(p["tender"] == "gift_card" for p in plan)
+                    or form.cleaned_data.get("gift_card_verified") is True
+                )
+                and (
+                    not any(p["tender"] == "zelle" and not p.get("advance") for p in plan)
+                    or form.cleaned_data.get("zelle_verified") is True
+                ),
+                "waiver": waiver,
+                "noncard_total": noncard["total"],
+                "prepaid_available": str(prepaid["available"]),
+                "plan": [
+                    {
+                        "tender": p["tender"],
+                        "amount": p["amount"],
+                        "advance": bool(p.get("advance")),
+                    }
+                    for p in plan
+                ],
             },
             headers={"Cache-Control": "no-store"},
         )
@@ -403,6 +555,9 @@ def checkout(request, pk, kind="arrival"):
             "zelle": prepaid,
             "zelle_form": zelle_form,
             "arrival_paper_form": arrival_paper_form,
+            "arrival_draft": draft_token,
+            "waiver_counts": waiver,
+            "split_rows": draft.get("fields", {}).get("split_rows", "") if draft else "",
             "active_waivers": active_customer_waivers(booking) if kind == "arrival" else [],
         },
     )
@@ -580,3 +735,49 @@ def complimentary(request, pk):
         except ValidationError as error:
             form.add_error(None, " ".join(error.messages))
     return render(request, "core/booking_comped.html", {"booking": booking, "form": form})
+
+
+@staff_permission("core.view_booking")
+@guarded
+@require_http_methods(["GET"])
+def arrival_status(request, pk, checkout_id):
+    from .invoices import received
+    from .models import BookingCheckout
+
+    checkout = get_object_or_404(
+        BookingCheckout.objects.select_related("booking", "sale"),
+        pk=checkout_id,
+        booking_id=pk,
+        kind="arrival",
+    )
+    operations = list(checkout.sale.operations.filter(kind="receipt")) if checkout.sale_id else []
+    cards = [op for op in operations if op.tender == "card"]
+    states = {op.state for op in cards}
+    if states & {"declined", "cancelled"}:
+        state, message = (
+            "declined",
+            "Arrival saved. The card payment was declined or cancelled. Review the unpaid balance before trying another payment.",
+        )
+    elif states & {"unknown", "action"}:
+        state, message = (
+            "review",
+            "Arrival saved. The card payment needs review; its outcome is not confirmed. Do not submit another charge.",
+        )
+    elif states & {"ready", "sending"}:
+        state, message = "processing", "Arrival saved. Card payment is processing."
+    elif cards:
+        state, message = "succeeded", "Arrival confirmed. Card payment approved."
+    else:
+        state, message = (
+            "succeeded",
+            "Arrival confirmed. The reviewed received payment was recorded.",
+        )
+    return JsonResponse(
+        {
+            "state": state,
+            "message": message,
+            "received": str(received(checkout.sale)) if checkout.sale_id else "0.00",
+            "booking_url": reverse("booking_detail", args=[pk]),
+        },
+        headers={"Cache-Control": "no-store"},
+    )

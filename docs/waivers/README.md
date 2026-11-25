@@ -1,5 +1,12 @@
 # MonkeyDo waiver source and status
 
+## Ninth review — required named minors and staff attestation
+
+The owner explicitly reconfirmed that every new waiver needs minors listed. Electronic signing and named paper entry require Parent/Legal guardian and minor names, retaining the first-name versus full-name distinction. This supersedes previous blank-name exceptions, including adult-only visits. Historical signed evidence is preserved; no names are invented for earlier records.
+
+At arrival, staff Yes confirms actual coverage. If current connected waiver names are fewer than attending children/babies, require a separate explicit acknowledgment of the stated count discrepancy and retain actor/time/counts in audit/checkout facts. Shared-parent link requests are visible to staff. Protected staff signing returns to the private arrival draft; public parent links do not expose it. See [ninth review](../NINTH_BATCH_REVIEW.md).
+
+
 ## Eighth public-waiver presentation
 
 Hide the internal waiver version label on customer signing pages, retaining version metadata, source documents and original evidence in staff/storage records. A visible disabled state accompanies Continue to payment when signing additional minors is selected. Required server errors scroll into view and receive keyboard focus. No waiver release, coverage rule, saved signature or source PDF is rewritten.

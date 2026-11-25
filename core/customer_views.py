@@ -43,9 +43,17 @@ def customer_list(request):
         if digits:
             criteria |= Q(phone__contains=digits) | Q(previous_phone__contains=digits)
         if can_comments:
-            criteria |= Q(comments__body__icontains=query)
+            criteria |= Q(comments__body__icontains=query) & (
+                Q()
+                if request.user.has_perm("core.view_booking")
+                else Q(comments__booking__isnull=True)
+            )
             if digits:
-                criteria |= Q(comments__search_digits__contains=digits)
+                criteria |= Q(comments__search_digits__contains=digits) & (
+                    Q()
+                    if request.user.has_perm("core.view_booking")
+                    else Q(comments__booking__isnull=True)
+                )
         customers = (
             customers.filter(criteria | Q(pk__in=exact + possible))
             .distinct()
@@ -78,7 +86,15 @@ def customer_list(request):
                 comment_filter = Q(body__icontains=query)
                 if digits:
                     comment_filter |= Q(search_digits__contains=digits)
-                if customer.comments.filter(comment_filter).exists():
+                if (
+                    customer.comments.filter(comment_filter)
+                    .filter(
+                        Q()
+                        if request.user.has_perm("core.view_booking")
+                        else Q(booking__isnull=True)
+                    )
+                    .exists()
+                ):
                     matched.append("Comment")
         customer.search_matches = ", ".join(matched)
     return render(
@@ -105,7 +121,7 @@ def customer_detail(request, pk):
     today = timezone.localdate()
     todays = list(bookings.filter(session__starts_at__date=today))
     comments = (
-        customer.comments.select_related("author")
+        customer.comments.filter(booking__isnull=True).select_related("author")
         if request.user.has_perm("core.view_customercomment")
         else []
     )
@@ -264,7 +280,9 @@ def comment_edit(request, pk, comment_id=None):
         raise PermissionDenied
     customer = get_object_or_404(Customer, pk=pk)
     comment = (
-        get_object_or_404(CustomerComment, pk=comment_id, customer=customer) if comment_id else None
+        get_object_or_404(CustomerComment, pk=comment_id, customer=customer, booking__isnull=True)
+        if comment_id
+        else None
     )
     form = CommentForm(
         request.POST if request.method == "POST" else None,

@@ -184,7 +184,9 @@ def save_comment(*, actor, customer_id, body, comment_id=None, revision=None):
     customer = Customer.objects.get(pk=customer_id)
     if comment_id:
         require_actor(actor, "core.view_customercomment")
-        comment = CustomerComment.objects.select_for_update().get(pk=comment_id, customer=customer)
+        comment = CustomerComment.objects.select_for_update().get(
+            pk=comment_id, customer=customer, booking__isnull=True
+        )
         if comment.system_generated:
             raise ValidationError("Archived contact history cannot be edited.")
         if revision != comment.revision:

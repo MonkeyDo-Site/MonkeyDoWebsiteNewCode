@@ -27,15 +27,16 @@ class SignatureForm(forms.Form):
         widget=forms.TextInput(attrs={"autocomplete": "name"}),
     )
     relationship = forms.ChoiceField(
-        required=False,
+        required=True,
         choices=[("", "Select one"), ("Parent", "Parent"), ("Legal guardian", "Legal guardian")],
         label="Your relationship to the participant(s)",
     )
     minors = forms.CharField(
         max_length=18000,
-        required=False,
+        required=True,
         widget=forms.Textarea(attrs={"rows": 4}),
         label="Names of minors covered by this electronic waiver",
+        error_messages={"required": "Enter the names of the minors covered by this waiver."},
         help_text=DEFAULT_MINOR_HELP,
     )
     adult_accepted = forms.BooleanField(label=ADULT)
@@ -71,9 +72,17 @@ class SignatureForm(forms.Form):
 
     def clean(self):
         data = super().clean()
-        if data.get("minors") and not data.get("relationship"):
+        if (
+            data.get("minors")
+            and not data.get("relationship")
+            and "relationship" not in self.errors
+        ):
             self.add_error("relationship", "Select your legal relationship to the minors listed.")
-        if not data.get("minors") and data.get("relationship") in {"Parent", "Legal guardian"}:
+        if (
+            not data.get("minors")
+            and data.get("relationship") in {"Parent", "Legal guardian"}
+            and "minors" not in self.errors
+        ):
             self.add_error("minors", "Enter the names of the minors you are signing for.")
         if data.get("relationship") == "Legal guardian" and any(
             len(name.split()) < 2 for name in data.get("minors", [])
@@ -82,8 +91,6 @@ class SignatureForm(forms.Form):
                 "minors",
                 "Enter a first and last name for every minor when signing as a legal guardian.",
             )
-        if not data.get("minors") and not data.get("relationship"):
-            data["relationship"] = "Attending adult"
         return data
 
 
@@ -102,14 +109,15 @@ class NamedPaperWaiverForm(forms.Form):
     signed_on = forms.DateField(label="Date signed", widget=forms.DateInput(attrs={"type": "date"}))
     signer_name = forms.CharField(max_length=180, label="Full name of person signing")
     relationship = forms.ChoiceField(
-        required=False,
+        required=True,
         choices=[("", "Select one"), ("Parent", "Parent"), ("Legal guardian", "Legal guardian")],
         label="Relationship to minors",
     )
     minors = forms.CharField(
-        required=False,
+        required=True,
         max_length=18000,
         label="Covered minors",
+        error_messages={"required": "Enter the names of the minors covered by this waiver."},
         widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="Parent: first names. Legal guardian: first and last names. Enter one minor per line; leave blank for an adult-only waiver.",
+        help_text="Parent: first names. Legal guardian: first and last names. Enter one minor per line. Every waiver must list minors.",
     )

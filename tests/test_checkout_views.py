@@ -71,7 +71,7 @@ class CheckoutViewTests(TestCase):
         }
         response = self.client.post(url, values)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Return to waiver handling")
+        self.assertContains(response, "The waiver confirmation field is required")
         self.assertEqual(response.context["form"]["children"].value(), str(booking.children))
         self.assertNotIn("confirm_review", response.context["form"].fields)
         self.assertFalse(FinancialPosting.objects.exists())
