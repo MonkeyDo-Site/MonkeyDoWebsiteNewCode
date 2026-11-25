@@ -1,7 +1,9 @@
 """Eighth review: confirmation boundaries, legacy recovery and reusable presentation."""
 
 from copy import deepcopy
+from datetime import datetime, timezone
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from django.core.exceptions import ValidationError
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
@@ -18,6 +20,31 @@ from tests import test_sixth_booking_review as fixtures
 
 
 class PublicDisplayTests(SimpleTestCase):
+    def test_time_ranges_share_meridiem_only_when_both_endpoints_match(self):
+        from django.template import Context, Template
+
+        from core.date_display import display_time_range
+
+        ny = ZoneInfo("America/New_York")
+        for start_hour, start_minute, end_hour, end_minute, expected in (
+            (9, 0, 10, 15, "9:00–10:15 AM"),
+            (14, 30, 15, 45, "2:30–3:45 PM"),
+            (11, 30, 12, 45, "11:30 AM–12:45 PM"),
+            (0, 0, 1, 15, "12:00–1:15 AM"),
+        ):
+            with self.subTest(expected=expected):
+                start = datetime(2026, 11, 26, start_hour, start_minute, tzinfo=ny)
+                end = start.replace(hour=end_hour, minute=end_minute)
+                # Stored UTC and template rendering must use the same NY meridiem.
+                start, end = start.astimezone(timezone.utc), end.astimezone(timezone.utc)
+                self.assertEqual(display_time_range(start, end), expected)
+                self.assertEqual(
+                    Template("{{ start|time_range:end }}").render(
+                        Context({"start": start, "end": end})
+                    ),
+                    expected,
+                )
+
     def test_counts_and_phone_format_never_rewrite_values(self):
         for count in (0, 1, 2):
             self.assertEqual(

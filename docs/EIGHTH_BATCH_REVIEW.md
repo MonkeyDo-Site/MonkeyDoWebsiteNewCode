@@ -29,8 +29,29 @@ The gallery uses fictional customer Greenfeld / 732-555-0147 and a synthetic pro
 
 [GitHub screenshot gallery](design-review/eighth-review/README.md): 21 numbered screens with full desktop and phone images (42 PNGs), mapped to document comment numbers. The gallery includes the requested 732-555-0147 examples, normal one-click confirmation, invalid card entry, processing, confirmed bookings, conditional saved-card text, waiver errors/disabled continuation, Zelle receipt/email and safe interrupted-response recovery. The mail preview adds a simulated inbox header outside the actual body for reviewing the subject.
 
-The complete 652-test regression suite passed; a further pending-policy case and its 12-test focused group also pass. Checks cover preserved legacy history, stale checkpoint rejection, card/waiver/booking boundaries, email subjects and counts, Zelle instruction reuse, required adults, retained card selection, existing financial/waiver integrations and deployment guards. Ruff/formatting, JavaScript syntax, Django checks and migration drift pass. Browser checks verified normal and saved-card confirmation, duplicate submission suppression, error focus on phone/desktop, numeric wheel behavior, supervised/open counts and interrupted-response recovery without repeating the card exchange. The final review database contains three completed integrated bookings, one card exchange, one signed waiver, three queued emails and zero payment operations/postings. No message job was run.
+The complete updated 654-test PostgreSQL regression suite passes, including the pending-policy regression and shared time-range cases. The 27 focused presentation/email/weekday checks also pass. Checks cover preserved legacy history, stale checkpoint rejection, card/waiver/booking boundaries, email subjects and counts, Zelle instruction reuse, required adults, retained card selection, existing financial/waiver integrations and deployment guards. Ruff/formatting, JavaScript syntax, Django checks and migration drift pass. Browser checks verified normal and saved-card confirmation, duplicate submission suppression, error focus on phone/desktop, numeric wheel behavior, supervised/open counts and interrupted-response recovery without repeating the card exchange. The final review database contains three completed integrated bookings, one card exchange, one signed waiver, three queued emails and zero payment operations/postings. No message job was run.
 
 The recovery test caught the browser rule that requestSubmit inside an active submit event is ignored. Final submission now runs on the next browser task, so an already-saved/recovered card completes normally. A card saved under older policy wording is offered for explicit current-policy acceptance instead of automatically recovering obsolete consent. Existing accepted booking agreements remain intact.
 
 PR #34 stays draft throughout owner review. No merge, hosted deployment, ZIP handoff, credential update or integration activation is performed at this point. This batch introduces no schema migration. Later review comments update this same PR and gallery; final testing-guide/ZIP/command preparation follows approval.
+
+
+## Responses to the eighth screenshot gallery
+
+Reviewed the complete follow-up Word document and all 12 screenshots before editing. The same draft PR #34 and numbered gallery are updated; version 4 supersedes all version 3 images.
+
+| Follow-up comment | Resolution |
+|---|---|
+| 1 | The washed-out appearance came from scroll-linked opacity, not GitHub. Content and photos retain full opacity during the existing movement. |
+| 2 | Phone membership photos use two columns and two rows. |
+| 3 | Lower the contact address with additional space below its divider. |
+| 4, 6 | Rose Choose your slot; roomier desktop slot spacing. Phone cards retain their existing padding/gap and move the description down within its reserved area. |
+| 5 | Phone progress uses steps 1–3 in the first column and 4–5 in the second; leaf icons align with the first line. |
+| 7 | Required markers follow the colon: Last Name: *. |
+| 8 | The box was the browser focus outline on the validation message, not an annotation. Keep focus/scroll and remove that container outline; normal keyboard outlines on interactive controls remain. |
+| 9 | Give expiry/security fields reserved space through Banquest's documented style keys, leaving the card number flexible and labels unwrapped. The simulated gallery frame reflects the intended proportions; actual provider rendering requires hosted review. |
+| 10 | Cream Zelle instruction panel, without warning border. First sentence: Please send payment by Zelle at any time to monkeydoplay@gmail.com. Shared confirmation-email wording matches. |
+| 11 | Explain the exceptional uncertain-response example: the card-saving response was interrupted. Check card setup checks the existing attempt or reloads the durable saved-card selection; it does not charge or repeat the exchange. Recovery still requires explicit Confirm booking. Normal successful bookings do not show this message. |
+| 12 | Shared live time-range formatting uses 2:30–3:45 PM / 9:00–10:15 AM, while crossing noon retains 11:30 AM–12:45 PM. New emails and live schedule/booking summaries use it. Historical frozen emails and signed evidence are unchanged. |
+
+The refreshed gallery keeps all 21 screen numbers and desktop/phone widths. Its explanations distinguish ordinary confirmation from deliberately simulated connection interruption. Screenshots await complete image decoding so lazily loaded photos are present. Card inputs are simulated in local review; no real card or external provider request is used.

@@ -112,7 +112,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   let hosted;
   try {
     const key = JSON.parse(document.querySelector('#card-tokenization-key').textContent);
-    hosted = new window.HostedTokenization(key, {target: '#provider-card-frame', showFieldErrors: true, styles: {container:'margin:0;padding:0;min-height:0',cardContainer:'margin:0 8px 0 0',expiryContainer:'margin:0 8px 0 0',cvv2Container:'margin:0',fieldErrors:'color:#9b3650;font-size:12px;margin:4px 0 0'}});
+    hosted = new window.HostedTokenization(key, {target: '#provider-card-frame', showFieldErrors: true, styles: {container:'display:flex;flex-wrap:wrap;gap:12px;margin:0;padding:0;min-height:0',cardContainer:'flex:1 1 150px;min-width:140px;width:auto;margin:0',expiryContainer:'flex:0 0 112px;width:112px;margin:0',cvv2Container:'flex:0 0 104px;width:104px;margin:0',labels:'white-space:nowrap',fieldErrors:'color:#9b3650;font-size:12px;margin:4px 0 0'}});
   } catch {
     report('Secure card entry is unavailable. Please reload this page or call/text 848-238-5147.');
   }

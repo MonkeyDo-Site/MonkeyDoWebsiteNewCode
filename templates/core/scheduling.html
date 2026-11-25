@@ -10,7 +10,7 @@
 <caption>Sessions for {{ day|date:'F j, Y' }}</caption>
 <thead><tr><th scope="col">Session time</th><th scope="col">Session label</th><th scope="col">Play mode</th><th scope="col">Blocked off?</th><th scope="col">Child capacity</th><th scope="col">Total capacity</th><th scope="col">Supervised capacity</th><th scope="col">Visibility on site</th><th scope="col">Actions</th></tr></thead>
 <tbody>{% for item in sessions %}<tr>
-<td class="session-clock">{{ item.session.starts_at|date:'g:i A' }}–{{ item.session.ends_at|date:'g:i A' }}</td>
+<td class="session-clock">{{ item.session.starts_at|time_range:item.session.ends_at }}</td>
 <td>{{ item.session.private_label|display_session_label:item.session.starts_at }}{% if item.session.kind != 'ordinary' %}<br><span class="caption">{{ item.session.get_kind_display }}</span>{% endif %}</td>
 <td>{{ item.session.play_mode|play_mode_label }}</td>
 <td>{% if item.blocked %}Yes<br><span class="caption">Closed for reservation</span>{% else %}No<br><span class="caption">Open for reservation</span>{% endif %}</td>

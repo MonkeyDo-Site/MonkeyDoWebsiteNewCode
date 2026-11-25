@@ -7,6 +7,7 @@
     if (!error || error === lastError) return;
     lastError = error;
     error.setAttribute('tabindex', '-1');
+    error.classList.add('error-feedback-focus');
     error.focus({preventScroll: true});
     error.scrollIntoView({block: 'center', behavior: 'instant'});
   };

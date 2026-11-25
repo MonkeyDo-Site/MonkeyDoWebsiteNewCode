@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.urls import reverse
 
-from core.date_display import display_date
+from core.date_display import display_date, display_time_range
 from core.payments.policy import CANCELLATION, CANCELLATION_SCOPE
 
 
@@ -15,14 +15,13 @@ def plural(count, singular, multiple):
 
 def session_subject(booking, title="Your MonkeyDo adventure is booked!"):
     day = display_date(booking.session.starts_at, "l, F j")
-    start = display_date(booking.session.starts_at, "g:i A")
-    end = display_date(booking.session.ends_at, "g:i A")
-    return f"{title} - {day}, {start}–{end}"
+    times = display_time_range(booking.session.starts_at, booking.session.ends_at)
+    return f"{title} - {day}, {times}"
 
 
 def zelle_instructions():
     return (
-        "Please send payment by Zelle at any time. Send to monkeydoplay@gmail.com. "
+        "Please send payment by Zelle at any time to monkeydoplay@gmail.com. "
         "If the Zelle isn’t received before the visit and cannot be taken care of upon arrival, "
         "your backup card will be charged."
     )
@@ -57,9 +56,7 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
         "We look forward to seeing you "
         + display_date(booking.session.starts_at, "l, F j, Y")
         + " at "
-        + display_date(booking.session.starts_at, "g:i A")
-        + "–"
-        + display_date(booking.session.ends_at, "g:i A")
+        + display_time_range(booking.session.starts_at, booking.session.ends_at)
         + ".",
         " · ".join(
             [

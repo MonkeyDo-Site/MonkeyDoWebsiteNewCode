@@ -6,7 +6,7 @@
 <td><a href="{% url 'booking_detail' booking.pk %}">#{{ booking.pk }}</a>{% if booking.workflow == 'legacy_test' %}<br><span class="caption">Old test booking</span>{% endif %}</td>
 <td>{% if link_customers and perms.core.view_customer %}<a href="{% url 'customer_detail' booking.customer_id %}">{{ booking.customer.last_name }}</a>{% else %}{{ booking.customer.last_name }}{% endif %}{% if booking.possible_name_match %}<br><span class="caption possible-match">Possible name match</span>{% endif %}</td>
 <td>{{ booking.customer.phone }}</td><td>{{ booking.customer.email|default:"—" }}</td>
-<td>{{ booking.session.starts_at|date:'D, M j, Y' }}<br><span class="session-clock">{{ booking.session.starts_at|date:'g:i A' }}–{{ booking.session.ends_at|date:'g:i A' }}</span></td>
+<td>{{ booking.session.starts_at|date:'D, M j, Y' }}<br><span class="session-clock">{{ booking.session.starts_at|time_range:booking.session.ends_at }}</span></td>
 <td>{{ booking.children }}</td><td>{{ booking.adults }}</td><td>{{ booking.babies }}</td>
 <td>{% if booking.supervised %}Supervised Play{% else %}Open Play{% endif %}</td>
 <td>{{ booking.status_label }}{% if today_only and booking_completion_enabled and booking.workflow == 'integrated_v1' and not booking.setup_pending and not booking.attendance and perms.core.collect_payment and perms.core.change_booking and perms.core.view_customer %}<br><a href="{% url 'booking_arrival' booking.pk %}">Start arrival</a>{% endif %}</td>
