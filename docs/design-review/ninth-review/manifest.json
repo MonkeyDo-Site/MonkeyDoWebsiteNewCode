@@ -1,157 +1,428 @@
 {
-  "version": "v1",
-  "pull_request": 35,
-  "viewports": [
-    1440,
-    390
-  ],
-  "screens": [
+  "version": 2,
+  "screens": 35,
+  "images": [
     {
-      "number": "01",
-      "title": "Arrival: live estimate before answering the waiver question",
-      "comments": "1, 7\u20139, 14",
-      "desktop": "NINTH-v1-01-arrival-live-before-waiver-1440.png",
-      "phone": "NINTH-v1-01-arrival-live-before-waiver-390.png"
+      "screen": "01-arrival-live-before-waiver",
+      "width": 1440,
+      "height": 1605,
+      "file": "NINTH-v2-01-arrival-live-before-waiver-1440.png"
     },
     {
-      "number": "02",
-      "title": "Waivers: explicit warning when there are more visiting minors than recorded names",
-      "comments": "8\u20139, 14",
-      "desktop": "NINTH-v1-02-waiver-count-warning-1440.png",
-      "phone": "NINTH-v1-02-waiver-count-warning-390.png"
+      "screen": "01-arrival-live-before-waiver",
+      "width": 390,
+      "height": 2624,
+      "file": "NINTH-v2-01-arrival-live-before-waiver-390.png"
     },
     {
-      "number": "03",
-      "title": "Waivers: staff acknowledgment enables the rose final action",
-      "comments": "8, 14",
-      "desktop": "NINTH-v1-03-waiver-count-acknowledged-1440.png",
-      "phone": "NINTH-v1-03-waiver-count-acknowledged-390.png"
+      "screen": "02-waiver-count-warning",
+      "width": 1440,
+      "height": 1817,
+      "file": "NINTH-v2-02-waiver-count-warning-1440.png"
     },
     {
-      "number": "04",
-      "title": "Change booking card: required Yes/No retention and one Save and use this card action",
-      "comments": "2, 4\u20136, 9",
-      "desktop": "NINTH-v1-04-one-action-change-card-1440.png",
-      "phone": "NINTH-v1-04-one-action-change-card-390.png"
+      "screen": "02-waiver-count-warning",
+      "width": 390,
+      "height": 3207,
+      "file": "NINTH-v2-02-waiver-count-warning-390.png"
     },
     {
-      "number": "05",
-      "title": "Return from card change: five children, selected card and waiver choices retained",
-      "comments": "6\u20139",
-      "desktop": "NINTH-v1-05-return-from-card-preserves-arrival-1440.png",
-      "phone": "NINTH-v1-05-return-from-card-preserves-arrival-390.png"
+      "screen": "03-waiver-count-acknowledged",
+      "width": 1440,
+      "height": 1817,
+      "file": "NINTH-v2-03-waiver-count-acknowledged-1440.png"
     },
     {
-      "number": "06",
-      "title": "Staff signing: every new waiver requires minor names",
-      "comments": "10, 14; final clarification",
-      "desktop": "NINTH-v1-06-sign-waiver-requires-minor-names-1440.png",
-      "phone": "NINTH-v1-06-sign-waiver-requires-minor-names-390.png"
+      "screen": "03-waiver-count-acknowledged",
+      "width": 390,
+      "height": 3119,
+      "file": "NINTH-v2-03-waiver-count-acknowledged-390.png"
     },
     {
-      "number": "07",
-      "title": "Return from signing: entered counts retained and newly covered names shown",
-      "comments": "9\u201310, 14",
-      "desktop": "NINTH-v1-07-return-from-signing-preserves-arrival-1440.png",
-      "phone": "NINTH-v1-07-return-from-signing-preserves-arrival-390.png"
+      "screen": "04-one-action-change-card",
+      "width": 1440,
+      "height": 1463,
+      "file": "NINTH-v2-04-one-action-change-card-1440.png"
     },
     {
-      "number": "08",
-      "title": "Split payment: $10 gift card + exact cash remainder, no card charge or fee",
-      "comments": "13",
-      "desktop": "NINTH-v1-08-gift-card-and-cash-no-card-charge-1440.png",
-      "phone": "NINTH-v1-08-gift-card-and-cash-no-card-charge-390.png"
+      "screen": "04-one-action-change-card",
+      "width": 390,
+      "height": 2142,
+      "file": "NINTH-v2-04-one-action-change-card-390.png"
     },
     {
-      "number": "09",
-      "title": "Split payment: partial gift card and explicit remaining card charge",
-      "comments": "13",
-      "desktop": "NINTH-v1-09-partial-gift-card-card-remainder-1440.png",
-      "phone": "NINTH-v1-09-partial-gift-card-card-remainder-390.png"
+      "screen": "05-return-from-card-preserves-arrival",
+      "width": 1440,
+      "height": 1883,
+      "file": "NINTH-v2-05-return-from-card-preserves-arrival-1440.png"
     },
     {
-      "number": "10",
-      "title": "Split payment: clear excess-allocation error and disabled confirmation",
-      "comments": "13, 15",
-      "desktop": "NINTH-v1-10-excess-payment-clear-error-1440.png",
-      "phone": "NINTH-v1-10-excess-payment-clear-error-390.png"
+      "screen": "05-return-from-card-preserves-arrival",
+      "width": 390,
+      "height": 3212,
+      "file": "NINTH-v2-05-return-from-card-preserves-arrival-390.png"
     },
     {
-      "number": "11",
-      "title": "Switch payment choice: abandoned split amounts cleared and price recalculated",
-      "comments": "16",
-      "desktop": "NINTH-v1-11-method-switch-clears-unsaved-split-1440.png",
-      "phone": "NINTH-v1-11-method-switch-clears-unsaved-split-390.png"
+      "screen": "06-sign-waiver-requires-minor-names",
+      "width": 1440,
+      "height": 2059,
+      "file": "NINTH-v2-06-sign-waiver-requires-minor-names-1440.png"
     },
     {
-      "number": "12",
-      "title": "Final arrival: processing dots while the provider outcome is pending",
-      "comments": "11",
-      "desktop": "NINTH-v1-12-arrival-card-processing-1440.png",
-      "phone": "NINTH-v1-12-arrival-card-processing-390.png"
+      "screen": "06-sign-waiver-requires-minor-names",
+      "width": 390,
+      "height": 3553,
+      "file": "NINTH-v2-06-sign-waiver-requires-minor-names-390.png"
     },
     {
-      "number": "13",
-      "title": "Final arrival: approved payment and actual total received",
-      "comments": "11",
-      "desktop": "NINTH-v1-13-arrival-card-approved-1440.png",
-      "phone": "NINTH-v1-13-arrival-card-approved-390.png"
+      "screen": "07-return-from-signing-preserves-arrival",
+      "width": 1440,
+      "height": 1686,
+      "file": "NINTH-v2-07-return-from-signing-preserves-arrival-1440.png"
     },
     {
-      "number": "14",
-      "title": "Final arrival: declined payment, no automatic retry",
-      "comments": "11",
-      "desktop": "NINTH-v1-14-arrival-card-declined-1440.png",
-      "phone": "NINTH-v1-14-arrival-card-declined-390.png"
+      "screen": "07-return-from-signing-preserves-arrival",
+      "width": 390,
+      "height": 2907,
+      "file": "NINTH-v2-07-return-from-signing-preserves-arrival-390.png"
     },
     {
-      "number": "15",
-      "title": "Booking details: Payment and Waivers left; price and Messages right",
-      "comments": "12",
-      "desktop": "NINTH-v1-15-booking-compact-payment-waiver-messages-1440.png",
-      "phone": "NINTH-v1-15-booking-compact-payment-waiver-messages-390.png"
+      "screen": "08-gift-card-and-cash-no-card-charge",
+      "width": 1440,
+      "height": 2016,
+      "file": "NINTH-v2-08-gift-card-and-cash-no-card-charge-1440.png"
     },
     {
-      "number": "16",
-      "title": "Booking comments: staff author/time, search and editing",
-      "comments": "18",
-      "desktop": "NINTH-v1-16-booking-comments-search-and-history-1440.png",
-      "phone": "NINTH-v1-16-booking-comments-search-and-history-390.png"
+      "screen": "08-gift-card-and-cash-no-card-charge",
+      "width": 390,
+      "height": 3114,
+      "file": "NINTH-v2-08-gift-card-and-cash-no-card-charge-390.png"
     },
     {
-      "number": "17",
-      "title": "Dashboard: compact notice rows, expandable details and Mark reviewed beside each",
-      "comments": "17",
-      "desktop": "NINTH-v1-17-dashboard-compact-notices-1440.png",
-      "phone": "NINTH-v1-17-dashboard-compact-notices-390.png"
+      "screen": "09-partial-gift-card-card-remainder",
+      "width": 1440,
+      "height": 1872,
+      "file": "NINTH-v2-09-partial-gift-card-card-remainder-1440.png"
     },
     {
-      "number": "18",
-      "title": "Pricing settings: clean percentage values and editable current prices",
-      "comments": "3",
-      "desktop": "NINTH-v1-18-pricing-clean-percentages-1440.png",
-      "phone": "NINTH-v1-18-pricing-clean-percentages-390.png"
+      "screen": "09-partial-gift-card-card-remainder",
+      "width": 390,
+      "height": 3120,
+      "file": "NINTH-v2-09-partial-gift-card-card-remainder-390.png"
     },
     {
-      "number": "19",
-      "title": "About/public prices after a new pricing version; existing bookings keep their policy",
-      "comments": "3",
-      "desktop": "NINTH-v1-19-public-current-prices-1440.png",
-      "phone": "NINTH-v1-19-public-current-prices-390.png"
+      "screen": "10-excess-payment-clear-error",
+      "width": 1440,
+      "height": 1942,
+      "file": "NINTH-v2-10-excess-payment-clear-error-1440.png"
     },
     {
-      "number": "20",
-      "title": "Paper waiver entry: missing minor names rejected without recording arrival",
-      "comments": "14; final clarification",
-      "desktop": "NINTH-v1-20-paper-waiver-requires-minor-names-1440.png",
-      "phone": "NINTH-v1-20-paper-waiver-requires-minor-names-390.png"
+      "screen": "10-excess-payment-clear-error",
+      "width": 390,
+      "height": 2983,
+      "file": "NINTH-v2-10-excess-payment-clear-error-390.png"
     },
     {
-      "number": "21",
-      "title": "Pricing validation: a genuine excess-precision error receives focus and scrolls into view",
-      "comments": "3",
-      "desktop": "NINTH-v1-21-pricing-error-focused-1440.png",
-      "phone": "NINTH-v1-21-pricing-error-focused-390.png"
+      "screen": "11-method-switch-clears-unsaved-split",
+      "width": 1440,
+      "height": 1570,
+      "file": "NINTH-v2-11-method-switch-clears-unsaved-split-1440.png"
+    },
+    {
+      "screen": "11-method-switch-clears-unsaved-split",
+      "width": 390,
+      "height": 2529,
+      "file": "NINTH-v2-11-method-switch-clears-unsaved-split-390.png"
+    },
+    {
+      "screen": "12-arrival-card-processing",
+      "width": 1440,
+      "height": 1570,
+      "file": "NINTH-v2-12-arrival-card-processing-1440.png"
+    },
+    {
+      "screen": "12-arrival-card-processing",
+      "width": 390,
+      "height": 2589,
+      "file": "NINTH-v2-12-arrival-card-processing-390.png"
+    },
+    {
+      "screen": "13-arrival-card-approved",
+      "width": 1440,
+      "height": 1570,
+      "file": "NINTH-v2-13-arrival-card-approved-1440.png"
+    },
+    {
+      "screen": "13-arrival-card-approved",
+      "width": 390,
+      "height": 2609,
+      "file": "NINTH-v2-13-arrival-card-approved-390.png"
+    },
+    {
+      "screen": "14-arrival-card-declined",
+      "width": 1440,
+      "height": 1570,
+      "file": "NINTH-v2-14-arrival-card-declined-1440.png"
+    },
+    {
+      "screen": "14-arrival-card-declined",
+      "width": 390,
+      "height": 2665,
+      "file": "NINTH-v2-14-arrival-card-declined-390.png"
+    },
+    {
+      "screen": "15-booking-compact-payment-waiver-messages",
+      "width": 1440,
+      "height": 1587,
+      "file": "NINTH-v2-15-booking-compact-payment-waiver-messages-1440.png"
+    },
+    {
+      "screen": "15-booking-compact-payment-waiver-messages",
+      "width": 390,
+      "height": 2646,
+      "file": "NINTH-v2-15-booking-compact-payment-waiver-messages-390.png"
+    },
+    {
+      "screen": "16-booking-comments-search-and-history",
+      "width": 1440,
+      "height": 2081,
+      "file": "NINTH-v2-16-booking-comments-search-and-history-1440.png"
+    },
+    {
+      "screen": "16-booking-comments-search-and-history",
+      "width": 390,
+      "height": 3402,
+      "file": "NINTH-v2-16-booking-comments-search-and-history-390.png"
+    },
+    {
+      "screen": "17-dashboard-compact-notices",
+      "width": 1440,
+      "height": 1392,
+      "file": "NINTH-v2-17-dashboard-compact-notices-1440.png"
+    },
+    {
+      "screen": "17-dashboard-compact-notices",
+      "width": 390,
+      "height": 1758,
+      "file": "NINTH-v2-17-dashboard-compact-notices-390.png"
+    },
+    {
+      "screen": "18-pricing-clean-percentages",
+      "width": 1440,
+      "height": 1456,
+      "file": "NINTH-v2-18-pricing-clean-percentages-1440.png"
+    },
+    {
+      "screen": "18-pricing-clean-percentages",
+      "width": 390,
+      "height": 1731,
+      "file": "NINTH-v2-18-pricing-clean-percentages-390.png"
+    },
+    {
+      "screen": "19-public-current-prices",
+      "width": 1440,
+      "height": 3460,
+      "file": "NINTH-v2-19-public-current-prices-1440.png"
+    },
+    {
+      "screen": "19-public-current-prices",
+      "width": 390,
+      "height": 4896,
+      "file": "NINTH-v2-19-public-current-prices-390.png"
+    },
+    {
+      "screen": "20-paper-waiver-requires-minor-names",
+      "width": 1440,
+      "height": 2172,
+      "file": "NINTH-v2-20-paper-waiver-requires-minor-names-1440.png"
+    },
+    {
+      "screen": "20-paper-waiver-requires-minor-names",
+      "width": 390,
+      "height": 3267,
+      "file": "NINTH-v2-20-paper-waiver-requires-minor-names-390.png"
+    },
+    {
+      "screen": "21-pricing-error-focused",
+      "width": 1440,
+      "height": 1504,
+      "file": "NINTH-v2-21-pricing-error-focused-1440.png"
+    },
+    {
+      "screen": "21-pricing-error-focused",
+      "width": 390,
+      "height": 1807,
+      "file": "NINTH-v2-21-pricing-error-focused-390.png"
+    },
+    {
+      "screen": "22-public-rose-confirmation-card-total",
+      "width": 1440,
+      "height": 2277,
+      "file": "NINTH-v2-22-public-rose-confirmation-card-total-1440.png"
+    },
+    {
+      "screen": "22-public-rose-confirmation-card-total",
+      "width": 390,
+      "height": 3233,
+      "file": "NINTH-v2-22-public-rose-confirmation-card-total-390.png"
+    },
+    {
+      "screen": "23-open-play-adult-guidance",
+      "width": 1440,
+      "height": 1804,
+      "file": "NINTH-v2-23-open-play-adult-guidance-1440.png"
+    },
+    {
+      "screen": "23-open-play-adult-guidance",
+      "width": 390,
+      "height": 3352,
+      "file": "NINTH-v2-23-open-play-adult-guidance-390.png"
+    },
+    {
+      "screen": "24-supervised-adult-field-warning",
+      "width": 1440,
+      "height": 1700,
+      "file": "NINTH-v2-24-supervised-adult-field-warning-1440.png"
+    },
+    {
+      "screen": "24-supervised-adult-field-warning",
+      "width": 390,
+      "height": 2230,
+      "file": "NINTH-v2-24-supervised-adult-field-warning-390.png"
+    },
+    {
+      "screen": "25-email-lookup-retry",
+      "width": 1440,
+      "height": 1304,
+      "file": "NINTH-v2-25-email-lookup-retry-1440.png"
+    },
+    {
+      "screen": "25-email-lookup-retry",
+      "width": 390,
+      "height": 1702,
+      "file": "NINTH-v2-25-email-lookup-retry-390.png"
+    },
+    {
+      "screen": "26-email-profile-name-verification",
+      "width": 1440,
+      "height": 1331,
+      "file": "NINTH-v2-26-email-profile-name-verification-1440.png"
+    },
+    {
+      "screen": "26-email-profile-name-verification",
+      "width": 390,
+      "height": 1730,
+      "file": "NINTH-v2-26-email-profile-name-verification-390.png"
+    },
+    {
+      "screen": "27-verified-email-profile-confirmation",
+      "width": 1440,
+      "height": 1275,
+      "file": "NINTH-v2-27-verified-email-profile-confirmation-1440.png"
+    },
+    {
+      "screen": "27-verified-email-profile-confirmation",
+      "width": 390,
+      "height": 1725,
+      "file": "NINTH-v2-27-verified-email-profile-confirmation-390.png"
+    },
+    {
+      "screen": "28-two-profiles-clear-verified-choices",
+      "width": 1440,
+      "height": 1695,
+      "file": "NINTH-v2-28-two-profiles-clear-verified-choices-1440.png"
+    },
+    {
+      "screen": "28-two-profiles-clear-verified-choices",
+      "width": 390,
+      "height": 2207,
+      "file": "NINTH-v2-28-two-profiles-clear-verified-choices-390.png"
+    },
+    {
+      "screen": "29-short-duplicate-email-guidance",
+      "width": 1440,
+      "height": 1553,
+      "file": "NINTH-v2-29-short-duplicate-email-guidance-1440.png"
+    },
+    {
+      "screen": "29-short-duplicate-email-guidance",
+      "width": 390,
+      "height": 1974,
+      "file": "NINTH-v2-29-short-duplicate-email-guidance-390.png"
+    },
+    {
+      "screen": "30-waiver-confirmation-yes-first",
+      "width": 1440,
+      "height": 1149,
+      "file": "NINTH-v2-30-waiver-confirmation-yes-first-1440.png"
+    },
+    {
+      "screen": "30-waiver-confirmation-yes-first",
+      "width": 390,
+      "height": 1401,
+      "file": "NINTH-v2-30-waiver-confirmation-yes-first-390.png"
+    },
+    {
+      "screen": "31-confirmation-waiver-reminder",
+      "width": 1440,
+      "height": 1874,
+      "file": "NINTH-v2-31-confirmation-waiver-reminder-1440.png"
+    },
+    {
+      "screen": "31-confirmation-waiver-reminder",
+      "width": 390,
+      "height": 2309,
+      "file": "NINTH-v2-31-confirmation-waiver-reminder-390.png"
+    },
+    {
+      "screen": "32-cancellation-tax-order-and-card-only-fee",
+      "width": 1440,
+      "height": 1817,
+      "file": "NINTH-v2-32-cancellation-tax-order-and-card-only-fee-1440.png"
+    },
+    {
+      "screen": "32-cancellation-tax-order-and-card-only-fee",
+      "width": 390,
+      "height": 2072,
+      "file": "NINTH-v2-32-cancellation-tax-order-and-card-only-fee-390.png"
+    },
+    {
+      "screen": "33-declined-booking-payment-choices",
+      "width": 1440,
+      "height": 1783,
+      "file": "NINTH-v2-33-declined-booking-payment-choices-1440.png"
+    },
+    {
+      "screen": "33-declined-booking-payment-choices",
+      "width": 390,
+      "height": 2919,
+      "file": "NINTH-v2-33-declined-booking-payment-choices-390.png"
+    },
+    {
+      "screen": "34-backup-card-public-payment",
+      "width": 1440,
+      "height": 2315,
+      "file": "NINTH-v2-34-backup-card-public-payment-1440.png"
+    },
+    {
+      "screen": "34-backup-card-public-payment",
+      "width": 390,
+      "height": 3355,
+      "file": "NINTH-v2-34-backup-card-public-payment-390.png"
+    },
+    {
+      "screen": "35-email-first-profile-confirmation",
+      "width": 1440,
+      "height": 1275,
+      "file": "NINTH-v2-35-email-first-profile-confirmation-1440.png"
+    },
+    {
+      "screen": "35-email-first-profile-confirmation",
+      "width": 390,
+      "height": 1725,
+      "file": "NINTH-v2-35-email-first-profile-confirmation-390.png"
     }
-  ]
+  ],
+  "provider_fields": "simulated; actual rendering pending tokenization-host access",
+  "external_provider_requests": false
 }

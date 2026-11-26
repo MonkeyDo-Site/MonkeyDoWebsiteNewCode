@@ -14,7 +14,7 @@
 <p>Expected payment: {{ booking.get_expected_method_display }}</p>
 <p>Phone: {{ booking.customer.phone|phone_display }}<br>Email: {{ booking.customer.email|default:"Not provided" }}</p>
 </article>
-{% include 'core/partials/booking_payment.html' %}{% include 'core/partials/booking_waivers.html' %}{% include 'core/partials/booking_comments.html' %}</div><div class="booking-overview-column">
+{% include 'core/partials/booking_payment.html' %}{% include 'core/partials/booking_waivers.html' %}</div><div class="booking-overview-column">
 {% if quote %}
 <article class="panel booking-card-price">
 <h2>{% if actual_breakdown %}Saved price breakdown{% else %}Saved price estimate{% endif %}</h2>{% if actual_breakdown %}{% include 'core/quote_items.html' with data=actual_breakdown actual=True adjustment=booking_adjustment %}{% else %}{% include 'core/quote_items.html' with data=quote.snapshot adjustment=booking_adjustment %}{% endif %}
@@ -22,7 +22,7 @@
 </article>{% else %}
 <p>No price snapshot exists for this earlier test record. Historical amounts have not been invented.</p>{% endif %}
 
-{% include 'core/partials/booking_messages.html' %}</div></div>
+{% include 'core/partials/booking_comments.html' %}{% include 'core/partials/booking_messages.html' %}</div></div>
 {% if booking.workflow == 'legacy_test' %}<p class="caption">Test booking: card setup, waiver coverage, confirmation delivery, arrival and payment are not recorded yet.</p>{% endif %}{% if perms.core.change_booking and booking.setup_pending and not booking.attendance and booking.workflow == 'legacy_test' %}
 <p>
 <a class="button small" href="{% url 'booking_edit' booking.pk %}">Edit booking</a>

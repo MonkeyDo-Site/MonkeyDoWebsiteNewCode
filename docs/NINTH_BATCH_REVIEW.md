@@ -1,5 +1,7 @@
 # Ninth batch: arrival, card replacement and payment review
 
+The [tenth-document follow-up](TENTH_BATCH_REVIEW.md) updates this same PR/gallery and supersedes the affected layout, recovery, minimum-pricing and fee-tender details below.
+
 The owner authorized development and a concurrent draft PR after review of all 18 comments and 20 screenshots in Ninth Batch of Comments.docx. The screenshots predate PR #34 deployment. Build on merged PR #34, retain its corrections, and provide a numbered GitHub desktop/phone gallery. Update this PR during review; merge and prepare the pinned ZIP/single deployment block only after the owner approves.
 
 ## Accepted scope

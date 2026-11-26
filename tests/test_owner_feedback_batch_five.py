@@ -76,7 +76,7 @@ class FifthBookingTests(TestCase):
         self.assertNotContains(response, "2025550191")
         response = self.post({"last_name": "New", "email": self.other.email})
         self.assert_clean_contact(response)
-        self.assertContains(response, "already exists for another customer")
+        self.assertContains(response, "booked with this email before")
         self.assertEqual(self.flow["phone"], "2025550192")
         self.assertNotIn("proof", self.flow)
         self.assertEqual(Customer.objects.count(), 2)
@@ -143,7 +143,7 @@ class FifthBookingTests(TestCase):
                 response = self.post(
                     {"profile_action": "verify_other", "last_name": self.other.last_name}
                 )
-                self.assertContains(response, f"Proceed using phone {self.other.phone}")
+                self.assertContains(response, "Continue with this email address")
                 self.post({"profile_action": "other"})
                 self.assertEqual(customer_from_flow(self.flow).pk, self.other.pk)
                 self.post(
@@ -167,12 +167,12 @@ class FifthBookingTests(TestCase):
         self.assertEqual(self.original.phone, "2025550100")
         self.assertEqual(self.other.phone, "2025550101")
 
-    def test_expanded_email_first_conflicts_keep_stop_restart_and_hide_other_phone(self):
+    def test_expanded_email_first_conflicts_require_profile_confirmation(self):
         self.customers()
         for route in ("no", "retry"):
             for entered, message in (
                 (self.original.last_name, "matches customer name"),
-                (self.other.last_name, "Please start again with the phone number"),
+                (self.other.last_name, "We found customer Braun"),
                 ("Unrelated", "doesn&#x27;t match either customer profile"),
             ):
                 with self.subTest(route=route, entered=entered):
@@ -182,9 +182,11 @@ class FifthBookingTests(TestCase):
                     self.assertNotContains(response, self.other.phone)
                     response = self.post({"last_name": entered})
                     self.assertContains(response, message)
-                    self.assertNotContains(response, self.other.phone)
-                    self.assertEqual(self.flow["stage"], "conflict_stop")
                     self.assertNotIn("proof", self.flow)
+                    self.assertEqual(
+                        self.flow["stage"],
+                        "recovered_confirm" if entered == self.other.last_name else "conflict_stop",
+                    )
         self.assertEqual(OwnerNotice.objects.count(), 6)
         self.assertFalse(Booking.objects.exists())
 
@@ -205,7 +207,7 @@ class FifthBookingTests(TestCase):
         self.begin("2025550191", "yes")
         response = self.client.get("/book/recover/", follow=True)
         self.assertContains(response, "You can try finding your customer profile")
-        response = self.post({"email": self.original.email})
+        response = self.post({"email": "missing@example.invalid"})
         self.assertContains(response, "Find your customer details")
         self.assertContains(response, "We couldn&#x27;t match those details.")
         self.assertNotContains(response, "You can try finding your customer profile")
@@ -246,7 +248,7 @@ class FifthBookingTests(TestCase):
                 response = self.post(data)
                 self.assertContains(
                     response,
-                    '<a href="/book/details/?restart=1">go back to the booking page</a>',
+                    '<a href="/book/details/?restart=1">go back</a>',
                     html=True,
                 )
                 self.assertNotContains(response, "We can remove this email address")
@@ -268,7 +270,9 @@ class FifthBookingTests(TestCase):
         self.assertFalse(Booking.objects.exists())
 
     def test_rich_duplicate_email_error_escapes_customer_controlled_text(self):
-        rendered = str(public_duplicate_email_message("<img src=x onerror=alert(1)>"))
+        rendered = str(
+            public_duplicate_email_message("test@example.invalid", "<img src=x onerror=alert(1)>")
+        )
         self.assertNotIn("<img", rendered)
         self.assertIn("&lt;img", rendered)
         self.assertIn('<a href="/book/details/?restart=1">', rendered)

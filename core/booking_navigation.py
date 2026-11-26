@@ -15,6 +15,8 @@ RANK = {
     "email_lookup": 2,
     "name_confirm": 2,
     "email_confirm": 2,
+    "recovered_name": 2,
+    "recovered_confirm": 2,
     "details": 3,
     "waiver": 4,
     "review": 5,

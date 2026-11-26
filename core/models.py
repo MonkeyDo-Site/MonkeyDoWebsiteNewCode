@@ -356,6 +356,12 @@ class ImmutablePriceRecord(models.Model):
 
 
 class PricingPolicy(ImmutablePriceRecord):
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            # New versions share one admission price; accepted historical versions stay immutable.
+            self.minimum_admission = self.child_price
+        return super().save(*args, **kwargs)
+
     child_price = models.DecimalField(
         max_digits=9, decimal_places=2, default="15.00", validators=[MinValueValidator(0)]
     )

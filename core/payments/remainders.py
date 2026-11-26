@@ -53,6 +53,8 @@ def preview(
         raise ValidationError(
             "Complete the reviewed arrival or fee action before collecting a remaining balance."
         )
+    if method == "gift_card" and booking.attendance in {"cancelled", "no_show"}:
+        raise ValidationError("Gift cards cannot be used for cancellation or no-show fees.")
     checkout = booking.checkouts.select_related("sale").order_by("-created_at").first()
     if checkout is None or checkout.sale is None:
         raise ValidationError("There is no reviewed balance to collect.")

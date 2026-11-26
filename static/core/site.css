@@ -1103,6 +1103,14 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .card-retention-choice { margin:12px 0; padding:12px 16px }
 .card-retention-choice label { display:inline-flex; align-items:center; gap:5px; margin-right:24px }
 .card-setup #provider-card-frame { min-height:0; margin-bottom:12px }
+.profile-option + .profile-option { border-top:1px solid #c5d1c2; margin-top:24px; padding-top:20px }
+.attendee-message { color:#9b3650; font-weight:700; background:#f6e4e6; border-left:3px solid #a93e5b; padding:8px 10px; margin:8px 0 }
+.public-payment-page [data-confirm-booking] { background:#a93e5b; color:#fff }
+.public-payment-page [data-confirm-booking]:hover:not(:disabled) { background:#8d304a }
+.public-payment-page [data-confirm-booking]:disabled { background:#d5b6bf; color:#5b3e47 }
+.booking-card-label { margin-bottom:6px }
+[data-arrival-confirm][hidden],.attendee-message[hidden] { display:none!important }
+@media(max-width:560px) { .waiver-review-line { display:block } }
 .booking-overview-columns { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start }
 .booking-overview-column { display:flex; flex-direction:column; gap:18px; min-width:0 }
 .booking-overview-column > .panel { margin:0 }

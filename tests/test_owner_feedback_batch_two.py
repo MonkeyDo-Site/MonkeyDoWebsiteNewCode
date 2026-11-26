@@ -532,7 +532,7 @@ class PublicBatchTests(TestCase):
             "/book/details/", {"last_name": "New", "email": customer.email.upper()}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "already exists for another customer")
+        self.assertContains(response, "booked with this email before")
         self.assertEqual(self.client.session["customer_test_booking"]["stage"], "contact")
         self.assertFalse(Booking.objects.exists())
 

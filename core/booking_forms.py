@@ -179,6 +179,8 @@ class TestBookingForm(forms.Form):
 
     def clean(self):
         data = super().clean()
+        if data.get("supervised") and data.get("adults", 0) > 0:
+            self.add_error("adults", "Cannot have adults in a supervised play visit.")
         if "zelle_sender" in self.fields and data.get("expected_method") == "zelle":
             from .payments.receipts import sender
 
@@ -247,7 +249,6 @@ class PricingPolicyForm(forms.ModelForm):
         fields = (
             "child_price",
             "extra_adult_price",
-            "minimum_admission",
             "supervised_price",
             "sock_price",
         )
@@ -264,6 +265,8 @@ class PricingPolicyForm(forms.ModelForm):
 
     def clean(self):
         result = super().clean()
+        if "child_price" in result:
+            self.instance.minimum_admission = result["child_price"]
         if "tax_percent" in result and "fee_percent" in result:
             self.instance.tax_rate = result["tax_percent"] / Decimal(100)
             self.instance.card_fee_rate = result["fee_percent"] / Decimal(100)

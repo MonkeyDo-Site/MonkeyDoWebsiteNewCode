@@ -98,7 +98,7 @@ def validate_attendees(children, adults, babies, supervised=False, socks=0):
     if supervised and (not children or adults or babies):
         raise ValidationError("Supervised play contains children only.")
     if not supervised and adults < 1:
-        raise ValidationError("Accompanied play requires an adult.")
+        raise ValidationError("An adult must accompany a baby or child to an open play session.")
 
 
 def booking_quote(

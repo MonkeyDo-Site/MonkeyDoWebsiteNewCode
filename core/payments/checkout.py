@@ -173,6 +173,10 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
             special_admissions=special,
         )
     else:
+        if data.get("method", "card") != "card":
+            raise ValidationError(
+                "Cancellation and no-show fees use the booking card or recorded Zelle prepayment."
+            )
         units = state.pending_fee_units + (booking.children if booking.children else 1)
         lines = [Line("Cancellation fee", units, Decimal("3.00"), False)]
         if type(data.get("charge_fee")) is not bool:

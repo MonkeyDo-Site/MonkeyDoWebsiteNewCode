@@ -222,7 +222,7 @@ class SixthBookingTests(TestCase):
         self.assertNotContains(page, "I agree to this payment policy")
         self.assertNotContains(page, "backup credit card for each booking")
         self.assertContains(page, "data-confirm-booking>")
-        self.assertContains(page, "Total due at arrival")
+        self.assertContains(page, "Total that will be charged at arrival")
         self.assertContains(
             page,
             "Your card will be charged at arrival.",

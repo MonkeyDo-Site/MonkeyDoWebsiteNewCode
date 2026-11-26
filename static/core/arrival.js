@@ -119,6 +119,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   });
   const result=form.querySelector('[data-arrival-result]'),resultText=form.querySelector('[data-arrival-result-text]'),checkStatus=form.querySelector('[data-arrival-check-status]');
   const showResult=(message,pending=false)=>{
+    if(!pending)label.textContent='Arrival saved';
     result.hidden=false;resultText.textContent=message;checkStatus.hidden=!pending;
     button.hidden=true;dots.hidden=true;status.textContent='';
   };

@@ -123,14 +123,16 @@ def compare_prices(original, current):
         (Decimal(line["amount"]) for line in new_lines if line["label"] in FEE_LABELS), ZERO
     )
     row(
-        "Plus cancellation fee" if new_fees > old_fees else "Cancellation fee adjustment",
-        new_fees - old_fees,
-    )
-    row(
         "Credit-card processing-fee adjustment",
         Decimal(current["processing_fee"]) - Decimal(original["processing_fee"]),
     )
     row("Sales-tax adjustment", Decimal(current["sales_tax"]) - Decimal(original["sales_tax"]))
+    row(
+        "Plus cancellation fee (no sales tax)"
+        if new_fees > old_fees
+        else "Cancellation fee adjustment (no sales tax)",
+        new_fees - old_fees,
+    )
     # Preserve exact reconciliation for historical/specially adjusted line sets.
     difference = Decimal(current["total"]) - Decimal(original["total"])
     row("Other pricing adjustment", difference - sum((r["delta"] for r in rows), ZERO))

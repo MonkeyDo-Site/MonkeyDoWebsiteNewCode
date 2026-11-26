@@ -1,4 +1,4 @@
-{% if payment_summary %}<article class="panel booking-card-payment"><h2>Payment</h2>{% if booking.card_agreement %}<p><strong>Booking card ending in {{ booking.card_agreement.method.last_four }}</strong></p>{% endif %}<p><strong>Payment status: {{ payment_summary.status }}</strong></p>
+{% if payment_summary %}<article class="panel booking-card-payment"><h2>Payment</h2><p><strong>Payment status: {{ payment_summary.status }}</strong></p>
 {% if booking.attendance %}<p><strong>Total received{% if payment_summary.zelle.refunded %}, after refunds{% endif %}: ${{ payment_summary.total_received|floatformat:2 }}</strong></p>{% endif %}
 {% if request.user.is_superuser and not booking.attendance %}<p><a href="{% url 'booking_comped' booking.pk %}">Edit pricing to owner pricing or complimentary booking</a></p>{% endif %}
 {% if not booking.attendance and perms.core.collect_payment %}<p><a class="button small" href="{% url 'booking_zelle_receipt' booking.pk %}">Record Zelle received</a></p>{% endif %}
@@ -7,6 +7,7 @@
 {% if payment_summary.zelle.refunded %}<p>Zelle refund completed: ${{ payment_summary.zelle.refunded|floatformat:2 }}</p>{% endif %}
 {% if payment_summary.due %}<p><strong>Balance unpaid: ${{ payment_summary.due|floatformat:2 }}</strong></p>{% endif %}
 {% for operation in payment_summary.operations %}<p><a href="{% url 'payment_detail' operation.pk %}">{{ operation.get_kind_display }} · ${{ operation.amount|floatformat:2 }}</a> · {{ operation.get_state_display }} · {% if operation.tender == 'gift_card' %}Gift card{% else %}{{ operation.get_tender_display }}{% endif %}{% if operation.last_four %} ending in {{ operation.last_four }}{% endif %}{% if operation.zelle_application %}<br><span class="caption">Applied from the recorded Zelle receipt</span>{% endif %}</p>{% endfor %}
-{% if payment_summary.can_retry and request.user.is_superuser %}<p><a class="button small" href="{% url 'booking_retry_card' booking.pk %}">Retry card</a></p>{% elif payment_summary.can_collect and perms.core.collect_payment %}<p><a class="button small" href="{% url 'booking_payment' booking.pk %}">Review remaining payment</a></p>{% endif %}
+{% if payment_summary.can_retry and request.user.is_superuser %}<p><a class="button small" href="{% url 'booking_retry_card' booking.pk %}">Retry card</a></p>{% endif %}{% if payment_summary.can_collect and perms.core.collect_payment %}<p><a class="button small" href="{% url 'booking_payment' booking.pk %}">Review remaining payment</a></p>{% endif %}
+{% if booking.card_agreement %}<p class="booking-card-label"><strong>{% if booking.expected_method != 'card' %}Backup booking card{% else %}Booking card{% endif %} ending in {{ booking.card_agreement.method.last_four }}</strong></p>{% endif %}
 {% if perms.core.change_booking and booking.card_agreement %}<p><a href="{% url 'booking_card_change' booking.pk %}">Change card for this booking</a></p>{% endif %}</article>{% endif %}
 

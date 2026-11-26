@@ -136,20 +136,22 @@ class FourthMatchingTests(TestCase):
         self.original.refresh_from_db()
         self.assertEqual(self.original.last_name, "Greenfeld")
 
-    def test_email_first_conflict_all_three_name_results_never_reveal_other_phone(self):
+    def test_email_first_conflict_requires_name_before_profile_confirmation(self):
         for visited in ("yes", "no"):
             for entered, expected in (
                 (self.original.last_name, "matches customer name"),
-                (self.other.last_name, "Please start again with the phone number"),
+                (self.other.last_name, "We found customer Braun"),
                 ("Unrelated", "doesn&#x27;t match either customer profile"),
             ):
                 with self.subTest(visited=visited, entered=entered):
                     self.email_first_conflict(visited)
                     response = self.post({"last_name": entered})
                     self.assertContains(response, expected)
-                    self.assertNotContains(response, self.other.phone)
                     self.assertNotIn("proof", self.flow)
-                    self.assertEqual(self.flow["stage"], "conflict_stop")
+                    self.assertEqual(
+                        self.flow["stage"],
+                        "recovered_confirm" if entered == self.other.last_name else "conflict_stop",
+                    )
         self.assertEqual(Customer.objects.count(), 2)
         self.assertFalse(Booking.objects.exists())
         self.assertEqual(OwnerNotice.objects.count(), 6)
@@ -158,7 +160,7 @@ class FourthMatchingTests(TestCase):
         self.assertEqual(self.original.phone, "2025550100")
         self.assertEqual(self.other.phone, "2025550101")
 
-    def test_email_first_matching_name_does_not_enable_profile_choice_via_forged_action(self):
+    def test_email_first_forged_action_cannot_skip_explicit_profile_confirmation(self):
         self.email_first_conflict()
         response = self.post(
             {
@@ -168,10 +170,10 @@ class FourthMatchingTests(TestCase):
             }
         )
         self.assertNotContains(response, self.other.phone)
-        self.assertEqual(self.flow["stage"], "conflict_stop")
+        self.assertEqual(self.flow["stage"], "recovered_confirm")
         self.assertNotIn("proof", self.flow)
         self.post({})
-        self.assertEqual(self.flow["stage"], "phone")
+        self.assertEqual(self.flow["stage"], "details")
         self.assertEqual(self.flow["session_id"], self.slot.pk)
 
     def test_name_and_email_together_conflict_hides_phone_until_other_name_verified(self):
@@ -183,7 +185,7 @@ class FourthMatchingTests(TestCase):
         response = self.post({"profile_action": "verify_other", "last_name": "Unrelated"})
         self.assertNotContains(response, self.other.phone)
         response = self.post({"profile_action": "verify_other", "last_name": self.other.last_name})
-        self.assertContains(response, f"Proceed using phone {self.other.phone}")
+        self.assertContains(response, "Continue with this email address")
         self.assertNotIn("proof", self.flow)
         self.post({"profile_action": "other"})
         self.assertEqual(customer_from_flow(self.flow).pk, self.other.pk)
@@ -223,7 +225,7 @@ class FourthMatchingTests(TestCase):
         self.other.save()
         self.begin(self.original.phone, "yes")
         response = self.post({"last_name": self.original.last_name, "email": self.other.email})
-        self.assertContains(response, f"Proceed using phone {self.other.phone}")
+        self.assertContains(response, "Continue with this email address")
         self.assertIn("other_proof", self.flow)
         self.assertNotIn("proof", self.flow)
 
@@ -233,7 +235,7 @@ class FourthMatchingTests(TestCase):
         self.assertContains(response, "Is this your family?")
         self.assertNotContains(response, self.other.phone)
         response = self.post({"profile_action": "confirm_other"})
-        self.assertContains(response, self.other.phone)
+        self.assertContains(response, "202-555-0101")
         self.assertNotIn("proof", self.flow)
 
     def test_changed_other_profile_invalidates_verified_choice(self):

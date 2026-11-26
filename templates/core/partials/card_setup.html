@@ -1,7 +1,7 @@
 {% load static %}
 <section class="{% if not card_public_booking %}panel {% endif %}card-setup" aria-labelledby="card-heading" data-card-setup{% if card_public_booking %} data-single-confirm="1"{% elif card_replacement %} data-single-replace="1"{% endif %} data-endpoint="{{ card_endpoint }}" data-status-url="{{ card_status_url }}" data-status-prefix="{{ card_endpoint }}" data-ready="{% if card_ready %}1{% else %}0{% endif %}">
 <h3 id="card-heading">{% if card_public_booking %}{% if card_primary %}Your credit card{% else %}Your backup credit card{% endif %}{% else %}Secure card setup{% endif %}</h3>
-{% if not card_public_booking %}<p>{{ card_retention_policy }}</p><p>{{ card_cancellation_policy }} {{ card_cancellation_scope }}</p>{% endif %}
+{% if not card_public_booking %}<p>{{ card_retention_policy }}</p><p>{{ card_cancellation_policy }}</p>{% endif %}
 {% if card_public_booking %}<p class="caption" data-selected-card{% if not card_ready %} hidden{% endif %}>{% if card_ready %}Saved payment method ending in {{ card_accepted_last_four }}. No admission payment has been collected.{% endif %}</p>{% endif %}
 {% if card_configured %}
 <form data-card-form{% if card_public_booking %} id="public-card-form"{% endif %}>

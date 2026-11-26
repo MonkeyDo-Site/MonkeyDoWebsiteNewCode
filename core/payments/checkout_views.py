@@ -176,11 +176,10 @@ class ClosureForm(ReceiptForm):
     )
     method = forms.ChoiceField(
         required=False,
-        choices=[("card", "Charge card on file"), ("gift_card", "Physical gift card presented")],
+        choices=[("card", "Charge card on file")],
         label="Fee payment",
-    )
-    gift_card_verified = forms.BooleanField(
-        required=False, label="The physical gift card has been presented and verified."
+        initial="card",
+        widget=forms.HiddenInput,
     )
 
     send_email = forms.ChoiceField(
@@ -202,8 +201,6 @@ class ClosureForm(ReceiptForm):
             self.fields["send_email"].help_text = "Add a customer email before selecting Yes."
         if not owner or kind != "cancellation":
             self.fields.pop("reopen_affected_sessions")
-        if kind == "no_show":
-            self.fields["method"].choices = [("card", "Charge card on file")]
         if charge_state(booking).comped:
             self.fields["charge_fee"].choices = [("no", "Owner-comped booking — no fee")]
             self.fields["charge_fee"].initial = "no"
@@ -215,15 +212,6 @@ class ClosureForm(ReceiptForm):
             self.add_error("send_email", "Add a current customer email or choose No.")
         data["charge_fee"] = data.get("charge_fee") == "yes"
         data["method"] = data.get("method") or "card"
-        if (
-            data["charge_fee"]
-            and data["method"] == "gift_card"
-            and not data.get("gift_card_verified")
-        ):
-            self.add_error(
-                "gift_card_verified",
-                "Present and verify the physical gift card before recording this fee tender.",
-            )
         return data
 
 
@@ -634,6 +622,10 @@ def remaining_payment(request, pk, retry=False):
     )
     if retry:
         form.fields["method"].choices = [("card", "Retry card on file")]
+    elif booking.attendance in {"cancelled", "no_show"}:
+        form.fields["method"].choices = [
+            choice for choice in form.fields["method"].choices if choice[0] != "gift_card"
+        ]
     reviewed = None
     if request.method == "POST" and form.is_valid():
         values = form.cleaned_data
@@ -667,7 +659,9 @@ def remaining_payment(request, pk, retry=False):
             )
             posted = request.POST.copy()
             posted["reviewed_hash"] = digest
+            method_choices = form.fields["method"].choices
             form = RemainingForm(posted)
+            form.fields["method"].choices = method_choices
             form.is_valid()
             reviewed = {
                 "amount": facts["amount"],

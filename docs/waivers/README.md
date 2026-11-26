@@ -1,5 +1,9 @@
 # MonkeyDo waiver source and status
 
+## Tenth document — presentation follow-up
+
+Post-signing coverage lists Yes before No. Booking completion reminds the customer to send the shared link without the previous Waiver pending introduction. Places remain held and outstanding coverage remains recorded. Every new waiver still requires minor names; legal text and historical signature evidence are unchanged.
+
 ## Ninth review — required named minors and staff attestation
 
 The owner explicitly reconfirmed that every new waiver needs minors listed. Electronic signing and named paper entry require Parent/Legal guardian and minor names, retaining the first-name versus full-name distinction. This supersedes previous blank-name exceptions, including adult-only visits. Historical signed evidence is preserved; no names are invented for earlier records.
