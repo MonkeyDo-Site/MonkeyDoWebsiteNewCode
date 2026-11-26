@@ -71,6 +71,7 @@ class SinglePageStaffBookingTests(RuntimeRoleMixin, TestCase):
             "expected_method": "cash",
             "price_mode": "standard",
             "waiver_type": "multiple",
+            "waiver_choice": "link",
             "confirm": "on",
         }
         return response
@@ -302,7 +303,7 @@ class SinglePageStaffBookingTests(RuntimeRoleMixin, TestCase):
 
         self.draft()
         self.save_card()
-        response = self.post("confirm", covered="on")
+        response = self.post("confirm", waiver_choice="covered")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(occupancy(self.play), (1, 1, 0))
         self.assertFalse(Booking.objects.exists())
@@ -335,7 +336,7 @@ class SinglePageStaffBookingTests(RuntimeRoleMixin, TestCase):
                 "paper-signer_name": "Devora Test",
                 "paper-relationship": "Parent",
                 "paper-minors": "Yanky",
-                "covered": "on",
+                "waiver_choice": "covered",
                 "price_mode": "comped",
             }
         )
@@ -423,6 +424,66 @@ class SinglePageStaffBookingTests(RuntimeRoleMixin, TestCase):
             self.assertEqual(response.status_code, 200, response.content)
             self.assertFalse(BookingCapacityHold.objects.exists())
         self.assertFalse(FinancialPosting.objects.exists())
+
+    def test_current_waivers_are_a_read_only_list_and_coverage_uses_all_current_records(self):
+        from core.waivers.paper import record
+
+        prior = create_test_booking(
+            actor=self.staff,
+            customer=self.customer,
+            session_id=self.create().pk,
+            children=1,
+            adults=1,
+            creation_key=uuid.uuid4(),
+            workflow="integrated_v1",
+        )
+        paper = record(
+            actor=self.staff,
+            booking_id=prior.pk,
+            request_key=uuid.uuid4(),
+            signer_name="Devora Test",
+            relationship="Parent",
+            minors=["Yanky"],
+            signed_on=timezone.localdate(),
+            paper_signed=True,
+        )
+        self.draft(owner=True, session=prior.session)
+        answer = self.post().json()
+        self.assertIn("Signed by Devora Test for Yanky", answer["waivers_html"])
+        self.assertIn('name="waiver_choice"', answer["waivers_html"])
+        self.assertNotIn('name="signatures"', answer["waivers_html"])
+        self.assertNotIn('name="paper_signatures"', answer["waivers_html"])
+        self.values.update(waiver_choice="covered", price_mode="comped")
+        answer = self.post("prepare").json()
+        self.values["reviewed_hash"] = answer["reviewed_hash"]
+        response = self.post("confirm")
+        self.assertEqual(response.status_code, 200, response.content)
+        booking = Booking.objects.get(creation_key=self.key)
+        self.assertTrue(booking.waiver_review.coverage_confirmed)
+        self.assertFalse(booking.waiver_review.share_requested)
+        self.assertEqual(MessageDelivery.objects.get().kind, "booking_confirmation")
+        self.assertEqual(paper.customer_id, booking.customer_id)
+
+    def test_waiver_link_choice_is_explicit_and_recorded_once_with_the_email(self):
+        self.draft(owner=True)
+        self.values.update(price_mode="comped", waiver_choice="link")
+        response = self.post("prepare")
+        self.values["reviewed_hash"] = response.json()["reviewed_hash"]
+        self.assertEqual(self.post("confirm").status_code, 200)
+        self.assertEqual(self.post("confirm").status_code, 200)
+        booking = Booking.objects.get()
+        self.assertTrue(booking.waiver_review.share_requested)
+        self.assertFalse(booking.waiver_review.coverage_confirmed)
+        message = MessageDelivery.objects.get()
+        self.assertIn("/waiver/shared/", message.text_body)
+        self.assertEqual(booking.waiver_share_links.count(), 1)
+
+    def test_waiver_answer_is_required_and_restored_when_reopening_draft(self):
+        self.draft(owner=True)
+        self.assertEqual(self.post("prepare", waiver_choice="").status_code, 400)
+        self.post(waiver_choice="link")
+        response = self.client.get(self.url, {"draft": self.key})
+        self.assertEqual(response.context["waiver_form"]["waiver_choice"].value(), "link")
 
 
 class StaffHoldConcurrencyTests(TransactionTestCase):

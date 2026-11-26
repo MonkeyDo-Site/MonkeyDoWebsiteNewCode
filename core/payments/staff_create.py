@@ -149,25 +149,43 @@ class DraftPaperForm(NamedPaperWaiverForm):
 
 
 class DraftWaivers(StaffConfirmForm):
-    """Validate the same coverage choices before a persisted booking is needed."""
+    """One coverage answer; current records are determined by the server."""
+
+    waiver_choice = forms.ChoiceField(
+        label="Is everyone in this booking covered by these waivers?",
+        choices=[
+            ("covered", "Yes, everyone is covered."),
+            ("link", "Include the waiver link in the confirmation email."),
+        ],
+        widget=forms.RadioSelect,
+    )
 
     def __init__(self, *args, customer, session, children, babies, pending_paper=None, **kwargs):
         forms.Form.__init__(self, *args, **kwargs)
         self.fields["payment_consent"].required = False
-        self.fields[
-            "covered"
-        ].label = "All participants are covered by the waivers selected or recorded here."
         self.fields["confirm"].widget = forms.HiddenInput()
         self.fields["confirm"].initial = True
         self.fields["signatures"].queryset = valid_customer_signatures(
             customer, at=session.starts_at
         )
         self.fields["paper_signatures"].queryset = current_paper(customer, session.starts_at)
+        self.current_waivers = [
+            *self.fields["signatures"].queryset,
+            *self.fields["paper_signatures"].queryset,
+        ]
+        self.fields["waiver_type"].label = "Waiver-link instructions"
+        self.fields["waiver_type"].choices = [
+            ("single", "For this customer to sign"),
+            ("multiple", "For this customer to share with other parents"),
+        ]
         self.minimum_minors = children + babies
         self.pending_paper = pending_paper
 
     def clean(self):
         data = forms.Form.clean(self)
+        data["covered"] = data.get("waiver_choice") == "covered"
+        data["signatures"] = self.fields["signatures"].queryset
+        data["paper_signatures"] = self.fields["paper_signatures"].queryset
         if data.get("covered"):
             selected = list(data.get("signatures") or []) + list(data.get("paper_signatures") or [])
             names = {name.strip().casefold() for signature in selected for name in signature.minors}
@@ -175,8 +193,8 @@ class DraftWaivers(StaffConfirmForm):
                 names.update(name.strip().casefold() for name in self.pending_paper["minors"])
             if (not selected and not self.pending_paper) or len(names) < self.minimum_minors:
                 self.add_error(
-                    "covered",
-                    "Select current waivers for everyone, record the signed paper waiver, or leave coverage pending and send signing instructions.",
+                    "waiver_choice",
+                    "The current waivers do not list enough minors for this booking. Sign or record the remaining waivers here, or choose to include the waiver link in the confirmation email.",
                 )
         return data
 
@@ -185,7 +203,7 @@ def posted_fields(post):
     allowed = (
         set(TestBookingForm.base_fields)
         | set(OwnerPriceForm.base_fields)
-        | set(StaffConfirmForm.base_fields)
+        | set(DraftWaivers.base_fields)
         | {"paper-" + key for key in NamedPaperWaiverForm.base_fields}
     )
     return {
@@ -297,13 +315,13 @@ def review(request, flow, post, *, final=False):
             return booking_form, price_form, paper_form, None, quote
     initial = {
         k: post.getlist(k) if k in {"signatures", "paper_signatures"} else post.get(k, "")
-        for k in StaffConfirmForm.base_fields
+        for k in DraftWaivers.base_fields
     }
     initial.update(
         wizard_key=flow["key"], confirm=True, waiver_type=post.get("waiver_type") or "single"
     )
     if identity_changed:
-        initial.update(covered=False, signatures=[], paper_signatures=[])
+        initial.update(waiver_choice="", covered=False, signatures=[], paper_signatures=[])
     waivers = DraftWaivers(
         post if final else None,
         customer=customer,
@@ -476,13 +494,20 @@ def commit_booking(request, flow, post, result):
             "Pricing changed while confirming. Review the new estimate and confirm again."
         )
     final_post = post.copy()
+    final_post["covered"] = "on" if waivers.cleaned_data["covered"] else ""
+    final_post.setlist("signatures", [str(item.pk) for item in waivers.cleaned_data["signatures"]])
+    final_post.setlist(
+        "paper_signatures", [str(item.pk) for item in waivers.cleaned_data["paper_signatures"]]
+    )
     if post.get("paper-paper_signed"):
         from core.waivers.paper import record
 
         if not paper_form.is_valid():
             raise ValidationError("Review the signed paper waiver details.")
         item = record(actor=request.user, booking_id=booking.pk, **paper_form.cleaned_data)
-        final_post.setlist("paper_signatures", post.getlist("paper_signatures") + [str(item.pk)])
+        final_post.setlist(
+            "paper_signatures", final_post.getlist("paper_signatures") + [str(item.pk)]
+        )
     final_flow = dict(
         flow,
         staff_action="setup",
@@ -497,12 +522,19 @@ def commit_booking(request, flow, post, result):
     finalize(
         actor=request.user, booking_id=booking.pk, flow=final_flow, values=confirm.cleaned_data
     )
+    review_record = booking.waiver_review
+    review_record.share_requested = waivers.cleaned_data["waiver_choice"] == "link"
+    review_record.save(update_fields=["share_requested", "updated_at"])
     AuditEvent.objects.create(
         actor=request.user,
         action="booking.single_page_confirmed",
         record_type="booking",
         record_id=str(booking.reference),
-        changes={"fingerprint": current},
+        changes={
+            "fingerprint": current,
+            "waiver_choice": waivers.cleaned_data["waiver_choice"],
+            "waiver_link_requested": review_record.share_requested,
+        },
     )
     return booking
 

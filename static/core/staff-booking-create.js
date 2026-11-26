@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
   card?.addEventListener('staff-create-busy', event => freeze(event.detail));
   const controls = () => {
     paperFields.disabled = !paper.checked;
+    const instructions = main.querySelector('[data-create-waiver-instructions]');
+    if (instructions) instructions.hidden = main.querySelector('[name=waiver_choice]:checked')?.value !== 'link';
     const mode = main.querySelector('[name=price_mode]:checked')?.value || 'standard';
     const custom = main.querySelector('[data-custom-price]');
     if (custom) { custom.hidden = mode !== 'special'; main.elements.custom_admissions.disabled = mode !== 'special'; }
@@ -186,9 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (answer.signed) {
           dialog.close(); paused = false; freeze(false);
           await preview();
-          const choice = [...waivers.querySelectorAll('[name=signatures]')].find(input => input.value === answer.signature_id);
-          if (choice) choice.checked = true;
-          preview(); return;
+          return;
         }
         if (answer.html) { signContent.innerHTML = answer.html; bindSignature(); }
         signStatus.textContent = answer.error || 'Review the waiver details above.';

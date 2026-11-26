@@ -12,6 +12,8 @@ An explicit final click saves/selects the secure card, then atomically rechecks 
 
 Signing and paper-waiver details should be accessible from this page without losing the booking draft. Signed electronic evidence remains valid independently of a later booking failure. The current two-page setup route stays available for previously saved incomplete bookings until their setup is finished.
 
+Owner screenshot correction: show the customer's current waivers as a read-only list, with no per-record selection boxes. Require one explicit answer: **Yes, everyone is covered** or **Include the waiver link in the confirmation email**. The covered answer uses all current customer-owned records automatically. The link answer records the request, keeps coverage pending and includes the signing link in the queued confirmation. Single-customer versus sharing-with-other-parents instructions remain available only for the email-link choice. Signing and recording a paper waiver remain on this page.
+
 Build in a new draft PR because PR #35 is merged. Provide compact desktop/phone review images of standard, owner-priced/complimentary, waiver and error states. Merge/deployment follows owner review. Actual hosted Banquest rendering remains the deferred provider check; local provider frames/outcomes are simulated.
 
 Migration **0053_staff_capacity_hold** adds only temporary operational reservations. The reviewed deployment allowlist and migration checksum include it. Runtime access grants SELECT/INSERT/UPDATE/DELETE on that temporary table, preserving existing financial/evidence restrictions. No live environment has been updated.
