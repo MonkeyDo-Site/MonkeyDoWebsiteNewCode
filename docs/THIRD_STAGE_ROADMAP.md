@@ -1,6 +1,12 @@
 # Third stage: active memberships — saved development roadmap
 
-## Owner's review gate
+## Current authorization — November 26, 2026
+
+The owner explicitly authorized building the entire mapped third stage while reviewing the latest booking deployment. Work should continue under one ongoing goal without repeated go-ahead requests; present the first representative functional samples early and update the same implementation PR during review. The earlier review hold below is superseded by this authorization. The owner confirmed the accidentally pasted email address and time are not project instructions or contact changes.
+
+No new business-rule blocker was identified in the initial reconciliation. Production tax/live-account configuration remain launch inputs, not obstacles to local/sandbox development. Browser ZIP and single-command staging deployment follow explicit release approval. Existing test membership drafts remain plans until an explicit purchase; do not activate them automatically.
+
+## Earlier owner's review gate — historical
 
 The owner reports the seventh booking batch deployed and is reviewing it. Wait for explicit go-ahead before starting membership requirements reconciliation, representative screen design or implementation. Recording this roadmap does not start those activities. The owner will say when the review is complete.
 
@@ -24,7 +30,7 @@ Active membership purchases and accepted terms; monthly/prepaid payments and ins
 
 Reuse the payment, card, customer, waiver, email, background-job and deployment foundation. Expect less setup and fewer repeated layout decisions. Membership term dates, benefit limits, installment outcomes and conversions still need careful scenario testing; no guarantee of shorter total development time or a fixed delivery date has been made.
 
-## Saved work sequence, pending go-ahead
+## Authorized work sequence
 
 1. Reconcile membership requirements with all accepted decisions and improvements from the first two stages; identify overlap and unresolved questions before building.
 2. Review a small set of representative membership screens early, then reuse the approved layouts consistently.
