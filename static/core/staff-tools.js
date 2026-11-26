@@ -431,7 +431,8 @@ for (const notice of document.querySelectorAll('[data-special-price-notice]')) {
 
 for(const select of document.querySelectorAll('[data-dated-sessions]')){
  const box=document.createElement('p');box.className='caption session-capacity-info';box.setAttribute('role','status');select.after(box);
- select.addEventListener('change',()=>{box.textContent=select.selectedOptions[0]?.dataset.capacity||'';});
+ const syncCapacity=()=>{box.textContent=select.selectedOptions[0]?.dataset.capacity||'';};
+ select.addEventListener('change',syncCapacity);syncCapacity();
 }
 
 for(const form of document.querySelectorAll('form.compact-edit')){

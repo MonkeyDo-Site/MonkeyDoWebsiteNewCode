@@ -1,0 +1,7 @@
+{% if waiver_form %}
+{% include 'core/partials/staff_create_field.html' with field=waiver_form.signatures %}
+{% if waiver_form.fields.paper_signatures.queryset.exists %}{% include 'core/partials/staff_create_field.html' with field=waiver_form.paper_signatures %}{% endif %}
+{% include 'core/partials/staff_create_field.html' with field=waiver_form.covered %}
+{% include 'core/partials/staff_create_field.html' with field=waiver_form.waiver_type %}
+<p class="caption">Leave coverage pending if anyone still needs to sign. The booking will hold their places and include signing instructions in the confirmation email.</p>
+{% else %}<p>Select a customer and session to see the current waiver details.</p>{% endif %}

@@ -40,6 +40,7 @@ REVIEWED_NAMES = (
     "0050_seventh_record_guards",
     "0051_paper_waiver_version",
     "0052_booking_comment_scope",
+    "0053_staff_capacity_hold",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
@@ -101,7 +102,7 @@ def reviewed_plan():
     ]
     if plan not in allowed:
         raise CommandError(
-            "Unexpected migration plan. Only the reviewed ordinary-booking stage 0027–0052 is allowed."
+            "Unexpected migration plan. Only the reviewed ordinary-booking stage 0027–0053 is allowed."
         )
     return plan
 
@@ -123,6 +124,12 @@ def grant_runtime_access():
                 quoted = ".".join(connection.ops.quote_name(part) for part in sequence.split("."))
                 cursor.execute(f"REVOKE ALL ON SEQUENCE {quoted} FROM {role}")
                 cursor.execute(f"GRANT USAGE, SELECT ON SEQUENCE {quoted} TO {role}")
+        # Temporary holds are replaceable operational records, not financial or
+        # signed evidence. Final confirmation deletes only its own hold.
+        cursor.execute(f"REVOKE ALL ON core_bookingcapacityhold FROM {role}")
+        cursor.execute(
+            f"GRANT SELECT, INSERT, UPDATE, DELETE ON core_bookingcapacityhold TO {role}"
+        )
         # The backup role has no application write privileges beyond backup status
         # and a durable failure alert. A root-owned installer creates this exact role.
         cursor.execute(

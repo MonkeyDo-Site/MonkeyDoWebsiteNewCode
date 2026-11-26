@@ -46,6 +46,7 @@ def assert_capacity(
     override=False,
     actor,
     supervised_exception=False,
+    hold_key=None,
 ):
     if override:
         if not actor.is_superuser:
@@ -86,15 +87,11 @@ def assert_capacity(
             "This session is no longer open for the selected play type.",
             code="supervised_exception_required" if supervised and now < session.ends_at else None,
         )
-    bookings = session.bookings.exclude(
-        attendance__in=[Booking.Attendance.CANCELLED, Booking.Attendance.NO_SHOW]
+    from .availability import occupancy
+
+    used_children, used_adults, used_supervised = occupancy(
+        session, ignore_booking_id=booking_id, ignore_hold=hold_key
     )
-    if booking_id:
-        bookings = bookings.exclude(pk=booking_id)
-    counts = list(bookings.values("children", "adults", "supervised"))
-    used_children = sum(row["children"] for row in counts)
-    used_adults = sum(row["adults"] for row in counts)
-    used_supervised = sum(row["children"] for row in counts if row["supervised"])
     if supervised and not exception and session.supervised_capacity == 0:
         raise ValidationError(
             "Supervised play is not enabled for this session.",

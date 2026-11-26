@@ -77,6 +77,7 @@ BOOKING_MIGRATIONS = {
     "0050_seventh_record_guards.py": "0e20f49414670c73f0128917bbcbfa0845cbfb1569a6b8fb80d851c599cff268",
     "0051_paper_waiver_version.py": "5dc195ee1151ada3c6f2f412f38917b077399ee467ee5823270bfc4230f2cb11",
     "0052_booking_comment_scope.py": "66880bf106cd5430b2f0dbe160fdd5838958c2aeef20e53e40cbe267d40a99e8",
+    "0053_staff_capacity_hold.py": "888b8bf991c8f465428c6565996481d34c9d3cef31608b768e473522ee1011e5",
 }
 BOOKING_UNITS = {
     "monkeydo-functional-backup.service.example": "1975613e1c7bc71881ffba37a41e56f66474f7044f2c72fba2103c08b9b6e1af",

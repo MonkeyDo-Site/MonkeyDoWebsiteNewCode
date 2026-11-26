@@ -140,6 +140,20 @@ class Session(models.Model):
         return display_strftime(self.starts_at, "%a %b %d, %Y %I:%M %p")
 
 
+class BookingCapacityHold(models.Model):
+    """Unconfirmed staff selections count toward capacity until their fixed expiry."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    session = models.ForeignKey(Session, on_delete=models.PROTECT, related_name="capacity_holds")
+    children = models.PositiveSmallIntegerField()
+    adults = models.PositiveSmallIntegerField()
+    babies = models.PositiveSmallIntegerField(default=0)
+    supervised = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(db_index=True)
+
+
 class Booking(models.Model):
     workflow = models.CharField(
         max_length=20,

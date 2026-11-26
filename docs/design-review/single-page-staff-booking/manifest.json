@@ -1,0 +1,47 @@
+[
+  {
+    "number": 1,
+    "slug": "standard",
+    "title": "All booking controls, live estimate, capacity counts and one confirmation button"
+  },
+  {
+    "number": 2,
+    "slug": "custom-price",
+    "title": "Custom admissions price beneath the estimate; socks remain separate"
+  },
+  {
+    "number": 3,
+    "slug": "complimentary",
+    "title": "Fully complimentary booking; no card or payment required"
+  },
+  {
+    "number": 4,
+    "slug": "paper-waiver",
+    "title": "Record a named signed paper waiver on the booking page"
+  },
+  {
+    "number": 5,
+    "slug": "electronic-waiver",
+    "title": "Sign an electronic waiver without navigating away from the booking"
+  },
+  {
+    "number": 6,
+    "slug": "capacity-warning",
+    "title": "Owner capacity reminder; previous reservation and entered counts retained"
+  },
+  {
+    "number": 7,
+    "slug": "card-error",
+    "title": "Card-entry error preserves the booking details and reserved places"
+  },
+  {
+    "number": 8,
+    "slug": "expired-reservation",
+    "title": "Expired backend reservation with explicit renewal; entries preserved"
+  },
+  {
+    "number": 9,
+    "slug": "confirmed",
+    "title": "Single final action opens the confirmed booking; admission remains due at arrival"
+  }
+]

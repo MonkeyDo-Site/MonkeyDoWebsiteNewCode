@@ -133,6 +133,10 @@ def booking_detail(request, pk):
 @staff_permission("core.view_customer")
 @require_http_methods(["GET", "POST"])
 def booking_create(request):
+    if settings.BOOKING_COMPLETION_ENABLED:
+        from .payments.staff_create import page
+
+        return page(request)
     customer = None
     if (
         request.GET.get("customer", "").isascii()
@@ -376,19 +380,15 @@ def dated_sessions(request):
     rows = selectable_sessions(booking).filter(starts_at__date=day)
 
     def item(row):
-        others = row.bookings.exclude(attendance__in=["cancelled", "no_show"])
-        if booking:
-            others = others.exclude(pk=booking.pk)
-        children = sum(others.values_list("children", flat=True))
-        adults = sum(others.values_list("adults", flat=True))
-        supervised = sum(others.filter(supervised=True).values_list("children", flat=True))
+        from .booking_forms import session_capacity_summary
+
         return {
             "id": row.pk,
             "label": str(row),
             "play_mode": row.play_mode,
             "supervised_capacity": row.supervised_capacity,
             "started": row.starts_at <= timezone.now(),
-            "capacity": f"Children: {max(0, row.child_capacity - children)} of {row.child_capacity} available · Total: {max(0, row.total_capacity - children - adults)} of {row.total_capacity} available · Supervised: {max(0, row.supervised_capacity - supervised)} of {row.supervised_capacity} available",
+            "capacity": session_capacity_summary(row, booking),
         }
 
     return JsonResponse(

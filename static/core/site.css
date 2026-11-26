@@ -1147,3 +1147,32 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
  .waiver-review-line { grid-template-columns:1fr; gap:12px }
  .waiver-review-line .button { justify-self:start }
 }
+.staff-create-top{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.85fr);gap:22px;align-items:start}
+.staff-create-form [hidden],.staff-create-payment[hidden],[data-create-comped][hidden]{display:none!important}
+.staff-create-top>.panel,.staff-create-price .estimate-panel{margin:0}
+.staff-create-price{padding:0}
+.staff-create-session{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+.staff-create-form input:not([type=checkbox]):not([type=radio]),.staff-create-payment select,.staff-create-payment input:not([type=checkbox]):not([type=radio]){max-width:100%;min-width:0;width:100%}
+.staff-create-form .arrival-counts{gap:12px}
+.staff-create-form .arrival-counts label{display:block;min-height:3.3em}
+.staff-create-form .session-capacity-info{font-weight:600;line-height:1.65;margin-bottom:0}
+.staff-create-exceptions{border-top:1px solid #c8d4c9;margin-top:10px;padding-top:12px}
+.staff-create-price>[data-owner-price-toggle]{margin-top:12px}
+.staff-create-owner-price{margin-top:12px}
+.staff-create-owner-price label:has(input[type=radio]){display:block;margin:10px 0}
+.staff-create-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.staff-create-section-heading h2{margin:0}
+.staff-create-paper{border-top:1px solid #c8d4c9;margin-top:16px;padding-top:12px}
+.staff-create-paper>label{display:block;margin:14px 0}
+.staff-create-paper fieldset{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 18px}
+.staff-create-paper fieldset [data-field=minors]{grid-column:1/-1}
+.staff-create-payment .card-setup{padding:0;margin:16px 0 0;border-top:1px solid #c8d4c9;border-radius:0}
+.staff-create-payment .form-field{max-width:650px;margin-bottom:14px}
+.staff-create-payment select{font:inherit;padding:12px;border:1px solid #657567;border-radius:10px}
+.card-confirm-actions .staff-create-confirm{background:var(--rose-ink);color:#fff}
+.staff-create-waiver-dialog{width:min(760px,calc(100% - 32px));max-height:90vh;box-sizing:border-box;border:1px solid #aebead;border-radius:18px;padding:24px;background:var(--cream)}
+.staff-create-waiver-dialog::backdrop{background:#243e35aa}
+.staff-create-waiver-dialog input:not([type=checkbox]),.staff-create-waiver-dialog textarea,.staff-create-waiver-dialog select{max-width:100%;width:100%}
+.staff-create-waiver-dialog .waiver-legal{max-height:32vh;overflow:auto;padding:16px;background:#fff;border:1px solid #c8d4c9;margin-bottom:18px}
+@media(max-width:1000px){.staff-create-top{grid-template-columns:1fr}.staff-create-session{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.staff-create-session,.staff-create-paper fieldset{grid-template-columns:1fr}.staff-create-paper fieldset [data-field=minors]{grid-column:auto}.staff-create-form .arrival-counts{grid-template-columns:1fr 1fr}.staff-create-waiver-dialog{padding:16px}}
