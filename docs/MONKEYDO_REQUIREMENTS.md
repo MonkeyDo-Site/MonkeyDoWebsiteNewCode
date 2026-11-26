@@ -1,5 +1,7 @@
 # MonkeyDo current website requirements
 
+Latest release authorization: merge PR #35 and prepare the pinned ZIP/single deployment block now. The owner defers the cloud-environment issue and actual Banquest layout acceptance until later. No production activation is requested.
+
 ## Tenth document follow-up — same PR #35
 
 The owner reviewed all 20 screenshots and clarified that gift cards never apply to cancellation/no-show fees; baby-only/adult-only admission matches the child price. The approved profile-choice copy separates the phone profile (requiring its email) and the already-name-verified email profile. Existing-email recovery after an unmatched phone must verify the name and explicitly confirm the profile, reusing an already matching entered name. Existing customer records are not merged or edited. A verified email-first conflict can continue with the confirmed email profile; same-surname conflicts retain the verified two-profile choice. See [complete follow-up scope](TENTH_BATCH_REVIEW.md) for copy, layout, attendee validation, payment action and tax-order corrections. The same gallery and PR are updated during review. Actual Banquest field verification is pending the tokenization-host network grant; synthetic images are not proof of provider rendering. No merge or deployment yet.

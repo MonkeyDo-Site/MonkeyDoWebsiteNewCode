@@ -1,6 +1,6 @@
 # PR #35 — ninth review and tenth-document follow-up
 
-**Updated in the same [draft PR #35](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/35).** This gallery includes the owner's tenth-document corrections to the ninth screenshots and the deployed site. Please refer to a gallery number when commenting; we will update this same PR and gallery. Merge, the ZIP and the single deployment command follow completed owner review.
+**Updated in the same [PR #35](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/35).** This gallery includes the owner's tenth-document corrections to the ninth screenshots and the deployed site. Please refer to a gallery number when commenting; we will update this same PR and gallery. The owner now authorizes merge and deployment while deferring actual Banquest field verification. Further comments can follow the deployment. See the [as-built test guide](../../NINTH_TENTH_TEST_GUIDE.md).
 
 There are **35 numbered screens**, each with **desktop (1440px)** and **phone (390px)** images. All filenames use **v2** to avoid old cached images. **22–35** show the added public/recovery/fee screens; **01–21** are refreshed staff/pricing/waiver views. In **15–16**, Comments now sits between price and Messages; **19** shows the baby-only price matching the child price. **28** is the approved clearer two-profile wording.
 

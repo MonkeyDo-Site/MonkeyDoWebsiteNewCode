@@ -1,5 +1,7 @@
 # Tenth document — follow-up review in PR #35
 
+Current release decision: the owner explicitly authorizes merging PR #35 and deploying with a ZIP and single command, leaving the environment-settings issue and actual Banquest-field verification for later. This supersedes the earlier review hold below. See [the as-built test guide](NINTH_TENTH_TEST_GUIDE.md) ([Word](NINTH_TENTH_TEST_GUIDE.docx)).
+
 The entire document and all 20 screenshots were reviewed before implementation. It combines feedback on the ninth gallery with issues on the deployed site. Keep this work in PR #35 and the existing numbered gallery. No merge or deployment is authorized until the owner finishes screenshot review.
 
 ## Decisions and changes
