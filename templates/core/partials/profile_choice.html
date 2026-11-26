@@ -1,19 +1,24 @@
-<p role="status">The email address you entered ‘{{ flow.conflict_email }}’ matches another customer profile{% if verified_other_phone %} with phone number {{ verified_other_phone }}{% endif %}. Your name and phone match the customer profile with phone number {{ original_phone }}.</p>
-<p>You can enter another email address below to proceed using the customer profile with {{ original_phone }}. To use the other profile, its last name must match the email address first.</p>
+{% load booking_display %}
+<p role="status">Your phone number and email address belong to different customer profiles. Which profile would you like to use?</p>
+<section class="profile-option"><h3>Use the profile with phone {{ original_phone|phone_display }}</h3>
+<p>Enter the email address saved with this phone number.</p>
 {{ form.non_field_errors }}
 <form method="post">{% include 'core/partials/wizard_identity.html' %}
 {% include 'core/partials/public_field.html' with field=form.email %}
-<button class="button" name="profile_action" value="original">Proceed using phone {{ original_phone }}</button>
-</form>
+<button class="button" name="profile_action" value="original">Continue with this phone number</button>
+</form></section>
+<section class="profile-option"><h3>Use the profile with email {{ flow.conflict_email }}</h3>
 {% if verified_other_phone %}
-<form method="post">{% include 'core/partials/wizard_identity.html' %}<button class="button" name="profile_action" value="other">Proceed using phone {{ verified_other_phone }}</button></form>
+<p>This profile has phone number <strong>{{ verified_other_phone|phone_display }}</strong>.</p>
+<form method="post">{% include 'core/partials/wizard_identity.html' %}<button class="button" name="profile_action" value="other">Continue with this email address</button></form>
 {% elif flow.other_possible_name %}
 <p>We found a customer “{{ flow.other_possible_name }}” matching the email address and name you entered. Is this your family?</p>
 <form method="post">{% include 'core/partials/wizard_identity.html' %}<button class="button" name="profile_action" value="confirm_other">Yes, this is my family</button></form>
 {% else %}
 <form method="post">{% include 'core/partials/wizard_identity.html' %}
-<p>To proceed with the customer profile associated with {{ flow.conflict_email }}, enter that customer's last name.</p>
+<p>Enter the last name saved with this email address.</p>
 {% include 'core/partials/public_field.html' with field=form.last_name %}
 <button class="button" name="profile_action" value="verify_other">Verify the other customer profile</button>
 </form>
 {% endif %}
+</section>

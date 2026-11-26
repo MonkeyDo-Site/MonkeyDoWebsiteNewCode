@@ -1,5 +1,16 @@
 # Payments, tax, card lifecycle, and Banquest evidence
 
+## Tenth document — correction of fee tenders and linked minimum pricing
+
+Cancellation/no-show fees never accept gift cards, superseding the earlier physical-gift-card exception below. Fee preview and follow-up collection reject that tender. Verified gift cards remain available for ordinary arrivals; existing receipts are preserved. Recorded Zelle prepayments still reconcile against the chosen fee. Declined bookings expose manual owner Retry card and Review remaining payment independently, with no automatic retry. New pricing versions set minimum admission equal to child admission; historical policies/quotes remain immutable. Tax/processing-fee adjustments precede the separately labelled cancellation fee (no sales tax). See [tenth follow-up](TENTH_BATCH_REVIEW.md) and the updated gallery. Actual hosted-field rendering remains pending a network grant; restore the earlier provider layout rather than treating synthetic fields as provider evidence.
+
+## Ninth staff review — draft PR #35
+
+Staff arrival previews update before waiver confirmation and tender verification; only final confirmation records attendance/money or requests a card charge. Private expiring drafts preserve counts and payment choices through protected card/signing returns. Staff card replacement uses one Save and use this card action and a required separate Yes/No future-use choice for new cards. Existing raw-card isolation and uncertain-exchange protections remain. New terms use MD-PAYMENT-2026-05; exact displayed prices/wording are retained in the consent audit.
+
+Split rows accept multiple actual non-card amounts, with Use remaining balance and an explicit card remainder. No card portion means no card fee. Abandoned unsaved rows are cleared when changing the overall method; recorded receipts persist. Cash-change functionality is deferred. An authenticated read-only status endpoint shows processing/approved/declined/pending outcomes without dispatch or retry. See [accepted ninth scope](NINTH_BATCH_REVIEW.md).
+
+
 ## Eighth review: one public confirmation action
 
 Public Payment Details has one Confirm booking button. Its explicit click accepts displayed payment terms and first saves/chooses the secure card, then submits the booking after successful setup. Processing dots and status explicitly say the booking is not confirmed yet. Card/setup errors appear in rose at the action and receive focus. Nothing charges ordinary admission online or creates an issuer hold. Duplicate clicks cannot repeat the exchange or booking; an uncertain setup is checked/recovered rather than exchanged again. A recovered response still requires an explicit confirmation when its original outcome was uncertain. Staff card setup retains its separate controls.

@@ -1083,3 +1083,67 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
  .slot { gap:8px; padding:20px }
  .slot-description { padding-top:8px }
 }
+
+/* Ninth batch: compact staff review, explicit exceptions and independent columns. */
+.arrival-final { background:var(--rose-ink); color:#fff }
+.arrival-final:disabled { background:#becbbd; color:#3b5041; cursor:not-allowed }
+.arrival-card-summary { display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; padding:14px 0; font-size:18px }
+.waiver-count-warning { background:var(--cream); border-left:3px solid var(--rose-ink); padding:12px 16px; margin:16px 0 }
+.waiver-count-warning p { margin:0 0 10px }
+.waiver-count-warning [role=radiogroup],.waiver-count-warning #id_waiver_mismatch_accepted { display:flex; flex-wrap:wrap; gap:16px }
+.waiver-link-requested { font-weight:700 }
+.split-payment-row { display:grid; grid-template-columns:minmax(130px,1fr) minmax(100px,.65fr); gap:8px 16px; padding:14px 0; border-bottom:1px solid var(--line) }
+.split-payment-row label { min-width:0 }
+.split-payment-row .text-button { justify-self:start }
+.arrival-tender-plan { border-top:1px solid var(--line); margin-top:18px; padding-top:12px }
+.arrival-tender-plan h3 { font-size:16px; margin:0 0 8px }
+.arrival-tender-plan p { display:flex; justify-content:space-between; gap:12px; margin:6px 0 }
+.arrival-result { margin:18px 0; padding:18px; background:var(--sage); border:1px solid var(--line); border-radius:16px }
+.arrival-result p { margin:0 0 12px }
+.card-retention-choice { margin:12px 0; padding:12px 16px }
+.card-retention-choice label { display:inline-flex; align-items:center; gap:5px; margin-right:24px }
+.card-setup #provider-card-frame { min-height:0; margin-bottom:12px }
+.profile-option + .profile-option { border-top:1px solid #c5d1c2; margin-top:24px; padding-top:20px }
+.attendee-message { color:#9b3650; font-weight:700; background:#f6e4e6; border-left:3px solid #a93e5b; padding:8px 10px; margin:8px 0 }
+.public-payment-page [data-confirm-booking] { background:#a93e5b; color:#fff }
+.public-payment-page [data-confirm-booking]:hover:not(:disabled) { background:#8d304a }
+.public-payment-page [data-confirm-booking]:disabled { background:#d5b6bf; color:#5b3e47 }
+.booking-card-label { margin-bottom:6px }
+[data-arrival-confirm][hidden],.attendee-message[hidden] { display:none!important }
+@media(max-width:560px) { .waiver-review-line { display:block } }
+.booking-overview-columns { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start }
+.booking-overview-column { display:flex; flex-direction:column; gap:18px; min-width:0 }
+.booking-overview-column > .panel { margin:0 }
+.booking-comment { border-bottom:1px solid var(--line); padding:10px 0 }
+.booking-comment p { margin:4px 0 }
+.booking-card-comments textarea,.comment-search input { width:100%; font:inherit; padding:10px; border:1px solid #657567; border-radius:10px }
+.booking-card-comments form { margin:12px 0 }
+.comment-search > div { display:flex; gap:8px }
+.notice-table { width:100%; min-width:0; table-layout:fixed; margin:12px 0 24px }
+.notice-table th:last-child,.notice-table td:last-child { width:155px }
+.notice-table td { padding:12px; vertical-align:top; overflow-wrap:anywhere }
+.notice-table summary { font-weight:700; cursor:pointer }
+.notice-table details p { margin:10px 0 }
+.notice-table .button { white-space:nowrap }
+@media(max-width:850px) {
+ .booking-overview-columns { display:flex; flex-direction:column }
+ .booking-overview-column { display:contents }
+ .booking-overview-column > .panel { width:100% }
+ .booking-card-visit { order:1 }.booking-card-price { order:2 }.booking-card-payment { order:3 }.booking-card-waivers { order:4 }.booking-card-messages { order:5 }.booking-card-comments { order:6 }
+}
+@media(max-width:500px) {
+ .split-payment-row { grid-template-columns:minmax(0,1fr) minmax(0,.8fr) }
+ .notice-table th:last-child,.notice-table td:last-child { width:125px }
+ .notice-table .button { padding:10px; font-size:13px }
+}
+
+.split-payment-row select { width:100%; min-width:0; font:inherit; padding:10px; border:1px solid #657567; border-radius:10px; background:#fff }
+.split-payment-row .text-button { font-size:14px; text-align:left }
+.comment-search input { flex:1; width:0; min-width:0 }
+.comment-search .button { flex-shrink:0; white-space:nowrap }
+.card-retention-choice { border:0; padding:0 }
+.card-retention-choice legend { width:100%; font-weight:600; padding:0; margin-bottom:10px }
+@media(max-width:650px) {
+ .waiver-review-line { grid-template-columns:1fr; gap:12px }
+ .waiver-review-line .button { justify-self:start }
+}

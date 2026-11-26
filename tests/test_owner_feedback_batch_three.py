@@ -319,10 +319,12 @@ class PublicThirdBatchTests(TestCase):
         )
         self.begin("5145550199", "yes")
         self.client.get("/book/recover/")
-        response = self.client.post("/book/details/", {"email": c.email, "last_name": c.last_name})
+        response = self.client.post(
+            "/book/details/", {"email": c.email, "last_name": c.last_name}, follow=True
+        )
         self.assertNotContains(response, "Is this your family?")
         self.assertNotIn("candidate_name", self.client.session["customer_test_booking"])
-        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "email_lookup")
+        self.assertEqual(self.client.session["customer_test_booking"]["stage"], "recovered_name")
 
     def test_email_from_history_cannot_identify_customer(self):
         c = Customer.objects.create(

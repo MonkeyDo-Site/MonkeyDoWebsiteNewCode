@@ -88,23 +88,32 @@ def check_arrival_capacity(booking, counts, override, actor):
         require_actor(actor, "core.change_booking")
 
 
-def verify_coverage(booking, counts, confirmed):
-    if confirmed is not True:
-        raise ValidationError(
-            "Return to waiver handling before confirming arrival. Your entries have not been saved or charged.",
-            code="waiver_required",
-        )
-    review = BookingWaiverReview.objects.filter(booking=booking).first()
-    if review and review.paper_signed:
-        return
+def coverage_facts(booking, counts):
     from core.waivers.paper import active_customer_waivers
 
     signatures = active_customer_waivers(booking)
-    minors = {name.strip().casefold() for signature in signatures for name in signature.minors}
-    if not signatures or len(minors) < counts["children"] + counts["babies"]:
+    names = {name.strip().casefold() for signature in signatures for name in signature.minors}
+    try:
+        expected = int(counts.get("children") or 0) + int(counts.get("babies") or 0)
+    except (ValueError, TypeError):
+        expected = 0
+    return {
+        "recorded_minors": len(names),
+        "attending_minors": expected,
+        "mismatch": len(names) < expected,
+    }
+
+
+def verify_coverage(booking, counts, confirmed, acknowledged=False):
+    if confirmed is not True:
         raise ValidationError(
-            "Obtain coverage for everyone using Sign waiver now, or record actual signed paper waivers before arrival.",
+            "The waiver confirmation field is required. Confirm that everyone has signed before completing arrival.",
             code="waiver_required",
+        )
+    if coverage_facts(booking, counts)["mismatch"] and acknowledged is not True:
+        raise ValidationError(
+            "There are more children in the visit than the children listed in the signed waivers connected to this booking. Do you want to go ahead?",
+            code="waiver_mismatch",
         )
 
 
@@ -140,7 +149,9 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
         validate_attendees(**counts, supervised=booking.supervised)
         check_arrival_capacity(booking, counts, override, actor)
         if validate_waivers:
-            verify_coverage(booking, counts, data.get("waiver_confirmed"))
+            verify_coverage(
+                booking, counts, data.get("waiver_confirmed"), data.get("waiver_mismatch_accepted")
+            )
         special = state.special_subtotal
         if data.get("special_admissions") is not None:
             require_actor(actor, "core.change_booking", owner=True)
@@ -162,6 +173,10 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
             special_admissions=special,
         )
     else:
+        if data.get("method", "card") != "card":
+            raise ValidationError(
+                "Cancellation and no-show fees use the booking card or recorded Zelle prepayment."
+            )
         units = state.pending_fee_units + (booking.children if booking.children else 1)
         lines = [Line("Cancellation fee", units, Decimal("3.00"), False)]
         if type(data.get("charge_fee")) is not bool:
@@ -220,6 +235,8 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
         "override_capacity": override,
         "fee_units": units,
         "waiver_confirmed": data.get("waiver_confirmed") is True,
+        "waiver_review": coverage_facts(booking, counts) if kind == "arrival" else None,
+        "waiver_mismatch_accepted": data.get("waiver_mismatch_accepted") is True,
         "comped": state.comped,
         "owner_special_admissions": str(special)
         if kind == "arrival" and special is not None
@@ -383,6 +400,8 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
             "checkout_id": str(checkout.pk),
             "total": quote["total"],
             "capacity_override": facts["override_capacity"],
+            "waiver_review": facts["waiver_review"],
+            "waiver_mismatch_accepted": facts["waiver_mismatch_accepted"],
             "fee_units": facts["fee_units"],
             "fee_charged": kind != "arrival" and bool(sale),
         },

@@ -52,7 +52,7 @@ def enabled_view(view):
     return inner
 
 
-def signing_form(request, *, flow=None, share_token=None):
+def signing_form(request, *, flow=None, share_token=None, staff_return=None, staff_booking=None):
     if settings.RECOVERY_HOLD:
         return render(request, "core/booking_paused.html", status=503)
     version = approved_version()
@@ -103,6 +103,8 @@ def signing_form(request, *, flow=None, share_token=None):
                 flow["last_waiver_signature"] = str(signature.pk)
                 flow["stage"] = "waiver"
                 save(request, flow)
+            if staff_return:
+                return redirect(staff_return)
             return (
                 redirect(
                     reverse("shared_waiver", args=[share_token]) + "?signed=" + str(signature.pk)
@@ -119,9 +121,11 @@ def signing_form(request, *, flow=None, share_token=None):
             form.add_error(None, " ".join(error.messages))
     return render(
         request,
-        "core/waivers/sign.html",
+        "core/waivers/staff_sign.html" if staff_return else "core/waivers/sign.html",
         {
             "form": form,
+            "staff_return": staff_return,
+            "staff_booking": staff_booking,
             "version": version,
             "legal_html": version.legal_html,
             "appointment": share.booking.session.starts_at if share else None,
@@ -446,6 +450,15 @@ def share_create(request, booking_id):
         link, token = create_share(actor=request.user, booking_id=booking_id)
     except (ValidationError, Booking.DoesNotExist):
         raise Http404 from None
+    if request.POST.get("staff_sign") == "1":
+        from core.payments import arrival_drafts
+
+        draft = arrival_drafts.create(request, link.booking, {})
+        arrival_drafts.set_waiver(request, link.booking, draft, token)
+        values = arrival_drafts.drafts(request)
+        values[draft]["return_to"] = "booking"
+        request.session[arrival_drafts.KEY] = values
+        return redirect(reverse("booking_waiver_sign", args=[booking_id]) + "?draft=" + draft)
     if request.POST.get("open_now") == "1":
         return redirect("shared_waiver", token=token)
     return render(
@@ -521,3 +534,31 @@ def paper_detail(request, pk):
 
     signature = get_object_or_404(PaperWaiver.objects.select_related("customer"), pk=pk)
     return render(request, "core/waivers/paper_detail.html", {"signature": signature})
+
+
+@staff_permission("core.view_booking")
+@staff_permission("core.change_booking")
+@staff_permission("core.view_customer")
+@staff_permission("core.view_waiversignature")
+@enabled_view
+@require_http_methods(["GET", "POST"])
+def staff_sign(request, booking_id):
+    from core.payments import arrival_drafts
+
+    booking = get_object_or_404(
+        Booking.objects.select_related("session"), pk=booking_id, workflow="integrated_v1"
+    )
+    token = request.GET.get("draft")
+    try:
+        draft = arrival_drafts.get(request, booking, token)
+        share_token = draft["waiver_token"]
+    except (ValidationError, KeyError):
+        raise Http404 from None
+    destination = (
+        reverse("booking_detail", args=[booking.pk])
+        if draft.get("return_to") == "booking"
+        else arrival_drafts.url(booking, token)
+    )
+    return signing_form(
+        request, share_token=share_token, staff_return=destination, staff_booking=booking
+    )

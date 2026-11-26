@@ -179,6 +179,8 @@ class TestBookingForm(forms.Form):
 
     def clean(self):
         data = super().clean()
+        if data.get("supervised") and data.get("adults", 0) > 0:
+            self.add_error("adults", "Cannot have adults in a supervised play visit.")
         if "zelle_sender" in self.fields and data.get("expected_method") == "zelle":
             from .payments.receipts import sender
 
@@ -228,11 +230,17 @@ class TimingForm(forms.Form):
         session_date_picker(self, booking)
 
 
+class PercentageField(forms.DecimalField):
+    def to_python(self, value):
+        number = super().to_python(value)
+        return number.normalize() if number is not None and number.is_finite() else number
+
+
 class PricingPolicyForm(forms.ModelForm):
-    tax_percent = forms.DecimalField(
+    tax_percent = PercentageField(
         min_value=0, max_value=100, decimal_places=2, label="Staging sales tax (%)"
     )
-    fee_percent = forms.DecimalField(
+    fee_percent = PercentageField(
         min_value=0, max_value=100, decimal_places=2, label="Card processing fee (%)"
     )
 
@@ -241,7 +249,6 @@ class PricingPolicyForm(forms.ModelForm):
         fields = (
             "child_price",
             "extra_adult_price",
-            "minimum_admission",
             "supervised_price",
             "sock_price",
         )
@@ -250,13 +257,16 @@ class PricingPolicyForm(forms.ModelForm):
         initial = {name: getattr(policy, name) for name in self.Meta.fields} if policy else {}
         if policy:
             initial.update(
-                tax_percent=policy.tax_rate * 100, fee_percent=policy.card_fee_rate * 100
+                tax_percent=(policy.tax_rate * 100).quantize(Decimal(".01")),
+                fee_percent=(policy.card_fee_rate * 100).quantize(Decimal(".01")),
             )
         # Never bind an existing immutable policy as this ModelForm's instance.
         super().__init__(*args, initial=initial, **kwargs)
 
     def clean(self):
         result = super().clean()
+        if "child_price" in result:
+            self.instance.minimum_admission = result["child_price"]
         if "tax_percent" in result and "fee_percent" in result:
             self.instance.tax_rate = result["tax_percent"] / Decimal(100)
             self.instance.card_fee_rate = result["fee_percent"] / Decimal(100)

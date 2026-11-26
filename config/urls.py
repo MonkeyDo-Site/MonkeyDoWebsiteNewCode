@@ -5,6 +5,7 @@ from django.views.generic import RedirectView
 
 from core import (
     account_views,
+    booking_comments,
     booking_views,
     customer_views,
     dashboard,
@@ -19,6 +20,7 @@ from core import (
 from core.backups import views as backup_views
 from core.communications import views as message_views
 from core.communications.webhooks import endpoint as email_webhook
+from core.payments import checkout_views as payment_checkout_views
 from core.payments import staff_setup, zelle_views
 from core.payments import views as payment_views
 from core.payments.checkout_views import checkout as booking_checkout
@@ -70,7 +72,25 @@ urlpatterns = [
         name="booking_retry_card",
     ),
     path("staff/bookings/<int:pk>/payment/", remaining_payment, name="booking_payment"),
+    path(
+        "staff/bookings/<int:pk>/comments/add/", booking_comments.edit, name="booking_comment_add"
+    ),
+    path(
+        "staff/bookings/<int:pk>/comments/<int:comment_id>/edit/",
+        booking_comments.edit,
+        name="booking_comment_edit",
+    ),
     path("staff/bookings/<int:pk>/arrival/", booking_checkout, name="booking_arrival"),
+    path(
+        "staff/bookings/<int:pk>/arrival/status/<uuid:checkout_id>/",
+        payment_checkout_views.arrival_status,
+        name="booking_arrival_status",
+    ),
+    path(
+        "staff/bookings/<int:booking_id>/waiver/sign/",
+        waiver_views.staff_sign,
+        name="booking_waiver_sign",
+    ),
     path(
         "staff/bookings/<int:pk>/cancel/",
         booking_checkout,

@@ -144,6 +144,10 @@ class ContactForm(forms.Form):
         max_length=240, required=False, label="How did you hear about MonkeyDo?"
     )
 
+    def __init__(self, *args, phone=None, **kwargs):
+        self.phone = phone
+        super().__init__(*args, **kwargs)
+
     def clean_email(self):
         from .customers import check_email_available
 
@@ -154,7 +158,7 @@ class ContactForm(forms.Form):
             from .customers import public_duplicate_email_message
 
             raise ValidationError(
-                public_duplicate_email_message(email), code="duplicate_email"
+                public_duplicate_email_message(email, self.phone), code="duplicate_email"
             ) from None
         return email
 
@@ -162,6 +166,10 @@ class ContactForm(forms.Form):
 class RequiredEmailForm(forms.Form):
     email = forms.EmailField(label="Email address")
 
+    def __init__(self, *args, phone=None, **kwargs):
+        self.phone = phone
+        super().__init__(*args, **kwargs)
+
     def clean_email(self):
         from .customers import check_email_available
 
@@ -172,7 +180,7 @@ class RequiredEmailForm(forms.Form):
             from .customers import public_duplicate_email_message
 
             raise ValidationError(
-                public_duplicate_email_message(email), code="duplicate_email"
+                public_duplicate_email_message(email, self.phone), code="duplicate_email"
             ) from None
         return email
 
@@ -283,6 +291,11 @@ class DetailsForm(forms.Form):
                 else ""
             )
         data["supervised"] = data.pop("play_type") == "supervised"
+        if not data["supervised"] and data["adults"] < 1:
+            self.add_error(
+                "adults", "An adult must accompany a baby or child to an open play session."
+            )
+            return data
         validate_attendees(
             **{k: data[k] for k in ("children", "adults", "babies", "socks", "supervised")}
         )
@@ -434,6 +447,8 @@ def wizard(request):
         if form_type is None:
             raise ValidationError("Start a new booking session.")
         args = {"session": session} if stage == "details" else {}
+        if stage in {"contact", "email"}:
+            args["phone"] = flow["phone"]
         if flow.get("answers", {}).get(stage):
             args["initial"] = flow["answers"][stage]
         if stage == "waiver":

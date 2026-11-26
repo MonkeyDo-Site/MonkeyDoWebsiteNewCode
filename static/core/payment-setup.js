@@ -3,7 +3,9 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   const form = section.querySelector('[data-card-form]');
   if (!form) continue;
   const status = section.querySelector('[data-card-status]');
-  const single = section.dataset.singleConfirm === '1';
+  const replacement = section.dataset.singleReplace === '1';
+  const single = section.dataset.singleConfirm === '1' || replacement;
+  const actionLabel = replacement ? 'Save and use this card' : 'Confirm booking';
   const confirmationForm = single ? document.querySelector('#customer-booking-form') : null;
   const button = single ? document.querySelector('[data-confirm-booking]') : document.querySelector('[data-payment-save]') || form.querySelector('[data-save-card]');
   const confirm = document.querySelector('[data-confirm-booking]');
@@ -14,7 +16,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   let uncertain = false;
   let confirmRequested = false;
   let finishing = false;
-  const processing = (active, label = 'Confirm booking') => {
+  const processing = (active, label = actionLabel) => {
     if (!single) return;
     button.querySelector('[data-confirm-label]').textContent = label;
     button.querySelector('.processing-dots').hidden = !active;
@@ -30,7 +32,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
       return;
     }
     finishing = true;
-    processing(true, 'Confirming booking');
+    processing(true, replacement ? 'Updating booking card' : 'Confirming booking');
     button.disabled = true;
     // A ready saved card may finish inside this form's submit event. A second
     // requestSubmit in the same event is ignored by browsers; submit on the next task.
@@ -40,7 +42,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     const target = publicStatus || status;
     if (!target) return;
     const error = !['Your card is saved', 'Save your', 'Saving', 'Card will', 'Your card will', 'Confirming'].some(prefix => message.startsWith(prefix));
-    target.textContent = single && error ? 'Your booking is not confirmed. ' + message : message;
+    target.textContent = single && error ? (replacement ? 'The booking card has not been changed. ' : 'Your booking is not confirmed. ') + message : message;
     if (single && error && uncertain) {
       target.append(' ', check);
       check.hidden = false;
@@ -64,7 +66,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     if (confirm) confirm.classList.remove('confirm-ready', 'confirm-attention');
   };
   const showSaved = data => {
-    report(single ? (confirmRequested ? 'Confirming your booking… Your booking is not confirmed yet.' : 'Your card is saved. Click Confirm booking to finish your reservation.') : 'Your card is saved. Click Confirm booking to finish your reservation.');
+    report(single ? (confirmRequested ? (replacement ? 'Confirming this booking’s card selection…' : 'Confirming your booking… Your booking is not confirmed yet.') : (replacement ? 'Your card is saved. Click Save and use this card to finish updating this booking.' : 'Your card is saved. Click Confirm booking to finish your reservation.')) : 'Your card is saved. Click Confirm booking to finish your reservation.');
     const summary = document.querySelector('[data-selected-card]');
     if (summary) {
       summary.textContent = `Saved payment method ending in ${data.last_four}. No admission payment has been collected.`;
@@ -117,11 +119,13 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   let hosted;
   try {
     const key = JSON.parse(document.querySelector('#card-tokenization-key').textContent);
-    hosted = new window.HostedTokenization(key, {target: '#provider-card-frame', showFieldErrors: true, styles: {container:'display:flex;flex-wrap:wrap;gap:12px;margin:0;padding:0;min-height:0',cardContainer:'flex:1 1 150px;min-width:140px;width:auto;margin:0',expiryContainer:'flex:0 0 112px;width:112px;margin:0',cvv2Container:'flex:0 0 104px;width:104px;margin:0',labels:'white-space:nowrap',fieldErrors:'color:#9b3650;font-size:12px;margin:4px 0 0'}});
+    // Keep Banquest's own responsive field layout. Container-only flex overrides
+    // detached the default input sizing and expiry/CVV alignment in PR #34.
+    hosted = new window.HostedTokenization(key, {target: '#provider-card-frame', showFieldErrors: true, styles: {container:'margin:0;padding:0;min-height:0',cardContainer:'margin:0 8px 0 0',card:'width:100%;box-sizing:border-box',expiryContainer:'margin:0 8px 0 0',cvv2Container:'margin:0',fieldErrors:'color:#9b3650;font-size:12px;margin:4px 0 0'}});
   } catch {
     report('Secure card entry is unavailable. Please reload this page or call/text 848-238-5147.');
   }
-  const sync = () => { section.querySelector('[data-new-card]').hidden = form.elements.method.value !== 'new'; };
+  const sync = () => { const isNew = form.elements.method.value === 'new'; section.querySelector('[data-new-card]').hidden = !isNew; for (const choice of form.querySelectorAll('[name=retain]')) choice.disabled = !isNew; };
   form.addEventListener('change', () => {
     sync();
     // A potentially accepted provider request must be checked, never exchanged again.
@@ -139,7 +143,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     invalidate();
     button.disabled = true;
     processing(true, 'Processing');
-    report(single ? 'Saving your card… Your booking is not confirmed yet.' : 'Saving secure card setup…');
+    report(single ? (replacement ? 'Saving your card… The booking card has not been changed yet.' : 'Saving your card… Your booking is not confirmed yet.') : 'Saving secure card setup…');
     try {
       const payload = {
         wizard_key: form.elements.wizard_key.value,
@@ -162,7 +166,8 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
           nonce: result.nonce.startsWith('nonce-') ? result.nonce : `nonce-${result.nonce}`,
           expiry_month: result.expiryMonth,
           expiry_year: result.expiryYear,
-          retain: form.elements.retain.checked
+          retain: form.elements.retain.type === 'checkbox' ? form.elements.retain.checked : form.elements.retain.value === 'yes',
+          ...(form.elements.retain.type !== 'checkbox' ? {retention_choice: form.elements.retain.value} : {})
         });
         statusUrl = `${section.dataset.statusPrefix}${form.elements.request_key.value}/`;
       } else payload.method = form.elements.method.value;

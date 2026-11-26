@@ -151,7 +151,13 @@ class CheckoutTests(TestCase):
         )
         checkout = self.act(
             booking,
-            self.arrival_inputs(booking, children=3, method="split", split={"cash": "40.00"}),
+            self.arrival_inputs(
+                booking,
+                children=3,
+                method="split",
+                split={"cash": "40.00"},
+                waiver_mismatch_accepted=True,
+            ),
         )
         cash = checkout.sale.operations.get(tender="cash")
         card = checkout.sale.operations.get(tender="card")
@@ -212,7 +218,13 @@ class CheckoutTests(TestCase):
             self.act(booking, self.arrival_inputs(booking, children=36, method="cash"))
         self.act(
             booking,
-            self.arrival_inputs(booking, children=36, method="cash", override_capacity=True),
+            self.arrival_inputs(
+                booking,
+                children=36,
+                method="cash",
+                override_capacity=True,
+                waiver_mismatch_accepted=True,
+            ),
         )
         booking.session.refresh_from_db()
         self.assertEqual(booking.session.child_capacity, 35)

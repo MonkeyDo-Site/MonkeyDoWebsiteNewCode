@@ -80,9 +80,11 @@ def tender_plan(policy, lines, *, method, split=None):
         (key, amount(split.get(key, ZERO))) for key in NONCARD if amount(split.get(key, ZERO))
     ]
     total_noncard = sum((value for _, value in received), ZERO)
-    if not total_noncard or total_noncard > amount(cash_quote["total"]):
+    if not total_noncard:
+        raise ValidationError("Enter an amount received for at least one payment method.")
+    if total_noncard > amount(cash_quote["total"]):
         raise ValidationError(
-            "Received non-card amounts must be positive and no greater than the full non-card total."
+            f"The entered payments total ${total_noncard:.2f}, which exceeds the non-card visit total of ${amount(cash_quote['total']):.2f}. Adjust the amounts applied to this booking."
         )
     subtotal = amount(cash_quote["subtotal"])
     taxable = amount(cash_quote["taxable_subtotal"])

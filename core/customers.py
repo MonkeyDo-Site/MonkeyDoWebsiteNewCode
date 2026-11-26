@@ -184,7 +184,9 @@ def save_comment(*, actor, customer_id, body, comment_id=None, revision=None):
     customer = Customer.objects.get(pk=customer_id)
     if comment_id:
         require_actor(actor, "core.view_customercomment")
-        comment = CustomerComment.objects.select_for_update().get(pk=comment_id, customer=customer)
+        comment = CustomerComment.objects.select_for_update().get(
+            pk=comment_id, customer=customer, booking__isnull=True
+        )
         if comment.system_generated:
             raise ValidationError("Archived contact history cannot be edited.")
         if revision != comment.revision:
@@ -232,16 +234,13 @@ def historical_email_customers(email, customer_id=None):
     )
 
 
-def public_duplicate_email_message(email):
+def public_duplicate_email_message(email, phone=None):
+    from .templatetags.booking_display import phone_display
+
     return format_html(
-        "The email address you entered {} already exists for another customer. "
-        "Please enter another email address or if {} is your email address, "
-        "perhaps you entered a different phone number now than the one associated "
-        "with a previous booking using this email address. Please "
-        '<a href="{}">go back to the booking page</a> and enter a phone number and '
-        "name you may have entered in the past for this email address. "
-        "If you need further help, we’re happy to help. Please contact us at 848-238-5147.",
-        email,
-        email,
+        "Looks like you’ve booked with this email before, using another phone number. Please "
+        '<a href="{}">go back</a> and use that number or you can create a new customer using {}, '
+        "with a different email address. For further assistance, call/text us at 848-238-5147.",
         reverse("customer_booking") + "?restart=1",
+        phone_display(phone) if phone else "the phone number you entered",
     )

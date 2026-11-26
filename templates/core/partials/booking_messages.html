@@ -1,0 +1,2 @@
+{% if booking_email_enabled and perms.core.view_messagedelivery %}<article class="panel booking-card-messages"><h2>Messages</h2>{% for delivery in booking_messages %}<p><a href="{% url 'message_detail' delivery.pk %}">{{ delivery.get_kind_display }}</a> · {{ delivery.get_state_display }}<br>{{ delivery.recipient }} · {{ delivery.created_at|date:'M j, Y g:i A' }}</p>{% empty %}<p>No booking messages are recorded.</p>{% endfor %}<a href="{% url 'messages' %}?booking={{ booking.pk }}">View message history</a></article>{% endif %}
+

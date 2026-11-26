@@ -36,11 +36,40 @@ class ProfileChoiceForm(forms.Form):
 
 
 FORMS = {
+    "recovered_name": RecoveryNameForm,
+    "recovered_confirm": forms.Form,
     "name_retry": RecoveryNameForm,
     "conflict_name": RecoveryNameForm,
     "profile_choice": ProfileChoiceForm,
     "conflict_stop": forms.Form,
 }
+
+
+def recovered_customer(flow):
+    saved = flow["recovered_candidate"]
+    customer = Customer.objects.filter(pk=saved["id"], revision=saved["revision"]).first()
+    if customer is None or customer.email.casefold() != flow["recovery_email"].casefold():
+        raise ValidationError("Customer details changed. Please start again.")
+    return customer
+
+
+def prepare_recovered(flow, customer, address):
+    for key in (
+        "proof",
+        "contact",
+        "payment_consent",
+        "waiver_signatures",
+        "last_waiver_signature",
+        "waiver_coverage",
+    ):
+        flow.pop(key, None)
+    flow.update(
+        recovered_candidate={"id": customer.pk, "revision": customer.revision},
+        recovery_email=address,
+        stage="recovered_confirm"
+        if name_match(flow.get("entered_name", ""), customer)
+        else "recovered_name",
+    )
 
 
 def name_match(entered, customer):
@@ -280,9 +309,34 @@ def handle(flow, form, stage):
     elif stage == "profile_choice":
         process_choice(flow, form)
     elif stage == "conflict_name":
-        stop_conflict(
-            flow, original_customer(flow), other_customer(flow), form.cleaned_data["last_name"]
-        )
+        original, other = original_customer(flow), other_customer(flow)
+        entered = form.cleaned_data["last_name"]
+        if name_match(entered, other):
+            flow["entered_name"] = entered
+            if name_match(entered, original):
+                profile_choice(flow, original, other)
+            else:
+                prepare_recovered(flow, other, other.email)
+                flow["entered_name"] = entered
+                flow["stage"] = "recovered_confirm"
+        else:
+            stop_conflict(flow, original, other, entered)
+    elif stage == "recovered_name":
+        customer = recovered_customer(flow)
+        entered = form.cleaned_data["last_name"]
+        if not name_match(entered, customer):
+            form.add_error(
+                "last_name",
+                f"That name doesn't match our records for email address ‘{flow['recovery_email']}’. Please try again or call/text {ASSISTANCE} for assistance.",
+            )
+        else:
+            flow.update(entered_name=entered, stage="recovered_confirm")
+    elif stage == "recovered_confirm":
+        customer = recovered_customer(flow)
+        if not name_match(flow.get("entered_name", ""), customer):
+            raise ValidationError("Please verify the customer name before continuing.")
+        flow["phone"] = customer.phone
+        associate(flow, customer, "both")
     elif stage == "name_retry":
         original = original_customer(flow)
         entered = form.cleaned_data["last_name"]
@@ -299,9 +353,17 @@ def handle(flow, form, stage):
     elif stage == "email_lookup":
         original = lookup_phone(flow["phone"])
         address = form.cleaned_data["email"].strip().lower()
-        # Preserve the unmatched-phone recovery and legacy same-profile path.
         if original is None:
-            return False
+            found = find_email(address)
+            if found:
+                prepare_recovered(flow, found, address)
+            else:
+                flow["unmatched_email_failed"] = True
+                form.add_error(
+                    None,
+                    f"We couldn't match those details. Please try again or call/text {ASSISTANCE} for help.",
+                )
+            return True
         is_fourth = (
             flow.get("fourth_recovery") == "name_failed"
             or flow.get("verification_entry") == "returning_current"
@@ -332,6 +394,11 @@ def handle(flow, form, stage):
 
 
 def choice_context(flow):
+    if flow.get("stage") == "recovered_confirm":
+        customer = recovered_customer(flow)
+        if not name_match(flow.get("entered_name", ""), customer):
+            raise ValidationError("Please verify the customer name before continuing.")
+        return {"recovered_profile": customer}
     if flow.get("stage") != "profile_choice":
         return {}
     original = original_customer(flow)

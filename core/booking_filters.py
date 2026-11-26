@@ -20,7 +20,9 @@ class BookingFilters(forms.Form):
     end = forms.DateField(
         required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Through date"
     )
-    q = forms.CharField(max_length=120, required=False, label="Family name, phone or email")
+    q = forms.CharField(
+        max_length=120, required=False, label="Family name, phone, email or booking comment"
+    )
     workflow = forms.ChoiceField(
         required=False,
         label="Booking workflow",
@@ -153,7 +155,12 @@ def booking_context(request, *, today_only=False):
                 criteria |= Q(customer__phone__contains=digits) | Q(
                     customer__previous_phone__contains=digits
                 )
-            rows = rows.filter(criteria)
+            if request.user.has_perm("core.view_customercomment"):
+                comment_query = Q(comments__body__icontains=query)
+                if digits:
+                    comment_query |= Q(comments__search_digits__contains=digits)
+                criteria |= comment_query
+            rows = rows.filter(criteria).distinct()
         else:
             exact = []
         if filters["session"]:

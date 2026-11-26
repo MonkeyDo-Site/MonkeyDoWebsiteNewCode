@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from .models import SiteSettings
+from .models import PricingPolicy, SiteSettings
 
 
 def site_context(request):
@@ -15,6 +15,7 @@ def site_context(request):
         parent = ("Membership drafts", "/staff/memberships/")
     return {
         "staff_parent": parent,
+        "public_pricing": PricingPolicy.objects.first() or PricingPolicy(),
         "payment_sandbox_enabled": settings.PAYMENT_SANDBOX_ENABLED,
         "waiver_enabled": settings.WAIVER_ENABLED,
         "booking_email_enabled": settings.BOOKING_EMAIL_ENABLED,

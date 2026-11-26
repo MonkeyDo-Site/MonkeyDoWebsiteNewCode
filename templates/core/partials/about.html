@@ -42,11 +42,11 @@
 <h3>Open Play</h3>
 <p class="play-subtitle">Play accompanied by an adult</p>
 <p>Children ages 1–11<br>
-$15 per child<br>
+${{ public_pricing.child_price|floatformat:'-2' }} per child<br>
 1 free adult<br>
-Additional adults ages 12 and up: $5 each<br>
+Additional adults ages 12 and up: ${{ public_pricing.extra_adult_price|floatformat:'-2' }} each<br>
 Babies under 1 are free</p>
-<p>If you are coming just with a baby, there is a $15 admission.</p>
+<p>If you are coming just with a baby, there is a ${{ public_pricing.minimum_admission|floatformat:'-2' }} admission.</p>
 {% if not embedded %}<p>Subscription and Unlimited Members receive membership pricing and benefits for open play sessions.</p>{% endif %}
 <a class="button" href="{% url 'schedule' %}">Book your session now <span aria-hidden="true">→</span></a>
 </article>
@@ -56,7 +56,7 @@ Babies under 1 are free</p>
 <h3>Supervised Play</h3>
 <p class="play-subtitle">Your child plays and our capable staff supervises</p>
 <p>For children ages 3-11<br>
-$18.99 per child</p>
+${{ public_pricing.supervised_price|floatformat:'-2' }} per child</p>
 <p class="supervised-benefit">Subscription Members enjoy 25% off supervised play</p>
 <p class="supervised-availability">Supervised play is available for select sessions. Check the booking page to see which sessions offer it.</p>
 <a class="button" href="{% url 'schedule' %}">See available sessions <span aria-hidden="true">→</span></a>

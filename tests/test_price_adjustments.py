@@ -69,8 +69,8 @@ class AdjustmentArithmeticTests(SimpleTestCase):
             [(r["label"], r["delta"]) for r in result["rows"]],
             [
                 ("Minus cancelled admissions", Decimal("-15")),
-                ("Plus cancellation fee", Decimal("3")),
                 ("Sales-tax adjustment", Decimal("-.99")),
+                ("Plus cancellation fee (no sales tax)", Decimal("3")),
             ],
         )
         self.assertEqual(result["total"], Decimal("42.30"))

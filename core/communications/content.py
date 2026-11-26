@@ -6,7 +6,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from core.date_display import display_date, display_time_range
-from core.payments.policy import CANCELLATION, CANCELLATION_SCOPE
+from core.payments.policy import CANCELLATION_SCOPE
 
 
 def plural(count, singular, multiple):
@@ -140,7 +140,11 @@ def booking_confirmation(booking, *, waiver_url=None, waiver_type="single", comp
         ]
     )
     if booking.source == "staff" and not comped:
-        lines.append(CANCELLATION + " " + CANCELLATION_SCOPE)
+        from core.payments.policy import displayed_cancellation
+
+        lines.append(
+            displayed_cancellation({"staff_booking": booking.pk})[0] + " " + CANCELLATION_SCOPE
+        )
     lines.extend(["", "Get ready to go bananas,", "The MonkeyDo team"])
     body = "\n".join(lines)
     while "\n\n\n" in body:

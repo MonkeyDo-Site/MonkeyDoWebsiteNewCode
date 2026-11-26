@@ -29,6 +29,7 @@ class SetupForm(forms.Form):
     expiry_year = forms.IntegerField(min_value=2020, max_value=9999, required=False)
     method = forms.UUIDField(required=False)
     retain = forms.BooleanField(required=False)
+    retention_choice = forms.ChoiceField(required=False, choices=[("yes", "Yes"), ("no", "No")])
     agree_payment = forms.BooleanField()
     agree_cancellation = forms.BooleanField()
 
@@ -84,6 +85,13 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
                 explanation = "Please complete the card number, expiration date and security code in the secure fields."
             return JsonResponse({"error": explanation}, status=400)
         values = form.cleaned_data
+        if actor is not None and not values.get("method"):
+            if values.get("retention_choice") not in {"yes", "no"}:
+                return JsonResponse(
+                    {"error": "Choose Yes or No for keeping this card for future visits."},
+                    status=400,
+                )
+            values["retain"] = values["retention_choice"] == "yes"
         if (
             str(values["wizard_key"]) != flow["key"]
             or values["wizard_stage"] != flow["stage"]
@@ -174,9 +182,7 @@ def card_context(flow):
     from django.db.models import Q
 
     from .policy import (
-        BACKUP_CANCELLATION,
         BACKUP_PAYMENT,
-        CANCELLATION,
         CANCELLATION_SCOPE,
         PAYMENT,
         RETENTION,
@@ -213,10 +219,13 @@ def card_context(flow):
             methods = PaymentMethod.objects.filter(
                 Q(pk__in=methods.values("pk")) | Q(pk=previous.method_id), state="active"
             )
+    from .policy import displayed_cancellation
+
+    cancellation, _ = displayed_cancellation(flow)
     return {
         "card_primary": method == "card",
         "card_backup_payment": BACKUP_PAYMENT,
-        "card_backup_cancellation": BACKUP_CANCELLATION,
+        "card_backup_cancellation": cancellation,
         "card_method_name": names.get(method, method),
         "card_is_zelle": method == "zelle",
         "card_ready": accepted is not None,
@@ -238,7 +247,7 @@ def card_context(flow):
         "card_policy_version": VERSION,
         "card_payment_policy": PAYMENT,
         "card_retention_policy": RETENTION,
-        "card_cancellation_policy": CANCELLATION,
+        "card_cancellation_policy": cancellation,
         "card_cancellation_scope": CANCELLATION_SCOPE,
         "card_public_key": settings.BANQUEST_TOKENIZATION_PUBLIC_KEY,
         "card_configured": bool(

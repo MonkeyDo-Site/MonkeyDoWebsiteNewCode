@@ -1,5 +1,16 @@
 # MonkeyDo current website requirements
 
+Latest release authorization: merge PR #35 and prepare the pinned ZIP/single deployment block now. The owner defers the cloud-environment issue and actual Banquest layout acceptance until later. No production activation is requested.
+
+## Tenth document follow-up — same PR #35
+
+The owner reviewed all 20 screenshots and clarified that gift cards never apply to cancellation/no-show fees; baby-only/adult-only admission matches the child price. The approved profile-choice copy separates the phone profile (requiring its email) and the already-name-verified email profile. Existing-email recovery after an unmatched phone must verify the name and explicitly confirm the profile, reusing an already matching entered name. Existing customer records are not merged or edited. A verified email-first conflict can continue with the confirmed email profile; same-surname conflicts retain the verified two-profile choice. See [complete follow-up scope](TENTH_BATCH_REVIEW.md) for copy, layout, attendee validation, payment action and tax-order corrections. The same gallery and PR are updated during review. Actual Banquest field verification is pending the tokenization-host network grant; synthetic images are not proof of provider rendering. No merge or deployment yet.
+
+## Latest authorized ninth batch — PR #35 in review
+
+The owner authorized the full ninth batch after all 18 comments/20 screenshots were reviewed and clarified. Its source screenshots predate PR #34. [Ninth scope and verification](NINTH_BATCH_REVIEW.md) supersedes conflicting earlier wording: every new waiver requires minors listed, without a blank-name adult-only exception; staff Yes is authoritative with a separate explicit count-discrepancy acknowledgment. Arrival drafts preserve entered counts/tenders through one-action card replacement and protected staff signing. Split rows can cover a visit without card funding, while final processing/results remain truthful. Add audited searchable booking comments, compact notices, pricing/percentage fixes and the revised backend layout. Cash change remains deferred. Review the [GitHub gallery](design-review/ninth-review/README.md) before merge/deployment. Active membership stage work remains on hold.
+
+
 ## Eighth feedback batch — current public presentation and confirmation
 
 The owner authorized PR #34 after all 28 comments/27 screenshots were reviewed. The latest accepted scope is [EIGHTH_BATCH_REVIEW.md](EIGHTH_BATCH_REVIEW.md). It supersedes earlier two-button public card/booking controls with one explicit Confirm booking action, visible pending/error states and safe interrupted-response recovery; ordinary admission collection remains at reviewed arrival. New legacy pending-test confirmations are blocked when the completed workflow is required. Historical bookings/evidence/messages remain intact. Approved public copy/branding, member/party descriptions, singular/plural quantities, phone formatting, required/error handling, Zelle confirmation instructions and year-free/reference-free email subjects apply together. Homepage layout/assets, live integration configuration, pricing/fee formulas and active membership development remain unchanged. Screenshot review precedes merging/deployment.

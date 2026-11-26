@@ -1,15 +1,15 @@
 {% if play_kind == 'supervised' %}
 <p class="play-subtitle">Your child plays and our capable staff supervises</p>
 <p>For children ages 3-11<br>
-$18.99 per child</p>
+${{ public_pricing.supervised_price|floatformat:'-2' }} per child</p>
 <p class="supervised-benefit">Subscription Members enjoy 25% off supervised play</p>
 <p class="supervised-availability">Supervised play is available for select sessions.{% if not omit_booking_instruction %} Check the booking page to see which sessions offer it.{% endif %}</p>
 {% else %}
 <p class="play-subtitle">Play accompanied by an adult</p>
 <p>Children ages 1–11<br>
-$15 per child<br>
+${{ public_pricing.child_price|floatformat:'-2' }} per child<br>
 1 free adult<br>
-Additional adults ages 12 and up: $5 each<br>
+Additional adults ages 12 and up: ${{ public_pricing.extra_adult_price|floatformat:'-2' }} each<br>
 Babies under 1 are free</p>
-<p>If you are coming just with a baby, there is a $15 admission.</p>
+<p>If you are coming just with a baby, there is a ${{ public_pricing.minimum_admission|floatformat:'-2' }} admission.</p>
 {% endif %}

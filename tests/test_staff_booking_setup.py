@@ -57,6 +57,7 @@ class StaffSetupTests(TestCase):
             "expiry_year": 2035,
             "agree_payment": True,
             "agree_cancellation": True,
+            "retention_choice": "no",
         }
         with patch("core.payments.setup.Gateway") as gateway:
             self.gateway(gateway)
@@ -121,6 +122,7 @@ class StaffSetupTests(TestCase):
                     "expiry_year": 2035,
                     "agree_payment": True,
                     "agree_cancellation": True,
+                    "retention_choice": "no",
                 },
                 content_type="application/json",
             )

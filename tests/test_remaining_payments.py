@@ -53,7 +53,14 @@ class RemainingPaymentTests(TestCase):
             signed=True,
         )
         checkout = self.act(
-            booking, self.arrival_inputs(booking, children=3, method="split", split={"cash": "40"})
+            booking,
+            self.arrival_inputs(
+                booking,
+                children=3,
+                method="split",
+                split={"cash": "40"},
+                waiver_mismatch_accepted=True,
+            ),
         )
         original = checkout.sale.operations.get(tender="card")
         self.decline(original)

@@ -114,7 +114,7 @@ for (const form of document.querySelectorAll('form[data-booking-estimate]')) {
       lastEstimate = data;
       return data;
     } catch (error) {
-      if (error.name !== 'AbortError') { status.textContent = error.message; lastEstimate = null; }
+      if (error.name !== 'AbortError') { content.replaceChildren(); status.textContent = error.message; lastEstimate = null; }
       return null;
     }
   }
@@ -260,10 +260,42 @@ for (const form of document.querySelectorAll('[data-public-estimate]')) {
   // For supervised-only sessions, switching is unavailable; quantities still start at zero.
   if (selected()) wasSupervised = true;
   sync();
+  const adultMessage = document.createElement('p');
+  adultMessage.className = 'field-help attendee-message'; adultMessage.hidden = true;
+  adultMessage.setAttribute('role', 'status'); adults.after(adultMessage);
+  const explainAdult = () => {
+    adultMessage.textContent = 'An adult must accompany a baby or child to an open play session.';
+    adultMessage.hidden = false;
+  };
   adults.addEventListener('input', () => {
-    if (!selected() && adults.value !== '' && Number(adults.value) < 1) adults.value = '1';
+    adultMessage.hidden = true;
+    if (!selected() && adults.value !== '' && Number(adults.value) < 1) { adults.value = '1'; explainAdult(); }
+  });
+  adults.addEventListener('keydown', event => {
+    if (!selected() && event.key === 'ArrowDown' && Number(adults.value) <= 1) { event.preventDefault(); explainAdult(); }
+  });
+  // The number spinner cannot go below its min, so explain a click on its lower half too.
+  adults.addEventListener('pointerdown', event => {
+    const rect = adults.getBoundingClientRect();
+    if (!selected() && Number(adults.value) <= 1 && event.clientX >= rect.right - 28 && event.clientY > rect.top + rect.height / 2) explainAdult();
   });
   for (const radio of form.querySelectorAll('[name=play_type]')) radio.addEventListener('change', sync);
+}
+/* Staff keeps entered counts; point directly to incompatible adults when switching play type. */
+for (const form of document.querySelectorAll('form.record-form')) {
+  const mode = form.elements.supervised, adults = form.elements.adults;
+  if (!mode || !adults) continue;
+  const message = document.createElement('p');
+  message.className = 'field-help attendee-message'; message.hidden = true;
+  message.textContent = 'Cannot have adults in a supervised play visit.';
+  message.setAttribute('role', 'status'); adults.after(message);
+  const syncAdults = () => {
+    const invalid = mode.checked && Number(adults.value) > 0;
+    message.hidden = !invalid;
+    adults.setCustomValidity(invalid ? message.textContent : '');
+    adults.setAttribute('aria-invalid', String(invalid));
+  };
+  mode.addEventListener('change', syncAdults); adults.addEventListener('input', syncAdults); syncAdults();
 }
 for (const form of document.querySelectorAll('[data-public-estimate]')) {
   const content = form.querySelector('[data-public-estimate-content]');

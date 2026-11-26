@@ -117,11 +117,11 @@ class CoverageConfirmationForm(forms.Form):
     coverage = forms.ChoiceField(
         label="Do all minors in this booking have a current signed waiver for them?",
         choices=[
+            ("yes", "Yes — all minors in this booking have a current waiver signed for them."),
             (
                 "no",
                 "No — additional minors need a waiver, please send me a waiver link in my confirmation email.",
             ),
-            ("yes", "Yes — all minors in this booking have a current waiver signed for them."),
         ],
         widget=forms.RadioSelect,
     )

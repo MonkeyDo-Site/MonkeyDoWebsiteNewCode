@@ -1,5 +1,12 @@
 # Shared workflow and screen standards for the remaining stages
 
+## Ninth review carry-forward
+
+Separate live estimate validation from final action validation. Keep prices updating while a waiver or tender verification answer is still missing, but disable final confirmation until all required decisions are explicit. Preserve private actor/booking/version-bound arrival drafts through card/signing side flows, serializing saves before departure. A draft is never attendance, money received or a payment request. Read-only result polling must not dispatch another card operation.
+
+Use compact payment rows and an exact remaining-balance action. Surface count discrepancies beside waiver confirmation and audit the staff acknowledgment. Booking comments are staff-only, searchable and revision-audited. Keep Dashboard notices compact with expandable detail and a side action. See [ninth review](NINTH_BATCH_REVIEW.md).
+
+
 ## Eighth review carry-forward
 
 Reuse display-only phone formatting (for example 732-555-0147), correct participant/sock pluralization, required indicators only on genuinely required fields, and validation that focuses/scrolls to visible errors without disturbing normal live estimates. Mouse-wheel scrolling must not change focused numeric quantities. Open Play keeps at least one adult; Supervised Play retains zero adults/babies, and approved baby-only/adult-only visits remain available.

@@ -39,7 +39,7 @@ def correct_email(*, flow, email, version, request_key):
     if customer.revision != version:
         raise ValidationError("Your profile changed. Reload this page before updating your email.")
     if Customer.objects.exclude(pk=customer.pk).filter(email__iexact=email).exists():
-        raise ValidationError(public_duplicate_email_message(email))
+        raise ValidationError(public_duplicate_email_message(email, customer.phone))
     if customer.email != email:
         old = customer.email
         historical = list(
