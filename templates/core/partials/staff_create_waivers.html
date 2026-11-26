@@ -1,0 +1,6 @@
+{% if waiver_form %}
+<p><strong>Current waivers for this customer</strong></p>
+{% for signature in waiver_form.current_waivers %}<div class="active-waiver">{% include 'core/partials/waiver_signer_summary.html' %}<p class="caption">{% if signature.signature_method == 'paper' %}Signed paper waiver · {% endif %}Valid until {{ signature.valid_until|date:'F j, Y' }}</p></div>{% empty %}<p>No current waivers are recorded for this customer. Sign or record a waiver here, or include the waiver link in the confirmation email.</p>{% endfor %}
+{% include 'core/partials/staff_create_field.html' with field=waiver_form.waiver_choice %}
+<div data-create-waiver-instructions hidden>{% include 'core/partials/staff_create_field.html' with field=waiver_form.waiver_type %}<p class="caption">The confirmation email will include the waiver link. The booking will hold their places while waivers are pending.</p></div>
+{% else %}<p>Select a customer and session to see the current waiver details.</p>{% endif %}

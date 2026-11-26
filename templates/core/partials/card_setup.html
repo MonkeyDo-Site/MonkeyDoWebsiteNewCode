@@ -1,21 +1,22 @@
 {% load static %}
-<section class="{% if not card_public_booking %}panel {% endif %}card-setup" aria-labelledby="card-heading" data-card-setup{% if card_public_booking %} data-single-confirm="1"{% elif card_replacement %} data-single-replace="1"{% endif %} data-endpoint="{{ card_endpoint }}" data-status-url="{{ card_status_url }}" data-status-prefix="{{ card_endpoint }}" data-ready="{% if card_ready %}1{% else %}0{% endif %}">
-<h3 id="card-heading">{% if card_public_booking %}{% if card_primary %}Your credit card{% else %}Your backup credit card{% endif %}{% else %}Secure card setup{% endif %}</h3>
-{% if not card_public_booking %}<p>{{ card_retention_policy }}</p><p>{{ card_cancellation_policy }}</p>{% endif %}
-{% if card_public_booking %}<p class="caption" data-selected-card{% if not card_ready %} hidden{% endif %}>{% if card_ready %}Saved payment method ending in {{ card_accepted_last_four }}. No admission payment has been collected.{% endif %}</p>{% endif %}
+<section class="{% if not card_public_booking %}panel {% endif %}card-setup" aria-labelledby="card-heading" data-card-setup{% if card_staff_create %} data-single-create="1"{% elif card_public_booking %} data-single-confirm="1"{% elif card_replacement %} data-single-replace="1"{% endif %} data-endpoint="{{ card_endpoint }}" data-status-url="{{ card_status_url }}" data-status-prefix="{{ card_endpoint }}" data-ready="{% if card_ready %}1{% else %}0{% endif %}">
+<h3 id="card-heading">{% if card_staff_create %}Booking card{% elif card_public_booking %}{% if card_primary %}Your credit card{% else %}Your backup credit card{% endif %}{% else %}Secure card setup{% endif %}</h3>
+{% if not card_public_booking %}<p>{{ card_retention_policy }}</p><p data-card-cancellation>{{ card_cancellation_policy }}</p>{% endif %}
+{% if card_public_booking or card_staff_create %}<p class="caption" data-selected-card{% if not card_ready %} hidden{% endif %}>{% if card_ready %}Saved payment method ending in {{ card_accepted_last_four }}. No admission payment has been collected.{% endif %}</p>{% endif %}
 {% if card_configured %}
 <form data-card-form{% if card_public_booking %} id="public-card-form"{% endif %}>
 {% include 'core/partials/wizard_identity.html' %}<input type="hidden" name="policy_version" value="{{ card_policy_version }}"><input type="hidden" name="request_key" value="{{ card_setup_key }}">
-<fieldset><legend>Choose a card</legend>
+<fieldset data-card-methods><legend>Choose a card</legend>
 {% for method in card_methods %}<label><input type="radio" name="method" value="{{ method.pk }}"{% if method.pk == card_accepted_method_id %} checked{% endif %}> Saved payment method ending in {{ method.last_four }}</label>{% endfor %}
 <label><input type="radio" name="method" value="new"{% if not card_ready %} checked{% endif %}> Enter a new card</label></fieldset>
+{% if card_staff_create %}<button type="button" class="text-button" data-create-change-card{% if not card_ready %} hidden{% endif %}>Change card selection</button>{% endif %}
 <div data-new-card><div id="provider-card-frame" aria-label="Secure provider card entry"></div>
 {% if card_staff %}<fieldset class="card-retention-choice"><legend>The customer wants to keep this card for future MonkeyDo visits? If there’s another saved card, this card will replace the saved card.</legend><label><input type="radio" name="retain" value="yes" required> Yes</label><label><input type="radio" name="retain" value="no" required> No</label></fieldset>{% else %}<label><input type="checkbox" name="retain"> Keep this card for future MonkeyDo bookings. {% if card_has_saved %}This card will replace the currently saved card.{% endif %}</label>{% endif %}</div>
 {% if card_staff %}<label><input type="checkbox" name="agree_payment" required{% if card_ready %} checked{% endif %}> The payment and cancellation policies have been reviewed with the customer.</label><input type="hidden" name="agree_cancellation" value="1">
 {% else %}<input type="hidden" name="agree_payment" value="1">
 <h3>Cancellation policy</h3><p>{% if card_public_booking %}{% if card_primary %}{{ card_cancellation_policy }}{% else %}{{ card_backup_cancellation }}{% endif %}{% else %}{{ card_cancellation_policy }} {{ card_cancellation_scope }}{% endif %}</p>
 <label><input type="checkbox" name="agree_cancellation" required{% if card_ready %} checked{% endif %}> I understand the MonkeyDo cancellation policy.</label>{% endif %}
-{% if not card_public_booking and not card_replacement %}<button type="submit" class="button" data-save-card>Save card securely</button>{% endif %}
+{% if not card_public_booking and not card_replacement and not card_staff_create %}<button type="submit" class="button" data-save-card>Save card securely</button>{% endif %}
 {% if card_public_booking %}<a href="#" data-check-card hidden>please try again</a>{% else %}<button type="button" class="text-button" data-check-card hidden>Check card setup</button>{% endif %}
 {% if not card_public_booking %}<p class="caption" role="status" data-card-status>Saving a card does not charge your admission or create a verification hold.</p>{% endif %}
 </form>

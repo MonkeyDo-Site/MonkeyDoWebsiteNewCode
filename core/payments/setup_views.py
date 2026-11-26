@@ -178,7 +178,7 @@ def setup_card(request, *, reader=current, writer=save, actor=None):
         )
 
 
-def card_context(flow):
+def card_context(flow, *, empty=False):
     from django.db.models import Q
 
     from .policy import (
@@ -202,7 +202,7 @@ def card_context(flow):
         accepted = selected_consent(flow)
     except ValidationError:
         accepted = None
-    methods = reusable_methods(flow)
+    methods = PaymentMethod.objects.none() if empty else reusable_methods(flow)
     saved_setup = (
         PaymentSetup.objects.filter(
             pk=flow.get("payment_setup_key"), flow_hash=flow_identity(flow)[0], state="succeeded"

@@ -1,0 +1,8 @@
+<div class="form-field" data-field="{{ field.name }}">
+{{ field.errors }}
+{% if field.name == 'customer' %}<label for="customer-picker-search">Search customer by name or phone</label><input type="search" id="customer-picker-search" data-customer-search aria-controls="{{ field.id_for_label }}" autocomplete="off" placeholder="Type at least two characters"><span class="caption" data-picker-status role="status"></span>
+{% elif field.widget_type == 'checkbox' %}<label for="{{ field.id_for_label }}">{{ field }} {{ field.label }}</label>{% else %}{{ field.label_tag }}{% endif %}
+{% if field.widget_type != 'checkbox' %}{{ field }}{% endif %}
+{% if field.name == 'session_date' %}<button class="text-button" type="submit" name="load_sessions" value="1" data-session-fallback formnovalidate>Show sessions for this date</button>{% endif %}
+{% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}
+</div>

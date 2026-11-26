@@ -6,3 +6,6 @@ docs/design-review/eighth-review/*.png export-ignore
 
 # Ninth review screenshots stay on GitHub, outside deployable ZIPs.
 docs/design-review/ninth-review/*.png export-ignore
+
+# Single-page backend booking review images are not release source assets.
+docs/design-review/single-page-staff-booking/*.png export-ignore

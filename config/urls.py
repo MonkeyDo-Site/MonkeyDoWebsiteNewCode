@@ -21,7 +21,7 @@ from core.backups import views as backup_views
 from core.communications import views as message_views
 from core.communications.webhooks import endpoint as email_webhook
 from core.payments import checkout_views as payment_checkout_views
-from core.payments import staff_setup, zelle_views
+from core.payments import staff_create, staff_setup, zelle_views
 from core.payments import views as payment_views
 from core.payments.checkout_views import checkout as booking_checkout
 from core.payments.checkout_views import complimentary, remaining_payment
@@ -32,6 +32,17 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path("staff/bookings/draft/<uuid:token>/card/", staff_create.card, name="staff_create_card"),
+    path(
+        "staff/bookings/draft/<uuid:token>/card/<uuid:setup_id>/",
+        staff_create.card_status,
+        name="staff_create_card_status",
+    ),
+    path(
+        "staff/bookings/draft/<uuid:token>/waiver/",
+        staff_create.sign_waiver,
+        name="staff_create_waiver",
+    ),
     path(
         "staff/waivers/paper/<uuid:pk>/",
         __import__("core.waivers.views", fromlist=["paper_detail"]).paper_detail,

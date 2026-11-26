@@ -19,15 +19,22 @@ def opening_time(day, horizon):
     return datetime.combine(opens, time.min, NEW_YORK)
 
 
-def occupancy(session):
+def occupancy(session, *, ignore_booking_id=None, ignore_hold=None):
     bookings = session.bookings.exclude(
         attendance__in=[Booking.Attendance.CANCELLED, Booking.Attendance.NO_SHOW]
     )
+    if ignore_booking_id:
+        bookings = bookings.exclude(pk=ignore_booking_id)
+    holds = session.capacity_holds.filter(expires_at__gt=timezone.now())
+    if ignore_hold:
+        holds = holds.exclude(pk=ignore_hold)
     counts = bookings.aggregate(children=Sum("children"), adults=Sum("adults"))
+    held = holds.aggregate(children=Sum("children"), adults=Sum("adults"))
     return (
-        counts["children"] or 0,
-        counts["adults"] or 0,
-        bookings.filter(supervised=True).aggregate(n=Sum("children"))["n"] or 0,
+        (counts["children"] or 0) + (held["children"] or 0),
+        (counts["adults"] or 0) + (held["adults"] or 0),
+        (bookings.filter(supervised=True).aggregate(n=Sum("children"))["n"] or 0)
+        + (holds.filter(supervised=True).aggregate(n=Sum("children"))["n"] or 0),
     )
 
 

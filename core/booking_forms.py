@@ -57,11 +57,25 @@ def session_date_picker(form, booking=None):
     form.fields["session"].widget.attrs["data-dated-sessions"] = "true"
 
 
+def session_capacity_summary(session, booking=None):
+    from .availability import occupancy
+
+    children, adults, supervised = occupancy(
+        session, ignore_booking_id=booking.pk if booking else None
+    )
+    return f"Children: {max(0, session.child_capacity - children)} of {session.child_capacity} available · Total: {max(0, session.total_capacity - children - adults)} of {session.total_capacity} available · Supervised: {max(0, session.supervised_capacity - supervised)} of {session.supervised_capacity} available"
+
+
 class SessionChoiceSelect(forms.Select):
+    def __init__(self, *args, booking=None, **kwargs):
+        self.booking = booking
+        super().__init__(*args, **kwargs)
+
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
         option = super().create_option(name, value, label, selected, index, subindex, attrs)
         if hasattr(value, "instance"):
             session = value.instance
+            option["attrs"]["data-capacity"] = session_capacity_summary(session, self.booking)
             option["attrs"]["data-play-mode"] = session.play_mode
             option["attrs"]["data-supervised-capacity"] = session.supervised_capacity
             option["attrs"]["data-started"] = "1" if session.starts_at <= timezone.now() else "0"
@@ -114,7 +128,8 @@ class TestBookingForm(forms.Form):
     creation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput, required=False)
 
-    def __init__(self, *args, owner=False, booking=None, customer=None, **kwargs):
+    def __init__(self, *args, owner=False, booking=None, customer=None, previewing=False, **kwargs):
+        self.previewing = previewing
         self.booking = booking
         initial = {}
         if customer:
@@ -135,7 +150,7 @@ class TestBookingForm(forms.Form):
             }
             initial["version"] = booking.edit_version
         super().__init__(*args, initial=initial, **kwargs)
-        self.fields["session"].widget = SessionChoiceSelect()
+        self.fields["session"].widget = SessionChoiceSelect(booking=booking)
         self.fields["session"].queryset = Session.objects.filter(
             Q(source_slot__isnull=True)
             | Q(source_slot__active=True, source_slot__archived_at__isnull=True),
@@ -185,7 +200,9 @@ class TestBookingForm(forms.Form):
             from .payments.receipts import sender
 
             try:
-                data["zelle_sender"] = sender(data.get("zelle_sender", ""), required=True)
+                data["zelle_sender"] = sender(
+                    data.get("zelle_sender", ""), required=not self.previewing
+                )
             except forms.ValidationError as error:
                 self.add_error("zelle_sender", error)
         return data
@@ -215,7 +232,7 @@ class TimingForm(forms.Form):
             initial={"session": booking.session_id, "version": booking.edit_version},
             **kwargs,
         )
-        self.fields["session"].widget = SessionChoiceSelect()
+        self.fields["session"].widget = SessionChoiceSelect(booking=booking)
         self.fields["session"].queryset = Session.objects.filter(
             Q(source_slot__isnull=True)
             | Q(source_slot__active=True, source_slot__archived_at__isnull=True),

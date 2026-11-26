@@ -1,0 +1,3 @@
+<h2>Sign Waiver</h2><p>Every participating minor needs a signed waiver.</p>
+<section class="waiver-legal" tabindex="0" aria-label="Complete liability waiver text">{{ legal_html|safe }}</section>
+<form method="post" data-create-sign-form>{% csrf_token %}{% include 'core/partials/form_fields.html' %}<button class="button" type="submit">Sign waiver</button></form>

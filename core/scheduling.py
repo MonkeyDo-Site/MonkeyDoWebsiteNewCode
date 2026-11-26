@@ -137,7 +137,10 @@ def save_session(
         )
         timing_changed = any(before[name] != after[name] for name in ("starts_at", "ends_at"))
         mode_changed = before["play_mode"] != row.play_mode and not equivalent_mode
-        if current.bookings.exists() and (timing_changed or mode_changed):
+        if (
+            current.bookings.exists()
+            or current.capacity_holds.filter(expires_at__gt=timezone.now()).exists()
+        ) and (timing_changed or mode_changed):
             raise ValidationError(
                 "Booked session timing/play type cannot change here. Move bookings individually; notification integration remains pending."
             )

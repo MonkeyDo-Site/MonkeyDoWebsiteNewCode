@@ -75,6 +75,13 @@ def authorize_actor(flow, actor):
     _, customer = flow_identity(flow)
     if customer is None:
         raise ValidationError("Choose the staff booking’s customer before card setup.")
+    if flow.get("staff_action") == "create" and not flow.get("staff_booking"):
+        require_actor(actor, "core.add_booking")
+        if not flow.get("quote") or flow.get("customer_id") != customer.pk:
+            raise ValidationError(
+                "Review the customer, session and current price before card setup."
+            )
+        return
     try:
         booking = Booking.objects.get(
             pk=flow.get("staff_booking"), customer=customer, workflow="integrated_v1"

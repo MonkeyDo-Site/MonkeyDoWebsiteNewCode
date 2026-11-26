@@ -4,7 +4,8 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   if (!form) continue;
   const status = section.querySelector('[data-card-status]');
   const replacement = section.dataset.singleReplace === '1';
-  const single = section.dataset.singleConfirm === '1' || replacement;
+  const creating = section.dataset.singleCreate === '1';
+  const single = section.dataset.singleConfirm === '1' || replacement || creating;
   const actionLabel = replacement ? 'Save and use this card' : 'Confirm booking';
   const confirmationForm = single ? document.querySelector('#customer-booking-form') : null;
   const button = single ? document.querySelector('[data-confirm-booking]') : document.querySelector('[data-payment-save]') || form.querySelector('[data-save-card]');
@@ -22,6 +23,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     button.querySelector('.processing-dots').hidden = !active;
     button.setAttribute('aria-busy', String(active));
     form.inert = active;
+    if (creating) section.dispatchEvent(new CustomEvent('staff-create-busy', {detail: active}));
   };
   const finish = () => {
     if (!single || !confirmRequested) return;
@@ -41,7 +43,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
   const report = message => {
     const target = publicStatus || status;
     if (!target) return;
-    const error = !['Your card is saved', 'Save your', 'Saving', 'Card will', 'Your card will', 'Confirming'].some(prefix => message.startsWith(prefix));
+    const error = message !== publicStatus?.dataset.idleMessage && !['Your card is saved', 'Save your', 'Saving', 'Card will', 'Your card will', 'Confirming'].some(prefix => message.startsWith(prefix));
     target.textContent = single && error ? (replacement ? 'The booking card has not been changed. ' : 'Your booking is not confirmed. ') + message : message;
     if (single && error && uncertain) {
       target.append(' ', check);
@@ -66,6 +68,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     if (confirm) confirm.classList.remove('confirm-ready', 'confirm-attention');
   };
   const showSaved = data => {
+    section.dataset.choiceDirty = '0';
     report(single ? (confirmRequested ? (replacement ? 'Confirming this booking’s card selection…' : 'Confirming your booking… Your booking is not confirmed yet.') : (replacement ? 'Your card is saved. Click Save and use this card to finish updating this booking.' : 'Your card is saved. Click Confirm booking to finish your reservation.')) : 'Your card is saved. Click Confirm booking to finish your reservation.');
     const summary = document.querySelector('[data-selected-card]');
     if (summary) {
@@ -87,6 +90,7 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     check.hidden = true;
     uncertain = false;
     section.dataset.ready = '1';
+    if (creating) sync();
     section.dispatchEvent(new CustomEvent('card-setup-saved', {bubbles: true}));
     if (single) {
       processing(false);
@@ -117,26 +121,61 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     });
   });
   let hosted;
-  try {
+  const initializeHosted = () => {
     const key = JSON.parse(document.querySelector('#card-tokenization-key').textContent);
-    // Keep Banquest's own responsive field layout. Container-only flex overrides
-    // detached the default input sizing and expiry/CVV alignment in PR #34.
-    hosted = new window.HostedTokenization(key, {target: '#provider-card-frame', showFieldErrors: true, styles: {container:'margin:0;padding:0;min-height:0',cardContainer:'margin:0 8px 0 0',card:'width:100%;box-sizing:border-box',expiryContainer:'margin:0 8px 0 0',cvv2Container:'margin:0',fieldErrors:'color:#9b3650;font-size:12px;margin:4px 0 0'}});
+    // Preserve the provider's own responsive container layout.
+    const instance = new window.HostedTokenization(key, {target: '#provider-card-frame', showFieldErrors: true, styles: {container:'margin:0;padding:0;min-height:0',cardContainer:'margin:0 8px 0 0',card:'width:100%;box-sizing:border-box',expiryContainer:'margin:0 8px 0 0',cvv2Container:'margin:0',fieldErrors:'color:#9b3650;font-size:12px;margin:4px 0 0'}});
+    return instance;
+  };
+  try {
+    hosted = initializeHosted();
   } catch {
     report('Secure card entry is unavailable. Please reload this page or call/text 848-238-5147.');
   }
-  const sync = () => { const isNew = form.elements.method.value === 'new'; section.querySelector('[data-new-card]').hidden = !isNew; for (const choice of form.querySelectorAll('[name=retain]')) choice.disabled = !isNew; };
+  const sync = () => {
+    const isNew = form.elements.method.value === 'new';
+    const ready = section.dataset.ready === '1';
+    section.querySelector('[data-new-card]').hidden = !isNew || (creating && ready);
+    if (creating) section.querySelector('[data-create-change-card]').hidden = !ready;
+    for (const choice of form.querySelectorAll('[name=retain]')) choice.disabled = !isNew;
+  };
   form.addEventListener('change', () => {
-    sync();
     // A potentially accepted provider request must be checked, never exchanged again.
-    if (uncertain) return;
+    if (uncertain) { sync(); return; }
+    if (creating) section.dataset.choiceDirty = '1';
     invalidate();
+    sync();
     button.disabled = false;
     statusUrl = '';
     check.hidden = true;
     report(publicStatus?.dataset.idleMessage || 'Save your selected card and policies before confirming your booking.');
   });
   sync();
+  if (creating) {
+    section.querySelector('[data-create-change-card]').addEventListener('click', () => {
+      if (uncertain) return;
+      invalidate();
+      form.dispatchEvent(new Event('change',{bubbles:true}));
+    });
+    section.addEventListener('staff-create-context', event => {
+      if (uncertain) return;
+      const data = event.detail;
+      statusUrl = data.status_url || '';
+      if (data.identity_changed) {
+        section.querySelector('#provider-card-frame').replaceChildren();
+        try { hosted = initializeHosted(); } catch { report('Secure card entry is unavailable. Please reload this page.'); }
+        section.dataset.choiceDirty = '0';
+      }
+      if (section.dataset.choiceDirty !== '1') {
+        section.dataset.ready = data.ready ? '1' : '0';
+        if (confirmedChoice) confirmedChoice.value = data.consent || '';
+      }
+      sync();
+    });
+    section.addEventListener('staff-create-final-error', () => {
+      finishing = false; confirmRequested = false; processing(false); button.disabled = false;
+    });
+  }
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (uncertain || !form.reportValidity()) return;
@@ -197,12 +236,20 @@ for (const section of document.querySelectorAll('[data-card-setup]')) {
     }
   });
   if (single) {
-    confirmationForm.addEventListener('submit', event => {
+    confirmationForm.addEventListener('submit', async event => {
       if (finishing) return;
       event.preventDefault();
       if (confirmRequested || uncertain) return;
-      if (!confirmationForm.reportValidity()) return;
-      if (section.dataset.ready !== '1' && !form.reportValidity()) return;
+      if (creating) {
+        confirmRequested = true;
+        try {
+          const prepared = await section.staffCreatePrepare();
+          if (!prepared) { confirmRequested = false; processing(false); return; }
+          if (prepared.comped) { finish(); return; }
+        } catch (error) { report(error.message || 'Review the booking details before confirming.'); return; }
+      }
+      if (!confirmationForm.reportValidity()) { confirmRequested = false; processing(false); return; }
+      if (section.dataset.ready !== '1' && !form.reportValidity()) { confirmRequested = false; processing(false); return; }
       confirmRequested = true;
       if (section.dataset.ready === '1') finish();
       else form.requestSubmit();
