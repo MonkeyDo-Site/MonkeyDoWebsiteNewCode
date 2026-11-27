@@ -258,8 +258,34 @@ The customer page keeps issued/applied credit history and links to the source bo
 | --- | --- |
 | [![Customer credit history, desktop](29-customer-credit-history-desktop.png)](29-customer-credit-history-desktop.png) | [![Customer credit history, phone](29-customer-credit-history-phone.png)](29-customer-credit-history-phone.png) |
 
+## 30 — Owner correction with the resulting balance visible
+
+On the existing customer page, expand **Owner: correct unused credit**. This fictional customer has **$16.02** available. Removing **$5.00** leaves **$11.02**. The amount, reason, before/after balances and one final action stay together. Review creates no correction; the owner must confirm. Staff cannot perform this action, and used or source-held credit cannot be removed.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Owner credit removal review, desktop](30-owner-credit-removal-review-desktop.png)](30-owner-credit-removal-review-desktop.png) | [![Owner credit removal review, phone](30-owner-credit-removal-review-phone.png)](30-owner-credit-removal-review-phone.png) |
+
+## 31 — Removed credit retained in the customer history
+
+After confirmation, **$11.02** is available. The expandable history keeps the owner, time, amount and reason; the full customer history remains accessible. The original **$16.47** card receipt and **$16.02** credit issue remain unchanged. Removing unused credit neither returns money nor changes an already applied amount.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Owner credit correction history, desktop](31-owner-credit-correction-history-desktop.png)](31-owner-credit-correction-history-desktop.png) | [![Owner credit correction history, phone](31-owner-credit-correction-history-phone.png)](31-owner-credit-correction-history-phone.png) |
+
+## 32 — Restore only a specific earlier removal
+
+The owner chooses the earlier **$5.00** removal and reviews restoring **$2.00**, leaving **$13.02** available. Restoration cannot exceed the amount still unrestored from that specific removal or create additional unsupported credit. If the original source later needs payment review, restored funds remain held; they do not become spendable. A second explicit confirmation records the restoration with its own reason and history.
+
+Both fictional actions were completed in browser checks. No external payment, refund or email was sent.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Owner credit restoration review, desktop](32-owner-credit-restoration-review-desktop.png)](32-owner-credit-restoration-review-desktop.png) | [![Owner credit restoration review, phone](32-owner-credit-restoration-review-phone.png)](32-owner-credit-restoration-review-phone.png) |
+
 ## Checked so far
 
-The browser checks confirm no horizontal overflow or JavaScript errors on all twenty-nine desktop/phone pairs. The complete application suite passes 968 tests, including the customer-credit foundation, split-source allocation, source-return holds and three new PostgreSQL races. Three final overview checks pass after native no-JavaScript re-review was added for changed amounts. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
+The browser checks confirm no horizontal overflow or JavaScript errors on all thirty-two desktop/phone pairs. The complete application suite passes 983 tests, including owner credit corrections, the customer-credit foundation, split-source allocation, source-return holds and six credit-related PostgreSQL races. All 37 final correction/customer checks pass after the readable full-history and financial-permission changes. Native no-JavaScript re-review protects changed amounts. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
 
 The first review is about layout and clarity. Implementation and regression testing continue independently while the owner reviews. The final owner testing guide and release package follow completion and explicit release approval.

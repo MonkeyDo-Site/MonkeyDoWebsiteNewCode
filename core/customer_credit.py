@@ -5,12 +5,13 @@ from itertools import islice
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import DecimalField, F, Sum, Value
+from django.db.models import DecimalField, F, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 
 from .customer_credit_records import (
     CustomerCreditAllocation,
     CustomerCreditApplication,
+    CustomerCreditCorrectionAllocation,
     CustomerCreditIssue,
 )
 from .membership_payments import member_record
@@ -22,16 +23,41 @@ from .payments.ledger import RESERVED, fingerprint, lock_request, used_component
 from .pricing import money
 
 
-def unspent_issues(customer_id):
+def issue_balances():
     currency = DecimalField(max_digits=14, decimal_places=2)
+
+    def summed(query):
+        return Coalesce(
+            Subquery(
+                query.order_by().values("issue_id").annotate(total=Sum("amount")).values("total"),
+                output_field=currency,
+            ),
+            Value(ZERO),
+            output_field=currency,
+        )
+
     return (
-        CustomerCreditIssue.objects.filter(customer_id=customer_id)
-        .annotate(spent=Coalesce(Sum("applications__amount"), Value(ZERO), output_field=currency))
-        .annotate(remaining=F("amount") - F("spent"))
-        .filter(remaining__gt=0)
+        CustomerCreditIssue.objects.annotate(
+            spent=summed(CustomerCreditAllocation.objects.filter(issue_id=OuterRef("pk"))),
+            removed=summed(
+                CustomerCreditCorrectionAllocation.objects.filter(
+                    issue_id=OuterRef("pk"), correction__kind="remove"
+                )
+            ),
+            restored=summed(
+                CustomerCreditCorrectionAllocation.objects.filter(
+                    issue_id=OuterRef("pk"), correction__kind="restore"
+                )
+            ),
+        )
+        .annotate(remaining=F("amount") - F("spent") - F("removed") + F("restored"))
         .select_related("original__sale")
         .order_by("created_at", "pk")
     )
+
+
+def unspent_issues(customer_id):
+    return issue_balances().filter(customer_id=customer_id, remaining__gt=0)
 
 
 def source_on_hold(original):
@@ -86,14 +112,7 @@ def expiry_notices():
     from django.db.models import Q
 
     candidates = (
-        CustomerCreditIssue.objects.annotate(
-            spent=Coalesce(
-                Sum("applications__amount"),
-                Value(ZERO),
-                output_field=DecimalField(max_digits=14, decimal_places=2),
-            )
-        )
-        .annotate(remaining=F("amount") - F("spent"))
+        issue_balances()
         .filter(
             Q(conversion__purchase__membership__ends_on__lt=today())
             | Q(conversion__purchase__billing_state__stopped_on__lte=today()),

@@ -651,6 +651,8 @@ from .communications.models import MailProviderEvent, MessageDelivery, MessageEv
 from .customer_credit_records import (  # noqa: E402,F401
     CustomerCreditAllocation,
     CustomerCreditApplication,
+    CustomerCreditCorrection,
+    CustomerCreditCorrectionAllocation,
     CustomerCreditIssue,
     VisitMembershipConversion,
 )

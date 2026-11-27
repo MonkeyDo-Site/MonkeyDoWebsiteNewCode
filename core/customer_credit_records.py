@@ -88,3 +88,56 @@ class CustomerCreditAllocation(FinancialFact):
                 condition=models.Q(amount__gt=0), name="customer_credit_allocation_positive"
             ),
         ]
+
+
+class CustomerCreditCorrection(FinancialFact):
+    """An owner changes unused credit; neither kind represents a cash refund."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    customer = models.ForeignKey(
+        "core.Customer", on_delete=models.PROTECT, related_name="credit_corrections"
+    )
+    kind = models.CharField(
+        max_length=7, choices=[("remove", "Remove credit"), ("restore", "Restore earlier removal")]
+    )
+    original = models.ForeignKey(
+        "self", null=True, on_delete=models.PROTECT, related_name="restorations"
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    reason = models.CharField(max_length=500)
+    fingerprint = models.CharField(max_length=64)
+    details = models.JSONField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="credit_correction_positive"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(kind="remove", original__isnull=True)
+                | models.Q(kind="restore", original__isnull=False),
+                name="credit_correction_original_scope",
+            ),
+        ]
+
+
+class CustomerCreditCorrectionAllocation(FinancialFact):
+    correction = models.ForeignKey(
+        CustomerCreditCorrection, on_delete=models.PROTECT, related_name="allocations"
+    )
+    issue = models.ForeignKey(
+        CustomerCreditIssue, on_delete=models.PROTECT, related_name="corrections"
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["correction", "issue"], name="credit_correction_issue_unique"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="credit_correction_allocation_positive"
+            ),
+        ]

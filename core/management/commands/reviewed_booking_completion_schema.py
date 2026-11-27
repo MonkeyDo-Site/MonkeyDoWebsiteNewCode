@@ -52,9 +52,12 @@ REVIEWED_NAMES = (
     "0062_booking_membership_owner_decisions",
     "0063_membership_cancellation_refunds",
     "0064_customer_credit_conversion",
+    "0065_owner_credit_corrections",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "customercreditcorrection",
+    "customercreditcorrectionallocation",
     "visitmembershipconversion",
     "customercreditissue",
     "customercreditapplication",
@@ -136,7 +139,7 @@ def reviewed_plan():
     ]
     if plan not in allowed:
         raise CommandError(
-            "Unexpected migration plan. Only the reviewed booking/membership stage 0027–0064 is allowed."
+            "Unexpected migration plan. Only the reviewed booking/membership stage 0027–0065 is allowed."
         )
     return plan
 
