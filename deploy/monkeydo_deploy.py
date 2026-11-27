@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0076_membership_first_split.py": "2d421da06f91daa90760ef7f796d55cb42705585aefa4432e19a2b59329682de",
     "0075_visit_customer_credit.py": "df972fb578370a3db917cec5930841b969ab59a2b014408a2e5b20173c84c3d2",
     "0074_scheduled_membership_credit_authority.py": "6d7c9a7f364a682832169c35a7323668b96b98fda526c3719b58a67a851df135",
     "0073_scheduled_membership_claims.py": "d75728f4b761f9f04f5e2b8c44ba693f83b940c9d30c1229316659a8e5bda783",
@@ -962,13 +963,57 @@ class Host:
             )
         return True
 
+    def ensure_membership_split_compatible(self, target):
+        marker = target / "deploy/membership-first-split-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "59c17332da9384dc05f07934a083f9ad768f161cdafdb65028d68ce168cf818b"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershippurchase') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify membership-split compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershippurchase p JOIN core_membershipdraft m ON m.id=p.membership_id WHERE m.expected_method='split')"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted split membership payments. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
             marker.is_file()
             and hashlib.sha256(marker.read_bytes()).hexdigest() == BOOKING_CAPABILITY
         ):
-            return self.ensure_visit_credit_compatible(target)
+            self.ensure_visit_credit_compatible(target)
+            return self.ensure_membership_split_compatible(target)
         psql = [
             "/usr/sbin/runuser",
             "-u",

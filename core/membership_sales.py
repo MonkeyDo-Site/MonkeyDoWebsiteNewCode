@@ -89,6 +89,9 @@ def offer(
     prior_id=None,
     authority=None,
     credit_amount=ZERO,
+    split=None,
+    split_sender="",
+    split_received_on=None,
 ):
     authorize(actor, authority=authority)
     if actor is None:
@@ -156,8 +159,10 @@ def offer(
         )
     if type(starts_on) is not date or starts_on < today():
         raise ValidationError("Choose today or a future membership start date.")
-    if expected_method not in {"card", "cash", "check", "zelle", "gift_card"}:
+    if expected_method not in {"card", "cash", "check", "zelle", "gift_card", "split"}:
         raise ValidationError("Choose a supported membership payment method.")
+    if split and expected_method != "split":
+        raise ValidationError("Choose split payment before entering separate received amounts.")
     from .membership_initial_credit import review as review_credit
 
     credit = review_credit(actor=actor, customer=customer, value=credit_amount, comped=comped)
@@ -176,6 +181,18 @@ def offer(
         applied_credit = amount(credit["amount"]) if credit and row["number"] == 1 else ZERO
         if applied_credit > principal:
             raise ValidationError("Apply credit only within the initial membership principal.")
+        first_plan = None
+        if tender == "split":
+            from .membership_first_split import review as split_review
+
+            first_plan = split_review(
+                principal=principal,
+                credit=applied_credit,
+                split=split or {},
+                policy=policy,
+                sender_name=split_sender,
+                received_on=split_received_on,
+            )
         quote = quote_lines(
             [
                 Line(
@@ -186,8 +203,14 @@ def offer(
                 )
             ],
             policy,
-            card_base=(principal - applied_credit) if tender == "card" else ZERO,
+            card_base=amount(first_plan["card_net"])
+            if first_plan
+            else (principal - applied_credit)
+            if tender == "card"
+            else ZERO,
         )
+        if first_plan:
+            quote["initial_split"] = first_plan
         if amount(quote["total"]) > Decimal("20000000.00"):
             raise ValidationError(
                 "The installment exceeds the supported payment amount. Review places and billing."
@@ -233,10 +256,32 @@ def offer(
     }
     if installments:
         first = installments[0]
+        if first["quote"].get("initial_split"):
+            data["first_payment_plan"] = first["quote"]["initial_split"]
+            data["first_payment_total"] = str(
+                amount(first["quote"]["total"])
+                - amount(data["first_payment_plan"]["credit_amount"])
+            )
         if credit:
             data["credit"] = credit
             data["first_payment_total"] = str(
                 amount(first["quote"]["total"]) - amount(credit["amount"])
+            )
+        if data.get("first_payment_plan"):
+            labels = {
+                "cash": "cash",
+                "check": "check",
+                "zelle": "verified Zelle",
+                "gift_card": "verified physical gift card",
+                "card": "card",
+            }
+            data["terms"] += (
+                " The first payment is split as follows: "
+                + ", ".join(
+                    f"${part['amount']} {labels[part['tender']]}"
+                    for part in data["first_payment_plan"]["parts"]
+                )
+                + "."
             )
         data["terms"] += (
             f" The accepted price is ${unit:.2f} per place per month for {places} place(s)."
@@ -269,6 +314,8 @@ def purchase(
     send_confirmation=None,
     verified_received=False,
     received_on=None,
+    gift_card_verified=False,
+    zelle_verified=False,
     authority=None,
     combined_booking=None,
     **values,
@@ -334,9 +381,7 @@ def purchase(
         if data["installments"]
         else ZERO
     )
-    needs_card = not data["comped"] and (
-        data["billing"] == "monthly" or (data["expected_method"] == "card" and due_now > ZERO)
-    )
+    needs_card = card_required(data)
     if needs_card:
         available = Q(reusable=True)
         if card_authorization_id:
@@ -376,7 +421,16 @@ def purchase(
             )
     elif method_id:
         raise ValidationError("No card is needed for this selected membership payment.")
-    if due_now > ZERO and data["expected_method"] != "card" and verified_received is not True:
+    if data.get("first_payment_plan"):
+        from .membership_first_split import verify
+
+        verify(
+            data["first_payment_plan"],
+            verified_received=verified_received,
+            gift_card_verified=gift_card_verified,
+            zelle_verified=zelle_verified,
+        )
+    elif due_now > ZERO and data["expected_method"] != "card" and verified_received is not True:
         raise ValidationError("Confirm that the membership payment was actually received.")
     root = MembershipDraft.objects.create(
         customer=customer,
@@ -496,6 +550,21 @@ def purchase(
             )
         first = member.installments.first()
         invoice = invoice_for(first, actor=actor, tender=root.expected_method, authority=authority)
+        if data.get("first_payment_plan"):
+            from .membership_first_split import apply_credit, record
+
+            if data.get("credit"):
+                apply_credit(actor=actor, member=member, sale=invoice.sale, plan=data["credit"])
+            record(
+                actor=actor,
+                member=member,
+                invoice=invoice,
+                plan=data["first_payment_plan"],
+                method=method,
+            )
+            if installment_paid(first):
+                queue_confirmation(member)
+            return member
         if data.get("credit"):
             from .membership_initial_credit import apply as apply_initial_credit
 
@@ -525,6 +594,19 @@ def purchase(
         else:
             record_manual(actor=actor, operation_id=operation.pk, received=True)
     return member
+
+
+def card_required(data):
+    if data["comped"]:
+        return False
+    card = (
+        amount(data["first_payment_plan"]["card_total"])
+        if data.get("first_payment_plan")
+        else amount(data.get("first_payment_total", data["installments"][0]["quote"]["total"]))
+        if data["installments"] and data["expected_method"] == "card"
+        else ZERO
+    )
+    return data["billing"] == "monthly" or card > ZERO
 
 
 @transaction.atomic

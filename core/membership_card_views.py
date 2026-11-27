@@ -259,9 +259,9 @@ def setup_card(request):
             raise ValidationError(
                 "Review and accept the current membership terms before saving this card."
             )
-        if current["comped"] or (
-            current["billing"] == "prepaid" and current["expected_method"] != "card"
-        ):
+        from .membership_sales import card_required
+
+        if not card_required(current):
             raise ValidationError("This selected membership payment does not require a card.")
         flow = current_flow(request, data | {"offer": current}, card=card.cleaned_data)
         values = card.cleaned_data

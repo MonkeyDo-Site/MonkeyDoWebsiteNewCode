@@ -18,9 +18,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Split visit payments and a separate membership receipt | 79–80 |
 | Separate membership Zelle during arrival | 81–82 |
 | Customer credit on arrival and the private receipt | 83–85 |
-| **New: credit with a partial cancellation fee** | **86–87** |
+| Credit with a partial cancellation fee | 86–87 |
+| **New: split the membership first payment** | **[88–89](#88--split-the-membership-payment-on-the-same-purchase-page)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Allocating already recorded booking Zelle toward membership, splitting the membership payment itself, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Allocating already recorded booking Zelle toward membership, extending membership splits to combined arrival, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -794,12 +795,32 @@ The database still forbids moving credit onto a cancellation-fee line. Developer
 | --- | --- |
 | [![Credit with cancellation received, desktop](87-credit-with-cancellation-received-desktop.png)](87-credit-with-cancellation-received-desktop.png) | [![Credit with cancellation received, phone](87-credit-with-cancellation-received-phone.png)](87-credit-with-cancellation-received-phone.png) |
 
+## 88 — Split the membership payment on the same purchase page
+
+Two monthly Subscription places: **$35.98 principal + $0.57 card fee = $36.55 first payment**. The actual received amounts are **$10 cash + $5 check + $2 verified Zelle**, leaving **$19.55 on the accepted card**. Only its $18.98 principal receives a processing fee. Amounts, bank date/sender, source proofs, saved card, terms, current total and final action stay on the existing page. Preview records no purchase or money.
+
+The accepted card also covers later **$37.06** installments on their original dates. Source/amount changes clear old receipt verification and acceptance. Gift-card proof appears only for a positive gift amount. Fully manual prepaid hides the card; prepaid with a positive card remainder still requires its current authority. This sample uses a fictional saved card, with no hosted-field verification or provider call.
+
+| Desktop | Phone |
+| --- | --- |
+| [![First membership split review, desktop](88-first-membership-split-review-desktop.png)](88-first-membership-split-review-desktop.png) | [![First membership split review, phone](88-first-membership-split-review-phone.png)](88-first-membership-split-review-phone.png) |
+
+## 89 — Four actual tenders, one membership and its next installment
+
+After one confirmation, the fictional membership initially has **$17 received**, one **$19.55 card request pending**, and pending benefits. A simulated success of that same card operation then gives **$36.55 received**, active benefits and one queued unsent customer confirmation. The overview retains cash/check/Zelle/card amounts, the **October 30** bank receipt date/sender, and the next **$37.06 November 30** installment. Future dates, accepted terms and receipt history are preserved.
+
+Developer checks also cover cash/check/gift prepaid splits, monthly manual-first/future-card rules, backed credit, strict proofs, actual receipt dates, stale reviews, atomic rollback, known-decline recovery, unknown outcomes, source holds, concurrent confirmations/source spending, public rejection, migration reversal and release compatibility. This first-payment split is available on the standalone staff purchase/renewal/addition page; integration with combined arrival remains a separate next step. No actual financial POST or external email occurs.
+
+| Desktop | Phone |
+| --- | --- |
+| [![First membership split received, desktop](89-first-membership-split-received-desktop.png)](89-first-membership-split-received-desktop.png) | [![First membership split received, phone](89-first-membership-split-received-phone.png)](89-first-membership-split-received-phone.png) |
+
 ## Checked so far
 
-The complete **1,375-test PostgreSQL suite passes** (474.135s) after the final accounting, scope, compatibility and mocked Gateway-payload changes. The related **56-case integration run passed** (71.088s), including live/native review, six PostgreSQL races/reversal, runtime category/component guards and the actual additive upgrade. The final **five pricing cases pass** (0.283s), including the added mixed-tax socks assertion, all 1,599 positive credit cents in this cancellation example, exact tender/component conservation and invalid funding metadata. All financial changes are covered by the full run; the extra socks assertion was added afterward.
+The complete **1,399-test PostgreSQL suite passes** (479.446s), including seventeen new first-split purchase/credit/native cases, four PostgreSQL race/reversal cases, two prepaid card-authority cases and one release-compatibility case. It verifies the original later $37.06 scheduled card amount after a manual first payment, runtime source budgets, unchanged older flows and the full additive upgrade. The final focused card/public/closed run passed 29 cases in 3.571s. Receipt dates, independent proofs, old/new card authority, partial/full credit, failure rollback and known/unknown collection rules are covered.
 
-The real desktop/phone scenario passes in **11.213s**: review-only $10/$9.26, a $15.99 eligible-credit cap, $3 cash split remainder, one queued $3.09 card request, $0 received while pending and $3.09 only after the same simulated successful result. The existing source/credit balance is conserved, the booking-card obligation closes and no new email/provider call occurs. All four samples 86–87 were visually inspected with no overflow or JavaScript errors.
+The final real desktop/phone scenario passes in **9.131s** after the compact-layout/native-control adjustment. It checks $17 manual funds with a $19.55 pending card, $36.55 only after the same simulated approval, one membership/four operations/one queued unsent customer confirmation, original future dates, prepaid no-card behavior and receipt-proof invalidation. A separate read-only no-JavaScript context confirms native receipt controls remain visible. No provider or external mail call occurs. All four final samples 88–89 were recaptured and visually inspected; no horizontal overflow or JavaScript errors.
 
-All **87 desktop/phone pairs**, 174 image links, Ruff/format (511 Python files), model drift, JavaScript syntax, whitespace and all **49 unchanged reviewed migration hashes** pass. This increment needs no new schema migration. The scoped credit quote and v2 release capability protect actual remaining card/tax allocation while preserving earlier accepted formats and source budgets. The preceding 177a1dc revision passed all four GitHub checks. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
+All **89 desktop/phone pairs**, 178 image links, Ruff/format (515 Python files), model drift, JavaScript syntax, whitespace and **50 reviewed migration hashes** pass. All 49 previous hashes remain unchanged. Migration 0076 records the new payment choice and refuses reversal after accepted splits; the release capability likewise prevents incompatible older code. The preceding 29774be revision passed all four GitHub checks. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
 
 Implementation continues while the owner reviews. The [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) identifies functional checks, unfinished scope and provider limitations. No merge, deployment, live financial action or external email delivery is included; release requires explicit authorization.

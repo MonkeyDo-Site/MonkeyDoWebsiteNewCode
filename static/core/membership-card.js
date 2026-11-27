@@ -21,7 +21,7 @@
   }
   function display() {
     option();
-    const isNew = field('method').value === 'new' && !field('comped')?.checked && (replacement || field('billing').value === 'monthly' || field('expected_method').value === 'card');
+    const isNew = field('method').value === 'new' && !field('comped')?.checked && (replacement || (form.dataset.needsCard !== '0' && (field('billing').value === 'monthly' || ['card','split'].includes(field('expected_method').value))));
     frame.hidden = !isNew;
     for (const choice of section.querySelectorAll('[name=member_retain]')) {choice.disabled = !isNew; choice.required = isNew && choice.type !== 'checkbox';}
     section.dataset.blocked = uncertain || saving ? '1' : '0';
@@ -62,7 +62,7 @@
   } catch {report('Secure card entry is unavailable. Reload or call/text 848-238-5147 for assistance.');}
   new MutationObserver(display).observe(field('method'), {childList: true});
   form.addEventListener('change', event => {
-    if (event.target.name === 'method' || !['member_retain', 'accepted', 'verified_received', 'send_confirmation'].includes(event.target.name)) field('card_authorization').value = '';
+    if (event.target.name === 'method' || !['member_retain', 'accepted', 'verified_received', 'first_gift_verified', 'first_zelle_verified', 'send_confirmation'].includes(event.target.name)) field('card_authorization').value = '';
     display();
   });
   check.addEventListener('click', () => recover().catch(() => {report('The card setup outcome could not yet be checked. No new exchange or payment was sent.');}));
@@ -79,7 +79,7 @@
     if (saving || uncertain || !field('accepted').checked || !field('reviewed').value || !form.reportValidity()) return;
     saving = true; display();
     try {
-      const purchase = Object.fromEntries(['operation','prior_id','customer','kind','places','months','billing','starts_on','expected_method','credit_amount','request_key','reviewed'].map(name => [name, field(name)?.value || '']));
+      const purchase = Object.fromEntries(['operation','prior_id','customer','kind','places','months','billing','starts_on','expected_method','credit_amount','first_cash','first_check','first_zelle','first_gift_card','first_zelle_sender','first_zelle_received_on','request_key','reviewed'].map(name => [name, field(name)?.value || '']));
       purchase.minimum_override = !!field('minimum_override')?.checked;
       purchase.comped = !!field('comped')?.checked;
       purchase.accepted = field('accepted').checked;

@@ -107,6 +107,24 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 self.assertRaisesRegex(deploy.DeployError, "visit credit"),
             ):
                 host.ensure_compatible_release(target)
+            for replies in (["f", "f"], ["t", "f", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_cannot_manage_accepted_first_membership_splits(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-membership-split-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in ("booking-completion-v1.capability", "visit-credit-v2.capability"):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "split membership"),
+            ):
+                host.ensure_compatible_release(target)
             for replies in (["f"], ["t", "f"]):
                 with patch.object(host, "command", side_effect=replies):
                     host.ensure_compatible_release(target)

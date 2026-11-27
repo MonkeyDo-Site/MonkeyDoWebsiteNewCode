@@ -504,6 +504,7 @@ class MembershipDraft(ImmutablePriceRecord):
             ("check", "Check"),
             ("zelle", "Zelle"),
             ("gift_card", "Gift card"),
+            ("split", "Split payment"),
         ],
     )
     snapshot = models.JSONField()

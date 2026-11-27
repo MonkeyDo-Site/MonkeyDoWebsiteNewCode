@@ -21,7 +21,14 @@ from .membership_records import MembershipInstallment, MembershipInvoice, Member
 from .membership_renewal_notices import overview_context as renewal_notice_context
 from .membership_renewals import renewal_details
 from .membership_reservations import summary_for
-from .membership_sales import installment_paid, membership_status, offer, purchase, today
+from .membership_sales import (
+    card_required,
+    installment_paid,
+    membership_status,
+    offer,
+    purchase,
+    today,
+)
 from .models import Customer, MembershipDraft, PaymentMethod, PricingPolicy
 from .pagination import paginate
 from .payments.amounts import ZERO, amount
@@ -43,6 +50,55 @@ OFFER_FIELDS = (
 
 
 class PurchaseForm(forms.Form):
+    first_cash = forms.DecimalField(
+        required=False,
+        min_value=ZERO,
+        max_digits=14,
+        decimal_places=2,
+        initial=ZERO,
+        label="Cash received",
+    )
+    first_check = forms.DecimalField(
+        required=False,
+        min_value=ZERO,
+        max_digits=14,
+        decimal_places=2,
+        initial=ZERO,
+        label="Check received",
+    )
+    first_zelle = forms.DecimalField(
+        required=False,
+        min_value=ZERO,
+        max_digits=14,
+        decimal_places=2,
+        initial=ZERO,
+        label="Zelle received",
+    )
+    first_gift_card = forms.DecimalField(
+        required=False,
+        min_value=ZERO,
+        max_digits=14,
+        decimal_places=2,
+        initial=ZERO,
+        label="Physical gift card amount",
+    )
+    first_zelle_sender = forms.CharField(
+        required=False, max_length=160, label="Zelle sender shown by the bank"
+    )
+    first_zelle_received_on = forms.DateField(
+        required=False,
+        initial=today,
+        label="Zelle bank receipt date",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    first_zelle_verified = forms.BooleanField(
+        required=False,
+        label="I verified this Zelle transfer in the bank account. It has not already been recorded elsewhere.",
+    )
+    first_gift_verified = forms.BooleanField(
+        required=False,
+        label="The physical gift card has been presented and verified for the membership amount shown.",
+    )
     credit_amount = forms.DecimalField(
         required=False,
         min_value=ZERO,
@@ -150,7 +206,7 @@ class PurchaseForm(forms.Form):
         }
         self.fields["expected_method"].choices = [
             (key, labels.get(key, label)) for key, label in self.fields["expected_method"].choices
-        ]
+        ] + [("split", "Split payment")]
         if owner:
             self.fields["months"] = forms.IntegerField(min_value=1, initial=3)
         else:
@@ -204,11 +260,21 @@ class PurchaseForm(forms.Form):
         )
 
     def offer_values(self):
-        return {name: self.cleaned_data.get(name, False) for name in OFFER_FIELDS} | {
+        values = {name: self.cleaned_data.get(name, False) for name in OFFER_FIELDS} | {
             "credit_amount": self.cleaned_data.get("credit_amount") or ZERO,
             "operation": self.cleaned_data.get("operation") or "purchase",
             "prior_id": self.cleaned_data.get("prior_id"),
         }
+        if self.cleaned_data.get("expected_method") == "split":
+            values.update(
+                split={
+                    kind: self.cleaned_data.get("first_" + kind) or ZERO
+                    for kind in ("cash", "check", "zelle", "gift_card")
+                },
+                split_sender=self.cleaned_data.get("first_zelle_sender", ""),
+                split_received_on=self.cleaned_data.get("first_zelle_received_on"),
+            )
+        return values
 
 
 class InstallmentPaymentForm(forms.Form):
@@ -330,11 +396,7 @@ def display_offer(data):
     )
     return data | {
         "payment_due_today": first_total,
-        "needs_card": not data["comped"]
-        and (
-            data["billing"] == "monthly"
-            or (data["expected_method"] == "card" and first_total > ZERO)
-        ),
+        "needs_card": card_required(data),
         "starts_on": date.fromisoformat(data["starts_on"]),
         "ends_on": date.fromisoformat(data["ends_on"]),
         "installments": [
@@ -432,6 +494,8 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
                     else None,
                     card_authorization_id=form.cleaned_data.get("card_authorization"),
                     verified_received=form.cleaned_data["verified_received"],
+                    gift_card_verified=form.cleaned_data["first_gift_verified"],
+                    zelle_verified=form.cleaned_data["first_zelle_verified"],
                     send_confirmation={"yes": True, "no": False}.get(
                         form.cleaned_data.get("send_confirmation")
                     ),
@@ -541,6 +605,10 @@ def membership_offer(request):
             "fingerprint": data["fingerprint"],
             "payment_due_today": display_offer(data)["payment_due_today"],
             "needs_card": display_offer(data)["needs_card"],
+            "split_card_total": (data.get("first_payment_plan") or {}).get("card_total", "0.00"),
+            "split_manual_total": (data.get("first_payment_plan") or {}).get(
+                "manual_total", "0.00"
+            ),
             "credit_available": balance(form.cleaned_data["customer"].pk),
             "initial_net": data["installments"][0]["quote"]["subtotal"]
             if data["installments"]

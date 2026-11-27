@@ -164,6 +164,9 @@ class PublicPurchaseForm(PurchaseForm):
                 self.initial["method"] = candidates[0].pk
         self.fields["method"].label = "Your membership card"
         self.fields.pop("credit_amount", None)
+        for name in tuple(self.fields):
+            if name.startswith("first_"):
+                self.fields.pop(name)
         self.fields["kind"].label = "Membership type"
         self.fields["places"] = forms.IntegerField(
             min_value=1,
@@ -181,6 +184,14 @@ class PublicPurchaseForm(PurchaseForm):
         data = super().clean()
         if self.data.get("credit_amount") not in (None, "", "0", "0.00"):
             raise ValidationError("Ask staff to review customer credit for this purchase.")
+        if any(
+            value not in (None, "", "0", "0.00", False)
+            for name, value in self.data.items()
+            if name.startswith("first_")
+        ):
+            raise ValidationError(
+                "Ask staff to review split membership payments. This private checkout uses the accepted card."
+            )
         if set(self.data) - {
             *PurchaseForm.base_fields,
             "csrfmiddlewaretoken",

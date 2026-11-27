@@ -80,6 +80,57 @@ class MembershipCardViewTests(TestCase):
             member.billing_state.mandate.method_id, uuid.UUID(result.json()["method_id"])
         )
 
+    def test_prepaid_split_can_authorize_a_card_only_for_the_remaining_part(self):
+        self.client.force_login(self.staff)
+        values = self.values | dict(
+            billing="prepaid", expected_method="split", split={"cash": "100.00"}
+        )
+        data = self.payload()
+        data["purchase"].update(
+            billing="prepaid",
+            expected_method="split",
+            first_cash="100.00",
+            reviewed=offer(**values)["fingerprint"],
+        )
+        with patch("core.payments.setup.Gateway") as gateway:
+            self.gateway(gateway)
+            result = self.send(data)
+        self.assertEqual(result.status_code, 200, result.content)
+        self.assertFalse(PaymentOperation.objects.exists())
+        final = self.client.post(
+            "/staff/memberships/purchase/",
+            data["purchase"]
+            | dict(
+                action="confirm",
+                method=result.json()["method_id"],
+                card_authorization=result.json()["authorization_id"],
+                verified_received="on",
+            ),
+        )
+        self.assertEqual(final.status_code, 302, final.content)
+        self.assertEqual(str(PaymentOperation.objects.get(tender="card").amount), "8.18")
+        self.assertEqual(str(PaymentOperation.objects.get(tender="cash").amount), "100.00")
+        self.assertFalse(PaymentConsent.objects.exists())
+
+    def test_fully_manual_prepaid_split_cannot_start_an_unnecessary_card_exchange(self):
+        self.client.force_login(self.staff)
+        values = self.values | dict(
+            billing="prepaid", expected_method="split", split={"cash": "107.94"}
+        )
+        data = self.payload()
+        data["purchase"].update(
+            billing="prepaid",
+            expected_method="split",
+            first_cash="107.94",
+            reviewed=offer(**values)["fingerprint"],
+        )
+        with patch("core.payments.setup.Gateway") as gateway:
+            response = self.send(data)
+            gateway.assert_not_called()
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertFalse(MembershipPurchase.objects.exists())
+        self.assertFalse(PaymentOperation.objects.exists())
+
     def test_uncertain_setup_replays_without_provider_post_and_recovers_only_in_original_browser(
         self,
     ):

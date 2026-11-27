@@ -149,7 +149,10 @@ class VisitCreditRaceTests(InitialCreditFixtures, TransactionTestCase):
     def test_reverse_refuses_accepted_visit_credit_without_removing_its_scope(self):
         self.prepare()
         record = self.complete()
-        with self.assertRaisesMessage(RuntimeError, "Accepted visit credit exists"):
+        with (
+            self.assertRaisesMessage(RuntimeError, "Accepted visit credit exists"),
+            transaction.atomic(),
+        ):
             MigrationExecutor(connection).migrate(
                 [("core", "0074_scheduled_membership_credit_authority")]
             )
@@ -164,6 +167,6 @@ class VisitCreditRaceTests(InitialCreditFixtures, TransactionTestCase):
             )
             self.assertEqual(balance(self.customer.pk), Decimal("16.02"))
         finally:
-            MigrationExecutor(connection).migrate([("core", "0075_visit_customer_credit")])
+            MigrationExecutor(connection).migrate([("core", "0076_membership_first_split")])
         record = self.complete()
         self.assertEqual(record.visit_credit_application.amount, Decimal("10.00"))

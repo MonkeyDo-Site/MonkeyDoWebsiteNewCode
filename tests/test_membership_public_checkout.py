@@ -144,6 +144,7 @@ class InitialPublicCheckoutTests(RuntimeRoleMixin, TestCase):
             dict(customer=other),
             dict(operation="renewal", prior_id=1),
             dict(expected_method="cash"),
+            dict(expected_method="split", split={"cash": "1.00"}),
             dict(minimum_override=True),
             dict(comped=True),
             dict(credit_amount="1.00"),
