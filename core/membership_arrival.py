@@ -407,12 +407,15 @@ def receipt_summary(record):
     visit_paid = (
         max(ZERO, received(record.checkout.sale) - prepaid) if record.checkout.sale_id else ZERO
     )
+    from .membership_arrival_returns import total_for_purchase
+
     return {
         "membership_received": member_paid,
         "membership_new_received": max(ZERO, member_paid - member_prepaid),
         "visit_received": visit_paid,
         "new_received": max(ZERO, member_paid - member_prepaid) + visit_paid,
         "membership_prepaid": member_prepaid,
+        "visit_returned": total_for_purchase(record.purchase),
         "credit_applied": applied(first.invoice.sale) if first else ZERO,
     }
 
@@ -489,8 +492,19 @@ def confirmation_payload(record):
         f"Membership and visit total: ${combined_total:.2f}",
         f"Membership payment received: ${max(ZERO, member_paid - member_prepaid):.2f}",
         f"Visit payment received: ${visit_paid:.2f}",
-        f"New payment received: ${max(ZERO, member_paid - member_prepaid) + visit_paid:.2f}",
     ]
+    from .membership_arrival_returns import total_for_purchase
+
+    returned = total_for_purchase(member)
+    if returned:
+        content += [
+            f"Unused visit funds returned: ${returned:.2f}",
+            f"Money received after recorded visit returns: ${max(ZERO, member_paid - member_prepaid) + visit_paid:.2f}",
+        ]
+    else:
+        content += [
+            f"New payment received: ${max(ZERO, member_paid - member_prepaid) + visit_paid:.2f}"
+        ]
     from .customer_credit import applied
 
     credited = applied(first.invoice.sale) if first else ZERO

@@ -398,13 +398,17 @@ def status_data(intent):
         membership_balance=str(max(ZERO, total(sale) - settled(sale))),
         received=str(received(sale) + visit_funds["total"] + visit_prepaid),
         visit_received=str(visit_funds["total"]),
+        visit_gross=str(visit_funds["gross"]),
+        visit_returned=str(visit_funds["returned"]),
         visit_prepaid=str(visit_prepaid),
         visit_total_received=str(visit_funds["total"] + visit_prepaid),
         visit_receipts=[
             {
                 "tender": r.tender,
                 "label": "Gift card" if r.tender == "gift_card" else r.tender.title(),
-                "amount": str(r.amount),
+                "amount": str(r.net_amount),
+                "original_amount": str(r.amount),
+                "returned": str(r.returned_amount),
                 "received_on": r.received_on.isoformat(),
                 "sender": r.sender,
             }

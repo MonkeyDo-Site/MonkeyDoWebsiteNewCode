@@ -23,9 +23,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Received membership split during arrival | [90–91](#90--received-membership-split-and-visit-on-one-page) |
 | Apply recorded booking Zelle to membership | [92–93](#92--assign-recorded-zelle-between-membership-and-visit) |
 | Membership card remainder during arrival | [94–96](#94--split-membership-receipts-and-card-with-arrival) |
-| **New: received visit funds while membership card is pending** | **[97–99](#97--received-visit-funds-with-a-pending-membership-card)** |
+| Received visit funds while membership card is pending | [97–99](#97--received-visit-funds-with-a-pending-membership-card) |
+| **New: record an unused visit-fund return and review the remaining payment** | **[100–102](#100--record-an-actual-unused-visit-fund-return)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Returning or reallocating pending manual visit funds, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Returns before that funding is confirmed, terminal unfinished-visit closure, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -825,7 +826,7 @@ Two monthly Subscription places are funded by **$10 cash + $5 check + $20.98 sep
 
 Counts, membership choices, original-to-adjusted visit price, waivers, receipt proofs and the final confirmation stay on the existing arrival page. A private draft reload retains the entered membership and visit amounts. Changing amounts clears cash/bank/gift proofs and requires reviewing terms again. Monthly membership still needs its accepted future-installment card; that card is separate from the booking's visit card.
 
-Samples 92–93 add an explicit allocation of already recorded booking Zelle between membership and visit. Samples 94–96 support a membership card balance when the visit uses only card and/or those prior bank funds. Samples 97–99 also record new manual visit funds immediately while the first membership card is pending. Their later return/reallocation and terminal unfinished-visit closure remain guarded work.
+Samples 92–93 add an explicit allocation of already recorded booking Zelle between membership and visit. Samples 94–96 support a membership card balance when the visit uses only card and/or those prior bank funds. Samples 97–99 also record new manual visit funds immediately while the first membership card is pending. Samples 100–102 add returns/reallocation after confirmed membership funding. Returns before funding is confirmed and terminal unfinished-visit closure remain guarded work.
 
 | Desktop | Phone |
 | --- | --- |
@@ -885,7 +886,7 @@ Developer checks also cover $25 earlier booking Zelle assigned as $20 membership
 
 A simulated success of that same membership card request makes **$36.61 membership funds** received. Current counts, sources, capacity, waivers and benefits are rechecked before arrival and the **$16.47 visit card** request. The paid combined email still waits for that visit result. Its simulated success yields **$53.08 new funds**, split into **$36.61 membership + $16.47 visit**, and one queued unsent combined confirmation. No actual provider call or email delivery occurs.
 
-Samples 97–99 extend this pending membership-card sequence to new manual visit cash/check/verified Zelle/gift receipts. They are saved immediately and applied once when the same reviewed arrival completes. Returning/reallocating those funds and terminal unfinished-visit closure remain in development. Fully received manual membership splits and card-only visits retain their existing paths.
+Samples 97–99 extend this pending membership-card sequence to new manual visit cash/check/verified Zelle/gift receipts. They are saved immediately and applied once when the same reviewed arrival completes. Samples 100–102 add returns/reallocation after confirmed membership funding; earlier unconfirmed funding and terminal unfinished-visit closure remain in development. Fully received manual membership splits and card-only visits retain their existing paths.
 
 | Desktop | Phone |
 | --- | --- |
@@ -927,4 +928,41 @@ The complete **1,456-test PostgreSQL suite passes** (521.824s), including thirte
 
 The final actual desktop/phone scenario passes in **9.972s**. Four visit sources ($7) and membership manual funds ($15) remain visible while the first $21.61 card is pending; their original dates survive reload. After simulated funding, four source applications and only a $9.26 visit card follow. Final funds total $52.87, with one membership/eight operations and one queued unsent combined confirmation. It checks current proof/terms reset, the explicit pending card remainder, no overflow/JavaScript errors and no bank/provider/storage/nonce/mail requests. All six final samples 97–99 were recaptured and visually inspected.
 
-All **99 desktop/phone pairs**, 198 image links, Ruff/format (527 Python files), model drift, JavaScript syntax, whitespace and **53 reviewed migration hashes** pass. All 52 prior hashes remain unchanged. Used migration/release guards preserve original pending receipt/application evidence. Feature switches remain off and the same PR stays draft. Returns/reallocation and terminal unfinished-visit closure, plus the other explicitly listed scope, remain in progress. No merge, deployment or live financial action is included.
+All **99 desktop/phone pairs**, 198 image links, Ruff/format (527 Python files), model drift, JavaScript syntax, whitespace and **53 reviewed migration hashes** pass. All 52 prior hashes remain unchanged. Used migration/release guards preserve original pending receipt/application evidence. Feature switches remain off and the same PR stays draft. This checkpoint preceded samples 100–102. Returns before confirmed membership funding and terminal unfinished-visit closure, plus the other explicitly listed scope, remain in progress. No merge, deployment or live financial action is included.
+
+
+## 100 — Record an actual unused visit-fund return
+
+After the first membership payment is confirmed, the owner chooses **Review current arrival or unused funds**. This pauses automatic arrival before any manual return is handled. On that same arrival page, **Record returned visit funds** expands only when usable original receipts exist. It records a return already completed using the original payment method; it sends no bank transfer, changes no gift-card balance and does not refund membership.
+
+The fictional visit originally received **$3 cash + $2 check + $1 Zelle + $1 gift card**. The owner records **$2 actually returned from the original cash receipt**. The original $3 record stays intact, with its collecting staff member and date. The actual return has its own owner/date/history. Changed amount/source/date clears the return confirmation. Before membership funding is confirmed, this action is unavailable.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Record actual unused visit-fund return, desktop](100-pending-visit-return-record-desktop.png)](100-pending-visit-return-record-desktop.png) | [![Record actual unused visit-fund return, phone](100-pending-visit-return-record-phone.png)](100-pending-visit-return-record-phone.png) |
+
+## 101 — Review the remaining funds and exact card balance together
+
+Recording the return keeps entered attendee counts on the same page. **Original cash $3, returned $2, remaining $1** appears beside the other original receipts, with **$5 total visit funds remaining**. Received funds apply automatically; **Add another payment** permits genuinely new money above each held amount. Existing verified Zelle/gift funds do not need to be entered or verified again. New amounts require their own verification and actual bank date.
+
+The owner reviews the current **$16.32 visit total** and explicitly chooses **apply received visit funds $5.00 and charge card $11.32**. Returning $2 changes how the visit is funded: its card fee rises from $0.25 to $0.31. The original reviewed $9.26 card amount is no longer authorized. Stale source balances, stale arrival reviews and competing application/return requests cannot reuse the returned money. Original membership payment, term, future installments and original bank receipt dates stay intact.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Review remaining received funds and card balance, desktop](101-pending-visit-return-review-desktop.png)](101-pending-visit-return-review-desktop.png) | [![Review remaining received funds and card balance, phone](101-pending-visit-return-review-phone.png)](101-pending-visit-return-review-phone.png) |
+
+## 102 — Completed arrival shows net received money and return history
+
+One arrival confirmation applies **$1 cash + $2 check + $1 Zelle + $1 gift card**, then requests only the reviewed **$11.32 visit card**. After a simulated approval of that exact operation, the booking shows **$16.32 visit received + $36.61 membership = $52.93 received after the recorded $2 visit return**. The return and original source history remain readable. One combined confirmation is queued only after the visit funds are confirmed; none is delivered externally. The fixture also has its original queued booking confirmation.
+
+Repeating the same return or arrival confirmation creates no second return/application. This is an unused, uninvoiced visit-source return during an unfinished arrival. It does not provide ordinary cash change, refund an already completed visit, cancel membership, move money to customer credit or resolve the still-guarded unconfirmed-funding cases.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Completed arrival after actual unused-fund return, desktop](102-pending-visit-return-completed-desktop.png)](102-pending-visit-return-completed-desktop.png) | [![Completed arrival after actual unused-fund return, phone](102-pending-visit-return-completed-phone.png)](102-pending-visit-return-completed-phone.png) |
+
+## Current unused-fund return verification checkpoint
+
+The final complete **1,476-test PostgreSQL suite passes in 553.752s**, with all final application, schema, template, JavaScript and test changes present before it started. Thirteen new source/native cases, six actual PostgreSQL concurrency/reversal cases and one release-compatibility case cover exact budgets, actual dates, explicit owner pause, partial/full returns, genuinely new same-tender receipts, stale reviews, immutable history, duplicate submissions and private-draft preservation. The final real desktop/phone browser scenario passes in **8.118s**, preserving entered counts, applying four source remainders once and showing $52.93 after a simulated $11.32 visit-card approval and a recorded fictional $2 cash return. All six final samples 100–102 were visually inspected; no overflow, duplicate field IDs, JavaScript errors or external bank/gift/provider/storage/nonce/mail calls occur.
+
+Ruff/format (**532 Python files**), model drift, JavaScript syntax, whitespace, all **204 image links / 102 desktop–phone pairs** and **54 reviewed migration hashes** pass. All 53 prior hashes remain unchanged. The same PR remains draft and membership/collection switches remain off. Returns before confirmed membership funding, terminal unfinished-visit closure and the other listed Stage 3 scope remain in progress. No merge, deployment or live financial action is included.

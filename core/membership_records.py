@@ -155,6 +155,33 @@ class MembershipArrivalReceiptApplication(FinancialFact):
     operation = models.OneToOneField("core.PaymentOperation", on_delete=models.PROTECT)
 
 
+class MembershipArrivalReceiptReturn(FinancialFact):
+    """An owner records an actual return of unused original visit funds."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    receipt = models.ForeignKey(
+        MembershipArrivalReceipt, on_delete=models.PROTECT, related_name="returns"
+    )
+    request_key = models.UUIDField(unique=True)
+    fingerprint = models.CharField(max_length=64)
+    reviewed_available = models.DecimalField(max_digits=14, decimal_places=2)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    completed_on = models.DateField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="pending_return_positive"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(reviewed_available__gte=models.F("amount")),
+                name="pending_return_within_review",
+            ),
+        ]
+
+
 class MembershipArrivalState(models.Model):
     intent = models.OneToOneField(
         MembershipArrivalIntent, primary_key=True, on_delete=models.PROTECT, related_name="progress"

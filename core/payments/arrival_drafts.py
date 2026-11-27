@@ -126,3 +126,31 @@ def discard(request, token):
     values = drafts(request)
     values.pop(str(token), None)
     request.session[KEY] = values
+
+
+def returned_funds(request, booking, token, returned, *, fresh_entries=False):
+    """Keep unsaved counts; a returned source must not become new received money."""
+    from .amounts import ZERO, amount
+
+    value = get(request, booking, token)
+    applied = value.setdefault("recorded_return_ids", [])
+    if str(returned.pk) in applied and not fresh_entries:
+        return
+    fields = value["fields"]
+    tender = returned.receipt.tender
+    name = tender + "_amount"
+    try:
+        prior = amount(fields.get(name) or "0")
+        fields[name] = f"{max(ZERO, prior - returned.amount):.2f}"
+    except ValidationError:
+        fields[name] = ""
+    # Rebuild split rows from the adjusted tender totals. Financial/waiver proofs
+    # are deliberately fresh; this draft is never payment authority.
+    fields["split_rows"] = ""
+    for name in ("zelle_verified", "gift_card_verified", "waiver_mismatch_accepted"):
+        fields[name] = ""
+    if str(returned.pk) not in applied:
+        applied.append(str(returned.pk))
+    values = drafts(request)
+    values[str(token)] = value
+    request.session[KEY] = values

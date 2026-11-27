@@ -663,6 +663,7 @@ from .membership_records import (  # noqa: E402,F401
     MembershipArrivalIntent,
     MembershipArrivalReceipt,
     MembershipArrivalReceiptApplication,
+    MembershipArrivalReceiptReturn,
     MembershipArrivalResolution,
     MembershipArrivalState,
     MembershipBankAllocation,

@@ -97,6 +97,17 @@ def data_for(intent, data):
     selected = data.get("pending_review")
     if selected and str(selected) != str(intent.pk):
         raise ValidationError("This review belongs to a different unfinished arrival.")
+    from .membership_arrival_receipts import held, rows
+
+    stored = held(intent)
+    if stored and data.get("method") == "card":
+        data = data | {"method": "split", "split": stored}
+    if stored.get("zelle") and data.get("method") == "split":
+        from .payments.amounts import amount
+
+        if amount(data.get("split", {}).get("zelle", "0.00")) <= amount(stored["zelle"]):
+            source = next(r for r in rows(intent) if r.tender == "zelle")
+            data = data | {"received_on": source.received_on, "zelle_sender": source.sender}
     return data | {"pending_review": intent.pk, "apply_available_benefits": True}
 
 

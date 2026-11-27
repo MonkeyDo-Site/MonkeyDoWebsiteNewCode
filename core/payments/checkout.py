@@ -368,7 +368,11 @@ def preview(
     if membership_intent:
         from core.membership_arrival_receipts import validate
 
-        validate(membership_intent, plan)
+        validate(membership_intent, plan, owner_review=bool(data.get("pending_review")))
+        if data.get("pending_review"):
+            from core.membership_arrival_receipts import snapshot as receipt_snapshot
+
+            facts["pending_receipts"] = receipt_snapshot(membership_intent)
     return booking, state, quote, plan, facts, fingerprint(facts)
 
 
@@ -417,6 +421,11 @@ def confirm(
         raise ValidationError(
             "The booking or reviewed price changed. Review it again before confirming."
         )
+    if membership_intent:
+        from core.membership_arrival_receipts import proofs_ready
+
+        if not proofs_ready(data, plan, membership_intent):
+            raise ValidationError("Verify any newly received Zelle or physical gift-card amount.")
     if facts.get("credit"):
         from core.visit_credit import verify_receipts
 
@@ -569,14 +578,15 @@ def confirm(
             if part["tender"] != "card" and membership_intent:
                 from core.membership_arrival_receipts import apply as apply_pending_receipt
 
-                if apply_pending_receipt(
+                allocation = apply_pending_receipt(
                     intent=membership_intent,
                     actor=actor,
                     sale=sale,
                     part=part,
                     key=key,
                     allocation=allocation,
-                ):
+                )
+                if not any(amount(entry[k]) for entry in allocation for k in COMPONENTS):
                     continue
             op = request_operation(
                 actor=actor,

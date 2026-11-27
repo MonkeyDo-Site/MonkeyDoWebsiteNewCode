@@ -5,6 +5,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const rowHost=form.querySelector('[data-payment-rows]'), add=form.querySelector('[data-add-payment]');
   const splitBox=form.querySelector('[data-split-payments]'), rowState=form.querySelector('[data-split-rows]');
   const kinds={cash:'Cash',check:'Check',zelle:'Zelle',gift_card:'Gift card'};
+  let heldReceipts={};try{heldReceipts=JSON.parse(form.dataset.heldReceipts||'{}');}catch{}
   const paperForm=document.querySelector('[data-arrival-paper-form]');
   const compedMethods=form.elements.method.dataset.compedMembershipMethods;
   let compedMembershipActive,compedMembershipMethod=form.elements.method.value==='comped'?'':form.elements.method.value;
@@ -119,7 +120,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     if(method==='split'&&!rows().length)makeRow();
     if(method==='split')serialize();
     const visitGift=lastQuote.plan===undefined||lastQuote.plan.some(part=>part.tender==='gift_card'&&cents(part.amount)>0);
-    const values=totals(),zelle=method==='split'&&values.zelle>0,gift=(method==='gift_card'&&visitGift)||(method==='split'&&values.gift_card>0)||(form.elements.member_add?.checked&&memberDue&&(firstTender==='gift_card'||memberParts.gift_card>0));
+    const values=totals(),zelle=method==='split'&&values.zelle>cents(heldReceipts.zelle),gift=(method==='gift_card'&&visitGift)||(method==='split'&&values.gift_card>cents(heldReceipts.gift_card))||(form.elements.member_add?.checked&&memberDue&&(firstTender==='gift_card'||memberParts.gift_card>0));
     for(const field of form.querySelectorAll('[data-noncard-fields] [data-arrival-field]')){
       const visible={zelle_verified:zelle,gift_card_verified:gift,received_on:zelle,zelle_sender:zelle}[field.dataset.arrivalField];
       field.hidden=!visible;for(const input of field.querySelectorAll('input,select'))input.disabled=!visible;
@@ -135,6 +136,11 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const inputIdentity=data=>JSON.stringify([...data].filter(([name])=>name!=='reviewed_hash'));
   const applyFeedback=(data,ok)=>{
     lastQuote={...lastQuote,...data};
+    if(data.held_receipts){
+      if(JSON.stringify(heldReceipts)!==JSON.stringify(data.held_receipts))for(const name of ['zelle_verified','gift_card_verified'])form.elements[name].checked=false;
+      heldReceipts=data.held_receipts;
+    }
+    if(data.pending_funds_html&&form.querySelector('[data-pending-funds]'))form.querySelector('[data-pending-funds]').innerHTML=data.pending_funds_html;
     sync();
     if(data.html)form.querySelector('[data-arrival-price]').innerHTML=data.html;
     const terms=form.querySelector('[data-arrival-membership-terms]');
@@ -171,7 +177,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     });
     return pending;
   };
-  const schedule=()=>{if(finalizing||inputIdentity(payload())===lastRequestedInput)return;button.disabled=true;clearTimeout(timer);timer=setTimeout(update,200);};
+  const schedule=()=>{if(finalizing||departing||inputIdentity(payload())===lastRequestedInput)return;button.disabled=true;clearTimeout(timer);timer=setTimeout(update,200);};
+  form.prepareReturnDeparture=async()=>{departing=true;clearTimeout(timer);button.disabled=true;await pending;};
   add.addEventListener('click',()=>{const used=new Set(rows().map(row=>row.querySelector('select').value));const next=Object.keys(kinds).find(kind=>!used.has(kind));if(next){makeRow(next);schedule();}});
   form.querySelector('[data-use-visit-credit]')?.addEventListener('click',async()=>{
     const requested=inputIdentity(payload());await update();
@@ -341,4 +348,22 @@ for(const form of document.querySelectorAll('form:not([data-arrival-live])')){
   const sync=()=>{field.hidden=method.value!=='zelle';for(const input of field.querySelectorAll('input'))input.disabled=field.hidden;};
   method.addEventListener('change',sync);sync();
  }
+}
+
+for(const form of document.querySelectorAll('[data-pending-return]')){
+  form.addEventListener('submit',async event=>{
+    const arrival=document.querySelector('[data-arrival-live]');
+    if(!arrival||form.dataset.returnReady)return;
+    event.preventDefault();
+    await arrival.prepareReturnDeparture();
+    for(const name of ['arrival_draft','arrival_fields']){
+      let input=form.elements.namedItem(name);
+      if(!input){input=document.createElement('input');input.type='hidden';input.name=name;form.append(input);}
+      input.value=name==='arrival_draft'?arrival.elements.arrival_draft.value:JSON.stringify(Object.fromEntries(new FormData(arrival)));
+    }
+    form.dataset.returnReady='1';const submitter=event.submitter;window.setTimeout(()=>form.requestSubmit(submitter),0);
+  });
+  for(const field of form.querySelectorAll('[name="receipt"],[name="amount"],[name="completed_on"]')){
+    for(const event of ['input','change'])field.addEventListener(event,()=>{form.elements.verified_returned.checked=false;});
+  }
 }

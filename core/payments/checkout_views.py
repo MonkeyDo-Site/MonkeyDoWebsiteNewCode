@@ -19,6 +19,7 @@ from core.membership_arrival_forms import card_purchase, card_review
 from core.membership_arrival_forms import confirm as arrival_confirm
 from core.membership_arrival_forms import preview as arrival_preview
 from core.membership_arrival_forms import ready as membership_ready
+from core.membership_arrival_receipts import proofs_ready as visit_proofs_ready
 from core.membership_sales import card_required
 from core.models import Booking
 from core.permissions import staff_permission
@@ -217,19 +218,39 @@ class ArrivalForm(ReceiptForm):
             values = self.data if self.is_bound else self.initial
             if values.get("member_add") and values.get("method") == "split":
                 self.fields["method"].label = "Visit payment"
+        if self.pending_intent:
+            from core.membership_arrival_receipts import held
+
+            if held(self.pending_intent):
+                self.fields["method"].choices = [
+                    ("card", "Received funds + card balance"),
+                    ("split", "Add another payment"),
+                ]
 
     def clean(self):
         data = super().clean()
         if self.errors:
             return data
         method = data["method"]
-        needs_zelle = method == "split" and data.get("zelle_amount")
+        from core.membership_arrival_receipts import held
+
+        stored = held(self.pending_intent) if self.pending_intent else {}
+        needs_zelle = method == "split" and (data.get("zelle_amount") or Decimal("0")) > Decimal(
+            stored.get("zelle", "0")
+        )
         if not self.previewing and needs_zelle and not data["zelle_verified"]:
             self.add_error(
                 "zelle_verified", "Verify the received Zelle payment in the business bank account."
             )
         if (
-            (method == "gift_card" or (method == "split" and data.get("gift_card_amount")))
+            (
+                method == "gift_card"
+                or (
+                    method == "split"
+                    and (data.get("gift_card_amount") or Decimal("0"))
+                    > Decimal(stored.get("gift_card", "0"))
+                )
+            )
             and not self.previewing
             and not data["gift_card_verified"]
             and not data.get("visit_credit")
@@ -319,7 +340,23 @@ def guarded(view):
     return inner
 
 
-def confirm_label(kind, quote, plan):
+def confirm_label(kind, quote, plan, *, stored=None):
+    if kind == "arrival" and stored:
+        actions = [
+            f"apply received visit funds ${sum((Decimal(v) for v in stored.values()), Decimal('0')):.2f}"
+        ]
+        for part in plan:
+            value = Decimal(part["amount"])
+            if part.get("advance"):
+                actions.append(f"apply recorded Zelle ${value:.2f}")
+            elif part["tender"] == "card":
+                actions.append(f"charge card ${value:.2f}")
+            elif part["tender"] == "credit":
+                actions.append(f"apply existing customer credit ${value:.2f}")
+            elif value > Decimal(stored.get(part["tender"], "0")):
+                new = value - Decimal(stored.get(part["tender"], "0"))
+                actions.append(f"record new {part['tender'].replace('_', ' ')} ${new:.2f}")
+        return "Confirm arrival — " + " and ".join(actions)
     from core.visit_credit import confirm_label as credit_label
 
     if kind == "arrival" and (label := credit_label(plan)):
@@ -365,8 +402,57 @@ def checkout(request, pk, kind="arrival"):
 
     pending = active_for_booking(pk)
     recovering = False
+    return_form = None
+    returning = request.method == "POST" and request.POST.get("record_visit_return") == "1"
     if pending and kind == "arrival":
         from core import membership_arrival_recovery as recovery
+
+        if returning:
+            from core.membership_arrival_return_forms import PendingVisitReturnForm
+
+            recovery.require_owner(request.user)
+            return_form = PendingVisitReturnForm(request.POST, intent=pending, actor=request.user)
+            if return_form.is_valid():
+                return_draft = request.POST.get("arrival_draft")
+                try:
+                    if return_draft:
+                        from . import arrival_drafts
+
+                        arrival_drafts.get(request, booking, return_draft)
+                        if request.POST.get("arrival_fields"):
+                            try:
+                                raw = request.POST["arrival_fields"]
+                                fields = json.loads(raw) if len(raw) <= 32000 else None
+                                if not isinstance(fields, dict) or any(
+                                    not isinstance(v, str) for v in fields.values()
+                                ):
+                                    raise ValueError
+                            except (ValueError, TypeError):
+                                raise ValidationError(
+                                    "Review the current arrival entries before recording this return."
+                                ) from None
+                            arrival_drafts.save(request, booking, return_draft, fields)
+                    returned = return_form.save()
+                    if return_draft:
+                        arrival_drafts.returned_funds(
+                            request,
+                            booking,
+                            return_draft,
+                            returned,
+                            fresh_entries=bool(request.POST.get("arrival_fields")),
+                        )
+                except ValidationError as error:
+                    return_form.add_error(None, error)
+                else:
+                    messages.success(
+                        request,
+                        "Completed return recorded. Review the current arrival before taking any remaining payment.",
+                    )
+                    return (
+                        redirect(arrival_drafts.url(booking, return_draft))
+                        if return_draft
+                        else redirect("booking_arrival", pk=pk)
+                    )
 
         if request.method == "POST" and request.POST.get("start_owner_review") == "1":
             try:
@@ -423,7 +509,7 @@ def checkout(request, pk, kind="arrival"):
                 changes={"intent_id": str(pending.pk)},
             )
             return redirect("booking_arrival", pk=pk)
-        if request.method == "GET" and kind == "arrival":
+        if (request.method == "GET" or returning) and kind == "arrival":
             progress = status_data(pending)
             may_recheck = request.user.pk == pending.actor_id or request.user.is_superuser
             may_start_review = False
@@ -433,6 +519,18 @@ def checkout(request, pk, kind="arrival"):
                     may_start_review = True
                 except ValidationError:
                     pass
+            if (
+                may_start_review
+                and pending.progress.code == "owner_review_requested"
+                and return_form is None
+            ):
+                from core.membership_arrival_receipts import held
+                from core.membership_schema import available
+
+                if held(pending) and available("core_membershiparrivalreceiptreturn"):
+                    from core.membership_arrival_return_forms import PendingVisitReturnForm
+
+                    return_form = PendingVisitReturnForm(intent=pending, actor=request.user)
             return render(
                 request,
                 "core/booking_arrival_pending.html",
@@ -443,6 +541,7 @@ def checkout(request, pk, kind="arrival"):
                     "may_recheck": may_recheck,
                     "may_continue": progress["can_continue"] and may_recheck,
                     "may_start_review": may_start_review,
+                    "return_form": return_form,
                     "counts": pending.facts["review"]["arrival"]["counts"],
                     "quote": pending.facts["review"]["arrival"]["quote"],
                     "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),
@@ -496,6 +595,10 @@ def checkout(request, pk, kind="arrival"):
         if recovering:
             initial.update(pending.facts["review"]["arrival"]["counts"])
             initial.update(pending_review=str(pending.pk), apply_available_benefits=True)
+            from core.membership_arrival_receipts import held
+
+            initial.update(method="card")
+            initial.update({k + "_amount": v for k, v in held(pending).items()})
     else:
         initial["method"] = "card"
     args = {"booking": booking, "owner": request.user.is_superuser}
@@ -636,7 +739,8 @@ def checkout(request, pk, kind="arrival"):
     from .zelle_views import ZelleReceiptForm
 
     zelle_form = ZelleReceiptForm(
-        initial={"request_key": uuid.uuid4(), "sender_name": booking.zelle_sender}
+        auto_id="id_inline_zelle_%s",
+        initial={"request_key": uuid.uuid4(), "sender_name": booking.zelle_sender},
     )
     from core.waivers.forms import NamedPaperWaiverForm
 
@@ -688,6 +792,30 @@ def checkout(request, pk, kind="arrival"):
         reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"] - member_prepaid
         reviewed["refund_due"] = max(0, prepaid["available"] - Decimal(reviewed["quote"]["total"]))
         reviewed["remaining"] = max(0, Decimal(reviewed["quote"]["total"]) - prepaid["available"])
+    held_payments = {}
+    if recovering and reviewed:
+        held_payments = {
+            r["tender"]: r["available"]
+            for r in (facts or {}).get("pending_receipts", [])
+            if Decimal(r["available"])
+        }
+        label = confirm_label(kind, quote, plan, stored=held_payments)
+        displayed = []
+        for part in reviewed["plan"]:
+            saved_amount = (
+                Decimal(held_payments.get(part["tender"], "0"))
+                if not part.get("advance")
+                else Decimal("0")
+            )
+            displayed.append(
+                part
+                | {
+                    "held_amount": f"{saved_amount:.2f}",
+                    "new_amount": f"{Decimal(part['amount']) - saved_amount:.2f}",
+                }
+            )
+        reviewed["plan"] = displayed
+
     waiver = (
         coverage_facts(
             booking,
@@ -777,15 +905,16 @@ def checkout(request, pk, kind="arrival"):
                     not waiver["mismatch"]
                     or form.cleaned_data.get("waiver_mismatch_accepted") is True
                 )
-                and (
-                    not any(p["tender"] == "gift_card" for p in plan)
-                    or form.cleaned_data.get("gift_card_verified") is True
-                )
-                and (
-                    not any(p["tender"] == "zelle" and not p.get("advance") for p in plan)
-                    or form.cleaned_data.get("zelle_verified") is True
-                ),
+                and visit_proofs_ready(form.cleaned_data, plan, pending if recovering else None),
                 "waiver": waiver,
+                "held_receipts": held_payments,
+                "pending_funds_html": render_to_string(
+                    "core/partials/pending_visit_funds.html",
+                    {"funding": status_data(pending)},
+                    request=request,
+                )
+                if recovering
+                else "",
                 "membership_terms": combined["offer"]["terms"] if combined else "",
                 "membership_due_today": combined["facts"]["membership_due"] if combined else None,
                 "membership_zelle_available": str(getattr(form, "membership_zelle_available", 0)),
@@ -828,6 +957,14 @@ def checkout(request, pk, kind="arrival"):
         and settings.BANQUEST_API_SOURCE_KEY
         and settings.BANQUEST_TOKENIZATION_PUBLIC_KEY.startswith("pk_")
     )
+    if recovering:
+        from core.membership_arrival_receipts import held
+        from core.membership_schema import available
+
+        if held(pending) and available("core_membershiparrivalreceiptreturn"):
+            from core.membership_arrival_return_forms import PendingVisitReturnForm
+
+            return_form = PendingVisitReturnForm(intent=pending, actor=request.user)
     setup_flow = {}
     if membership_card_configured:
         from core.membership_arrival_forms import purchase_key
@@ -859,6 +996,8 @@ def checkout(request, pk, kind="arrival"):
             ),
             "pending_membership": pending if recovering else None,
             "pending_receipt": status_data(pending) if recovering else None,
+            "return_form": return_form,
+            "held_receipts_json": json.dumps(held_payments),
             "kind": kind,
             "zelle": prepaid,
             "zelle_form": zelle_form,

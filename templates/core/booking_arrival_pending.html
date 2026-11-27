@@ -6,7 +6,8 @@
 <p><button type="button" class="button small" data-pending-check>Check payment status</button></p>
 <p>{% if sales_enabled %}<a href="{% url 'membership_overview' intent.purchase_id %}">Review membership and its payment</a> · {% endif %}{% if perms.core.view_paymentoperation %}<a href="{% url 'payment_detail' intent.operation_id %}">Review existing card payment</a> · {% endif %}<a href="{% url 'booking_detail' booking.pk %}">View booking</a></p>
 <form method="post" data-pending-continue{% if not may_continue %} hidden{% endif %}>{% csrf_token %}<button class="button small" name="continue_approved" value="1">Complete reviewed arrival</button></form>
-{% if may_start_review %}<form method="post">{% csrf_token %}<button class="button small" name="start_owner_review" value="1">Review current arrival</button></form>{% endif %}
+{% if may_start_review %}<form method="post">{% csrf_token %}<button class="button small" name="start_owner_review" value="1">Review current arrival or unused funds</button></form>{% endif %}
+{% include 'core/partials/pending_visit_return_controls.html' %}
 </section><section class="panel"><h2>Your reviewed visit</h2>
 <p>{{ counts.children }} children · {{ counts.adults }} adults · {{ counts.babies }} babies · {{ counts.socks }} pairs of grip socks</p>
 <p>{{ intent.purchase.membership.places }} {{ intent.purchase.membership.get_kind_display }} place{{ intent.purchase.membership.places|pluralize }} · {{ intent.purchase.membership.starts_on|date:'M j, Y' }}–{{ intent.purchase.membership.ends_on|date:'M j, Y' }}</p>
@@ -18,8 +19,9 @@
 <dt>Membership payment received</dt><dd data-pending-received>${{ progress.membership_received }}</dd>
 {% if progress.credit_applied %}<dt>Existing credit applied</dt><dd>${{ progress.credit_applied|floatformat:2 }}</dd>{% endif %}
 {% if progress.membership_prepaid != '0.00' %}<dt>Previously recorded Zelle applied</dt><dd>${{ progress.membership_prepaid }}</dd><dt>New membership funds received</dt><dd data-pending-new-received>${{ progress.membership_new_received }}</dd>{% endif %}<dt>Membership balance</dt><dd data-pending-balance>${{ progress.membership_balance }}</dd></dl>
-<h3>Visit payment details</h3>{% include 'core/quote_items.html' with data=quote %}
-{% if progress.visit_received != '0.00' or progress.visit_prepaid != '0.00' %}<h3>Visit funds already received</h3><dl class="quote-lines">{% for receipt in progress.visit_receipts %}<dt>{{ receipt.label }} · {{ receipt.received_on }}{% if receipt.sender %} · {{ receipt.sender }}{% endif %}</dt><dd>${{ receipt.amount }}</dd>{% endfor %}{% if progress.visit_prepaid != '0.00' %}<dt>Previously recorded Zelle to apply</dt><dd>${{ progress.visit_prepaid }}</dd>{% endif %}<dt>Total received for this visit</dt><dd>${{ progress.visit_total_received }}</dd>{% if intent.facts.review.visit_card_due != '0.00' %}<dt>Visit card after membership funding</dt><dd>${{ intent.facts.review.visit_card_due }}</dd>{% endif %}</dl><p class="caption">These original receipts are saved. They will be applied once when arrival completes.</p>{% endif %}
+<h3>{% if progress.visit_returned != '0.00' %}Original reviewed visit price{% else %}Visit payment details{% endif %}</h3>{% include 'core/quote_items.html' with data=quote %}
+{% if progress.visit_gross != '0.00' or progress.visit_prepaid != '0.00' %}{% include 'core/partials/pending_visit_funds.html' with funding=progress %}{% if progress.visit_returned == '0.00' and intent.facts.review.visit_card_due != '0.00' %}<dl class="quote-lines"><dt>Visit card after membership funding</dt><dd>${{ intent.facts.review.visit_card_due }}</dd></dl>{% endif %}{% endif %}
+{% if progress.visit_returned != '0.00' %}<p class="notice">The completed return is recorded. Review current arrival for the updated price and remaining card balance before charging.</p>{% endif %}
 <p class="caption">The visit charge follows confirmed membership funding and a check that the reviewed details are still current.</p>
 </section></div>
 {% endblock %}
