@@ -224,6 +224,21 @@ def preview(
                 "Explicitly choose whether to charge the cancellation/no-show fee."
             )
     no_charge = state.comped or (kind != "arrival" and not data["charge_fee"])
+    from core.visit_credit import review as review_credit
+
+    credit = review_credit(
+        booking=booking,
+        policy=saved.policy,
+        lines=lines,
+        value=data.get("visit_credit"),
+        kind=kind,
+        comped=state.comped,
+        combined=bool(
+            proposed_membership is not None
+            or membership_intent is not None
+            or data.get("member_add")
+        ),
+    )
     if no_charge:
         lines = [Line(line.label, line.quantity, ZERO, line.taxable) for line in lines]
         quote = quote_lines(lines, saved.policy, card_base=ZERO)
@@ -235,7 +250,12 @@ def preview(
 
         prepaid = zelle_facts(booking)
         quote, plan, _ = plan_with_prepayment(
-            saved.policy, lines, method, data.get("split"), prepaid["available"]
+            saved.policy,
+            lines,
+            method,
+            data.get("split"),
+            prepaid["available"],
+            credit=amount(credit["amount"]) if credit else ZERO,
         )
     from .zelle import facts as zelle_facts
 
@@ -258,7 +278,9 @@ def preview(
         card_identity = None
     from .receipts import receipt_date, sender
 
-    manual = any(part["tender"] != "card" and not part.get("advance") for part in plan)
+    manual = any(
+        part["tender"] not in {"card", "credit"} and not part.get("advance") for part in plan
+    )
     zelle = any(part["tender"] == "zelle" and not part.get("advance") for part in plan)
     received_on = receipt_date(data.get("received_on") if zelle else None) if manual else None
     zelle_sender = (
@@ -299,6 +321,11 @@ def preview(
             for p in plan
         ],
     }
+    if credit:
+        part = next(part for part in plan if part["tender"] == "credit")
+        facts["credit"] = credit | {
+            "parts": [{key: str(value) for key, value in row.items()} for row in part["parts"]]
+        }
     if membership_intent and data.get("pending_review"):
         from core.membership_arrival_recovery import marker
 
@@ -341,6 +368,10 @@ def confirm(
         raise ValidationError(
             "The booking or reviewed price changed. Review it again before confirming."
         )
+    if facts.get("credit"):
+        from core.visit_credit import verify_receipts
+
+        verify_receipts(data, plan)
     if PaymentOperation.objects.filter(
         sale__booking=booking, state__in=["ready", "sending", "unknown", "action", "succeeded"]
     ).exists():
@@ -460,7 +491,18 @@ def confirm(
     )
     if sale:
         lines = list(sale.lines.all())
+        if facts.get("credit"):
+            from core.visit_credit import apply as apply_credit
+
+            apply_credit(
+                actor=actor,
+                checkout=checkout,
+                plan=facts["credit"],
+                part=next(part for part in plan if part["tender"] == "credit"),
+            )
         for position, part in enumerate(plan):
+            if part["tender"] == "credit":
+                continue
             if part.get("advance"):
                 from .zelle import apply_receipts
 
@@ -532,8 +574,11 @@ def resolve_if_settled(booking_id):
 
     if zelle_facts(booking)["refund_due"]:
         return False
-    if checkout.sale and received(checkout.sale) < total(checkout.sale):
-        return False
+    if checkout.sale:
+        from core.customer_credit import held_on
+
+        if held_on(checkout.sale) or settled(checkout.sale) < total(checkout.sale):
+            return False
     PaymentFollowup.objects.filter(
         operation__sale__booking=booking, resolved_at__isnull=True
     ).update(resolved_at=timezone.now())
@@ -623,7 +668,10 @@ def summary(booking):
     external_review = operations.filter(
         events__code="external_correction_review", followup__resolved_at__isnull=True
     ).exists()
-    corrected = operations.exclude(kind="receipt").exists() or external_review
+    from core.customer_credit import applied, held_on
+
+    credit = applied(sale)
+    corrected = operations.exclude(kind="receipt").exists() or external_review or held_on(sale)
     if corrected:
         status = "Payment correction requires owner review"
     elif operations.filter(state="unknown").exists():
@@ -633,7 +681,7 @@ def summary(booking):
     elif pending:
         status = "Charge pending"
     elif not due:
-        status = "Paid"
+        status = "Covered by customer credit" if credit and not paid else "Paid"
     elif operations.filter(state="declined").exists():
         status = "Card declined — balance unpaid"
     else:
@@ -646,6 +694,7 @@ def summary(booking):
         "zelle": prepaid,
         "status": status,
         "received": paid,
+        "credit_applied": credit,
         "converted_credit": transferred(sale),
         # Applied advance receipts are already included in paid; only add the unused balance.
         "total_received": paid + prepaid["available"],

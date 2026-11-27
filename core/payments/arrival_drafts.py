@@ -18,6 +18,7 @@ FIELDS = (
     "babies",
     "socks",
     "method",
+    "visit_credit",
     "cash_amount",
     "check_amount",
     "zelle_amount",

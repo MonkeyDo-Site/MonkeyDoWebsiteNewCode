@@ -64,11 +64,17 @@ def line_components(quote):
     ]
 
 
-def tender_plan(policy, lines, *, method, split=None):
+def tender_plan(policy, lines, *, method, split=None, credit=ZERO):
     """Fixed noncard values are amounts received, not silently treated as pretax."""
     if method not in {"card", "split", *NONCARD}:
         raise ValidationError("Choose the actual payment method.")
     cash_quote = quote_lines(lines, policy, card_base=ZERO)
+    credit = amount(credit)
+    if credit > amount(cash_quote["total"]):
+        raise ValidationError("Customer credit exceeds the non-card visit total.")
+    if credit and method != "split":
+        split = {} if method == "card" else {method: str(amount(cash_quote["total"]) - credit)}
+        method = "split"
     if method != "split":
         quote = quote_lines(lines, policy, card_base=None if method == "card" else ZERO)
         quote["expected_method"] = method
@@ -79,6 +85,8 @@ def tender_plan(policy, lines, *, method, split=None):
     received = [
         (key, amount(split.get(key, ZERO))) for key in NONCARD if amount(split.get(key, ZERO))
     ]
+    if credit:
+        received.insert(0, ("credit", credit))
     total_noncard = sum((value for _, value in received), ZERO)
     if not total_noncard:
         if not amount(cash_quote["total"]):

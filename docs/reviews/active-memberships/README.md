@@ -16,7 +16,8 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Physical gift card and an owner-comped visit | 75–76 |
 | Customer review and reservation of a released Unlimited benefit | 77–78 |
 | Split visit payments and a separate membership receipt | 79–80 |
-| **New: separately verified membership Zelle during arrival** | **81–82** |
+| Separate membership Zelle during arrival | 81–82 |
+| **New: customer credit on arrival and the private receipt** | **83–85** |
 
 Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Allocating already recorded booking Zelle toward membership, splitting the membership payment itself, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
@@ -744,10 +745,40 @@ Developer checks also cover separate visit/member bank proofs and dates, existin
 | --- | --- |
 | [![Separate membership Zelle recorded, desktop](82-separate-membership-zelle-received-desktop.png)](82-separate-membership-zelle-received-desktop.png) | [![Separate membership Zelle recorded, phone](82-separate-membership-zelle-received-phone.png)](82-separate-membership-zelle-received-phone.png) |
 
+## 83 — Apply existing credit on the arrival page
+
+This visit has one included member admission and one ordinary child admission. Staff reviews **$10.00 existing credit + $6.17 remaining card payment = $16.17**. Only that remaining card portion has a processing fee. The original-to-adjusted price, credit, payment choice, waivers and final confirmation stay on the existing page. **Use available credit** caps the chosen amount at the eligible visit balance; changing financial amounts clears an earlier gift/Zelle receipt verification.
+
+This is a review capture: no credit is spent and no visit payment exists yet. The source is a fictional earlier $16.47 card receipt converted through the existing reconciliation service: $0.45 retained original processing fee and $16.02 available credit. That source receipt is not recreated as new money. The completed example below changes the selection to full credit before confirmation.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Visit credit review, desktop](83-visit-credit-review-desktop.png)](83-visit-credit-review-desktop.png) | [![Visit credit review, phone](83-visit-credit-review-phone.png)](83-visit-credit-review-phone.png) |
+
+## 84 — A fully credit-funded visit is separate from money received
+
+In the same fictional browser flow, staff uses the available-credit shortcut and explicitly confirms **$15.99 existing credit**. There is no new payment, card operation, financial posting or email. **$0.03 credit remains** for future use. The booking shows **Covered by customer credit**, **Total received: $0.00** and **Existing customer credit applied: $15.99**. The original booking estimate stays in history; its uncharged fee/tax adjustments explain the current total.
+
+Ordinary/supervised admission and socks are developer-tested. Recorded visit Zelle applies first; any actual new cash/check/card/gift/Zelle remainder stays separate. Source holds stop new spending and unstarted card dispatch. Simultaneous source use, repeated confirmation, runtime permissions, exact component budgets and migration reversal are guarded. Credit with partial cancellation fees, simultaneous new membership/visit credit allocation and credit returns are still in development; this sample does not claim those branches are finished.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Visit credit completed, desktop](84-visit-credit-completed-desktop.png)](84-visit-credit-completed-desktop.png) | [![Visit credit completed, phone](84-visit-credit-completed-phone.png)](84-visit-credit-completed-phone.png) |
+
+## 85 — The original private customer receipt shows the reviewed funds
+
+The customer's original verified receipt now shows the reviewed **$15.99 visit total**, **$15.99 credit applied**, **$0.00 new money** and **No remaining visit payment is due**. It does not promise another arrival charge. This is the same original private booking context and deadline, with no public wallet balance or underlying source identifiers. Reloading creates no new application, payment or message, and the original queued booking confirmation remains unchanged in history.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Private credit receipt, desktop](85-private-credit-receipt-desktop.png)](85-private-credit-receipt-desktop.png) | [![Private credit receipt, phone](85-private-credit-receipt-phone.png)](85-private-credit-receipt-phone.png) |
+
 ## Checked so far
 
-The complete **1,337-test PostgreSQL suite passes** (432.077s), including twelve new separate-membership-Zelle cases and one real overlapping-confirmation race. Exact new/prior funds, independent bank proofs/dates, current review hashes, prepaid and credit funding, zero-dollar visits, protected navigation and atomic rollback are covered. Original financial, queue, migration, runtime and private-receipt checks remain green.
+The complete **1,364-test PostgreSQL suite passed** (472.414s), including twenty new visit-credit cases, six PostgreSQL race/migration cases and the older financial, queue, runtime, private-receipt and additive-upgrade checks. After the final safe-preview recovery and funded-settlement/card-obligation correction, **58 focused credit, booking, gift and card-setup checks pass** (32.027s). Full/partial credit, supervised admission, socks, original source funds, recorded Zelle, receipt proof, staff permissions, stale/repeated/concurrent use, exact component budgets, rollback and migration reversal are covered.
 
-The final real desktop/phone scenario and width recapture pass in 13.500s: conditional bank fields, proof resets, independent verification and a deliberately delayed remaining-balance response preserving newer typing. It confirms one membership and three constituent operations, $45.98 before a simulated visit-card result and $52.15 afterward, with one queued unsent combined confirmation and no external provider/bank action. All four final samples 81–82 were recaptured; bank date and sender inputs use the full phone width. All **82 desktop/phone pairs**, 164 image links, Ruff/format (505 Python files), model drift, JavaScript syntax, whitespace and all 48 unchanged reviewed migration hashes pass. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
+The final real desktop/phone browser check passes in **15.294s**. It verifies a $10/$6.17 review without spending, a $5.99 split remainder, recovery from excessive credit after changed counts, stale physical proof reset, full $15.99 credit confirmation, $0 new money and $0.03 left, plus the original private receipt and closed booking-card obligation. It creates no new payment/posting/message and makes no provider call. All six final samples 83–85 were visually inspected with no overflow or JavaScript errors. The preceding f4d4e85 revision passed all four GitHub checks.
+
+All **85 desktop/phone pairs**, 170 image links, Ruff/format (509 Python files), model drift, JavaScript syntax, whitespace and all **49 reviewed migration hashes** pass. All 48 previous hashes remain unchanged. The new migration and release compatibility check refuse to remove accepted visit-credit accounting; original source and scheduled-collection guards are retained. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
 
 Implementation continues while the owner reviews. The [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) identifies functional checks, unfinished scope and provider limitations. No merge, deployment, live financial action or external email delivery is included; release requires explicit authorization.

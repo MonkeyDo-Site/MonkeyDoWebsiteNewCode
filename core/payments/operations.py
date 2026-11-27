@@ -158,6 +158,14 @@ def begin_dispatch(operation_id):
     from core.membership_arrival import lock_payment
 
     combined = lock_payment(candidate)
+    visit_credit = candidate.sale.kind == "visit" and candidate.sale.credit_applications.exists()
+    if visit_credit:
+        # Match arrival's booking-then-customer lock order before checking a
+        # credit source that may have been returned while dispatch was queued.
+        Booking.objects.select_for_update().get(pk=candidate.sale.booking_id)
+        from core.membership_reservations import lock_customer
+
+        lock_customer(candidate.sale.customer_id)
     if candidate.sale.kind == "membership":
         from core.membership_reservations import lock_customer
 
@@ -230,6 +238,10 @@ def begin_dispatch(operation_id):
             or not method.provider_method
             or method.customer_id != operation.sale.customer_id
         )
+        if visit_credit:
+            from core.customer_credit import held_on
+
+            invalid |= held_on(operation.sale)
         if operation.sale.kind == "membership":
             from core.membership_funding import member_needs_review
 

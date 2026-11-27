@@ -468,7 +468,10 @@ class ScheduledCreditRaceTests(CreditFixtures, TransactionTestCase):
         item = member.installments.get(number=2)
         with clock(item.due_on):
             result = schedule_installment(item.pk)
-        with self.assertRaisesMessage(RuntimeError, "Scheduled credit facts prevent removing"):
+        with (
+            self.assertRaisesMessage(RuntimeError, "Scheduled credit facts prevent removing"),
+            transaction.atomic(),
+        ):
             MigrationExecutor(connection).migrate([("core", "0073_scheduled_membership_claims")])
         result.credit_application.refresh_from_db()
         self.assertEqual(result.credit_application.amount, Decimal("16.02"))

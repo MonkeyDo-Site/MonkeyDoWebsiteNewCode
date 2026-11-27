@@ -172,7 +172,9 @@ def customer_detail(request, pk):
             and request.user.has_perm("core.view_paymentoperation")
             else [],
             "credit_applications": CustomerCreditApplication.objects.filter(customer=customer)
-            .select_related("sale__membership_invoice__installment__purchase")
+            .select_related(
+                "sale__membership_invoice__installment__purchase", "booking_checkout__booking"
+            )
             .order_by("-created_at", "-pk")[:5]
             if settings.MEMBERSHIP_SALES_ENABLED
             and request.user.has_perm("core.view_paymentoperation")

@@ -553,6 +553,19 @@ def receipt(request):
     from .price_adjustments import booking_price_adjustment
 
     prepaid = zelle_facts(booking) if booking.workflow == "integrated_v1" else None
+    credit_receipt = None
+    if booking.attendance == "arrived" and booking.workflow == "integrated_v1":
+        from .payments.checkout import summary as payment_summary
+
+        funding = payment_summary(booking)
+        if funding.get("credit_applied"):
+            # Only this private booking's aggregate funding is exposed, never
+            # the wallet, original source references or other visits.
+            credit_receipt = {
+                "applied": funding["credit_applied"],
+                "received": funding["total_received"],
+                "due": funding["due"],
+            }
 
     return render(
         request,
@@ -563,7 +576,10 @@ def receipt(request):
             "benefit_form": benefit_form,
             "benefit_error": benefit_error,
             "receipt_prepayment": prepaid if not booking.attendance else None,
-            "receipt_quote_label": "Booking price estimate"
+            "receipt_credit": credit_receipt,
+            "receipt_quote_label": "Reviewed visit total"
+            if credit_receipt
+            else "Booking price estimate"
             if prepaid and prepaid["received"] and not booking.attendance
             else "",
             "benefit_updated": bool(

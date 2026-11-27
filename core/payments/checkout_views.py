@@ -148,6 +148,9 @@ class ArrivalForm(ReceiptForm):
                 required=not previewing,
                 label="Reason for reviewing this arrival again",
             )
+        from core.visit_credit import configure as configure_credit
+
+        configure_credit(self, booking, actor)
         from core.membership_booking_exceptions import add_fields
 
         add_fields(self, booking=booking, owner=owner)
@@ -224,6 +227,8 @@ class ArrivalForm(ReceiptForm):
             (method == "gift_card" or (method == "split" and data.get("gift_card_amount")))
             and not self.previewing
             and not data["gift_card_verified"]
+            and not data.get("visit_credit")
+            and not (data.get("member_add") and data.get("member_credit"))
         ):
             self.add_error(
                 "gift_card_verified",
@@ -310,6 +315,10 @@ def guarded(view):
 
 
 def confirm_label(kind, quote, plan):
+    from core.visit_credit import confirm_label as credit_label
+
+    if kind == "arrival" and (label := credit_label(plan)):
+        return label
     noun = {"arrival": "arrival", "cancellation": "cancellation", "no_show": "no show"}[kind]
     if not plan:
         return (
@@ -593,7 +602,7 @@ def checkout(request, pk, kind="arrival"):
                 raise ValidationError(
                     "The booking changed. Reload it and review the current details."
                 )
-            (_, _, quote, plan, _, digest), combined = arrival_preview(
+            (_, _, quote, plan, facts, digest), combined = arrival_preview(
                 actor=request.user,
                 booking_id=pk,
                 kind=kind,
@@ -605,7 +614,12 @@ def checkout(request, pk, kind="arrival"):
             values["reviewed_hash"] = digest
             form = form_type(values, **args)
             form.is_valid()
-            reviewed = {"quote": quote, "plan": plan, "combined": combined}
+            reviewed = {
+                "quote": quote,
+                "plan": plan,
+                "combined": combined,
+                "credit": (facts or {}).get("credit"),
+            }
             label = combined_label(combined) if combined else confirm_label(kind, quote, plan)
         except ValidationError as error:
             form.add_error(None, " ".join(error.messages))
@@ -637,7 +651,7 @@ def checkout(request, pk, kind="arrival"):
         preview_form = ArrivalForm(values, **(args | {"previewing": True}))
         if preview_form.is_valid():
             try:
-                (_, _, quote, plan, _, digest), combined = arrival_preview(
+                (_, _, quote, plan, facts, digest), combined = arrival_preview(
                     actor=request.user,
                     booking_id=pk,
                     kind=kind,
@@ -645,7 +659,12 @@ def checkout(request, pk, kind="arrival"):
                     validate_waivers=False,
                     pending_intent=pending if recovering else None,
                 )
-                reviewed = {"quote": quote, "plan": plan, "combined": combined}
+                reviewed = {
+                    "quote": quote,
+                    "plan": plan,
+                    "combined": combined,
+                    "credit": (facts or {}).get("credit"),
+                }
                 form.initial["reviewed_hash"] = digest
                 label = combined_label(combined) if combined else confirm_label(kind, quote, plan)
             except ValidationError as error:
@@ -678,12 +697,15 @@ def checkout(request, pk, kind="arrival"):
                 "hash": "",
                 "can_confirm": False,
                 "waiver": waiver,
+                "credit_available": str(getattr(form, "visit_credit_available", Decimal("0.00"))),
             }
             if kind == "arrival" and not form.cleaned_data.get("member_add"):
                 try:
                     from core.pricing import Line, quote_lines
 
-                    valid = dict(form.cleaned_data, method="cash", split={})
+                    valid = dict(
+                        form.cleaned_data, method="cash", split={}, visit_credit=Decimal("0")
+                    )
                     _, _, safe_quote, _, _, _ = preview(
                         actor=request.user,
                         booking_id=pk,
@@ -772,6 +794,7 @@ def checkout(request, pk, kind="arrival"):
                 ),
                 "noncard_total": noncard["total"],
                 "prepaid_available": str(prepaid["available"]),
+                "credit_available": str(getattr(form, "visit_credit_available", Decimal("0.00"))),
                 "plan": [
                     {
                         "tender": p["tender"],
@@ -1080,6 +1103,17 @@ def arrival_status(request, pk, checkout_id):
         else None
     )
     new_received = received(checkout.sale) if checkout.sale_id else Decimal("0.00")
+    from core.customer_credit import applied as applied_credit
+    from core.customer_credit import held_on
+
+    credit_used = applied_credit(checkout.sale) if checkout.sale_id else Decimal("0.00")
+    if checkout.sale_id and held_on(checkout.sale):
+        state, message = (
+            "review",
+            "Arrival saved. A customer-credit source needs owner review before another collection.",
+        )
+    elif credit_used and state == "succeeded" and not new_received:
+        message = "Arrival confirmed. Customer credit applied; no new payment was received."
     if combined:
         from core.membership_arrival import membership_funded
 
@@ -1113,6 +1147,7 @@ def arrival_status(request, pk, checkout_id):
     return JsonResponse(
         {
             "state": state,
+            "credit_applied": str(credit_used),
             "message": message,
             "received": str(new_received),
             "booking_url": reverse("booking_detail", args=[pk]),

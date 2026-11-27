@@ -79,6 +79,10 @@ def review(*, actor, booking_id, member_id):
             "This visit has no paid admission invoice to convert. Unpaid visits create no credit."
         )
     sale = checkout.sale
+    if sale.credit_applications.exists():
+        raise ValidationError(
+            "This visit already uses customer credit. Review returning that credit before converting it again; no new credit was issued."
+        )
     operations = list(sale.operations.order_by("requested_at", "pk"))
     if any(
         op.kind != "receipt" or op.state in {"ready", "sending", "unknown", "action"}

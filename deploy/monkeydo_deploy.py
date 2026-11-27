@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0075_visit_customer_credit.py": "df972fb578370a3db917cec5930841b969ab59a2b014408a2e5b20173c84c3d2",
     "0074_scheduled_membership_credit_authority.py": "6d7c9a7f364a682832169c35a7323668b96b98fda526c3719b58a67a851df135",
     "0073_scheduled_membership_claims.py": "d75728f4b761f9f04f5e2b8c44ba693f83b940c9d30c1229316659a8e5bda783",
     "0072_initial_public_membership_authority.py": "472a7643f28ba0fd383eb269d4a54135b90b1c2bb687e56fe7e3f6be063bb51e",
@@ -915,13 +916,59 @@ class Host:
         )
         return candidate
 
+    def ensure_visit_credit_compatible(self, target):
+        marker = target / "deploy/visit-credit-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "81714ec336c7b9c848de0b523cddbbb90fc317f749c0ad64f837787d0a1082aa"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='core_customercreditapplication' AND column_name='booking_checkout_id')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify visit-credit compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_customercreditapplication WHERE booking_checkout_id IS NOT NULL)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted visit credit. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
             marker.is_file()
             and hashlib.sha256(marker.read_bytes()).hexdigest() == BOOKING_CAPABILITY
         ):
-            return True
+            return self.ensure_visit_credit_compatible(target)
         psql = [
             "/usr/sbin/runuser",
             "-u",

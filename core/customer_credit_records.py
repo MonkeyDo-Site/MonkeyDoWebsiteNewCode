@@ -65,6 +65,12 @@ class CustomerCreditApplication(FinancialFact):
         on_delete=models.PROTECT,
         related_name="credit_application",
     )
+    booking_checkout = models.OneToOneField(
+        "core.BookingCheckout",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="visit_credit_application",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

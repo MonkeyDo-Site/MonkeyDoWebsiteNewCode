@@ -323,6 +323,13 @@ def request_operation(
     if kind != "receipt":
         purpose = "correction"
     member_source = False
+    if kind == "receipt" and sale.kind == "visit":
+        from core.customer_credit import held_on
+
+        if held_on(sale):
+            raise ValidationError(
+                "A customer-credit source needs owner review before new collection."
+            )
     if kind == "receipt" and (sale.kind == "membership" or purpose.startswith("member_")):
         from core.membership_records import MembershipInvoice
         from core.membership_sales import authorize

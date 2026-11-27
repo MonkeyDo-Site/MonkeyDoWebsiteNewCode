@@ -87,6 +87,25 @@ class ClosedBookingPlanTests(SimpleTestCase):
             host.reviewed_booking(ROOT, "a" * 40)
         command.assert_not_called()
 
+    def test_old_booking_release_cannot_hide_accepted_visit_credit(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-visit-credit-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            (target / "deploy/booking-completion-v1.capability").write_bytes(
+                (ROOT / "deploy/booking-completion-v1.capability").read_bytes()
+            )
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "visit credit"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    host.ensure_compatible_release(target)
+
 
 class BookingUpgradeTests(TransactionTestCase):
     def test_actual_additive_upgrade_preserves_legacy_booking_and_grant_failure_rolls_back(self):

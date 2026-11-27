@@ -59,6 +59,12 @@ def preview(
     if checkout is None or checkout.sale is None:
         raise ValidationError("There is no reviewed balance to collect.")
     sale = checkout.sale
+    from core.customer_credit import applied_components, held_on
+
+    if held_on(sale):
+        raise ValidationError(
+            "A customer-credit source needs owner review before another collection."
+        )
     from core.membership_arrival import for_sale, membership_funded
 
     combined = for_sale(sale.pk)
@@ -84,6 +90,10 @@ def preview(
         )
     desired = effective_components(sale) if method == "card" else noncard_components(sale)
     used = used_components(sale.operations.filter(kind="receipt", state__in=RESERVED))
+    for key, values in applied_components(sale).items():
+        prior = used.setdefault(key, {part: ZERO for part in COMPONENTS})
+        for part in COMPONENTS:
+            prior[part] += values[part]
     allocation = []
     for key, values in desired.items():
         remaining = {part: values[part] - used.get(key, {}).get(part, ZERO) for part in COMPONENTS}

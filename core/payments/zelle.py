@@ -84,13 +84,40 @@ def record_receipt(
     return receipt
 
 
-def plan_with_prepayment(policy, lines, method, split, available):
+def plan_with_prepayment(policy, lines, method, split, available, *, credit=ZERO):
     from core.pricing import quote_lines
 
     from .checkout_pricing import tender_plan
 
     base = quote_lines(lines, policy, card_base=ZERO)
     applied = min(available, amount(base["total"]))
+    if credit:
+        credit = amount(credit)
+        if applied + credit > amount(base["total"]):
+            raise ValidationError("Credit exceeds the visit balance after recorded Zelle.")
+        if method == "zelle" and applied + credit < amount(base["total"]):
+            raise ValidationError(
+                "Record the remaining Zelle receipt or choose another payment method."
+            )
+        if method not in {"card", "split", "cash", "check", "zelle", "gift_card"}:
+            raise ValidationError("Choose the actual visit payment method.")
+        additional = (
+            dict(split or {})
+            if method == "split"
+            else {}
+            if method in {"card", "zelle"}
+            else {method: str(amount(base["total"]) - applied - credit)}
+        )
+        if applied:
+            if amount(additional.get("zelle", ZERO)):
+                raise ValidationError(
+                    "Record the new Zelle receipt first, then review the remaining payment."
+                )
+            additional["zelle"] = str(applied)
+        quote, plan = tender_plan(policy, lines, method="split", split=additional, credit=credit)
+        if applied:
+            next(part for part in plan if part["tender"] == "zelle")["advance"] = True
+        return quote, plan, applied
     if method == "zelle" and available < amount(base["total"]):
         raise ValidationError(
             f"Only ${available:.2f} has been recorded through Zelle. Record the verified receipt or another transfer first, or choose the card on file for the remaining balance."
