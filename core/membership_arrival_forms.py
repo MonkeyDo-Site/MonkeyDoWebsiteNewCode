@@ -111,12 +111,27 @@ def configure(form, booking, actor):
                 ("cash", "Cash"),
                 ("check", "Check"),
                 ("gift_card", "Physical gift card (verified)"),
+                ("zelle", "Separate Zelle transfer (verified)"),
             ],
             label="Membership paid by",
             help_text="For a split visit payment, record the membership payment separately here.",
         ),
         "member_received": forms.BooleanField(
             required=False, label="The combined cash or check amount shown was actually received."
+        ),
+        "member_received_on": forms.DateField(
+            required=False,
+            label="Membership Zelle bank receipt date",
+            widget=forms.DateInput(attrs={"type": "date"}),
+            help_text="Leave blank for today.",
+        ),
+        "member_zelle_sender": forms.CharField(
+            required=False, max_length=160, label="Membership Zelle sender name/account"
+        ),
+        "member_zelle_verified": forms.BooleanField(
+            required=False,
+            label="This separate membership transfer was verified in the business bank account and has not already been recorded for this booking.",
+            help_text="A customer screenshot alone does not confirm receipt.",
         ),
     }
     if actor.is_superuser:
@@ -137,7 +152,9 @@ def configure(form, booking, actor):
     split = values.get("method") == "split"
     tender = values.get("member_first_method") if split else values.get("method")
     form.fields["member_first_method"].arrival_hidden = not split
-    form.fields["member_received"].arrival_hidden = tender in {"card", "gift_card"}
+    form.fields["member_received"].arrival_hidden = tender in {"card", "gift_card", "zelle"}
+    for name in ("member_received_on", "member_zelle_sender", "member_zelle_verified"):
+        form.fields[name].arrival_hidden = not (split and tender == "zelle")
     if split:
         form.fields[
             "member_received"

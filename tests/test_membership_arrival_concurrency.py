@@ -1,12 +1,14 @@
 """Overlapping final submissions cannot collect the combined payment twice."""
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from decimal import Decimal
 from threading import Event
 from unittest.mock import patch
 
 from django.db import close_old_connections, connection, connections, transaction
 from django.test import TransactionTestCase, override_settings
+from django.utils import timezone
 
 from core import membership_arrival
 from core.communications.models import MessageDelivery
@@ -30,12 +32,21 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
     def test_split_visit_duplicate_waits_without_repeating_membership_or_card_remainder(self):
         self.check_duplicate_confirmation(split=True)
 
-    def check_duplicate_confirmation(self, *, split):
+    def test_separate_membership_zelle_is_recorded_only_once_during_overlapping_confirmations(self):
+        self.check_duplicate_confirmation(split=True, member="zelle")
+
+    def check_duplicate_confirmation(self, *, split, member="cash"):
         if connection.vendor != "postgresql":
             self.skipTest("PostgreSQL transaction/advisory-lock race")
         booking = self.prepare(method="split" if split else "cash")
         if split:
-            self.input.update(member_first_method="cash", split={"cash": "10.00"})
+            self.input.update(member_first_method=member, split={"cash": "10.00"})
+        if member == "zelle":
+            self.input.update(
+                member_zelle_sender="Fictional member sender",
+                member_received_on=timezone.localdate() - timedelta(days=1),
+                member_zelle_verified=True,
+            )
         accepted = membership_arrival.review(**self.options)
         bought, waiting = Event(), Event()
         original_purchase, original_lock = (

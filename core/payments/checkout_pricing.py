@@ -81,6 +81,8 @@ def tender_plan(policy, lines, *, method, split=None):
     ]
     total_noncard = sum((value for _, value in received), ZERO)
     if not total_noncard:
+        if not amount(cash_quote["total"]):
+            return cash_quote | {"expected_method": "card"}, []
         raise ValidationError("Enter an amount received for at least one payment method.")
     if total_noncard > amount(cash_quote["total"]):
         raise ValidationError(

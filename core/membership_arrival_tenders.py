@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 
 from .payments.amounts import ZERO, amount
 
-MANUAL = {"cash": "Cash", "check": "Check", "gift_card": "Gift card"}
+MANUAL = {"cash": "Cash", "check": "Check", "gift_card": "Gift card", "zelle": "Zelle"}
 
 
 def first_tender(data, *, comped=False):
@@ -16,7 +16,7 @@ def first_tender(data, *, comped=False):
         selected = data.get("member_first_method")
         if selected and (not isinstance(selected, str) or selected not in MANUAL):
             raise ValidationError(
-                "Choose cash, check or a verified physical gift card for the membership payment."
+                "Choose cash, check, a verified physical gift card or a separate verified Zelle transfer for the membership payment."
             )
         # An unselected preview still needs to display the amount. Confirmation
         # rejects the placeholder if an actual membership payment is due.
@@ -57,6 +57,20 @@ def split_facts(*, tender, membership_due, plan, selection):
     return result
 
 
+def zelle_receipt(data, *, tender, due):
+    if tender != "zelle" or not due:
+        return {}
+    from .payments.receipts import receipt_date, sender
+
+    return {
+        "membership_zelle": {
+            "amount": str(due),
+            "received_on": receipt_date(data.get("member_received_on")).isoformat(),
+            "sender": sender(data.get("member_zelle_sender", ""), required=True),
+        }
+    }
+
+
 def receipt_ready(data, reviewed):
     tender, facts = reviewed["offer"]["expected_method"], reviewed["facts"]
     due = facts["membership_due"] if facts.get("split_visit") else facts["received_today"]
@@ -64,6 +78,8 @@ def receipt_ready(data, reviewed):
         return False
     if tender == "card" or due == "0.00":
         return True
+    if tender == "zelle":
+        return bool(data.get("member_zelle_verified"))
     return bool(
         data.get("gift_card_verified") if tender == "gift_card" else data.get("member_received")
     )
@@ -90,6 +106,12 @@ def verify_receipt(data, reviewed, verified_received):
         if data.get("gift_card_verified") is not True:
             raise ValidationError(
                 "Present and verify the physical gift card for the combined amount shown."
+            )
+        verified_received = True
+    if tender == "zelle" and due:
+        if data.get("member_zelle_verified") is not True:
+            raise ValidationError(
+                "Verify the separate membership Zelle transfer in the business bank account. Do not reuse Zelle already recorded for this booking."
             )
         verified_received = True
     if tender != "card" and due > ZERO and verified_received is not True:

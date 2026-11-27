@@ -12,6 +12,12 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const memberCard=window.MonkeyDoArrivalCard?.(form,()=>update());
   if(memberCard){const address=new URL(location.href);address.searchParams.set('draft',form.elements.arrival_draft.value);history.replaceState(null,'',address);}
   const cents=value=>Math.round(Number(value||0)*100);
+  const invalidateReceipts=()=>{
+    if(!form.elements.member_add?.checked)return;
+    form.elements.member_received.checked=false;
+    form.elements.member_zelle_verified.checked=false;
+    if(['gift_card','split'].includes(form.elements.method.value))form.elements.gift_card_verified.checked=false;
+  };
   const rows=()=>[...rowHost.querySelectorAll('[data-payment-row]')];
   const totals=()=>Object.fromEntries(Object.keys(kinds).map(kind=>[kind,rows().filter(row=>row.querySelector('select').value===kind).reduce((sum,row)=>sum+cents(row.querySelector('input').value),0)]));
   const serialize=()=>{
@@ -33,9 +39,11 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     const remove=document.createElement('button');remove.type='button';remove.className='text-button';remove.textContent='Remove';
     row.append(methodLabel,amountLabel,fill,remove);rowHost.append(row);
     select.addEventListener('change',()=>{input.value='';serialize();});
-    remove.addEventListener('click',()=>{row.remove();serialize();schedule();});
+    remove.addEventListener('click',()=>{invalidateReceipts();row.remove();serialize();schedule();});
     fill.addEventListener('click',async()=>{
-      input.value='';serialize();await update();
+      invalidateReceipts();
+      input.value='';serialize();const requested=inputIdentity(payload());await update();
+      if(!row.isConnected||inputIdentity(payload())!==requested)return;
       if(!lastQuote.noncard_total)return;
       const other=rows().filter(item=>item!==row).reduce((sum,item)=>sum+cents(item.querySelector('input').value),0);
       input.value=(Math.max(0,cents(lastQuote.noncard_total)-cents(lastQuote.prepaid_available)-other)/100).toFixed(2);
@@ -85,7 +93,10 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       if(email){email.hidden=!form.elements.member_comped.checked;form.elements.member_send_confirmation.disabled=!active||email.hidden;}
       const receipt=form.querySelector('[data-arrival-field="member_received"]');
       receipt.querySelector('label').textContent=splitMember?'The membership cash or check payment shown was actually received.':'The combined cash or check amount shown was actually received.';
-      receipt.hidden=['card','gift_card'].includes(firstTender)||(splitMember&&!memberDue);form.elements.member_received.disabled=!active||receipt.hidden;
+      receipt.hidden=['card','gift_card','zelle'].includes(firstTender)||(splitMember&&!memberDue);form.elements.member_received.disabled=!active||receipt.hidden;
+      const bank=memberFields.querySelector('[data-membership-zelle]');
+      bank.hidden=!splitMember||!memberDue||firstTender!=='zelle';
+      for(const field of bank.querySelectorAll('[data-arrival-field]')){field.hidden=bank.hidden;for(const input of field.querySelectorAll('input'))input.disabled=bank.hidden;}
       if(!compedMethods)form.querySelector('[data-arrival-field="method"] label').textContent=splitMember?'Visit payment:':'Actual payment:';
     }
     const splitNote=form.querySelector('[data-split-membership-note]');if(splitNote)splitNote.hidden=!splitMember;
@@ -124,7 +135,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     else if(form.elements.waiver_confirmed.value==='no')status.textContent='Complete waiver coverage before confirming arrival.';
     else if(form.elements.waiver_confirmed.value!=='yes')status.textContent='The waiver confirmation field is required.';
     else if(!warning.hidden&&form.elements.waiver_mismatch_accepted.value!=='yes')status.textContent='Review the waiver-count warning before completing arrival.';
-    else if(data.membership_ready===false)status.textContent='Review the membership terms, saved installment card and combined payment confirmation above.';
+    else if(data.membership_ready===false)status.textContent=form.elements.method.value==='split'&&form.elements.member_first_method?.value==='zelle'?'Verify the separate membership Zelle transfer and review the current membership terms.':'Review the membership terms, saved installment card and combined payment confirmation above.';
     else if(!data.can_confirm)status.textContent='Verify the received Zelle or physical gift card before completing arrival.';
     else status.textContent='';
   };
@@ -148,9 +159,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   add.addEventListener('click',()=>{const used=new Set(rows().map(row=>row.querySelector('select').value));const next=Object.keys(kinds).find(kind=>!used.has(kind));if(next){makeRow(next);schedule();}});
   form.addEventListener('input',event=>{
     if(event.target.form!==form)return;
-    if(form.elements.member_add?.checked&&!['member_accepted','member_received','gift_card_verified','waiver_confirmed','waiver_mismatch_accepted'].includes(event.target.name)){
-      form.elements.member_received.checked=false;
-      if(['gift_card','split'].includes(form.elements.method.value))form.elements.gift_card_verified.checked=false;
+    if(form.elements.member_add?.checked&&!['member_accepted','member_received','member_zelle_verified','zelle_verified','gift_card_verified','waiver_confirmed','waiver_mismatch_accepted'].includes(event.target.name)){
+      invalidateReceipts();
     }
     if(['children','babies'].includes(event.target.name))for(const input of form.querySelectorAll('[name=waiver_mismatch_accepted]'))input.checked=false;
     schedule();
@@ -158,9 +168,11 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   form.addEventListener('change',event=>{
     if(event.target.form!==form)return;
     if(event.target.name==='member_add'&&['gift_card','split'].includes(form.elements.method.value))form.elements.gift_card_verified.checked=false;
+    if(event.target.name==='member_add')form.elements.member_zelle_verified.checked=false;
     if(event.target.name==='member_card'&&form.elements.member_card_authorization)form.elements.member_card_authorization.value='';
-    if(form.elements.member_add?.checked&&(event.target.name==='method'||(event.target.name.startsWith('member_')&&!['member_accepted','member_received'].includes(event.target.name)))){
+    if(form.elements.member_add?.checked&&(event.target.name==='method'||(event.target.name.startsWith('member_')&&!['member_accepted','member_received','member_zelle_verified'].includes(event.target.name)))){
       form.elements.member_accepted.checked=false;form.elements.member_received.checked=false;
+      form.elements.member_zelle_verified.checked=false;
       form.elements.gift_card_verified.checked=false;
     }
     if(event.target===form.elements.method){

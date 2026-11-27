@@ -168,7 +168,7 @@ class SplitMembershipArrivalTests(InitialCreditFixtures, RuntimeRoleMixin, TestC
 
     def test_unsupported_first_tenders_or_excess_visit_amounts_cannot_partially_save(self):
         self.split_visit()
-        for tender in ("card", "zelle", "split"):
+        for tender in ("card", "wire", "split"):
             self.input["member_first_method"] = tender
             with self.subTest(tender=tender), self.assertRaises(ValidationError):
                 self.confirm_split()

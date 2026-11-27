@@ -15,9 +15,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Scheduled installment review | 73–74 |
 | Physical gift card and an owner-comped visit | 75–76 |
 | Customer review and reservation of a released Unlimited benefit | 77–78 |
-| **New: split visit payments and a separate membership receipt** | **79–80** |
+| Split visit payments and a separate membership receipt | 79–80 |
+| **New: separately verified membership Zelle during arrival** | **81–82** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Membership-first Zelle funding, splitting the membership payment itself, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Allocating already recorded booking Zelle toward membership, splitting the membership payment itself, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -723,10 +724,30 @@ All-manual visit splits, strict gift/Zelle verification, actual Zelle bank dates
 | --- | --- |
 | [![Split visit and membership actual funds, desktop](80-split-visit-membership-received-desktop.png)](80-split-visit-membership-received-desktop.png) | [![Split visit and membership actual funds, phone](80-split-visit-membership-received-phone.png)](80-split-visit-membership-received-phone.png) |
 
+## 81 — Separate membership Zelle alongside the visit payment
+
+The same arrival page shows **$35.98 separate membership Zelle + $10.00 visit cash + $6.17 visit card = $52.15**. Only choosing the membership's separate Zelle transfer reveals its bank sender/date and verification. The cash/check acknowledgment is hidden. Monthly future installments retain their accepted card; the visit remainder stays on the booking card.
+
+Staff verifies that these membership funds have not already been recorded for this booking. This does not allocate existing booking Zelle to membership or check a bank account automatically. Actual bank date/sender enter the accepted combined history. Changes clear stale receipt verification; the remaining-balance control preserves any newer typed amount when its response arrives late.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Separate membership Zelle review, desktop](81-separate-membership-zelle-review-desktop.png)](81-separate-membership-zelle-review-desktop.png) | [![Separate membership Zelle review, phone](81-separate-membership-zelle-review-phone.png)](81-separate-membership-zelle-review-phone.png) |
+
+## 82 — Separate bank funds and the confirmed visit result
+
+The membership's fictional **$35.98 Zelle** keeps its actual **March 8** bank receipt date; the **$10 visit cash** is recorded at arrival on **March 9**. Initially **$45.98** is received and the card is pending. After a simulated successful outcome on the same **$6.17** operation, the page shows **$52.15 combined new funds** and **$16.17 visit funds**, with the separate membership bank details alongside the link. One combined confirmation is queued, with none delivered externally.
+
+Developer checks also cover separate visit/member bank proofs and dates, existing booking Zelle, duplicate submissions, prepaid/card-free membership, full credit, a zero-dollar member visit and atomic rollback. No actual provider or bank request occurred. Reallocation of already recorded booking Zelle and splitting the membership's own first payment remain unfinished.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Separate membership Zelle recorded, desktop](82-separate-membership-zelle-received-desktop.png)](82-separate-membership-zelle-received-desktop.png) | [![Separate membership Zelle recorded, phone](82-separate-membership-zelle-received-phone.png)](82-separate-membership-zelle-received-phone.png) |
+
 ## Checked so far
 
-The complete **1,324-test PostgreSQL suite passes** (426.416s), including fifteen new split-payment cases and one real overlapping-confirmation race. These cover exact constituent receipts/card fees, verified gift/Zelle funds, distinct actual receipt dates, prepaid/full-credit membership, current acceptance and source scopes, stale/repeated confirmation, and known/unknown visit-card recovery. Original financial, queue, migration, runtime and private-receipt checks remain green.
+The complete **1,337-test PostgreSQL suite passes** (432.077s), including twelve new separate-membership-Zelle cases and one real overlapping-confirmation race. Exact new/prior funds, independent bank proofs/dates, current review hashes, prepaid and credit funding, zero-dollar visits, protected navigation and atomic rollback are covered. Original financial, queue, migration, runtime and private-receipt checks remain green.
 
-All **80 desktop/phone pairs** have passed browser overflow/JavaScript checks. The final split-visit browser scenario and receipt-label verification passed in 7.795s, with all four samples 79–80 recaptured and visually inspected. It verified $45.98 actual funds while the visit card remained pending, then $52.15 only after its simulated confirmed outcome: one purchase, three constituent operations, one queued unsent combined confirmation and no provider call. Ruff/format (504 Python files), model drift, whitespace, all 160 image links and all 48 unchanged reviewed migration hashes pass. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
+The final real desktop/phone scenario and width recapture pass in 13.500s: conditional bank fields, proof resets, independent verification and a deliberately delayed remaining-balance response preserving newer typing. It confirms one membership and three constituent operations, $45.98 before a simulated visit-card result and $52.15 afterward, with one queued unsent combined confirmation and no external provider/bank action. All four final samples 81–82 were recaptured; bank date and sender inputs use the full phone width. All **82 desktop/phone pairs**, 164 image links, Ruff/format (505 Python files), model drift, JavaScript syntax, whitespace and all 48 unchanged reviewed migration hashes pass. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
 
 Implementation continues while the owner reviews. The [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) identifies functional checks, unfinished scope and provider limitations. No merge, deployment, live financial action or external email delivery is included; release requires explicit authorization.

@@ -15,6 +15,14 @@
 <div data-membership-monthly-card>{% include 'core/partials/arrival_field.html' with field=form.member_card %}</div>
 {% include 'core/partials/arrival_field.html' with field=form.member_first_method %}
 </div>
+<div data-membership-zelle{% if form.member_first_method.value != 'zelle' %} hidden{% endif %}>
+<p class="caption">Use a separate membership transfer. Zelle already recorded for this booking remains allocated to the visit.</p>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_received_on %}
+{% include 'core/partials/arrival_field.html' with field=form.member_zelle_sender %}
+</div>
+{% include 'core/partials/arrival_field.html' with field=form.member_zelle_verified %}
+</div>
 <div data-arrival-membership-card>{% include 'core/partials/membership_card_entry.html' %}</div>
 {% if form.member_minimum_override %}<details><summary>Owner membership exceptions</summary>
 {% include 'core/partials/arrival_field.html' with field=form.member_minimum_override %}

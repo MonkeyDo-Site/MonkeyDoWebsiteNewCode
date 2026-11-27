@@ -15,7 +15,7 @@ from django.db import transaction
 
 from .availability import NEW_YORK
 from .calendar import lock_calendar
-from .membership_arrival_tenders import first_tender, split_facts, verify_receipt
+from .membership_arrival_tenders import first_tender, split_facts, verify_receipt, zelle_receipt
 from .membership_benefits import Place
 from .membership_records import MembershipArrivalCheckout
 from .membership_reservations import accepted_rules, lock_customer
@@ -138,6 +138,7 @@ def review(
                 selection=data.get("member_first_method"),
             )
         )
+    facts.update(zelle_receipt(data, tender=tender, due=membership_due))
     if card_authorization_id:
         facts["card_authorization_id"] = str(card_authorization_id)
     return {
@@ -213,6 +214,7 @@ def confirm(
             "The membership, visit or payments changed. Review the current combined total."
         )
     verified_received = verify_receipt(data, reviewed, verified_received)
+    bank_date = reviewed["facts"].get("membership_zelle", {}).get("received_on")
     member = purchase(
         actor=actor,
         request_key=uuid.uuid5(key, "membership"),
@@ -221,6 +223,7 @@ def confirm(
         method_id=method_id,
         card_authorization_id=card_authorization_id,
         verified_received=verified_received,
+        received_on=date.fromisoformat(bank_date) if bank_date else None,
         send_confirmation=send_confirmation,
         combined_booking=booking,
         customer=booking.customer,
