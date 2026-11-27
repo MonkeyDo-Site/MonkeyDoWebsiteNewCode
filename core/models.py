@@ -649,6 +649,10 @@ class SessionReservationBlock(models.Model):
 from .backups.models import BackupDownload, BackupRestoreCheck, BackupRun  # noqa: E402,F401
 from .communications.models import MailProviderEvent, MessageDelivery, MessageEvent  # noqa: E402,F401
 from .membership_records import (  # noqa: E402,F401
+    MembershipBenefitAssignment,
+    MembershipBenefitBatch,
+    MembershipBenefitEvent,
+    MembershipBenefitState,
     MembershipBilling,
     MembershipCardMandate,
     MembershipInstallment,

@@ -2,7 +2,7 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37). These are actual application pages with fictional review data, captured at 1440px desktop and 390px phone widths. All names, card references and payment outcomes are synthetic. No card was charged and no customer email was delivered.
 
-These first samples cover staff purchase and the membership overview. Booking benefit reservations, public purchase, renewals/additions, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not shown or verified here.
+These first samples cover staff purchase and the membership overview. Booking-screen benefit integration, public purchase, renewals/additions, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not shown or verified here.
 
 ## 01 — Purchase membership on one page
 
@@ -14,7 +14,7 @@ Customer, membership places, term, payment choice, amount due today, remaining i
 
 ## 02 — Active membership after confirmed payment
 
-A successful simulated provider outcome records $37.06 received. The overview separates actual money from the next $37.06 installment. Membership dates, current month, saved card and included benefits are together; installment details and accepted history expand underneath. No automatic renewal beyond the purchased term.
+A successful simulated provider outcome records $37.06 received. The overview separates actual money from the next $37.06 installment. Membership dates, current month, saved card, included benefits and available/reserved/used counts are together; installment details and accepted history expand underneath. No automatic renewal beyond the purchased term.
 
 | Desktop | Phone |
 | --- | --- |

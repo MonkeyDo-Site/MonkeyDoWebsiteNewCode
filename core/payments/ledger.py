@@ -421,6 +421,10 @@ def record_result(
 ):
     enabled()
     operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
+    if operation.sale.kind == "membership":
+        from core.membership_reservations import lock_customer
+
+        lock_customer(operation.sale.customer_id)
     if source not in {
         "provider",
         "staff",

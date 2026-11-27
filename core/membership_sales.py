@@ -200,6 +200,9 @@ def purchase(
     if accepted is not True:
         raise ValidationError("Review and accept the membership terms before confirming.")
     customer = Customer.objects.select_for_update().get(pk=values["customer"].pk)
+    from .membership_reservations import lock_customer
+
+    lock_customer(customer.pk)
     values["customer"] = customer
     data = offer(actor=actor, **values)
     if data["fingerprint"] != reviewed:

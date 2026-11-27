@@ -14,6 +14,7 @@ from django.views.decorators.http import require_http_methods, require_POST, req
 from .booking_forms import CustomerChoice, customer_picker
 from .forms import payment_method_choices
 from .membership_records import MembershipInvoice, MembershipPurchase
+from .membership_reservations import summary_for
 from .membership_sales import installment_paid, membership_status, offer, purchase, today
 from .models import Customer, MembershipDraft, PaymentMethod, PricingPolicy
 from .pagination import paginate
@@ -272,6 +273,7 @@ def membership_overview(request, pk):
             "status": status,
             "installments": installments,
             "money_received": paid,
+            "benefit_summary": summary_for(member),
             "next_item": next_item,
             "first": first,
             "today": today(),

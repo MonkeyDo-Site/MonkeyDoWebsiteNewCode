@@ -98,3 +98,87 @@ class MembershipBilling(models.Model):
     )
     stopped_on = models.DateField(null=True)
     revision = models.PositiveIntegerField(default=1)
+
+
+class MembershipBenefitBatch(FinancialFact):
+    id = models.UUIDField(primary_key=True, editable=False)
+    booking = models.ForeignKey(
+        "core.Booking", on_delete=models.PROTECT, related_name="membership_benefit_batches"
+    )
+    quote = models.ForeignKey("core.BookingQuote", null=True, on_delete=models.PROTECT)
+    action = models.CharField(
+        max_length=10, choices=[(x, x.title()) for x in ("reserved", "used", "released")]
+    )
+    fingerprint = models.CharField(max_length=64)
+    reason = models.CharField(max_length=30)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+
+class MembershipBenefitAssignment(FinancialFact):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(
+        "core.Booking", on_delete=models.PROTECT, related_name="membership_benefits"
+    )
+    quote = models.ForeignKey(
+        "core.BookingQuote", on_delete=models.PROTECT, related_name="membership_benefits"
+    )
+    purchase = models.ForeignKey(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="benefit_assignments"
+    )
+    place = models.PositiveIntegerField()
+    kind = models.CharField(
+        max_length=30,
+        choices=[
+            (x, x.replace("_", " ").title())
+            for x in (
+                "unlimited_daily",
+                "subscription_free",
+                "subscription_additional",
+                "subscription_supervised",
+            )
+        ],
+    )
+    appointment_on = models.DateField()
+    cycle = models.ForeignKey("core.MembershipDraftCycle", on_delete=models.PROTECT)
+    price = models.DecimalField(max_digits=9, decimal_places=2)
+    rules_version = models.CharField(max_length=60)
+    reserved_by = models.ForeignKey(
+        MembershipBenefitBatch, on_delete=models.PROTECT, related_name="assignments"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["quote", "purchase", "place"], name="membership_benefit_unique_place"
+            )
+        ]
+
+
+class MembershipBenefitEvent(FinancialFact):
+    assignment = models.ForeignKey(
+        MembershipBenefitAssignment, on_delete=models.PROTECT, related_name="events"
+    )
+    batch = models.ForeignKey(
+        MembershipBenefitBatch, on_delete=models.PROTECT, related_name="events"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["assignment", "batch"], name="membership_benefit_unique_event"
+            )
+        ]
+
+
+class MembershipBenefitState(models.Model):
+    assignment = models.OneToOneField(
+        MembershipBenefitAssignment,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="current",
+    )
+    status = models.CharField(
+        max_length=10, choices=[(x, x.title()) for x in ("reserved", "used", "released")]
+    )
+    event = models.OneToOneField(MembershipBenefitEvent, on_delete=models.PROTECT)
