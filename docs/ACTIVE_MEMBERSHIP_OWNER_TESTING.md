@@ -2,6 +2,21 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37) remains under development. The [gallery](reviews/active-memberships/README.md) uses fictional records and simulated card outcomes; no live payment or email delivery was performed. Review images now. The steps below are for a later authorized staging release, with test customers and Banquest test cards. This is not a deployment or live-payment instruction.
 
+## Public initial membership purchase — samples 67–70
+
+For a later authorized staging test, open **Membership → Choose a membership**. The feature remains disabled by default. Use fictional contact details and provider test cards only after the separate provider verification/release steps.
+
+| Scenario | Actions | Expected result |
+| --- | --- | --- |
+| Existing customer | Enter phone and verify last name/email. | The approved profile-matching rules apply. Plan, price, card, agreement and final purchase remain on one checkout page. |
+| New customer | Enter an unmatched phone and new contact details. | One customer/checkout identity is saved; no booking or payment exists yet. New-card entry is selected automatically when no saved card is available. |
+| Conflicting profiles | Enter a phone and another profile's email. | The customer explicitly verifies/selects a profile before checkout. Neither profile is silently overwritten. Duplicate-email recovery stays in the membership flow. |
+| Current price and terms | Change type, places, term, billing or start date. | Amount/schedule refresh together. A changed review requires acceptance again. Ordinary public terms remain at least three whole months. |
+| Final confirmation | Accept the current agreement and confirm with a saved or new card. Reload/resubmit. | Exact card authorization precedes one purchase and one first-payment request. No visit, admission hold or waiver is created by this membership-only action. |
+| Uncertain storage/payment | Interrupt card storage or simulate an uncertain payment. Reload/check status. | No repeated storage/financial POST or new purchase is requested. Unconfirmed funds remain zero; unknown storage blocks discarding the checkout. Actual hosted fields are unverified in the gallery. |
+| Known outcome | Confirm a successful provider result through the permitted test workflow. | The membership receipt shows actual received funds, the purchased term and one queued confirmation. A visit is booked separately. |
+| Expired accepted checkout | Return after twenty minutes or after verified contact details change. | The expired browser cannot purchase again or erase the accepted checkout. It currently directs the customer to assistance; self-service receipt re-verification remains to be implemented. Owner history retains the accepted payment. |
+
 ## Current functional scenarios
 
 | Scenario | Actions | Expected result |
@@ -202,7 +217,7 @@ Review samples 65–66. This applies to staff purchase/arrival sessions with a k
 
 ## Known unfinished areas
 
-Public new-membership purchase; other-tender combined purchase-and-visit checkout; combined multi-cohort renewal checkout; scheduled installment execution and automatic next-installment credit use; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; private public-booking benefit actions; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and ordinary-visit/broader credit redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment credit application and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
+Self-service receipt re-verification after an initial public checkout expires; other-tender combined purchase-and-visit checkout; combined multi-cohort renewal checkout; scheduled installment execution and automatic next-installment credit use; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; private public-booking benefit actions; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and ordinary-visit/broader credit redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment credit application and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
 
 Actual Banquest hosted fields and installment processor flags are not verified by the fictional gallery. Three policy answers about later installments after failure, parent arrears after prepaid early renewal, and credit-funded cancellation refund destinations remain pending in the [implementation record](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). The disputed automatic branches are not enabled, and no credit-refund destination is assumed.
 

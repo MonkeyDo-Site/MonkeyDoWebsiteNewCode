@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}{% load booking_display %}
+{% block title %}Your membership · MonkeyDo{% endblock %}
+{% block content %}<div class="public-membership-page">
+<div class="page-heading"><p class="eyebrow">More MonkeyDo adventures</p><h1>Your membership</h1><p>Let’s start with your customer details.</p></div>
+{% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
+{% if form %}<section class="panel public-membership-verification">
+{% if flow.stage == 'name' %}<p>We found a customer profile with the phone number you entered — {{ flow.phone|phone_display }}. For verification, enter your last name{% if flow.verification_entry == 'returning_current' %} or email address{% endif %}.</p>{% endif %}
+{% if flow.stage == 'name_confirm' or flow.stage == 'email_confirm' %}<h2>Is this your family?</h2><p>We found customer “{{ flow.candidate_name }}” matching the details you entered. Is this you?</p>{% endif %}
+{% if flow.stage == 'previous' %}<p>We found your number along with an updated number of {{ flow.current_phone|phone_display }}. Please confirm if this is your current phone number.</p>{% endif %}
+{% if flow.stage == 'contact' %}<h2>Your details</h2><p>Phone: {{ flow.phone|phone_display }}</p>{% endif %}
+{% if flow.stage == 'retry_phone' %}<h2>Let’s try another number</h2><p>No customer was found with {{ flow.phone|phone_display }}. Did you use another phone number for a previous visit?</p>{% endif %}
+{% if flow.stage == 'email' %}<h2>Add your email address</h2><p>Your customer record doesn’t have an email address yet. Enter one to continue.</p>{% endif %}
+{% if flow.stage == 'email_lookup' %}<h2>Find your customer details</h2><p>{% if flow.recovery_notice %}{{ flow.recovery_notice }} {% endif %}Enter your email address to find your profile.</p>{% endif %}
+{% if flow.stage == 'name_retry' %}<h2>Find your customer details</h2><p>We couldn’t match that email address to phone {{ flow.phone|phone_display }}. Try entering your last name.</p>{% endif %}
+{% if flow.stage == 'conflict_name' %}<p>The email address {{ flow.conflict_email }} matches another customer profile. Enter your last name so we can check the right profile.</p>{% endif %}
+{% if flow.stage == 'recovered_name' %}<h2>Verify your details</h2><p>We found a profile with email {{ flow.recovery_email }} and another phone number. Enter your last name to verify this profile.</p>{% endif %}
+{% if flow.stage == 'recovered_confirm' %}<h2>Is this you?</h2><p>We found customer {{ recovered_profile.last_name }} with email {{ recovered_profile.email }} and phone {{ recovered_profile.phone|phone_display }}.</p>{% endif %}
+{% if flow.stage == 'conflict_stop' %}<p class="notice" role="alert">{{ flow.conflict_message }}</p>{% endif %}
+{% if flow.stage == 'profile_choice' %}{% include 'core/partials/profile_choice.html' %}{% else %}
+<form method="post" class="record-form" id="membership-identity-form">{% include 'core/partials/wizard_identity.html' %}{% include 'core/partials/form_fields.html' %}
+<button class="button" type="submit">{% if flow.stage == 'recovered_confirm' %}Continue with this customer profile{% elif flow.stage == 'conflict_stop' %}Start again{% else %}Continue{% endif %}</button>
+{% if flow.stage == 'retry_phone' %}<button class="text-button" name="continue_new" value="1" formnovalidate>Continue as a new customer</button>{% endif %}
+</form>{% endif %}
+{% if flow.stage == 'retry_phone' or flow.stage == 'contact' %}<form method="post">{% include 'core/partials/wizard_identity.html' %}<button class="text-button" name="action" value="email_recovery">Find my customer details by email</button></form>{% endif %}
+</section>{% endif %}
+{% if restart_allowed and flow.stage != 'phone' %}<form method="post">{% include 'core/partials/wizard_identity.html' %}<button class="text-button" name="action" value="restart">Start again / try another phone number</button></form>{% endif %}
+<p class="caption">For assistance, call/text 848-238-5147.</p></div>{% endblock %}

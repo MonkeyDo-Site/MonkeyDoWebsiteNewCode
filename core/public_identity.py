@@ -77,8 +77,9 @@ class ContactForm(forms.Form):
         max_length=240, required=False, label="How did you hear about MonkeyDo?"
     )
 
-    def __init__(self, *args, phone=None, **kwargs):
+    def __init__(self, *args, phone=None, restart_url=None, **kwargs):
         self.phone = phone
+        self.restart_url = restart_url
         super().__init__(*args, **kwargs)
 
     def clean_email(self):
@@ -91,7 +92,8 @@ class ContactForm(forms.Form):
             from .customers import public_duplicate_email_message
 
             raise ValidationError(
-                public_duplicate_email_message(email, self.phone), code="duplicate_email"
+                public_duplicate_email_message(email, self.phone, restart_url=self.restart_url),
+                code="duplicate_email",
             ) from None
         return email
 
@@ -99,8 +101,9 @@ class ContactForm(forms.Form):
 class RequiredEmailForm(forms.Form):
     email = forms.EmailField(label="Email address")
 
-    def __init__(self, *args, phone=None, **kwargs):
+    def __init__(self, *args, phone=None, restart_url=None, **kwargs):
         self.phone = phone
+        self.restart_url = restart_url
         super().__init__(*args, **kwargs)
 
     def clean_email(self):
@@ -113,7 +116,8 @@ class RequiredEmailForm(forms.Form):
             from .customers import public_duplicate_email_message
 
             raise ValidationError(
-                public_duplicate_email_message(email, self.phone), code="duplicate_email"
+                public_duplicate_email_message(email, self.phone, restart_url=self.restart_url),
+                code="duplicate_email",
             ) from None
         return email
 

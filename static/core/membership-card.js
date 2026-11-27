@@ -111,6 +111,7 @@
       display();
     }
   }, true);
+  if (section.dataset.startNew === '1') {option(); field('method').value = 'new';}
   display();
   if (statusUrl) {uncertain = true; display(); recover().catch(() => {check.hidden = false; report('Check the existing membership card setup before another attempt.');});}
 })();

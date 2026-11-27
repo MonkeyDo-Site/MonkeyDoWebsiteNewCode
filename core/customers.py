@@ -234,13 +234,13 @@ def historical_email_customers(email, customer_id=None):
     )
 
 
-def public_duplicate_email_message(email, phone=None):
+def public_duplicate_email_message(email, phone=None, *, restart_url=None):
     from .templatetags.booking_display import phone_display
 
     return format_html(
         "Looks like you’ve booked with this email before, using another phone number. Please "
         '<a href="{}">go back</a> and use that number or you can create a new customer using {}, '
         "with a different email address. For further assistance, call/text us at 848-238-5147.",
-        reverse("customer_booking") + "?restart=1",
+        restart_url or reverse("customer_booking") + "?restart=1",
         phone_display(phone) if phone else "the phone number you entered",
     )

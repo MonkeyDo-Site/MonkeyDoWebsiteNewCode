@@ -15,6 +15,7 @@ from core import (
     membership_prompt_views,
     membership_views,
     public_booking_views,
+    public_membership_join,
     public_membership_views,
     recurring_views,
     scheduling_views,
@@ -51,6 +52,27 @@ urlpatterns = [
         "staff/memberships/<int:pk>/card/",
         membership_card_views.setup_replacement,
         name="membership_card_replacement",
+    ),
+    path("membership/join/", public_membership_join.join, name="public_membership_join"),
+    path(
+        "membership/join/offer/",
+        public_membership_views.live_offer,
+        name="public_membership_join_offer",
+    ),
+    path(
+        "membership/join/card/",
+        public_membership_views.setup_card,
+        name="public_membership_join_card",
+    ),
+    path(
+        "membership/join/card/<uuid:setup_id>/",
+        public_membership_views.setup_status,
+        name="public_membership_join_card_status",
+    ),
+    path(
+        "membership/join/complete/",
+        public_membership_views.receipt,
+        name="public_membership_join_receipt",
     ),
     path(
         "membership/renew/<str:token>/",

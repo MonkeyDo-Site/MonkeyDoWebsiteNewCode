@@ -1,4 +1,4 @@
-"""Verified private renewal; no public customer search or broad account access."""
+"""Verified initial purchase/private renewal; no broad public account access."""
 
 import json
 from functools import wraps
@@ -17,7 +17,13 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from .active_membership_views import PurchaseForm, display_offer
 from .membership_card_setup import available_methods, identity, make_flow
 from .membership_card_views import CardInput, saved_response
-from .membership_public_authority import resolve_link, submit, verified_scope, verify_identity
+from .membership_public_authority import (
+    acceptance_filter,
+    resolve_link,
+    submit,
+    verified_scope,
+    verify_identity,
+)
 from .membership_records import MembershipPublicAcceptance
 from .membership_renewals import renewal_details
 from .membership_sales import installment_paid, membership_status, offer
@@ -29,11 +35,12 @@ from .payments.setup import exchange
 from .public_booking_views import limit
 
 SESSION_KEY = "private_membership_renewals"
+INITIAL_SESSION_KEY = "initial_membership_identity"
 
 
 def private_view(view):
     @wraps(view)
-    def wrapped(request, token, *args, **kwargs):
+    def wrapped(request, *args, **kwargs):
         if not settings.MEMBERSHIP_SALES_ENABLED or settings.DESIGN_REVIEW_ONLY:
             raise Http404
         if settings.RECOVERY_HOLD:
@@ -46,7 +53,7 @@ def private_view(view):
                 status=503,
             )
         else:
-            response = view(request, token, *args, **kwargs)
+            response = view(request, *args, **kwargs)
         add_never_cache_headers(response)
         # Keep renewal tokens out of cross-origin requests while preserving the
         # browser's same-origin Origin/Referer evidence for Django CSRF checks.
@@ -62,13 +69,40 @@ class VerifyForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last name")
 
 
-def state(request, token):
-    link = resolve_link(token)
-    record = request.session.get(SESSION_KEY, {}).get(str(link.pk), {})
-    scope = verified_scope(record.get("proof"))
-    if scope["link_record"].pk != link.pk:
-        raise PermissionDenied
-    return link, record, scope
+def public_url(token, kind="checkout", *, setup_id=None):
+    names = {
+        "checkout": "renewal",
+        "offer": "offer",
+        "card": "card",
+        "status": "card_status",
+        "receipt": "receipt",
+    }
+    if token is None:
+        name = "public_membership_join" + ("" if kind == "checkout" else "_" + names[kind])
+        kwargs = {}
+    else:
+        name = "public_membership_" + names[kind]
+        kwargs = {"token": token}
+    if setup_id is not None:
+        kwargs["setup_id"] = setup_id
+    return reverse(name, kwargs=kwargs)
+
+
+def state(request, token=None):
+    if token is None:
+        checkout_id = request.session.get(INITIAL_SESSION_KEY, {}).get("checkout_id")
+        record = request.session.get(SESSION_KEY, {}).get(str(checkout_id), {})
+        scope = verified_scope(record.get("proof"))
+        source = scope.get("checkout_record")
+        if source is None or str(source.pk) != checkout_id:
+            raise PermissionDenied
+    else:
+        source = resolve_link(token)
+        record = request.session.get(SESSION_KEY, {}).get(str(source.pk), {})
+        scope = verified_scope(record.get("proof"))
+        if scope.get("link_record") != source:
+            raise PermissionDenied
+    return source, record, scope
 
 
 def save_state(request, link, record):
@@ -89,32 +123,38 @@ def method_flow(scope, proof):
         customer_id=scope["customer"],
         customer_revision=scope["revision"],
         prior_id=scope["prior"],
-        operation="renewal",
+        operation=scope["operation"],
         expected_method="card",
         expires=scope["expires"],
     )
 
 
-class RenewalForm(PurchaseForm):
+class PublicPurchaseForm(PurchaseForm):
     def __init__(self, *args, scope, proof, **kwargs):
+        bound = (args[0] if args else kwargs.get("data")) or {}
+        if scope["operation"] == "purchase" and bound.get("prior_id") not in (None, ""):
+            raise ValidationError("Use the current membership purchase form.")
         self.scope = scope
         self.proof = proof
         initial = dict(customer=scope["customer"], request_key=scope["request_key"])
         super().__init__(
             *args,
             owner=False,
-            prior=scope["link_record"].prior,
-            operation="renewal",
+            prior=scope["link_record"].prior if scope["operation"] == "renewal" else None,
+            operation=scope["operation"],
             initial=initial,
             **kwargs,
         )
-        details = renewal_details(scope["link_record"].prior)
+        details = (
+            renewal_details(scope["link_record"].prior) if scope["operation"] == "renewal" else None
+        )
         self.renewal_details = details
-        if details["available_places"] <= 0:
+        if details and details["available_places"] <= 0:
             raise ValidationError(
                 "These membership places already have a renewal recorded. Please call/text MonkeyDo if you need assistance."
             )
         self.fields["customer"].queryset = Customer.objects.filter(pk=scope["customer"])
+        self.fields["customer"].widget = forms.HiddenInput()
         self.fields["method"].queryset = available_methods(method_flow(scope, proof)).order_by(
             "last_four", "pk"
         )
@@ -127,9 +167,9 @@ class RenewalForm(PurchaseForm):
         self.fields["kind"].label = "Membership type"
         self.fields["places"] = forms.IntegerField(
             min_value=1,
-            max_value=details["available_places"],
+            max_value=details["available_places"] if details else 2147483647,
             label="Number of memberships",
-            initial=details["available_places"],
+            initial=details["available_places"] if details else 1,
         )
         self.fields["expected_method"].choices = [("card", "Credit card")]
         self.fields["expected_method"].initial = "card"
@@ -147,17 +187,17 @@ class RenewalForm(PurchaseForm):
             "action",
             "member_retain",
         }:
-            raise ValidationError("Use the secure membership renewal form.")
+            raise ValidationError("Use the secure membership form.")
         if self.errors:
             return data
         if (
             data["customer"].pk != self.scope["customer"]
             or data["request_key"] != self.scope["request_key"]
             or data["prior_id"] != self.scope["prior"]
-            or data["operation"] != "renewal"
+            or data["operation"] != self.scope["operation"]
         ):
             raise ValidationError(
-                "This renewal session changed. Reload and verify your details again."
+                "This membership session changed. Reload and verify your details again."
             )
         for key in ("minimum_override", "comped"):
             if forms.BooleanField(required=False).clean(self.data.get(key)):
@@ -179,21 +219,23 @@ def render_checkout(request, token, record, scope, form, data=None):
         dict(
             form=form,
             customer=scope["customer_record"],
-            prior=scope["link_record"].prior,
-            prior_ends_on=form.renewal_details["ends_on"],
+            prior=scope["link_record"].prior if scope["operation"] == "renewal" else None,
+            prior_ends_on=form.renewal_details["ends_on"] if form.renewal_details else None,
+            initial_purchase=scope["operation"] == "purchase",
+            membership_offer_url=public_url(token, "offer"),
             offer=display_offer(data),
             token=token,
             membership_card_public=True,
-            membership_card_endpoint=reverse("public_membership_card", args=[token]),
+            membership_card_start_new=scope["operation"] == "purchase"
+            and not form.fields["method"].queryset.exists(),
+            membership_card_endpoint=public_url(token, "card"),
             membership_card_configured=bool(
                 settings.PAYMENT_SANDBOX_ENABLED
                 and settings.BANQUEST_API_SOURCE_KEY
                 and settings.BANQUEST_TOKENIZATION_PUBLIC_KEY.startswith("pk_")
             ),
             membership_card_public_key=settings.BANQUEST_TOKENIZATION_PUBLIC_KEY,
-            membership_card_status_url=reverse(
-                "public_membership_card_status", args=[token, card_flow["setup_key"]]
-            )
+            membership_card_status_url=public_url(token, "status", setup_id=card_flow["setup_key"])
             if card_flow.get("setup_key")
             else "",
         ),
@@ -220,7 +262,7 @@ def renewal(request, token):
                 limit(request, "membership-renewal-verify", 8)
                 proof = verify_identity(token=token, **form.cleaned_data)
                 save_state(request, link, {"proof": proof})
-                return redirect("public_membership_renewal", token=token)
+                return redirect(public_url(token))
             except ValidationError as exc:
                 form.add_error(None, " ".join(exc.messages))
         return render(request, "core/public_membership_renewal.html", {"verification_form": form})
@@ -237,10 +279,14 @@ def renewal(request, token):
         return render(
             request, "core/public_membership_renewal.html", {"verification_form": VerifyForm()}
         )
-    if MembershipPublicAcceptance.objects.filter(link=link).exists():
-        return redirect("public_membership_receipt", token=token)
+    return checkout(request, token, record, scope)
+
+
+def checkout(request, token, record, scope):
+    if MembershipPublicAcceptance.objects.filter(**acceptance_filter(scope)).exists():
+        return redirect(public_url(token, "receipt"))
     try:
-        form = RenewalForm(
+        form = PublicPurchaseForm(
             request.POST if request.method == "POST" else None, scope=scope, proof=record["proof"]
         )
         data = None
@@ -257,7 +303,7 @@ def renewal(request, token):
                     else None,
                     **form.values(),
                 )
-                return redirect("public_membership_receipt", token=token)
+                return redirect(public_url(token, "receipt"))
         return render_checkout(request, token, record, scope, form, data)
     except ValidationError as exc:
         if "form" in locals():
@@ -270,10 +316,10 @@ def renewal(request, token):
 
 @private_view
 @require_POST
-def live_offer(request, token):
+def live_offer(request, token=None):
     try:
         _, record, scope = state(request, token)
-        form = RenewalForm(request.POST, scope=scope, proof=record["proof"])
+        form = PublicPurchaseForm(request.POST, scope=scope, proof=record["proof"])
         for key in ("method", "card_authorization"):
             form.fields.pop(key, None)
         if not form.is_valid():
@@ -313,13 +359,13 @@ def live_offer(request, token):
 @require_POST
 @sensitive_post_parameters()
 @sensitive_variables()
-def setup_card(request, token):
+def setup_card(request, token=None):
     try:
         link, record, scope = state(request, token)
         limit(request, "public-membership-card", 10)
-        if MembershipPublicAcceptance.objects.filter(link=link).exists():
+        if MembershipPublicAcceptance.objects.filter(**acceptance_filter(scope)).exists():
             raise ValidationError(
-                "A renewal is already recorded. Open your confirmation before starting another purchase."
+                "A membership purchase is already recorded. Open your confirmation before starting another purchase."
             )
         if len(request.body) > 8192:
             raise ValidationError("Use the secure card form.")
@@ -330,8 +376,8 @@ def setup_card(request, token):
         if not isinstance(purchase_data, dict) or set(purchase_data) - set(
             PurchaseForm.base_fields
         ):
-            raise ValidationError("Use the current renewal form.")
-        form = RenewalForm(purchase_data, scope=scope, proof=record["proof"])
+            raise ValidationError("Use the current membership form.")
+        form = PublicPurchaseForm(purchase_data, scope=scope, proof=record["proof"])
         for key in ("method", "card_authorization"):
             form.fields.pop(key, None)
         card = CardInput(payload)
@@ -411,7 +457,7 @@ def setup_card(request, token):
 
 @private_view
 @require_GET
-def setup_status(request, token, setup_id):
+def setup_status(request, setup_id, token=None):
     try:
         _, record, scope = state(request, token)
         flow = record.get("card_flow")
@@ -427,7 +473,7 @@ def setup_status(request, token, setup_id):
         return JsonResponse(
             dict(
                 state="review",
-                error="This card setup still needs review. No renewal payment has been requested.",
+                error="This card setup still needs review. No membership payment has been requested.",
             ),
             status=202,
         )
@@ -440,26 +486,27 @@ def setup_status(request, token, setup_id):
         AttributeError,
     ):
         return JsonResponse(
-            {"error": "This card setup is unavailable in the current renewal session."}, status=404
+            {"error": "This card setup is unavailable in the current membership session."},
+            status=404,
         )
 
 
 @private_view
 @require_GET
-def receipt(request, token):
+def receipt(request, token=None):
     try:
-        link, _, _ = state(request, token)
+        link, _, scope = state(request, token)
     except (PermissionDenied, ValidationError):
-        return redirect("public_membership_renewal", token=token)
+        return redirect(public_url(token))
     acceptance = (
         MembershipPublicAcceptance.objects.select_related(
             "purchase__membership", "purchase__customer"
         )
-        .filter(link=link)
+        .filter(**acceptance_filter(scope))
         .first()
     )
     if not acceptance:
-        return redirect("public_membership_renewal", token=token)
+        return redirect(public_url(token))
     member = acceptance.purchase
     from .membership_cancellations import plan_paid
 
@@ -483,6 +530,7 @@ def receipt(request, token):
         "core/public_membership_renewal.html",
         dict(
             receipt=member,
+            initial_purchase=token is None,
             paid=installment_paid(item),
             money_received=funds,
             credit_applied=credit_funds,
