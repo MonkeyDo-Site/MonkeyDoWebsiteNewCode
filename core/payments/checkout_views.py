@@ -1,5 +1,6 @@
 """Two-step staff review/confirm forms. Merely opening or previewing never charges."""
 
+import json
 import uuid
 from decimal import Decimal
 from functools import wraps
@@ -177,6 +178,22 @@ class ArrivalForm(ReceiptForm):
             ]
         if charge_state(booking).comped:
             self.fields["method"].choices = [("comped", "Owner-comped booking — no payment")]
+            if "member_add" in self.fields:
+                self.owner_comped_membership = True
+                choices = [
+                    ("", "Choose membership payment"),
+                    ("card", "Charge membership card"),
+                    ("cash", "Cash received"),
+                    ("check", "Check received"),
+                    ("gift_card", "Physical gift card presented"),
+                ]
+                self.fields["method"].widget.attrs["data-comped-membership-methods"] = json.dumps(
+                    choices
+                )
+                values = self.data if self.is_bound else self.initial
+                if self.fields["member_add"].to_python(values.get("member_add")):
+                    self.fields["method"].choices = choices
+                    self.fields["method"].label = "Membership payment (visit is owner-comped)"
 
     def clean(self):
         data = super().clean()

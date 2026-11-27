@@ -129,7 +129,7 @@ This increment uses existing available credit. Combined purchase-and-visit conve
 
 ## Combined membership purchase at arrival — cash/check
 
-Review gallery samples 46–48 using fictional data only. These are the first manual-payment combined samples; combined card and already-paid visit conversion remain in development.
+Review samples 46–48 for cash/check, 49–66 for card funding and recovery, 75 for a verified physical gift card and 76 for a paid membership during an owner-comped visit. Combined already-paid visit conversion remains in development; use fictional data only.
 
 | Scenario | Action | Expected result |
 | --- | --- | --- |
@@ -152,6 +152,19 @@ Review sample 75 with fictional data. This is verified in-person tender recordin
 | Future installments | Compare monthly and prepaid. | Monthly requires the accepted future saved card. Prepaid physical-gift-card purchase needs no future card. Neither requests a provider charge today. |
 | Confirm once | Confirm the verified tender and repeat the same confirmation key. | Exactly one membership receipt and one visit receipt, one arrival and one combined email entry. No zero receipt or repeated tender. A late local failure rolls everything back. |
 | Existing Zelle | Keep $10 already recorded for the visit in this example. | Prior Zelle applies once to the visit; only $41.97 new gift-card funds are recorded. Choosing Zelle or split payment as the combined new tender remains under development. |
+
+## Paid membership with an owner-comped visit
+
+Review sample 76. A complimentary visit and a complimentary membership are separate owner decisions.
+
+| Scenario | Action | Expected result |
+| --- | --- | --- |
+| Existing owner exception | Open a confirmed owner-comped booking without selecting a membership purchase. | The original Owner-comped booking — no payment control remains. No paid tender or membership is introduced. |
+| Add a paid membership | Select Buy a membership with this visit and choose the actual membership tender below. | The visit remains $0. Two monthly Subscription places cost $35.98 cash/check/verified gift card, or $37.06 by card. A future installment mandate remains required. |
+| Remove/reinclude | Remove the purchase, then add it again. | The control returns to comped-only, then offers membership tenders again. The selected tender can be retained, but terms and receipt acknowledgment require fresh acceptance. |
+| Complete once | Confirm the reviewed payment and waivers. | One membership receipt, no fabricated visit receipt and no consumed membership benefit for the comped visit. A positive first card payment must succeed before the accepted $0 arrival completes; no second card request is created. |
+| Current owner decision | Change the owner-comped choice after a preview. | The old review cannot complete the purchase. Current booking/setup/payment facts must be reviewed again. Staff cannot grant or remove the owner exception through this form. |
+| Reconfirm revised setup | Reconfirm an existing booking after the owner changes its pricing to complimentary. | The original email remains in history. One separate confirmation for the revised booking version can be queued; repeated confirmation creates no extra message. No email delivery is implied. |
 
 ## Credit-funded membership with visit-card recovery
 

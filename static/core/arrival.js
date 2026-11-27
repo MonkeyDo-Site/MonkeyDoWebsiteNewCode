@@ -6,6 +6,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const splitBox=form.querySelector('[data-split-payments]'), rowState=form.querySelector('[data-split-rows]');
   const kinds={cash:'Cash',check:'Check',zelle:'Zelle',gift_card:'Gift card'};
   const paperForm=document.querySelector('[data-arrival-paper-form]');
+  const compedMethods=form.elements.method.dataset.compedMembershipMethods;
+  let compedMembershipActive,compedMembershipMethod=form.elements.method.value==='comped'?'':form.elements.method.value;
   let timer,generation=0,finalizing=false,departing=false,pending=Promise.resolve(),lastQuote={},previousMethod=form.elements.method.value,statusUrl,lastRequestedInput='';
   const memberCard=window.MonkeyDoArrivalCard?.(form,()=>update());
   if(memberCard){const address=new URL(location.href);address.searchParams.set('draft',form.elements.arrival_draft.value);history.replaceState(null,'',address);}
@@ -51,6 +53,17 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     for(const [kind,value] of saved)makeRow(kind,value);
   }
   const sync=()=>{
+    if(compedMethods){
+      const active=form.elements.member_add.checked;
+      if(active!==compedMembershipActive){
+        if(!active&&compedMembershipActive)compedMembershipMethod=form.elements.method.value;
+        const choices=active?JSON.parse(compedMethods):[['comped','Owner-comped booking — no payment']];
+        form.elements.method.replaceChildren(...choices.map(([value,text])=>new Option(text,value)));
+        form.elements.method.value=active?compedMembershipMethod:'comped';
+        compedMembershipActive=active;
+      }
+      form.querySelector('[data-arrival-field="method"] label').textContent=active?'Membership payment (visit is owner-comped):':'Actual payment:';
+    }
     const method=form.elements.method.value;
     const giftLabel=form.querySelector('[data-arrival-field="gift_card_verified"] label');
     if(giftLabel)giftLabel.textContent=form.elements.member_add?.checked&&method==='gift_card'?'The physical gift card has been presented and verified for the combined amount shown.':'The physical gift card has been presented and verified.';
