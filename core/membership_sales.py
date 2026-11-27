@@ -5,7 +5,7 @@ from datetime import date, datetime, time
 from decimal import Decimal
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -52,8 +52,13 @@ def enabled():
         raise ValidationError("Active membership sales are not enabled.")
 
 
-def authorize(actor, *, collect=False):
+def authorize(actor, *, collect=False, authority=None):
     enabled()
+    if actor is None and authority:
+        from .membership_public_authority import verified_scope
+
+        verified_scope(authority)
+        return
     for permission in (
         "core.view_customer",
         "core.view_membershippurchase",
@@ -82,8 +87,19 @@ def offer(
     comped=False,
     operation="purchase",
     prior_id=None,
+    authority=None,
 ):
-    authorize(actor)
+    authorize(actor, authority=authority)
+    if actor is None:
+        from .membership_public_authority import check_selection
+
+        check_selection(
+            authority,
+            customer_id=customer.pk,
+            operation=operation,
+            prior_id=prior_id,
+            tender=expected_method,
+        )
     if any(type(value) is not bool for value in (minimum_override, comped)):
         raise ValidationError("Review the owner exception choices.")
     if minimum_override or comped:
@@ -236,17 +252,27 @@ def purchase(
     send_confirmation=None,
     verified_received=False,
     received_on=None,
+    authority=None,
     **values,
 ):
-    authorize(actor, collect=True)
+    authorize(actor, collect=True, authority=authority)
     writes_allowed()
     key = lock_request(request_key)
+    if actor is None:
+        from .membership_public_authority import verified_scope
+
+        if key != verified_scope(authority)["request_key"]:
+            raise PermissionDenied
     prior = MembershipPurchase.objects.select_related("membership").filter(request_key=key).first()
     if prior:
-        if prior.actor_id != actor.pk or prior.fingerprint != reviewed:
+        if prior.actor_id != (actor.pk if actor else None) or prior.fingerprint != reviewed:
             raise ValidationError(
                 "This membership request has already been used. Open the saved membership."
             )
+        if actor is None:
+            from .membership_public_authority import check_purchase
+
+            check_purchase(authority, prior)
         return prior
     if accepted is not True:
         raise ValidationError("Review and accept the membership terms before confirming.")
@@ -254,8 +280,20 @@ def purchase(
     from .membership_reservations import lock_customer
 
     lock_customer(customer.pk)
+    if actor is None:
+        from .membership_public_authority import verified_scope
+        from .membership_records import MembershipPublicAcceptance
+
+        scope = verified_scope(authority)
+        if (
+            not card_authorization_id
+            or MembershipPublicAcceptance.objects.filter(link=scope["link_record"]).exists()
+        ):
+            raise ValidationError(
+                "This renewal needs its current card authorization, or already has a purchase recorded."
+            )
     values["customer"] = customer
-    data = offer(actor=actor, **values)
+    data = offer(actor=actor, authority=authority, **values)
     if data["fingerprint"] != reviewed:
         raise ValidationError(
             "The membership or price changed. Review the current total and confirm again."
@@ -361,6 +399,7 @@ def purchase(
         benefit_rules=data["rules"],
         purpose="complimentary" if data["comped"] else data["operation"],
         send_confirmation=send_confirmation if data["comped"] else True,
+        source="staff" if actor else "public",
         actor=actor,
     )
     mandate = (
@@ -417,8 +456,14 @@ def purchase(
     if data["comped"]:
         queue_confirmation(member)
     else:
+        if actor is None:
+            from .membership_public_authority import record_acceptance
+
+            record_acceptance(
+                proof=authority, purchase=member, card_authorization_id=card_authorization_id
+            )
         first = member.installments.first()
-        invoice = invoice_for(first, actor=actor, tender=root.expected_method)
+        invoice = invoice_for(first, actor=actor, tender=root.expected_method, authority=authority)
         operation = request_operation(
             actor=actor,
             sale_id=invoice.sale_id,
@@ -428,6 +473,7 @@ def purchase(
             method_id=method.pk if root.expected_method == "card" else None,
             purpose="member_purchase",
             received_on=received_on,
+            public_membership_authority=authority,
         )
         if operation.tender == "card":
             from .payments.jobs import enqueue
@@ -439,12 +485,18 @@ def purchase(
 
 
 @transaction.atomic
-def invoice_for(installment, *, actor, tender):
-    authorize(actor, collect=True)
+def invoice_for(installment, *, actor, tender, authority=None):
+    authorize(actor, collect=True, authority=authority)
     installment = MembershipInstallment.objects.select_related("purchase__membership").get(
         pk=installment.pk
     )
     purchase = installment.purchase
+    if actor is None:
+        from .membership_public_authority import check_purchase
+
+        check_purchase(authority, purchase)
+        if installment.number != 1 or tender != "card":
+            raise PermissionDenied
     root = purchase.membership
     quote = installment.quote
     # Later alternate-tender/credit changes require an explicit revised allocation.

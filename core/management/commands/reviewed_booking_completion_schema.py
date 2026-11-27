@@ -48,9 +48,13 @@ REVIEWED_NAMES = (
     "0058_membership_follow_on_cohorts",
     "0059_membership_billing_actions",
     "0060_membership_card_authorizations",
+    "0061_verified_membership_renewal_authority",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "membershiprenewallink",
+    "membershiprenewallinkrevocation",
+    "membershippublicacceptance",
     "membershipcardauthorization",
     "membershipbillingaction",
     "membershiporigin",
@@ -121,7 +125,7 @@ def reviewed_plan():
     ]
     if plan not in allowed:
         raise CommandError(
-            "Unexpected migration plan. Only the reviewed booking/membership stage 0027–0060 is allowed."
+            "Unexpected migration plan. Only the reviewed booking/membership stage 0027–0061 is allowed."
         )
     return plan
 

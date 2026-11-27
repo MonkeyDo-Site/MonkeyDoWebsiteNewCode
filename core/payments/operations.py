@@ -155,7 +155,16 @@ def begin_dispatch(operation_id):
         raise ValidationError("Non-card receipt must be explicitly recorded by staff.")
     if operation.state != "ready":
         return None
-    require_actor(operation.actor, "core.collect_payment", owner=operation.kind != "receipt")
+    if operation.sale.kind == "membership":
+        from core.membership_sales import enabled as membership_enabled
+
+        membership_enabled()
+    if operation.actor_id is None:
+        from core.membership_public_authority import authorize_dispatch
+
+        authorize_dispatch(operation)
+    else:
+        require_actor(operation.actor, "core.collect_payment", owner=operation.kind != "receipt")
     if operation.kind == "receipt":
         booking = (
             Booking.objects.select_for_update().get(pk=operation.sale.booking_id)
@@ -163,7 +172,11 @@ def begin_dispatch(operation_id):
             else None
         )
         method = PaymentMethod.objects.select_for_update().get(pk=operation.method_id)
-        invalid = method.state != "active" or not method.provider_method
+        invalid = (
+            method.state != "active"
+            or not method.provider_method
+            or method.customer_id != operation.sale.customer_id
+        )
         if booking:
             invalid |= booking.workflow != "integrated_v1" or (
                 operation.sale.kind == "visit"

@@ -20,7 +20,7 @@
     option();
     const isNew = field('method').value === 'new' && !field('comped')?.checked && (field('billing').value === 'monthly' || field('expected_method').value === 'card');
     frame.hidden = !isNew;
-    for (const choice of section.querySelectorAll('[name=member_retain]')) {choice.disabled = !isNew; choice.required = isNew;}
+    for (const choice of section.querySelectorAll('[name=member_retain]')) {choice.disabled = !isNew; choice.required = isNew && choice.type !== 'checkbox';}
     section.dataset.blocked = uncertain || saving ? '1' : '0';
     form.dispatchEvent(new CustomEvent('membership-card-state'));
   }
@@ -57,7 +57,8 @@
   });
   check.addEventListener('click', () => recover().catch(() => {report('The card setup outcome could not yet be checked. No new exchange or payment was sent.');}));
   form.addEventListener('submit', async event => {
-    if (field('method').value !== 'new' && (field('method').value !== savedMethod || field('card_authorization').value)) return;
+    const requiresAuthority = section.dataset.requireAuthorization === '1' || field('method').value === savedMethod;
+    if (field('method').value !== 'new' && (!requiresAuthority || field('card_authorization').value)) return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (saving || uncertain || !field('accepted').checked || !field('reviewed').value || !form.reportValidity()) return;
     saving = true; display();
@@ -73,7 +74,8 @@
         if (surcharge.surcharge && Number(surcharge.surcharge.value) !== 0) throw new Error('The provider has an additional surcharge configured. Contact MonkeyDo before continuing.');
         const token = await hosted.getNonceToken();
         if (!token || !token.nonce) throw new Error('Complete the secure card number, expiration and security code.');
-        Object.assign(payload, {setup_key: setupKey, nonce: token.nonce.startsWith('nonce-') ? token.nonce : `nonce-${token.nonce}`, expiry_month: token.expiryMonth, expiry_year: token.expiryYear, retention_choice: field('member_retain').value});
+        const retain = field('member_retain');
+        Object.assign(payload, {setup_key: setupKey, nonce: token.nonce.startsWith('nonce-') ? token.nonce : `nonce-${token.nonce}`, expiry_month: token.expiryMonth, expiry_year: token.expiryYear, retention_choice: retain.type === 'checkbox' ? (retain.checked ? 'yes' : 'no') : retain.value});
         statusUrl = `${section.dataset.statusPrefix}${setupKey}/`;
       } else payload.method = field('method').value;
       uncertain = true;

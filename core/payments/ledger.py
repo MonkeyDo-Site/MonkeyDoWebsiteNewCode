@@ -7,7 +7,7 @@ import uuid
 from decimal import Decimal
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import connection, transaction
 from django.utils import timezone
 
@@ -266,9 +266,18 @@ def request_operation(
     kind="receipt",
     purpose="arrival",
     received_on=None,
+    public_membership_authority=None,
 ):
     enabled()
-    require_actor(actor, "core.collect_payment", owner=kind != "receipt")
+    public = actor is None and public_membership_authority is not None
+    if public:
+        from core.membership_public_authority import verified_scope
+
+        verified_scope(public_membership_authority)
+        if kind != "receipt" or tender != "card" or purpose != "member_purchase":
+            raise PermissionDenied
+    else:
+        require_actor(actor, "core.collect_payment", owner=kind != "receipt")
     request_key = lock_request(request_key)
     sale = lock_sale(sale_id)
     if (
@@ -295,7 +304,7 @@ def request_operation(
         from core.membership_records import MembershipInvoice
         from core.membership_sales import authorize
 
-        authorize(actor, collect=True)
+        authorize(actor, collect=True, authority=public_membership_authority)
         invoice = (
             MembershipInvoice.objects.select_related(
                 "installment__purchase__billing_state__mandate"
@@ -307,6 +316,12 @@ def request_operation(
             "member_purchase" if invoice.installment.number == 1 else "member_installment"
         ):
             raise ValidationError("Use the accepted membership installment before collecting.")
+        if public:
+            from core.membership_public_authority import check_purchase
+
+            check_purchase(public_membership_authority, invoice.installment.purchase)
+            if invoice.installment.number != 1:
+                raise PermissionDenied
         mandate = invoice.installment.purchase.billing_state.mandate
         if tender == "card" and (not mandate or str(mandate.method_id) != str(method_id)):
             raise ValidationError("Use the currently accepted membership payment method.")
@@ -328,6 +343,8 @@ def request_operation(
         ):
             raise ValidationError("Review the current integrated booking before collection.")
     cleaned = checked_allocation(sale, allocation)
+    if public and (not member_source or cleaned != full_allocation(sale)):
+        raise PermissionDenied
     value = sum((amount(part[k]) for part in cleaned for k in COMPONENTS), ZERO)
     if not ZERO < value <= Decimal("20000000.00"):
         raise ValidationError("Payment amount is outside the supported range.")

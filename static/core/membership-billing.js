@@ -1,4 +1,5 @@
 (() => {
+  for (const input of document.querySelectorAll('.renewal-link-copy')) input.addEventListener('focus', () => input.select());
   const form = document.querySelector('[data-installment-payment]');
   if (!form) return;
   const field = name => form.elements.namedItem(name);

@@ -42,6 +42,15 @@ class MembershipPurchase(FinancialFact):
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
     accepted_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(source="staff", actor__isnull=False)
+                | models.Q(source="public", actor__isnull=True),
+                name="membership_purchase_source_actor",
+            )
+        ]
+
     @property
     def membership_number(self):
         return self.membership.membership_number
@@ -98,6 +107,48 @@ class MembershipBilling(models.Model):
     )
     stopped_on = models.DateField(null=True)
     revision = models.PositiveIntegerField(default=1)
+
+
+class MembershipRenewalLink(FinancialFact):
+    """Signed private address; thirty-day validity never changes renewal grace."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    prior = models.ForeignKey(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="renewal_links"
+    )
+    customer = models.ForeignKey("core.Customer", on_delete=models.PROTECT)
+    expires_at = models.DateTimeField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MembershipRenewalLinkRevocation(FinancialFact):
+    link = models.OneToOneField(
+        MembershipRenewalLink, primary_key=True, on_delete=models.PROTECT, related_name="revocation"
+    )
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+
+class MembershipPublicAcceptance(FinancialFact):
+    """Durable scope for the explicitly accepted first public renewal payment."""
+
+    purchase = models.OneToOneField(
+        MembershipPurchase,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="public_acceptance",
+    )
+    link = models.OneToOneField(
+        MembershipRenewalLink, on_delete=models.PROTECT, related_name="acceptance"
+    )
+    card_authorization = models.ForeignKey(
+        "core.MembershipCardAuthorization", on_delete=models.PROTECT
+    )
+    proof_hash = models.CharField(max_length=64)
+    customer_revision = models.PositiveIntegerField()
+    verified_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(auto_now_add=True)
 
 
 class MembershipCardAuthorization(FinancialFact):

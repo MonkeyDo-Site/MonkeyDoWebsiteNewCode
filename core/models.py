@@ -508,7 +508,7 @@ class MembershipDraft(ImmutablePriceRecord):
     )
     snapshot = models.JSONField()
     creation_key = models.UUIDField(unique=True, editable=False)
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -660,7 +660,10 @@ from .membership_records import (  # noqa: E402,F401
     MembershipInstallment,
     MembershipInvoice,
     MembershipOrigin,
+    MembershipPublicAcceptance,
     MembershipPurchase,
+    MembershipRenewalLink,
+    MembershipRenewalLinkRevocation,
 )
 from .payments.models import (  # noqa: E402,F401
     BookingCardAgreement,

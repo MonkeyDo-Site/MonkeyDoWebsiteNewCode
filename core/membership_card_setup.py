@@ -50,14 +50,45 @@ def identity(flow):
         raise ValidationError(
             "Customer details changed. Review the membership purchase again."
         ) from None
-    digest = salted_hmac(
-        "membership-card-flow", f"{key}:{customer.pk}:{customer.revision}:{flow.get('staff_actor')}"
-    ).hexdigest()
+    if flow.get("public_authority"):
+        from .membership_public_authority import verified_scope
+
+        scope = verified_scope(flow["public_authority"])
+        if (
+            scope["request_key"] != key
+            or scope["customer"] != customer.pk
+            or flow.get("staff_actor") is not None
+        ):
+            raise ValidationError("Return to the verified renewal session.")
+        digest = salted_hmac(
+            "membership-public-card-flow",
+            f"{key}:{customer.pk}:{customer.revision}:{scope['link']}",
+        ).hexdigest()
+    else:
+        digest = salted_hmac(
+            "membership-card-flow",
+            f"{key}:{customer.pk}:{customer.revision}:{flow.get('staff_actor')}",
+        ).hexdigest()
     return digest, customer
 
 
 def authorize_flow(flow, actor):
-    if actor is None or not isinstance(flow, dict):
+    if not isinstance(flow, dict):
+        raise ValidationError("Return to the authorized membership purchase form.")
+    if actor is None and flow.get("public_authority"):
+        from .membership_public_authority import check_selection
+
+        authorize(None, collect=True, authority=flow["public_authority"])
+        check_selection(
+            flow["public_authority"],
+            customer_id=flow["customer_id"],
+            operation=flow.get("operation"),
+            prior_id=flow.get("prior_id"),
+            tender=flow.get("expected_method"),
+        )
+        identity(flow)
+        return
+    if actor is None:
         raise ValidationError("Return to the authorized membership purchase form.")
     authorize(actor, collect=True)
     if actor.pk != flow.get("staff_actor"):
@@ -67,17 +98,33 @@ def authorize_flow(flow, actor):
         raise ValidationError("Review the membership terms before saving a card.")
 
 
-def make_flow(*, actor, customer, request_key, offer, expires=None):
-    authorize(actor, collect=True)
+def make_flow(*, actor, customer, request_key, offer, expires=None, authority=None):
+    authorize(actor, collect=True, authority=authority)
+    if actor is None:
+        from .membership_public_authority import check_selection
+
+        scope = check_selection(
+            authority,
+            customer_id=customer.pk,
+            operation=offer["operation"],
+            prior_id=(offer.get("origin") or {}).get("prior_id"),
+            tender=offer["expected_method"],
+        )
+        if scope["request_key"] != uuid.UUID(str(request_key)):
+            raise ValidationError("Return to the verified renewal session.")
+        expires = min(expires or scope["expires"], scope["expires"])
     return dict(
         purpose="membership",
         key=str(request_key),
-        staff_actor=actor.pk,
+        staff_actor=actor.pk if actor else None,
+        public_authority=authority,
         customer_id=customer.pk,
         customer_revision=customer.revision,
         offer_fingerprint=offer["fingerprint"],
         terms_text=offer["terms"],
         prior_id=(offer.get("origin") or {}).get("prior_id"),
+        operation=offer["operation"],
+        expected_method=offer["expected_method"],
         expires=expires or timezone.now().timestamp() + LIFETIME,
     )
 
@@ -101,7 +148,7 @@ def prepared_authorization(flow, setup, actor):
     )
     if not created and (
         authorization.offer_fingerprint != flow["offer_fingerprint"]
-        or authorization.actor_id != actor.pk
+        or authorization.actor_id != (actor.pk if actor else None)
     ):
         raise ValidationError(
             "Review the saved card for the current membership terms before continuing."

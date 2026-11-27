@@ -477,7 +477,8 @@ def membership_overview(request, pk):
     )
     payment_form = InstallmentPaymentForm(
         request.POST
-        if request.method == "POST" and request.POST.get("action") != "card_update"
+        if request.method == "POST"
+        and request.POST.get("action") in {"payment_preview", "payment_review", "payment_confirm"}
         else None,
         member=member,
     )
@@ -488,7 +489,26 @@ def membership_overview(request, pk):
         member=member,
     )
     payment_quote = None
-    if request.method == "POST":
+    public_renewal_url = ""
+    if request.method == "POST" and request.POST.get("action") == "renewal_link":
+        from .membership_public_authority import create_link
+
+        if not request.user.has_perm("core.collect_payment") or not request.user.has_perm(
+            "core.add_membershippurchase"
+        ):
+            raise PermissionDenied
+        try:
+            _, token = create_link(
+                actor=request.user,
+                prior=member,
+                request_key=forms.UUIDField().clean(request.POST.get("link_request_key")),
+            )
+            public_renewal_url = request.build_absolute_uri(
+                reverse("public_membership_renewal", args=[token])
+            )
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
+    if request.method == "POST" and request.POST.get("action") != "renewal_link":
         from .membership_payments import change_card, collect_installment, payment_review
 
         if not request.user.has_perm("core.collect_payment") or not request.user.has_perm(
@@ -592,6 +612,8 @@ def membership_overview(request, pk):
         "core/active_membership_detail.html",
         {
             "member": member,
+            "public_renewal_url": public_renewal_url,
+            "renewal_link_key": uuid.uuid4(),
             "renewal_places": remaining_places(member),
             "renewal_problem": renewal_problem,
             "follow_on": member.follow_on.select_related("purchase__membership").order_by(

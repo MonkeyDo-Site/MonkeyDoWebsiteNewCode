@@ -199,7 +199,7 @@ class PaymentOperation(models.Model):
     requested_at = models.DateTimeField(auto_now_add=True)
     dispatched_at = models.DateTimeField(null=True)
     completed_at = models.DateTimeField(null=True)
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
 
     class Meta:
         constraints = [

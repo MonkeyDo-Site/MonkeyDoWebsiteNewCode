@@ -54,6 +54,7 @@ BOOKING_MIGRATIONS = {
     "0058_membership_follow_on_cohorts.py": "cc2d855ac67e12fd508b4b4cffb57ecf389be736e31c4a8a220967dfba17e4c0",
     "0059_membership_billing_actions.py": "42216fe77b5b8172a4307e95a2b6b21f8e0d342ef7085bc2a9a894c452a3e8c9",
     "0060_membership_card_authorizations.py": "cda39f8af2a1415142b11c4478e0f4af940559de85d37791e71851ba7880909c",
+    "0061_verified_membership_renewal_authority.py": "45c2d3a3f5133aa73e15f40ca7b912e8decb90daab35b316eab53fdaaf26a516",
     "0057_membership_benefit_reservations.py": "5bc11feecb58be60aadf0f70ff777b0c883bb4d32d1124fe8d3617465048c992",
     "0027_payment_foundation.py": "d9ddf42e75cb21d1549a403556e4c16073c9cbc3cd4102317f7f155cbcd455e8",
     "0028_financial_record_guards.py": "e3b182b45f60e0e21c11aec5240af42fb883af5dc2b8572043c84cb182f21ea4",

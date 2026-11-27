@@ -21,7 +21,7 @@
     if (email) email.hidden = !comped;
     form.querySelector('[data-card-description]').textContent = field('billing').value === 'monthly' ? 'Monthly billing uses this card for the scheduled installments.' : 'This card will be charged for the full selected term.';
     if (!needsCard) field('method').value = '';
-    button.disabled = (needsCard && form.querySelector('[data-membership-card-entry]')?.dataset.blocked === '1') || !field('reviewed').value || !checked('accepted') || (needsCard && !field('method').value) || (!comped && field('expected_method').value !== 'card' && !checked('verified_received')) || (comped && !field('send_confirmation')?.value);
+    button.disabled = (needsCard && (form.dataset.membershipCardUnavailable === '1' || form.querySelector('[data-membership-card-entry]')?.dataset.blocked === '1')) || !field('reviewed').value || !checked('accepted') || (needsCard && !field('method').value) || (!comped && field('expected_method').value !== 'card' && !checked('verified_received')) || (comped && !field('send_confirmation')?.value);
     const noun = field('operation')?.value === 'renewal' ? 'renewal' : field('operation')?.value === 'addition' ? 'additional places' : 'membership';
     button.textContent = comped ? `Confirm complimentary ${noun}` : field('expected_method').value === 'card' ? `Confirm ${noun} and charge card` : `Confirm ${noun} and record payment`;
   }
