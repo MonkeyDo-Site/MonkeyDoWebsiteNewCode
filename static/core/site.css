@@ -1209,3 +1209,13 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 
 [data-customer-credit] [hidden], [data-credit-correction] [hidden] { display: none!important; }
 .staff-page .customer-cards .membership-price-card dl { grid-template-columns: minmax(0, 1fr) auto; }
+
+.membership-filter-fields { display:grid; grid-template-columns:minmax(230px,2fr) repeat(3,minmax(130px,1fr)); gap:12px; align-items:end; }
+.membership-filter-fields input,.membership-filter-fields select { width:100%; min-width:0; }
+.membership-filter-actions { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+.membership-filters [hidden] { display:none!important; }
+.membership-export form { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; }
+@media(max-width:760px) { .membership-filter-fields { grid-template-columns:repeat(2,minmax(0,1fr)); } .membership-filter-fields>div:first-child { grid-column:1/-1; } }
+
+.membership-filter-fields select,.membership-export select { min-height:44px; padding:10px 12px; border:1px solid #657567; border-radius:10px; background:#fff; font:inherit; }
+.membership-term-dates { white-space:nowrap; }

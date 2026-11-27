@@ -2,7 +2,7 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37). These are actual application pages with fictional review data, captured at 1440px desktop and 390px phone widths. All names, card references and payment outcomes are synthetic. No card was charged and no customer email was delivered.
 
-These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution, verified private customer renewal, replacement-card entry, owner decisions for overdue reserved bookings, membership cancellation/refund tracking and customer credit review/history. Public new-membership purchase, combined multi-cohort renewal checkout, combined first-purchase conversion, credit returns/broader redemption and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
+These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution, verified private customer renewal, replacement-card entry, owner decisions for overdue reserved bookings, membership cancellation/refund tracking customer credit review/history, owner unused-credit corrections and membership filtering/exports. Public new-membership purchase, combined multi-cohort renewal checkout, combined first-purchase conversion, credit returns/broader redemption and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
 
 ## 01 — Purchase membership on one page
 
@@ -284,8 +284,40 @@ Both fictional actions were completed in browser checks. No external payment, re
 | --- | --- |
 | [![Owner credit restoration review, desktop](32-owner-credit-restoration-review-desktop.png)](32-owner-credit-restoration-review-desktop.png) | [![Owner credit restoration review, phone](32-owner-credit-restoration-review-phone.png)](32-owner-credit-restoration-review-phone.png) |
 
+## 33 — Membership search, status and expiry together
+
+The membership list keeps all history available by default, with one compact filter area for customer/M-number search, type, actual payment status and expiry. Phone/email matching and labelled possible name matches reuse the existing staff search rules. Type/status/date changes apply immediately; text search uses Enter or Apply filters. Clear expiry preserves the other choices. Existing row-size and page navigation remain.
+
+The fictional rows include active, future and overdue memberships. Status filtering uses actual receipts, adjusted obligations and applied credit, with source-held credit shown for review; a saved card or accepted purchase alone is not payment. Scheduled cancellation uses the effective last benefit day while preserving the original end date.
+
+CSV downloads stay collapsed on the same page. Owners have access; staff need an explicitly assigned export permission, plus payment/booking viewing rights for the corresponding report. That export permission is not selected for new staff by default. The staff editor now also preserves normal membership sale/view/update permissions that were already available through the default staff group.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Membership filters and exports, desktop](33-membership-list-and-exports-desktop.png)](33-membership-list-and-exports-desktop.png) | [![Membership filters and exports, phone](33-membership-list-and-exports-phone.png)](33-membership-list-and-exports-phone.png) |
+
+## 34 — Expiring memberships and a matching CSV
+
+**Active + Next 5 days** narrows the list to the fictional complimentary membership ending **November 30**. The same filters apply to every exported row across all result pages. The downloaded [fictional sample CSV](34-expiring-memberships-sample.csv) contains that single membership; pagination does not limit the export.
+
+The available operational reports are membership details, payment transactions and benefit history. Payment requests retain their outcome and requested amount separately from successfully recorded principal, fee and taxes, with distinct service, manual-receipt, completion and reported settlement dates. Credit applications create no incoming-money row. Benefit history includes each reserved/used/released event alongside its current state. Sensitive card-storage references, signed waivers and staff comments are excluded. These are operational CSVs; final accountant-report presentation remains separate.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Expiring memberships, desktop](34-expiring-memberships-desktop.png)](34-expiring-memberships-desktop.png) | [![Expiring memberships, phone](34-expiring-memberships-phone.png)](34-expiring-memberships-phone.png) |
+
+## 35 — Owner export history
+
+Each prepared CSV records its report, exact row count, filters, staff member and New York time. The owner can page through all export history; ordinary staff cannot open this history even when permitted to export. CSV preparation is recorded before returning the download, and untrusted spreadsheet text is protected from formula interpretation. No additional owner password prompt is introduced.
+
+Desktop and phone browser checks actually changed filters and downloaded/read the one-row fictional CSV. No membership, benefit reservation or payment was changed by filtering or exporting.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Membership export history, desktop](35-membership-export-history-desktop.png)](35-membership-export-history-desktop.png) | [![Membership export history, phone](35-membership-export-history-phone.png)](35-membership-export-history-phone.png) |
+
 ## Checked so far
 
-The browser checks confirm no horizontal overflow or JavaScript errors on all thirty-two desktop/phone pairs. The complete application suite passes 983 tests, including owner credit corrections, the customer-credit foundation, split-source allocation, source-return holds and six credit-related PostgreSQL races. All 37 final correction/customer checks pass after the readable full-history and financial-permission changes. Native no-JavaScript re-review protects changed amounts. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
+The browser checks confirm no horizontal overflow or JavaScript errors on all thirty-five desktop/phone pairs. The complete application suite passes 993 tests, including membership filtering/exports, staff permissions, owner credit corrections, the customer-credit foundation, split-source allocation, source-return holds and six credit-related PostgreSQL races. All ten final reporting checks pass after stable ordering and readable export-history labels were added. Native no-JavaScript re-review protects changed amounts. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
 
 The first review is about layout and clarity. Implementation and regression testing continue independently while the owner reviews. The final owner testing guide and release package follow completion and explicit release approval.

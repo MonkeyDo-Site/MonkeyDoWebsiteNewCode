@@ -11,6 +11,7 @@ from core import (
     customer_views,
     dashboard,
     membership_card_views,
+    membership_exports,
     membership_views,
     public_booking_views,
     public_membership_views,
@@ -209,6 +210,11 @@ urlpatterns = [
     ),
     path("staff/scheduling/horizon/", recurring_views.horizon_settings, name="horizon_settings"),
     path("staff/memberships/", membership_views.drafts, name="membership_drafts"),
+    path(
+        "staff/memberships/exports/history/",
+        membership_exports.history,
+        name="membership_export_history",
+    ),
     path(
         "staff/memberships/purchased/",
         active_membership_views.memberships,

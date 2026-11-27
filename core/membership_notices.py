@@ -24,7 +24,7 @@ def affected_bookings(member):
     )
 
 
-def payment_notices():
+def installment_balances(*, on=None, due_only=True):
     currency = DecimalField(max_digits=14, decimal_places=2)
     posted = (
         FinancialPosting.objects.filter(
@@ -63,7 +63,7 @@ def payment_notices():
         .values("value")
     )
     dues = (
-        MembershipInstallment.objects.filter(due_on__lte=today())
+        MembershipInstallment.objects.all()
         .exclude(purchase__purpose="complimentary")
         .exclude(
             Q(purchase__billing_state__stopped_on__isnull=False)
@@ -83,12 +83,20 @@ def payment_notices():
                 Subquery(adjustments, output_field=currency), Value(ZERO), output_field=currency
             ),
         )
-        .filter(paid_amount__lt=F("adjusted_total") - F("credited_amount"))
+        .filter(
+            Q(invoice__isnull=True) | Q(paid_amount__lt=F("adjusted_total") - F("credited_amount"))
+        )
         .select_related("purchase__customer", "purchase__membership", "invoice__sale")
         .order_by("due_on", "purchase_id", "number")
     )
+    if due_only:
+        dues = dues.filter(due_on__lte=on or today())
+    return dues
+
+
+def payment_notices():
     result = []
-    for item in dues[:20]:
+    for item in installment_balances()[:20]:
         item.remaining = item.adjusted_total - item.paid_amount - item.credited_amount
         item.affected_bookings = affected_bookings(item.purchase).count()
         item.issue_label = "Installment due"

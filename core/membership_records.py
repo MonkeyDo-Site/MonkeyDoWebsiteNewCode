@@ -43,6 +43,7 @@ class MembershipPurchase(FinancialFact):
     accepted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        permissions = [("export_membership_records", "Export membership records")]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(source="staff", actor__isnull=False)

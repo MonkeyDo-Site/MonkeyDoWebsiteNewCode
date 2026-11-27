@@ -12,7 +12,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods, require_POST, require_safe
+from django.views.decorators.http import require_http_methods, require_POST
 
 from .booking_forms import CustomerChoice, customer_picker
 from .forms import payment_method_choices
@@ -322,18 +322,41 @@ def display_offer(data):
 
 @staff_permission("core.view_membershippurchase")
 @staff_permission("core.view_customer")
-@require_safe
+@require_http_methods(["GET", "HEAD", "POST"])
 def memberships(request):
     check_enabled()
-    records = MembershipPurchase.objects.select_related(
-        "membership", "customer", "billing_state"
-    ).prefetch_related("installments__invoice__sale")
-    customer = request.GET.get("customer", "")
-    if customer.isascii() and customer.isdigit() and len(customer) <= 18:
-        records = records.filter(customer_id=customer)
-    page = paginate(request, records.order_by("-accepted_at", "-pk"))
-    rows = [(member, membership_status(member)) for member in page.object_list]
-    return render(request, "core/active_memberships.html", {"memberships": page, "rows": rows})
+    from .membership_exports import export_response
+    from .membership_reporting import filtered_members
+
+    records, form, possible = filtered_members(
+        request.POST if request.method == "POST" else request.GET
+    )
+    if request.method == "POST":
+        if request.POST.get("action") != "export" or not request.user.has_perm(
+            "core.export_membership_records"
+        ):
+            raise PermissionDenied
+        if form.is_valid():
+            return export_response(request, records, form)
+    page = paginate(request, records)
+    for member in page.object_list:
+        member.possible_name_match = member.customer_id in possible
+    rows = [(member, member.report_status) for member in page.object_list]
+    params = request.GET.copy()
+    params.pop("page", None)
+    params.pop("ends_from", None)
+    params.pop("ends_to", None)
+    params.pop("expiry", None)
+    return render(
+        request,
+        "core/active_memberships.html",
+        {
+            "memberships": page,
+            "rows": rows,
+            "filter_form": form,
+            "clear_expiry_query": params.urlencode(),
+        },
+    )
 
 
 @staff_permission("core.add_membershippurchase")
