@@ -528,13 +528,20 @@ def purchase(
 
 
 @transaction.atomic
-def invoice_for(installment, *, actor, tender, authority=None):
-    authorize(actor, collect=True, authority=authority)
+def invoice_for(installment, *, actor, tender, authority=None, scheduled_claim=None):
+    if scheduled_claim is not None:
+        if actor is not None or authority is not None:
+            raise PermissionDenied
+        from .membership_collection_authority import authorize_invoice
+
+        authorize_invoice(scheduled_claim, installment_id=installment.pk, tender=tender)
+    else:
+        authorize(actor, collect=True, authority=authority)
     installment = MembershipInstallment.objects.select_related("purchase__membership").get(
         pk=installment.pk
     )
     purchase = installment.purchase
-    if actor is None:
+    if actor is None and scheduled_claim is None:
         from .membership_public_authority import check_purchase
 
         check_purchase(authority, purchase)

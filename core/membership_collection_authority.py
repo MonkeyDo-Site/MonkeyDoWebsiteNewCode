@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime, time, timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -9,12 +10,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from .availability import NEW_YORK
-from .membership_collection_plan import installment_plan
-from .membership_records import MembershipCollectionClaim, MembershipInstallment
+from .membership_collection_plan import REASONS, installment_plan
+from .membership_records import MembershipCollectionClaim, MembershipInstallment, MembershipInvoice
 from .membership_reservations import lock_customer
 from .membership_sales import enabled as membership_enabled
 from .membership_sales import today
 from .models import AuditEvent
+from .payments.amounts import ZERO, amount
 from .payments.ledger import fingerprint, lock_request, writes_allowed
 
 
@@ -57,11 +59,127 @@ def current_claim(value):
 
 
 def authorize(value):
-    """Authorize a pristine preparation; dispatch will have its own live checks."""
+    """Authorize a pristine preparation before its invoice exists."""
     claim = current_claim(value)
     plan = installment_plan(claim.installment_id)
     if plan["status"] != "ready_for_scheduling" or plan["fingerprint"] != claim.fingerprint:
         raise ValidationError("The scheduled installment changed and needs review.")
+    return claim
+
+
+def card_only(claim):
+    if amount(claim.details["credit_to_apply"]) != ZERO:
+        raise ValidationError(
+            "Scheduled customer credit requires review. No card payment was requested."
+        )
+
+
+def authorize_invoice(value, *, installment_id, tender):
+    claim = authorize(value)
+    card_only(claim)
+    if claim.installment_id != installment_id or tender != "card":
+        raise PermissionDenied
+    return claim
+
+
+def prepared_invoice(value):
+    """Recheck the accepted plan, allowing only this claim's own pristine invoice."""
+    claim = current_claim(value)
+    card_only(claim)
+    try:
+        invoice = MembershipInvoice.objects.select_related("sale", "installment__purchase").get(
+            installment_id=claim.installment_id
+        )
+    except MembershipInvoice.DoesNotExist:
+        raise PermissionDenied from None
+    sale, item = invoice.sale, invoice.installment
+    if (
+        sale.actor_id is not None
+        or sale.created_at < claim.created_at
+        or sale.kind != "membership"
+        or sale.booking_id is not None
+        or sale.customer_id != claim.details["customer"]
+        or sale.creation_key != uuid.uuid5(item.purchase.request_key, f"installment:{item.number}")
+        or sale.fingerprint
+        != fingerprint(
+            {"membership": item.purchase_id, "installment": item.number, "quote": item.quote}
+        )
+        or sale.subtotal != amount(claim.details["principal_due"])
+        or sale.processing_fee != amount(claim.details["card_fee"])
+        or sale.total != amount(claim.details["card_total"])
+        or sale.sales_tax != ZERO
+        or sale.fee_rate != Decimal(item.quote["rates"]["card_fee_rate"])
+        or sale.credit_applications.exists()
+        or sale.lines.filter(adjustments__isnull=False).exists()
+        or sale.operations.exclude(request_key=claim.payment_key).exists()
+    ):
+        raise ValidationError("The scheduled invoice changed and needs payment review.")
+    plan = installment_plan(item.pk)
+    if plan["status"] == "paid":
+        raise ValidationError("This scheduled installment is already funded.")
+    # The original no-invoice projection remains the accepted scope. Only the
+    # invoice just created under that claim may be omitted from this comparison.
+    plan["reasons"] = [reason for reason in plan["reasons"] if reason != "existing_invoice"]
+    plan["messages"] = [REASONS[reason] for reason in plan["reasons"]]
+    plan["status"] = "review" if plan["reasons"] else "ready_for_scheduling"
+    body = {key: val for key, val in plan.items() if key != "fingerprint"}
+    if plan["status"] != "ready_for_scheduling" or fingerprint(body) != claim.fingerprint:
+        raise ValidationError("The scheduled installment changed and needs review.")
+    return claim, invoice
+
+
+def authorize_operation(value, *, sale_id, request_key, method_id, allocation):
+    claim, invoice = prepared_invoice(value)
+    lines = list(invoice.sale.lines.all())
+    if len(lines) != 1:
+        raise PermissionDenied
+    expected = [
+        dict(
+            line=str(lines[0].pk),
+            net=claim.details["principal_due"],
+            fee=claim.details["card_fee"],
+            item_tax="0.00",
+            fee_tax="0.00",
+        )
+    ]
+    from .payments.ledger import full_allocation
+
+    if (
+        str(sale_id) != str(invoice.sale_id)
+        or request_key != claim.payment_key
+        or str(method_id) != claim.details["method"]
+        or allocation != expected
+        or full_allocation(invoice.sale) != expected
+    ):
+        raise PermissionDenied
+    return claim
+
+
+def authorize_dispatch(operation):
+    if (
+        operation.actor_id is not None
+        or operation.kind != "receipt"
+        or operation.tender != "card"
+        or operation.purpose != "member_installment"
+        or operation.original_id is not None
+        or operation.manual_received_on is not None
+    ):
+        raise PermissionDenied
+    try:
+        claim = MembershipCollectionClaim.objects.get(
+            installment__invoice__sale_id=operation.sale_id
+        )
+    except MembershipCollectionClaim.DoesNotExist:
+        raise PermissionDenied from None
+    authorize_operation(
+        claim,
+        sale_id=operation.sale_id,
+        request_key=operation.request_key,
+        method_id=operation.method_id,
+        allocation=operation.allocation,
+    )
+    if operation.amount != amount(claim.details["card_total"]):
+        raise PermissionDenied
     return claim
 
 

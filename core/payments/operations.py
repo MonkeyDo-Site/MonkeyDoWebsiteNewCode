@@ -1,7 +1,7 @@
 """Durable financial dispatch: an uncertain POST is never automatically replayed."""
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
@@ -179,7 +179,25 @@ def begin_dispatch(operation_id):
         from core.membership_sales import enabled as membership_enabled
 
         membership_enabled()
-    if operation.actor_id is None:
+    if operation.actor_id is None and operation.purpose == "member_installment":
+        from core.membership_collection_authority import authorize_dispatch
+
+        try:
+            authorize_dispatch(operation)
+        except (PermissionDenied, ValidationError):
+            # This exact unattempted scope cannot be silently replaced. Leave
+            # the installment due for the existing explicit owner controls.
+            operation.state, operation.result_code = "cancelled", "scheduled_scope_changed"
+            operation.completed_at = timezone.now()
+            operation.save(update_fields=["state", "result_code", "completed_at"])
+            PaymentEvent.objects.create(
+                operation=operation,
+                state="cancelled",
+                source="worker",
+                code="scheduled_scope_changed",
+            )
+            return None
+    elif operation.actor_id is None:
         from core.membership_public_authority import authorize_dispatch
 
         authorize_dispatch(operation)

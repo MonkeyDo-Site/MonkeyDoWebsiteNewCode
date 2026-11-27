@@ -219,7 +219,7 @@ Review samples 65–66. This applies to staff purchase/arrival sessions with a k
 
 The developer-only `preview_membership_installments --limit 20` report is read-only. It shows installments due on the current New York date, the accepted price, backed credit, the remaining card amount and reasons for owner review. `--include-overdue` includes missed dates for review; it never catches up or retries a charge.
 
-Immutable scheduled claims now protect one installment's accepted scope and fixed keys against duplicate preparation. This remains an internal foundation: it creates no financial work and no worker is connected to it. Automatic installment collection and automatic credit use are still unfinished, and `MONKEYDO_MEMBERSHIP_COLLECTIONS` stays off by default. Existing explicit installment controls remain the functional collection path. No new owner screen is claimed for this increment.
+Immutable scheduled claims now protect one installment's accepted scope and fixed keys against duplicate preparation. Claim preparation itself creates no financial work. A guarded internal service now queues a no-credit installment through the existing ledger and one-POST worker, with live agreement/credit/funding checks before dispatch. No daily producer calls it, and backed-credit installments remain guarded. Automatic installment collection and automatic credit use are still unfinished, and `MONKEYDO_MEMBERSHIP_COLLECTIONS` stays off by default. Existing explicit installment controls remain the functional collection path. No new owner screen is claimed for this increment.
 
 ## Known unfinished areas
 

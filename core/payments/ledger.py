@@ -271,13 +271,29 @@ def request_operation(
     purpose="arrival",
     received_on=None,
     public_membership_authority=None,
+    scheduled_membership_claim=None,
     membership_refund_plan_id=None,
 ):
     enabled()
     if membership_refund_plan_id is not None and kind != "refund":
         raise PermissionDenied
     public = actor is None and public_membership_authority is not None
-    if public:
+    scheduled = scheduled_membership_claim is not None
+    if scheduled:
+        from core.membership_collection_authority import current_claim
+
+        if (
+            actor is not None
+            or public_membership_authority is not None
+            or kind != "receipt"
+            or tender != "card"
+            or purpose != "member_installment"
+            or original_id is not None
+            or received_on is not None
+        ):
+            raise PermissionDenied
+        current_claim(scheduled_membership_claim)
+    elif public:
         from core.membership_public_authority import verified_scope
 
         verified_scope(public_membership_authority)
@@ -311,7 +327,8 @@ def request_operation(
         from core.membership_records import MembershipInvoice
         from core.membership_sales import authorize
 
-        authorize(actor, collect=True, authority=public_membership_authority)
+        if not scheduled:
+            authorize(actor, collect=True, authority=public_membership_authority)
         invoice = (
             MembershipInvoice.objects.select_related(
                 "installment__purchase__billing_state__mandate"
@@ -363,6 +380,18 @@ def request_operation(
         ):
             raise ValidationError("Review the current integrated booking before collection.")
     cleaned = checked_allocation(sale, allocation)
+    if scheduled:
+        from core.membership_collection_authority import authorize_operation
+
+        if not member_source:
+            raise PermissionDenied
+        authorize_operation(
+            scheduled_membership_claim,
+            sale_id=sale.pk,
+            request_key=request_key,
+            method_id=method_id,
+            allocation=cleaned,
+        )
     if public and (not member_source or cleaned != full_allocation(sale)):
         raise PermissionDenied
     value = sum((amount(part[k]) for part in cleaned for k in COMPONENTS), ZERO)
@@ -464,7 +493,9 @@ def request_operation(
         allocation=cleaned,
         actor=actor,
     )
-    PaymentEvent.objects.create(operation=operation, state="ready", source="staff", actor=actor)
+    PaymentEvent.objects.create(
+        operation=operation, state="ready", source="worker" if scheduled else "staff", actor=actor
+    )
     audit(actor, "payment.requested", operation)
     return operation
 
