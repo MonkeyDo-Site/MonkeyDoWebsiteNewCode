@@ -24,6 +24,7 @@ from .permissions import staff_permission
 @staff_permission("core.view_booking")
 @require_safe
 def dashboard(request):
+    from .membership_notices import payment_notices
     from .payments.zelle import refund_notices
 
     alerts = (
@@ -33,6 +34,9 @@ def dashboard(request):
         request,
         "core/dashboard.html",
         {
+            "membership_payment_issues": payment_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
             "alerts": alerts,
             "waiver_pending_bookings": Booking.objects.filter(
                 workflow="integrated_v1",

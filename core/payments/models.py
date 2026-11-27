@@ -406,7 +406,7 @@ class FinancialLineAdjustment(FinancialFact):
     reason = models.CharField(
         max_length=30,
         choices=[
-            ("tender_change", "Uncharged fee removed after tender change"),
+            ("tender_change", "Uncharged card fee adjusted for payment method"),
             ("owner_price", "Owner price correction"),
         ],
     )

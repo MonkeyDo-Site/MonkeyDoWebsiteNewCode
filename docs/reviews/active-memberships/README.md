@@ -2,7 +2,7 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37). These are actual application pages with fictional review data, captured at 1440px desktop and 390px phone widths. All names, card references and payment outcomes are synthetic. No card was charged and no customer email was delivered.
 
-These samples cover staff purchase, the membership overview, member-aware staff booking/edit/arrival and individual-cohort renewals/additions. Public purchase, combined multi-cohort renewal checkout, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not shown or verified here.
+These samples cover staff purchase, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions and explicit installment payment resolution. Public purchase, combined multi-cohort renewal checkout, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not shown or verified here.
 
 ## 01 — Purchase membership on one page
 
@@ -78,8 +78,32 @@ One additional Unlimited place costs **$41.19 today**, with the two remaining in
 | --- | --- |
 | [![Add membership places, desktop](09-addition-desktop.png)](09-addition-desktop.png) | [![Add membership places, phone](09-addition-phone.png)](09-addition-phone.png) |
 
+## 10 — Resolve a declined installment with cash
+
+Two Subscription places have a declined **$37.06** card installment. The same overview shows the actual first **$35.98 received**, the overdue installment and its payment history. Opening the controls keeps the amount and final action together. Choosing cash previews **$35.98**, removing the uncharged **$1.08** card fee for this installment. The owner/staff verifies receipt before recording it. Changing the membership card is alongside this control and requests no charge by itself.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Record installment cash, desktop](10-installment-cash-desktop.png)](10-installment-cash-desktop.png) | [![Record installment cash, phone](10-installment-cash-phone.png)](10-installment-cash-phone.png) |
+
+## 11 — Uncertain outcome blocks another collection
+
+The first **$18.53** card outcome is unknown. Received funds remain **$0.00**, benefits stay pending and the previous payment record remains accessible. The payment controls explain that its outcome must be checked first. Another card charge or manual receipt is blocked even after changing the membership card. The collection button is visibly inactive.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Uncertain payment, desktop](11-uncertain-payment-desktop.png)](11-uncertain-payment-desktop.png) | [![Uncertain payment, phone](11-uncertain-payment-phone.png)](11-uncertain-payment-phone.png) |
+
+## 12 — Installment resolved, benefits active again
+
+The cash-only fictional browser scenario was completed once. **$71.96 total money received** represents two actual **$35.98** recorded cash payments. The failed card attempt remains in history and adds no received funds. Benefits are active again with **four free child visits available** this membership month; the next installment remains **$37.06** on its accepted date. The persistent payment notice clears. No successful-installment customer email is queued.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Installment paid, desktop](12-installment-paid-desktop.png)](12-installment-paid-desktop.png) | [![Installment paid, phone](12-installment-paid-phone.png)](12-installment-paid-phone.png) |
+
 ## Checked so far
 
-The browser checks confirm no horizontal overflow or JavaScript errors on all nine desktop/phone pairs. The complete application suite passes 816 tests, including 56 related renewal/payment/setup tests. A separate functional browser scenario completes a prepaid cash purchase on the same form, requires new acceptance after changing places and shows the recorded receipt on the active overview. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants.
+The browser checks confirm no horizontal overflow or JavaScript errors on all twelve desktop/phone pairs. The complete application suite passes 838 tests, followed by ten passing checks after the final billing-history display changes. Functional browser scenarios complete a prepaid cash purchase and resolve a declined installment with one cash receipt; changing purchase counts requires accepting the current terms again. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
 
 The first review is about layout and clarity. Implementation and regression testing continue independently while the owner reviews. The final owner testing guide and release package follow completion and explicit release approval.

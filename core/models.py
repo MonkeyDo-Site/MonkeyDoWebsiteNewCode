@@ -654,6 +654,7 @@ from .membership_records import (  # noqa: E402,F401
     MembershipBenefitEvent,
     MembershipBenefitState,
     MembershipBilling,
+    MembershipBillingAction,
     MembershipCardMandate,
     MembershipInstallment,
     MembershipInvoice,

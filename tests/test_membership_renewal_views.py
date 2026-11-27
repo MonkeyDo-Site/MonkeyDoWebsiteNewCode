@@ -125,3 +125,12 @@ class MembershipRenewalViewTests(TestCase):
         self.assertContains(result, "Review and accept the membership terms")
         self.assertEqual(FinancialSale.objects.count(), before)
         self.assertFalse(MembershipOrigin.objects.exists())
+
+    def test_refresh_keeps_card_authorized_for_this_membership_without_future_visit_consent(self):
+        prior = self.buy(expected_method="cash", verified_received=True)
+        self.method.reusable = False
+        self.method.save(update_fields=["reusable"])
+        self.client.force_login(self.staff)
+        result = self.client.post("/staff/memberships/offer/", self.payload(prior))
+        self.assertEqual(result.status_code, 200, result.content)
+        self.assertIn(str(self.method.pk), [card["id"] for card in result.json()["cards"]])

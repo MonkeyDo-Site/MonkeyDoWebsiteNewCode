@@ -100,6 +100,45 @@ class MembershipBilling(models.Model):
     revision = models.PositiveIntegerField(default=1)
 
 
+class MembershipBillingAction(FinancialFact):
+    """Accepted staff billing actions, independent of later provider outcomes."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    purchase = models.ForeignKey(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="billing_actions"
+    )
+    kind = models.CharField(
+        max_length=12, choices=[("payment", "Payment"), ("card_update", "Card update")]
+    )
+    fingerprint = models.CharField(max_length=64)
+    details = models.JSONField()
+    operation = models.OneToOneField(
+        "core.PaymentOperation",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="membership_billing_action",
+    )
+    mandate = models.OneToOneField(
+        MembershipCardMandate,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="billing_action",
+    )
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(kind="payment", operation__isnull=False, mandate__isnull=True)
+                    | models.Q(kind="card_update", operation__isnull=True, mandate__isnull=False)
+                ),
+                name="membership_billing_action_evidence",
+            )
+        ]
+
+
 class MembershipBenefitBatch(FinancialFact):
     id = models.UUIDField(primary_key=True, editable=False)
     booking = models.ForeignKey(

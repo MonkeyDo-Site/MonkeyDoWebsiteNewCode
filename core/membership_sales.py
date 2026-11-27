@@ -491,7 +491,10 @@ def membership_status(member, *, on=None):
     if root.ends_on < on:
         return "expired"
     if member.purpose != "complimentary":
-        installments = list(member.installments.select_related("invoice__sale").order_by("number"))
+        required = member.installments.select_related("invoice__sale", "cycle").order_by("number")
+        if billing.stopped_on:
+            required = required.filter(cycle__starts_on__lt=billing.stopped_on)
+        installments = list(required)
         if not installments or not installment_paid(installments[0]):
             return "pending"
         if any(item.due_on <= on and not installment_paid(item) for item in installments):
@@ -504,6 +507,14 @@ def payment_updated(operation):
         invoice = operation.sale.membership_invoice
     except MembershipInvoice.DoesNotExist:
         return
+    if installment_paid(invoice.installment):
+        from .payments.models import PaymentFollowup
+
+        PaymentFollowup.objects.filter(
+            operation__sale=operation.sale,
+            operation__state__in=["declined", "cancelled"],
+            resolved_at__isnull=True,
+        ).update(resolved_at=timezone.now())
     if (
         operation.kind == "receipt"
         and invoice.installment.number == 1
