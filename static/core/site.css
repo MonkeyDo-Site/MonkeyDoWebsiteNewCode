@@ -1225,4 +1225,4 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .booking-renewal-row+.booking-renewal-row{border-top:1px solid #c8d2c5;margin-top:1rem;padding-top:.75rem}
 .booking-renewal-row p{margin:.5rem 0}.booking-renewal-row .membership-actions{gap:.5rem;flex-wrap:wrap}
 
-@media(max-width:760px){.arrival-membership [data-arrival-field="member_billing"],.arrival-membership [data-membership-monthly-card]{grid-column:1/-1}}
+@media(max-width:760px){.arrival-membership [data-arrival-field="member_billing"],.arrival-membership [data-arrival-field="member_first_method"],.arrival-membership [data-membership-monthly-card]{grid-column:1/-1}}

@@ -13,6 +13,7 @@
 {% include 'core/partials/arrival_field.html' with field=form.member_starts_on %}
 {% include 'core/partials/arrival_field.html' with field=form.member_credit %}
 <div data-membership-monthly-card>{% include 'core/partials/arrival_field.html' with field=form.member_card %}</div>
+{% include 'core/partials/arrival_field.html' with field=form.member_first_method %}
 </div>
 <div data-arrival-membership-card>{% include 'core/partials/membership_card_entry.html' %}</div>
 {% if form.member_minimum_override %}<details><summary>Owner membership exceptions</summary>

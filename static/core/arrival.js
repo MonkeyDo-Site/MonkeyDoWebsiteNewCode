@@ -65,26 +65,34 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       form.querySelector('[data-arrival-field="method"] label').textContent=active?'Membership payment (visit is owner-comped):':'Actual payment:';
     }
     const method=form.elements.method.value;
+    const splitMember=Boolean(form.elements.member_add?.checked&&method==='split');
+    const firstTender=splitMember?(form.elements.member_first_method.value||'cash'):method;
+    const memberDue=lastQuote.membership_due_today!=='0.00'&&!form.elements.member_comped?.checked;
     const giftLabel=form.querySelector('[data-arrival-field="gift_card_verified"] label');
-    if(giftLabel)giftLabel.textContent=form.elements.member_add?.checked&&method==='gift_card'?'The physical gift card has been presented and verified for the combined amount shown.':'The physical gift card has been presented and verified.';
+    if(giftLabel)giftLabel.textContent=splitMember?'All physical gift-card amounts shown have been presented and verified.':form.elements.member_add?.checked&&method==='gift_card'?'The physical gift card has been presented and verified for the combined amount shown.':'The physical gift card has been presented and verified.';
     const memberFields=form.querySelector('[data-arrival-membership-fields]');
     if(memberFields){
       const active=form.elements.member_add.checked;
       memberFields.hidden=!active;
       for(const input of memberFields.querySelectorAll('input,select,textarea'))input.disabled=!active;
+      const first=form.querySelector('[data-arrival-field="member_first_method"]');
+      first.hidden=!splitMember||!memberDue;form.elements.member_first_method.disabled=!splitMember;
       const card=memberFields.querySelector('[data-membership-monthly-card]');
-      const needsCard=active&&!form.elements.member_comped?.checked&&(form.elements.member_billing.value==='monthly'||(method==='card'&&lastQuote.membership_needs_card!==false));
+      const needsCard=active&&!form.elements.member_comped?.checked&&(form.elements.member_billing.value==='monthly'||(firstTender==='card'&&lastQuote.membership_needs_card!==false));
       card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;
       const entry=memberFields.querySelector('[data-arrival-membership-card]');if(entry)entry.hidden=!needsCard;
       const email=memberFields.querySelector('[data-membership-comped-email]');
       if(email){email.hidden=!form.elements.member_comped.checked;form.elements.member_send_confirmation.disabled=!active||email.hidden;}
       const receipt=form.querySelector('[data-arrival-field="member_received"]');
-      receipt.hidden=['card','gift_card'].includes(method);form.elements.member_received.disabled=!active||receipt.hidden;
+      receipt.querySelector('label').textContent=splitMember?'The membership cash or check payment shown was actually received.':'The combined cash or check amount shown was actually received.';
+      receipt.hidden=['card','gift_card'].includes(firstTender)||(splitMember&&!memberDue);form.elements.member_received.disabled=!active||receipt.hidden;
+      if(!compedMethods)form.querySelector('[data-arrival-field="method"] label').textContent=splitMember?'Visit payment:':'Actual payment:';
     }
+    const splitNote=form.querySelector('[data-split-membership-note]');if(splitNote)splitNote.hidden=!splitMember;
     splitBox.hidden=method!=='split';
     if(method==='split'&&!rows().length)makeRow();
     if(method==='split')serialize();
-    const values=totals(),zelle=method==='split'&&values.zelle>0,gift=method==='gift_card'||(method==='split'&&values.gift_card>0);
+    const values=totals(),zelle=method==='split'&&values.zelle>0,gift=method==='gift_card'||(method==='split'&&values.gift_card>0)||(splitMember&&memberDue&&firstTender==='gift_card');
     for(const field of form.querySelectorAll('[data-noncard-fields] [data-arrival-field]')){
       const visible={zelle_verified:zelle,gift_card_verified:gift,received_on:zelle,zelle_sender:zelle}[field.dataset.arrivalField];
       field.hidden=!visible;for(const input of field.querySelectorAll('input,select'))input.disabled=!visible;
@@ -142,14 +150,14 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     if(event.target.form!==form)return;
     if(form.elements.member_add?.checked&&!['member_accepted','member_received','gift_card_verified','waiver_confirmed','waiver_mismatch_accepted'].includes(event.target.name)){
       form.elements.member_received.checked=false;
-      if(form.elements.method.value==='gift_card')form.elements.gift_card_verified.checked=false;
+      if(['gift_card','split'].includes(form.elements.method.value))form.elements.gift_card_verified.checked=false;
     }
     if(['children','babies'].includes(event.target.name))for(const input of form.querySelectorAll('[name=waiver_mismatch_accepted]'))input.checked=false;
     schedule();
   });
   form.addEventListener('change',event=>{
     if(event.target.form!==form)return;
-    if(event.target.name==='member_add'&&form.elements.method.value==='gift_card')form.elements.gift_card_verified.checked=false;
+    if(event.target.name==='member_add'&&['gift_card','split'].includes(form.elements.method.value))form.elements.gift_card_verified.checked=false;
     if(event.target.name==='member_card'&&form.elements.member_card_authorization)form.elements.member_card_authorization.value='';
     if(form.elements.member_add?.checked&&(event.target.name==='method'||(event.target.name.startsWith('member_')&&!['member_accepted','member_received'].includes(event.target.name)))){
       form.elements.member_accepted.checked=false;form.elements.member_received.checked=false;

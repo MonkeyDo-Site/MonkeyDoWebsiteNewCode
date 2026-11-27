@@ -27,6 +27,17 @@ from .checkout import charge_state, coverage_facts, preview
 
 def combined_label(combined):
     tender = combined["offer"]["expected_method"]
+    facts = combined["facts"]
+    if facts.get("split_visit"):
+        manual = Decimal(facts["received_today"])
+        card = Decimal(facts.get("payment_due_today", "0.00"))
+        if manual and card:
+            return f"Confirm arrival and membership — record ${manual:.2f} and charge visit card ${card:.2f}"
+        if card:
+            return f"Confirm arrival and membership — charge visit card ${card:.2f}"
+        if manual:
+            return f"Confirm arrival and membership — record received payments ${manual:.2f}"
+        return "Confirm arrival and membership — no new payment due"
     if tender == "card":
         return f"Confirm arrival and membership — charge card ${combined['facts']['payment_due_today']}"
     return f"Confirm arrival and membership — record {tender.replace('_', ' ')} ${combined['facts']['received_today']}"
@@ -194,6 +205,10 @@ class ArrivalForm(ReceiptForm):
                 if self.fields["member_add"].to_python(values.get("member_add")):
                     self.fields["method"].choices = choices
                     self.fields["method"].label = "Membership payment (visit is owner-comped)"
+        elif "member_add" in self.fields:
+            values = self.data if self.is_bound else self.initial
+            if values.get("member_add") and values.get("method") == "split":
+                self.fields["method"].label = "Visit payment"
 
     def clean(self):
         data = super().clean()
@@ -731,6 +746,7 @@ def checkout(request, pk, kind="arrival"):
                 ),
                 "waiver": waiver,
                 "membership_terms": combined["offer"]["terms"] if combined else "",
+                "membership_due_today": combined["facts"]["membership_due"] if combined else None,
                 "membership_card_purchase": card_purchase(booking, form.cleaned_data, combined),
                 "membership_card_review": card_review(combined),
                 "membership_card_authorization_offer": getattr(

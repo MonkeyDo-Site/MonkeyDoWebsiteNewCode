@@ -14,9 +14,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Membership purchase with arrival and recovery | 46–66 |
 | Scheduled installment review | 73–74 |
 | Physical gift card and an owner-comped visit | 75–76 |
-| **New: customer review and reservation of a released Unlimited benefit** | **77–78** |
+| Customer review and reservation of a released Unlimited benefit | 77–78 |
+| **New: split visit payments and a separate membership receipt** | **79–80** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Combined Zelle/split tenders, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Membership-first Zelle funding, splitting the membership payment itself, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -702,10 +703,30 @@ Recorded Zelle is displayed separately from the booking estimate and remains ava
 | --- | --- |
 | [![Customer benefit reserved, desktop](78-public-benefit-applied-desktop.png)](78-public-benefit-applied-desktop.png) | [![Customer benefit reserved, phone](78-public-benefit-applied-phone.png)](78-public-benefit-applied-phone.png) |
 
+## 79 — Split visit payments and a membership on the same arrival page
+
+Two monthly Subscription places cost **$35.98**, paid by cash. The visit's split rows contain **$10.00 cash**, leaving **$6.17 on the booking card** including its $0.17 processing fee. The combined summary and final button show **$45.98 cash + $6.17 visit card = $52.15**. The accepted card for later membership installments remains separate. Counts, waivers and the existing arrival controls stay on the same page.
+
+Preview creates no purchase, receipt or benefit usage. Choosing physical gift card for the membership shows the verification control even when the visit has no gift-card part; changing the amount or removing the membership clears verification. A positive membership payment requires its own actual tender choice. Splitting that membership payment itself or using recorded Zelle to fund it remains in development.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Split visit and manual membership review, desktop](79-split-visit-membership-review-desktop.png)](79-split-visit-membership-review-desktop.png) | [![Split visit and manual membership review, phone](79-split-visit-membership-review-phone.png)](79-split-visit-membership-review-phone.png) |
+
+## 80 — Actual funds after one combined confirmation
+
+The fictional browser scenario confirms once, initially recording **$45.98 cash** and leaving the **$6.17 visit card pending**. No paid combined email is queued in that pending state. A simulated successful outcome on that same card operation then produces **$52.15 actual combined new funds**: **$35.98 membership + $16.17 visit**. The visit's own cash/card rows remain readable, alongside the linked membership and one queued combined confirmation. No actual provider request or email delivery occurred.
+
+All-manual visit splits, strict gift/Zelle verification, actual Zelle bank dates, earlier recorded Zelle, prepaid membership, fully credit-funded membership and known/unknown visit-card recovery are developer-tested. Repeated or overlapping confirmations cannot create another membership, receipt set or card remainder. Cash/check collected at arrival uses today's date even when a separate visit Zelle part was received earlier.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Split visit and membership actual funds, desktop](80-split-visit-membership-received-desktop.png)](80-split-visit-membership-received-desktop.png) | [![Split visit and membership actual funds, phone](80-split-visit-membership-received-phone.png)](80-split-visit-membership-received-phone.png) |
+
 ## Checked so far
 
-The complete **1,308-test PostgreSQL suite passes** (423.205s), followed by one final native receipt/history check after its wording-only label update. Eighteen new cases cover private ownership, existing/new customers, current verification, exact prices and actual Zelle, immutable original evidence, native/CSRF boundaries, stale/duplicate confirmation, rollback, historical adult allowances and two real PostgreSQL races. Original financial/queue/migration/runtime checks remain green.
+The complete **1,324-test PostgreSQL suite passes** (426.416s), including fifteen new split-payment cases and one real overlapping-confirmation race. These cover exact constituent receipts/card fees, verified gift/Zelle funds, distinct actual receipt dates, prepaid/full-credit membership, current acceptance and source scopes, stale/repeated confirmation, and known/unknown visit-card recovery. Original financial, queue, migration, runtime and private-receipt checks remain green.
 
-All **78 desktop/phone pairs** have passed browser overflow/JavaScript checks. New samples 77–78 are four actual captures of one read-only price review and explicit confirmation: one reserved unused benefit, no new payment/posting/email/provider action, and unchanged original card, waiver and deadline. Ruff/format (502 Python files), model drift, whitespace, all 156 image links and all 48 unchanged reviewed migration hashes pass. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
+All **80 desktop/phone pairs** have passed browser overflow/JavaScript checks. The final split-visit browser scenario and receipt-label verification passed in 7.795s, with all four samples 79–80 recaptured and visually inspected. It verified $45.98 actual funds while the visit card remained pending, then $52.15 only after its simulated confirmed outcome: one purchase, three constituent operations, one queued unsent combined confirmation and no provider call. Ruff/format (504 Python files), model drift, whitespace, all 160 image links and all 48 unchanged reviewed migration hashes pass. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
 
 Implementation continues while the owner reviews. The [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) identifies functional checks, unfinished scope and provider limitations. No merge, deployment, live financial action or external email delivery is included; release requires explicit authorization.

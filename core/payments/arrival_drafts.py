@@ -39,6 +39,7 @@ FIELDS = (
     "member_places",
     "member_months",
     "member_billing",
+    "member_first_method",
     "member_starts_on",
     "member_card",
     "member_card_authorization",

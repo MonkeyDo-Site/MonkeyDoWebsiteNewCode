@@ -484,7 +484,7 @@ def confirm(
                 method_id=booking.card_agreement.method_id if part["tender"] == "card" else None,
                 purpose="arrival" if kind == "arrival" else kind,
                 received_on=date.fromisoformat(facts["received_on"])
-                if part["tender"] != "card"
+                if part["tender"] == "zelle"
                 else None,
             )
             if part["tender"] == "card":

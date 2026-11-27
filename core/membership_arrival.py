@@ -15,6 +15,7 @@ from django.db import transaction
 
 from .availability import NEW_YORK
 from .calendar import lock_calendar
+from .membership_arrival_tenders import first_tender, split_facts, verify_receipt
 from .membership_benefits import Place
 from .membership_records import MembershipArrivalCheckout
 from .membership_reservations import accepted_rules, lock_customer
@@ -85,11 +86,7 @@ def review(
     checkout.require_current(booking, "arrival")
     if booking.session.starts_at.astimezone(NEW_YORK).date() != today():
         raise ValidationError("Combine a membership purchase with arrival on the visit date.")
-    tender = data.get("method")
-    if tender not in {"cash", "check", "card", "gift_card"}:
-        raise ValidationError(
-            "Choose cash, check, card or a verified physical gift card for this combined payment, or clear the membership purchase to use another arrival payment."
-        )
+    tender = first_tender(data, comped=selection.get("comped", False))
     # These values are derived from this booking, never supplied by the browser.
     values = selection | {"customer": booking.customer, "expected_method": tender}
     proposed = offer(actor=actor, **values)
@@ -127,11 +124,20 @@ def review(
         "waiver_evidence": waivers(booking),
         "membership_card_last_four": selected.last_four if selected else "",
         "visit_card_last_four": booking.card_agreement.method.last_four
-        if tender == "card" and visit_due
+        if any(p["tender"] == "card" and amount(p["amount"]) for p in result[3])
         else "",
     }
     if tender == "card":
         facts.update(payment_due_today=str(membership_due + visit_due), received_today="0.00")
+    elif data.get("method") == "split":
+        facts.update(
+            split_facts(
+                tender=tender,
+                membership_due=membership_due,
+                plan=result[3],
+                selection=data.get("member_first_method"),
+            )
+        )
     if card_authorization_id:
         facts["card_authorization_id"] = str(card_authorization_id)
     return {
@@ -206,20 +212,7 @@ def confirm(
         raise ValidationError(
             "The membership, visit or payments changed. Review the current combined total."
         )
-    if data["method"] == "gift_card":
-        if data.get("gift_card_verified") is not True:
-            raise ValidationError(
-                "Present and verify the physical gift card for the combined amount shown."
-            )
-        verified_received = True
-    if (
-        data["method"] != "card"
-        and amount(reviewed["facts"]["received_today"]) > ZERO
-        and verified_received is not True
-    ):
-        raise ValidationError(
-            "Confirm that the combined cash or check payment was actually received."
-        )
+    verified_received = verify_receipt(data, reviewed, verified_received)
     member = purchase(
         actor=actor,
         request_key=uuid.uuid5(key, "membership"),
@@ -231,7 +224,7 @@ def confirm(
         send_confirmation=send_confirmation,
         combined_booking=booking,
         customer=booking.customer,
-        expected_method=data["method"],
+        expected_method=reviewed["offer"]["expected_method"],
         **selection,
     )
     if data["method"] == "card" and amount(reviewed["facts"]["membership_due"]):

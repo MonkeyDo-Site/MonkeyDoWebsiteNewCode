@@ -1,6 +1,7 @@
 """Overlapping final submissions cannot collect the combined payment twice."""
 
 from concurrent.futures import ThreadPoolExecutor
+from decimal import Decimal
 from threading import Event
 from unittest.mock import patch
 
@@ -24,9 +25,17 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
     prepare = arrival_fixtures.CombinedMembershipArrivalTests.prepare
 
     def test_second_submission_waits_for_first_and_returns_its_completed_receipt(self):
+        self.check_duplicate_confirmation(split=False)
+
+    def test_split_visit_duplicate_waits_without_repeating_membership_or_card_remainder(self):
+        self.check_duplicate_confirmation(split=True)
+
+    def check_duplicate_confirmation(self, *, split):
         if connection.vendor != "postgresql":
             self.skipTest("PostgreSQL transaction/advisory-lock race")
-        booking = self.prepare()
+        booking = self.prepare(method="split" if split else "cash")
+        if split:
+            self.input.update(member_first_method="cash", split={"cash": "10.00"})
         accepted = membership_arrival.review(**self.options)
         bought, waiting = Event(), Event()
         original_purchase, original_lock = (
@@ -73,9 +82,12 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
         self.assertEqual(booking.attendance, "arrived")
         self.assertEqual(MembershipArrivalCheckout.objects.count(), 1)
         self.assertEqual(MembershipPurchase.objects.count(), 1)
-        self.assertEqual(PaymentOperation.objects.count(), 2)
+        self.assertEqual(PaymentOperation.objects.count(), 3 if split else 2)
+        if split:
+            self.assertEqual(PaymentOperation.objects.get(tender="card").amount, Decimal("6.17"))
         self.assertEqual(
-            MessageDelivery.objects.filter(kind="membership_visit_confirmation").count(), 1
+            MessageDelivery.objects.filter(kind="membership_visit_confirmation").count(),
+            0 if split else 1,
         )
 
 

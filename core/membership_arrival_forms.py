@@ -104,6 +104,17 @@ def configure(form, booking, actor):
             required=False,
             label="The customer accepts these membership terms and the scheduled card payments shown.",
         ),
+        "member_first_method": forms.ChoiceField(
+            required=False,
+            choices=[
+                ("", "Choose membership payment"),
+                ("cash", "Cash"),
+                ("check", "Check"),
+                ("gift_card", "Physical gift card (verified)"),
+            ],
+            label="Membership paid by",
+            help_text="For a split visit payment, record the membership payment separately here.",
+        ),
         "member_received": forms.BooleanField(
             required=False, label="The combined cash or check amount shown was actually received."
         ),
@@ -123,7 +134,14 @@ def configure(form, booking, actor):
             ),
         )
     form.fields.update(fields)
-    form.fields["member_received"].arrival_hidden = values.get("method") in {"card", "gift_card"}
+    split = values.get("method") == "split"
+    tender = values.get("member_first_method") if split else values.get("method")
+    form.fields["member_first_method"].arrival_hidden = not split
+    form.fields["member_received"].arrival_hidden = tender in {"card", "gift_card"}
+    if split:
+        form.fields[
+            "member_received"
+        ].label = "The membership cash or check payment shown was actually received."
     if values.get("member_add") and values.get("method") == "gift_card":
         form.fields[
             "gift_card_verified"
@@ -202,19 +220,13 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True, pending_int
 
 
 def ready(data, combined):
+    from .membership_arrival_tenders import receipt_ready
+
     if combined is None:
         return True
     return bool(
         data.get("member_accepted")
-        and (
-            combined["offer"]["expected_method"] == "card"
-            or (
-                combined["offer"]["expected_method"] == "gift_card"
-                and data.get("gift_card_verified")
-            )
-            or data.get("member_received")
-            or combined["facts"]["received_today"] == "0.00"
-        )
+        and receipt_ready(data, combined)
         and (
             combined["offer"]["comped"]
             or (
@@ -294,7 +306,7 @@ def card_purchase(booking, data, combined):
         customer=booking.customer_id,
         **{name: data["member_" + name] for name in ("kind", "places", "months", "billing")},
         starts_on=data["member_starts_on"].isoformat(),
-        expected_method=data["method"],
+        expected_method=offer["expected_method"],
         credit_amount=str(data.get("member_credit") or 0),
         minimum_override=data.get("member_minimum_override", False),
         comped=False,
