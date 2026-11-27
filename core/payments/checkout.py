@@ -42,7 +42,7 @@ def charge_state(booking):
     )
 
 
-def require_current(booking, kind):
+def require_current(booking, kind, membership_intent=None):
     if booking.workflow != "integrated_v1":
         raise ValidationError(
             "Use a new integrated booking. Earlier test records cannot be charged."
@@ -51,6 +51,9 @@ def require_current(booking, kind):
         raise ValidationError(
             "Attendance is already recorded. Review the existing payment balance instead."
         )
+    from core.membership_arrival_pending import check_access
+
+    check_access(booking, membership_intent)
     if kind not in {"arrival", "cancellation", "no_show"}:
         raise ValidationError("Choose an ordinary booking action.")
     if booking.session.kind != "ordinary":
@@ -61,13 +64,14 @@ def require_current(booking, kind):
         )
 
 
-def check_arrival_capacity(booking, counts, override, actor):
-    others = booking.session.bookings.exclude(pk=booking.pk).exclude(
-        attendance__in=["cancelled", "no_show"]
+def check_arrival_capacity(booking, counts, override, actor, membership_intent=None):
+    from core.availability import occupancy
+
+    children, adults, supervised = occupancy(
+        booking.session,
+        ignore_booking_id=booking.pk,
+        ignore_hold=membership_intent.hold_key if membership_intent else None,
     )
-    children = sum(others.values_list("children", flat=True))
-    adults = sum(others.values_list("adults", flat=True))
-    supervised = sum(others.filter(supervised=True).values_list("children", flat=True))
     over = (
         children + counts["children"] > booking.session.child_capacity
         or children + adults + counts["children"] + counts["adults"]
@@ -117,10 +121,19 @@ def verify_coverage(booking, counts, confirmed, acknowledged=False):
         )
 
 
-def preview(*, actor, booking_id, kind, data, validate_waivers=True, proposed_membership=None):
+def preview(
+    *,
+    actor,
+    booking_id,
+    kind,
+    data,
+    validate_waivers=True,
+    proposed_membership=None,
+    membership_intent=None,
+):
     authorize(actor)
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
-    require_current(booking, kind)
+    require_current(booking, kind, membership_intent)
     state = charge_state(booking)
     if kind != "arrival" and type(data.get("send_email", False)) is not bool:
         raise ValidationError("Choose whether to send a customer email.")
@@ -157,7 +170,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True, proposed_me
                 "Complete booking setup before arrival. Complimentary bookings require no card."
             )
         validate_attendees(**counts, supervised=booking.supervised)
-        check_arrival_capacity(booking, counts, override, actor)
+        check_arrival_capacity(booking, counts, override, actor, membership_intent)
         if validate_waivers:
             verify_coverage(
                 booking, counts, data.get("waiver_confirmed"), data.get("waiver_mismatch_accepted")
@@ -290,7 +303,9 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True, proposed_me
 
 
 @transaction.atomic
-def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confirmed):
+def confirm(
+    *, actor, booking_id, kind, data, request_key, reviewed_hash, confirmed, membership_intent=None
+):
     authorize(actor)
     if confirmed is not True:
         raise ValidationError("Explicitly confirm the reviewed attendance and payment action.")
@@ -312,7 +327,11 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
 
     membership_booking.lock(booking)
     booking, state, quote, plan, facts, digest = preview(
-        actor=actor, booking_id=booking_id, kind=kind, data=data
+        actor=actor,
+        booking_id=booking_id,
+        kind=kind,
+        data=data,
+        membership_intent=membership_intent,
     )
     if digest != reviewed_hash:
         raise ValidationError(

@@ -60,7 +60,7 @@ def configure(form, booking, actor):
                 environment="sandbox",
                 provider_method__isnull=False,
             ),
-            label="Card for future membership installments",
+            label="Card for membership payment and scheduled installments",
             empty_label="Choose a saved card",
         ),
         "member_credit": forms.DecimalField(
@@ -164,7 +164,13 @@ def ready(data, combined):
         )
         and (
             combined["offer"]["comped"]
-            or combined["offer"]["billing"] != "monthly"
+            or (
+                combined["offer"]["billing"] != "monthly"
+                and not (
+                    combined["offer"]["expected_method"] == "card"
+                    and combined["facts"]["membership_due"] != "0.00"
+                )
+            )
             or data.get("member_card")
         )
         and (
@@ -201,4 +207,6 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         verified_received=data.get("member_received", False),
         send_confirmation={"yes": True, "no": False}.get(data.get("member_send_confirmation")),
     )
-    return record.checkout
+    from .membership_records import MembershipArrivalIntent
+
+    return record if isinstance(record, MembershipArrivalIntent) else record.checkout

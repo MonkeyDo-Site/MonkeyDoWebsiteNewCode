@@ -1,0 +1,23 @@
+{% extends 'core/staff_base.html' %}{% block staff_content %}
+<h1>Membership and arrival</h1>
+<p class="booking-subtitle">{{ booking.customer.last_name }} · {{ booking.session.starts_at|date:'l, F j, Y g:i A' }}</p>
+<div class="arrival-columns" data-membership-arrival-pending data-status-url="{{ status_url }}" data-state="{{ progress.state }}" data-may-recheck="{{ may_recheck|yesno:'true,false' }}">
+<div><section class="panel"><h2>Payment status</h2><p role="status" data-pending-message>{{ progress.message }}</p>
+<p><button type="button" class="button small" data-pending-check>Check payment status</button></p>
+<p>{% if sales_enabled %}<a href="{% url 'membership_overview' intent.purchase_id %}">Review membership and its payment</a> · {% endif %}{% if perms.core.view_paymentoperation %}<a href="{% url 'payment_detail' intent.operation_id %}">Review existing card payment</a> · {% endif %}<a href="{% url 'booking_detail' booking.pk %}">View booking</a></p>
+<form method="post" data-pending-continue{% if not may_continue %} hidden{% endif %}>{% csrf_token %}<button class="button small" name="continue_approved" value="1">Complete reviewed arrival</button></form>
+</section><section class="panel"><h2>Your reviewed visit</h2>
+<p>{{ counts.children }} children · {{ counts.adults }} adults · {{ counts.babies }} babies · {{ counts.socks }} pairs of grip socks</p>
+<p>{{ intent.purchase.membership.places }} {{ intent.purchase.membership.get_kind_display }} place{{ intent.purchase.membership.places|pluralize }} · {{ intent.purchase.membership.starts_on|date:'M j, Y' }}–{{ intent.purchase.membership.ends_on|date:'M j, Y' }}</p>
+{% if has_extra_hold %}<p class="caption">Extra places reserved until {{ intent.expires_at|date:'g:i A' }}.</p>{% endif %}
+<p class="caption">The original confirmation is saved. Checking status does not request another charge.</p>
+</section></div>
+<section class="estimate-panel"><h2>Membership and visit payment</h2>
+<dl class="quote-lines"><dt>Membership amount</dt><dd data-pending-amount>${{ progress.membership_amount }}</dd>
+<dt>Membership payment received</dt><dd data-pending-received>${{ progress.membership_received }}</dd>
+{% if progress.credit_applied %}<dt>Existing credit applied</dt><dd>${{ progress.credit_applied|floatformat:2 }}</dd>{% endif %}
+<dt>Membership balance</dt><dd data-pending-balance>${{ progress.membership_balance }}</dd></dl>
+<h3>Visit payment details</h3>{% include 'core/quote_items.html' with data=quote %}
+<p class="caption">The visit charge follows confirmed membership funding and a check that the reviewed details are still current.</p>
+</section></div>
+{% endblock %}

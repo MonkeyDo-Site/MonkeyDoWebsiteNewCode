@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from core.membership_arrival_forms import confirm as arrival_confirm
@@ -293,6 +294,83 @@ def checkout(request, pk, kind="arrival"):
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "session"), pk=pk, workflow="integrated_v1"
     )
+    from core.membership_arrival_pending import active_for_booking, status_data
+    from core.membership_records import MembershipArrivalIntent
+
+    pending = active_for_booking(pk)
+    if pending:
+        if not request.user.has_perm("core.view_membershippurchase"):
+            raise PermissionDenied
+        if request.method == "POST" and request.POST.get("continue_approved") == "1":
+            if request.user.pk != pending.actor_id and not request.user.is_superuser:
+                raise PermissionDenied
+            progress = status_data(pending)
+            if not progress["can_continue"]:
+                messages.error(request, progress["message"])
+                return redirect("booking_arrival", pk=pk)
+            from core.membership_arrival_pending import complete
+            from core.models import AuditEvent
+
+            complete(pending.pk)
+            AuditEvent.objects.create(
+                actor=request.user,
+                action="membership.arrival_rechecked",
+                record_type="booking",
+                record_id=str(booking.reference),
+                changes={"intent_id": str(pending.pk)},
+            )
+            return redirect("booking_arrival", pk=pk)
+        if request.method == "GET" and kind == "arrival":
+            progress = status_data(pending)
+            may_recheck = request.user.pk == pending.actor_id or request.user.is_superuser
+            return render(
+                request,
+                "core/booking_arrival_pending.html",
+                {
+                    "booking": booking,
+                    "intent": pending,
+                    "progress": progress,
+                    "may_recheck": may_recheck,
+                    "may_continue": progress["can_continue"] and may_recheck,
+                    "counts": pending.facts["review"]["arrival"]["counts"],
+                    "quote": pending.facts["review"]["arrival"]["quote"],
+                    "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),
+                    "sales_enabled": settings.MEMBERSHIP_SALES_ENABLED,
+                    "has_extra_hold": booking.session.capacity_holds.filter(
+                        pk=pending.hold_key, expires_at__gt=timezone.now()
+                    ).exists(),
+                },
+            )
+        if request.headers.get("Accept") == "application/json":
+            if (
+                request.POST.get("confirm_review") == "1"
+                and str(request.POST.get("request_key")) == str(pending.pk)
+                and request.POST.get("reviewed_hash") == pending.fingerprint
+                and pending.actor_id == request.user.pk
+            ):
+                return JsonResponse(
+                    {
+                        "accepted": True,
+                        "pending_membership": True,
+                        "pending_url": reverse("booking_arrival", args=[pk]),
+                        "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),
+                        "booking_url": reverse("booking_detail", args=[pk]),
+                    },
+                    headers={"Cache-Control": "no-store"},
+                )
+            return JsonResponse(
+                {
+                    "errors": {
+                        "__all__": [
+                            {
+                                "message": "Membership and arrival are already in progress. Open their current status."
+                            }
+                        ]
+                    }
+                },
+                status=409,
+            )
+        return redirect("booking_arrival", pk=pk)
     form_type = ArrivalForm if kind == "arrival" else ClosureForm
     initial = {
         "request_key": uuid.uuid4(),
@@ -365,6 +443,22 @@ def checkout(request, pk, kind="arrival"):
                     reviewed_hash=data["reviewed_hash"],
                     confirmed=True,
                 )
+                if isinstance(result, MembershipArrivalIntent):
+                    arrival_drafts.discard(request, draft_token)
+                    if is_live:
+                        return JsonResponse(
+                            {
+                                "accepted": True,
+                                "pending_membership": True,
+                                "pending_url": reverse("booking_arrival", args=[pk]),
+                                "status_url": reverse(
+                                    "booking_arrival_status", args=[pk, result.pk]
+                                ),
+                                "booking_url": reverse("booking_detail", args=[pk]),
+                            },
+                            headers={"Cache-Control": "no-store"},
+                        )
+                    return redirect("booking_arrival", pk=pk)
                 queued = bool(
                     result.sale
                     and result.sale.operations.filter(
@@ -548,6 +642,14 @@ def checkout(request, pk, kind="arrival"):
                 "waiver": waiver,
                 "membership_terms": combined["offer"]["terms"] if combined else "",
                 "membership_ready": membership_ready(form.cleaned_data, combined),
+                "membership_needs_card": bool(
+                    combined
+                    and not combined["offer"]["comped"]
+                    and (
+                        combined["offer"]["billing"] == "monthly"
+                        or combined["facts"]["membership_due"] != "0.00"
+                    )
+                ),
                 "noncard_total": noncard["total"],
                 "prepaid_available": str(prepaid["available"]),
                 "plan": [
@@ -774,6 +876,28 @@ def arrival_status(request, pk, checkout_id):
     from .invoices import received
     from .models import BookingCheckout
 
+    pending = None
+    from core.membership_schema import available
+
+    if available("core_membershiparrivalintent"):
+        from core.membership_arrival_pending import status_data
+        from core.membership_records import MembershipArrivalCheckout, MembershipArrivalIntent
+
+        pending = (
+            MembershipArrivalIntent.objects.filter(pk=checkout_id, booking_id=pk)
+            .select_related("progress", "purchase__membership", "purchase__billing_state")
+            .first()
+        )
+        if pending:
+            if not request.user.has_perm("core.view_membershippurchase"):
+                raise PermissionDenied
+            if pending.progress.status != "completed":
+                return JsonResponse(
+                    status_data(pending) | {"booking_url": reverse("booking_detail", args=[pk])},
+                    headers={"Cache-Control": "no-store"},
+                )
+            checkout_id = MembershipArrivalCheckout.objects.get(pk=pending.pk).checkout_id
+
     checkout = get_object_or_404(
         BookingCheckout.objects.select_related("booking", "sale"),
         pk=checkout_id,
@@ -804,10 +928,18 @@ def arrival_status(request, pk, checkout_id):
         )
     combined = (
         getattr(checkout, "membership_purchase", None)
-        if settings.MEMBERSHIP_SALES_ENABLED
+        if available("core_membershiparrivalcheckout")
         else None
     )
     new_received = received(checkout.sale) if checkout.sale_id else Decimal("0.00")
+    if combined:
+        from core.membership_arrival import membership_funded
+
+        if not membership_funded(combined):
+            state, message = (
+                "review",
+                "The membership funding needs owner review before another payment.",
+            )
     if combined and state == "succeeded":
         # The visit status must include the simultaneously collected membership
         # payment, while applied credit and earlier Zelle stay separate.
@@ -818,12 +950,25 @@ def arrival_status(request, pk, checkout_id):
         prepaid = sum((amount(p["amount"]) for p in checkout.details["plan"] if p["advance"]), ZERO)
         new_received = member_paid + max(ZERO, new_received - prepaid)
         message = "Arrival and membership confirmed. The reviewed received payment was recorded."
+    pending_data = {}
+    if pending:
+        from .invoices import settled, total
+
+        first_sale = pending.purchase.installments.first().invoice.sale
+        pending_data = {
+            "membership_received": str(received(first_sale)),
+            "membership_balance": str(
+                max(Decimal("0.00"), total(first_sale) - settled(first_sale))
+            ),
+            "pending_membership": False,
+        }
     return JsonResponse(
         {
             "state": state,
             "message": message,
             "received": str(new_received),
             "booking_url": reverse("booking_detail", args=[pk]),
+            **pending_data,
         },
         headers={"Cache-Control": "no-store"},
     )

@@ -41,6 +41,11 @@ def booking_detail(request, pk):
     booking = get_object_or_404(Booking.objects.select_related("customer", "session"), pk=pk)
     waiver_context = {}
     payment_context = {}
+    from .membership_arrival_pending import active_for_booking
+
+    pending_arrival = active_for_booking(pk)
+    if pending_arrival and request.user.has_perm("core.view_membershippurchase"):
+        payment_context["pending_membership_arrival"] = pending_arrival
     if (
         settings.BOOKING_COMPLETION_ENABLED
         and request.user.has_perm("core.view_paymentoperation")

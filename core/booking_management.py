@@ -161,6 +161,9 @@ def check_editable(booking, version):
             "Booking changed while you were editing. Reload and review the latest record."
         )
     if booking.workflow == "integrated_v1":
+        from .membership_arrival_pending import check_access
+
+        check_access(booking)
         from .booking_completion import enabled
         from .payments.models import PaymentOperation
 

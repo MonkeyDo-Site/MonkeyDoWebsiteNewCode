@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
@@ -143,6 +144,27 @@ def review_notice(request, pk):
     if not request.user.is_superuser:
         raise PermissionDenied
     notice = get_object_or_404(OwnerNotice.objects.select_for_update(), pk=pk)
+    if notice.details.get("kind") == "membership_arrival":
+        from .membership_records import MembershipArrivalState
+
+        if not MembershipArrivalState.objects.filter(
+            intent_id=notice.details.get("intent_id"), status="completed"
+        ).exists():
+            messages.error(
+                request, "Review and complete the membership arrival before clearing this notice."
+            )
+            return redirect("dashboard")
+        if notice.reviewed_at is None:
+            notice.reviewed_at, notice.reviewed_by = timezone.now(), request.user
+            notice.save(update_fields=["reviewed_at", "reviewed_by"])
+            AuditEvent.objects.create(
+                actor=request.user,
+                action="membership.arrival_notice_reviewed",
+                record_type="booking",
+                record_id=notice.details.get("booking_reference", str(notice.customer_id)),
+                changes={"notice_id": notice.pk},
+            )
+        return redirect("dashboard")
     if notice.reviewed_at is None:
         notice.reviewed_at = timezone.now()
         notice.reviewed_by = request.user

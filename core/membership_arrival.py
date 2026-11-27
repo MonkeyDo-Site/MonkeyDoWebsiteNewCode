@@ -10,7 +10,6 @@ import uuid
 from dataclasses import dataclass
 from datetime import date
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -70,6 +69,8 @@ def normalized(facts, member_id=PROPOSED_ID):
 
 
 def review(*, actor, booking_id, data, selection, method_id=None, validate_waivers=True):
+    from .membership_arrival_pending import session_facts, waivers
+
     authorize(actor, collect=True)
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
     checkout.require_current(booking, "arrival")
@@ -88,10 +89,6 @@ def review(*, actor, booking_id, data, selection, method_id=None, validate_waive
         if proposed["installments"]
         else ZERO
     )
-    if tender == "card" and membership_due:
-        raise ValidationError(
-            "To use the card in this combined checkout, apply existing credit to cover today's membership payment, or choose cash/check. The membership was not purchased and no card was charged."
-        )
     result = checkout.preview(
         actor=actor,
         booking_id=booking_id,
@@ -101,6 +98,13 @@ def review(*, actor, booking_id, data, selection, method_id=None, validate_waive
         proposed_membership=ProposedMembership(proposed),
     )
     visit_due = sum((amount(p["amount"]) for p in result[3] if not p.get("advance")), ZERO)
+    from .models import PaymentMethod
+
+    selected = (
+        PaymentMethod.objects.filter(pk=method_id, customer=booking.customer).first()
+        if method_id
+        else None
+    )
     facts = {
         "booking": booking.pk,
         "actor": actor.pk,
@@ -110,9 +114,15 @@ def review(*, actor, booking_id, data, selection, method_id=None, validate_waive
         "membership_due": str(membership_due),
         "visit_due": str(visit_due),
         "received_today": str(membership_due + visit_due),
+        "session": session_facts(booking),
+        "waiver_evidence": waivers(booking),
+        "membership_card_last_four": selected.last_four if selected else "",
+        "visit_card_last_four": booking.card_agreement.method.last_four
+        if tender == "card" and visit_due
+        else "",
     }
     if tender == "card":
-        facts.update(payment_due_today=str(visit_due), received_today="0.00")
+        facts.update(payment_due_today=str(membership_due + visit_due), received_today="0.00")
     return {
         "offer": proposed,
         "quote": result[2],
@@ -142,6 +152,20 @@ def confirm(
     if confirmed is not True or accepted is not True:
         raise ValidationError("Accept the membership terms and confirm the combined arrival.")
     key = lock_request(request_key)
+    from .membership_arrival_pending import MembershipArrivalIntent
+    from .membership_arrival_pending import create as create_pending
+
+    pending = MembershipArrivalIntent.objects.filter(pk=key).first()
+    if pending:
+        if (
+            pending.actor_id != actor.pk
+            or pending.booking_id != booking_id
+            or pending.fingerprint != reviewed_hash
+        ):
+            raise ValidationError(
+                "This confirmation already identifies another membership arrival."
+            )
+        return pending
     previous = MembershipArrivalCheckout.objects.select_related("checkout").filter(pk=key).first()
     if previous:
         if (
@@ -190,6 +214,10 @@ def confirm(
         expected_method=data["method"],
         **selection,
     )
+    if data["method"] == "card" and amount(reviewed["facts"]["membership_due"]):
+        return create_pending(
+            actor=actor, key=key, booking=booking, member=member, data=data, reviewed=reviewed
+        )
     final_data = data | {"apply_available_benefits": True}
     real = checkout.preview(actor=actor, booking_id=booking_id, kind="arrival", data=final_data)
     if normalized(real[4], member.pk) != reviewed["facts"]["arrival"]:
@@ -256,7 +284,9 @@ def ready_for_confirmation(record):
 
 
 def for_sale(sale_id):
-    if not settings.MEMBERSHIP_SALES_ENABLED:
+    from .membership_schema import available
+
+    if not available("core_membershiparrivalcheckout"):
         return None
     return (
         MembershipArrivalCheckout.objects.select_related(
@@ -357,14 +387,23 @@ def confirmation_payload(record):
             else "Today's visit uses the membership prices shown below."
         ]
     content += ["", "Here's your payment details for the membership and visit:"]
-    combined_total = (amount(first.quote["total"]) if first else ZERO) + amount(quote["total"])
+    from .payments.presentation import invoice_breakdown
+
+    member_quote = (
+        invoice_breakdown(first.invoice.sale)
+        if first
+        else {"total": "0.00", "subtotal": "0.00", "processing_fee": "0.00", "sales_tax": "0.00"}
+    )
+    combined_total = amount(member_quote["total"]) + amount(quote["total"])
+    combined_fee = amount(member_quote["processing_fee"]) + amount(quote["processing_fee"])
+    combined_tax = amount(member_quote["sales_tax"]) + amount(quote["sales_tax"])
     content += [
-        f"Membership{'—first month' if root.billing == 'monthly' else '—full selected term'}: ${first.quote['total']}"
+        f"Membership{'—first month' if root.billing == 'monthly' else '—full selected term'}: ${member_quote['subtotal']}"
         if first
         else "Complimentary membership: $0.00",
         *[f"{row['label']}: ${row['amount']}" for row in quote["lines"]],
-        f"Credit-card processing fee: ${quote['processing_fee']}",
-        f"Sales tax: ${quote['sales_tax']}",
+        f"Credit-card processing fee: ${combined_fee:.2f}",
+        f"Sales tax: ${combined_tax:.2f}",
         f"Visit total: ${quote['total']}",
         f"Membership and visit total: ${combined_total:.2f}",
         f"Membership payment received: ${member_paid:.2f}",

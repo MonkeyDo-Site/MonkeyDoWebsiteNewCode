@@ -1,5 +1,6 @@
 """Durable financial dispatch: an uncertain POST is never automatically replayed."""
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -151,6 +152,9 @@ def refresh_completed(operation):
 @transaction.atomic
 def begin_dispatch(operation_id):
     candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    from core.membership_arrival_pending import allow_dispatch, lock_operation
+
+    pending_arrival = lock_operation(candidate)
     from core.membership_arrival import lock_payment
 
     combined = lock_payment(candidate)
@@ -162,6 +166,14 @@ def begin_dispatch(operation_id):
     if operation.tender != "card":
         raise ValidationError("Non-card receipt must be explicitly recorded by staff.")
     if operation.state != "ready":
+        return None
+    if not allow_dispatch(pending_arrival):
+        operation.state, operation.result_code = "cancelled", "changed_before_dispatch"
+        operation.completed_at = timezone.now()
+        operation.save(update_fields=["state", "result_code", "completed_at"])
+        PaymentEvent.objects.create(
+            operation=operation, state="cancelled", source="worker", code="changed_before_dispatch"
+        )
         return None
     if operation.sale.kind == "membership":
         from core.membership_sales import enabled as membership_enabled
@@ -216,6 +228,7 @@ def begin_dispatch(operation_id):
                 from core.membership_arrival import membership_funded
 
                 invalid |= not membership_funded(combined)
+                invalid |= not settings.MEMBERSHIP_SALES_ENABLED
         if invalid:
             operation.state = "cancelled"
             operation.result_code = "changed_before_dispatch"

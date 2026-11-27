@@ -3,6 +3,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 
 from .payments.models import FinancialFact
@@ -70,6 +71,61 @@ class MembershipArrivalCheckout(FinancialFact):
     fingerprint = models.CharField(max_length=64)
     facts = models.JSONField()
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MembershipArrivalIntent(FinancialFact):
+    """Accepted conditional visit consent; an unpaid purchase grants no benefits."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    purchase = models.OneToOneField(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="arrival_intent"
+    )
+    booking = models.ForeignKey(
+        "core.Booking", on_delete=models.PROTECT, related_name="membership_arrival_intents"
+    )
+    operation = models.OneToOneField(
+        "core.PaymentOperation", on_delete=models.PROTECT, related_name="arrival_intent"
+    )
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    fingerprint = models.CharField(max_length=64)
+    facts = models.JSONField(encoder=DjangoJSONEncoder)
+    hold_key = models.UUIDField(unique=True)
+    accepted_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+
+
+class MembershipArrivalState(models.Model):
+    intent = models.OneToOneField(
+        MembershipArrivalIntent, primary_key=True, on_delete=models.PROTECT, related_name="progress"
+    )
+    booking = models.ForeignKey("core.Booking", on_delete=models.PROTECT)
+    status = models.CharField(
+        max_length=10,
+        default="waiting",
+        choices=[(x, x.title()) for x in ("waiting", "review", "completed")],
+    )
+    code = models.CharField(max_length=40, blank=True)
+    revision = models.PositiveIntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["booking"],
+                condition=~models.Q(status="completed"),
+                name="one_pending_membership_arrival",
+            )
+        ]
+
+
+class MembershipArrivalEvent(FinancialFact):
+    intent = models.ForeignKey(
+        MembershipArrivalIntent, on_delete=models.PROTECT, related_name="events"
+    )
+    status = models.CharField(max_length=10)
+    code = models.CharField(max_length=40, blank=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
 

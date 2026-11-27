@@ -646,6 +646,11 @@ def payment_updated(operation):
 
 
 def queue_confirmation(member):
+    if member.confirmation_mode == "combined":
+        from .membership_arrival_pending import queue_ready
+
+        queue_ready(member)
+        return
     if (
         not member.send_confirmation
         or member.confirmation_mode == "combined"

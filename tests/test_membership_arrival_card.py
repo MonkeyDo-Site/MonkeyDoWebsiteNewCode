@@ -132,10 +132,12 @@ class CreditFundedCardArrivalTests(InitialCreditFixtures, RuntimeRoleMixin, Test
         self.assertIn("Credit-card processing fee: $0.00", message.text_body)
         self.assertIn("Sales tax: $0.99", message.text_body)
 
-    def test_card_cannot_purchase_an_unfunded_membership_or_reapply_credit_on_replay(self):
+    def test_positive_card_preview_is_read_only_and_credit_is_not_reapplied_on_replay(self):
         self.card_visit(submit=False)
-        with self.assertRaisesMessage(ValidationError, "cover today's membership"):
-            review(**(self.options | {"selection": self.selection}))
+        before = PaymentOperation.objects.count()
+        positive = review(**(self.options | {"selection": self.selection}))
+        self.assertEqual(positive["facts"]["membership_due"], "18.53")
+        self.assertEqual(PaymentOperation.objects.count(), before)
         first = confirm(
             **self.options,
             request_key=self.key,
@@ -212,12 +214,13 @@ class CreditFundedCardArrivalTests(InitialCreditFixtures, RuntimeRoleMixin, Test
             MessageDelivery.objects.filter(kind="membership_visit_confirmation").count(), 1
         )
 
-    def test_disabled_membership_feature_does_not_read_combined_payment_tables(self):
+    def test_earlier_schema_with_disabled_feature_does_not_read_combined_payment_tables(self):
         from core.membership_arrival import for_sale
         from core.membership_records import MembershipArrivalCheckout
 
         with (
             override_settings(MEMBERSHIP_SALES_ENABLED=False),
+            patch("core.membership_schema.available", return_value=False),
             patch.object(
                 MembershipArrivalCheckout.objects,
                 "filter",

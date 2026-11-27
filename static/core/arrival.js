@@ -56,7 +56,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       memberFields.hidden=!active;
       for(const input of memberFields.querySelectorAll('input,select,textarea'))input.disabled=!active;
       const card=memberFields.querySelector('[data-membership-monthly-card]');
-      const needsCard=active&&form.elements.member_billing.value==='monthly'&&!form.elements.member_comped?.checked;
+      const needsCard=active&&!form.elements.member_comped?.checked&&(form.elements.member_billing.value==='monthly'||(method==='card'&&lastQuote.membership_needs_card!==false));
       card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;
       const email=memberFields.querySelector('[data-membership-comped-email]');
       if(email){email.hidden=!form.elements.member_comped.checked;form.elements.member_send_confirmation.disabled=!active||email.hidden;}
@@ -81,6 +81,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const inputIdentity=data=>JSON.stringify([...data].filter(([name])=>name!=='reviewed_hash'));
   const applyFeedback=(data,ok)=>{
     lastQuote={...lastQuote,...data};
+    sync();
     if(data.html)form.querySelector('[data-arrival-price]').innerHTML=data.html;
     const terms=form.querySelector('[data-arrival-membership-terms]');
     if(terms)terms.textContent=data.membership_terms||'';
@@ -178,7 +179,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     try{
       const response=await fetch(location.href,{method:'POST',body:data,headers:{Accept:'application/json'},cache:'no-store'});
       const answer=await response.json();
-      if(!response.ok||!answer.confirmed){finalizing=false;form.inert=false;dots.hidden=true;applyFeedback(answer,false);return;}
+      if(!response.ok||(!answer.confirmed&&!answer.accepted)){finalizing=false;form.inert=false;dots.hidden=true;applyFeedback(answer,false);return;}
+      if(answer.pending_membership){location.assign(answer.pending_url);return;}
       statusUrl=answer.status_url;form.inert=false;
       for(const input of form.querySelectorAll('input,select,textarea'))input.disabled=true;
       for(const other of form.querySelectorAll('button[name=continue_to]'))other.disabled=true;
@@ -219,6 +221,27 @@ for(const form of document.querySelectorAll('[data-paper-entry]')){
   const check=form.elements.paper_signed,fields=form.querySelector('.paper-entry');
   const sync=()=>{fields.hidden=!check.checked;for(const field of fields.querySelectorAll('input,select,textarea'))field.disabled=!check.checked;};
   check.addEventListener('change',sync);sync();
+}
+for(const workspace of document.querySelectorAll('[data-membership-arrival-pending]')){
+  const message=workspace.querySelector('[data-pending-message]'),check=workspace.querySelector('[data-pending-check]');
+  let polling=false,timer,deadline=Date.now()+60000;
+  const refresh=async()=>{
+    if(polling)return;polling=true;check.disabled=true;
+    try{
+      const response=await fetch(workspace.dataset.statusUrl,{headers:{Accept:'application/json'},cache:'no-store'});
+      if(!response.ok)throw Error();
+      const data=await response.json();message.textContent=data.message;
+      workspace.querySelector('[data-pending-continue]').hidden=!(data.can_continue&&workspace.dataset.mayRecheck==='true');
+      if(data.membership_amount!==undefined)workspace.querySelector('[data-pending-amount]').textContent='$'+Number(data.membership_amount).toFixed(2);
+      if(data.membership_received!==undefined)workspace.querySelector('[data-pending-received]').textContent='$'+Number(data.membership_received).toFixed(2);
+      if(data.membership_balance!==undefined)workspace.querySelector('[data-pending-balance]').textContent='$'+Number(data.membership_balance).toFixed(2);
+      if(data.state==='succeeded'){location.assign(data.booking_url);return;}
+      if(data.state==='processing'&&Date.now()<deadline)timer=setTimeout(refresh,1500);
+    }catch{message.textContent='We could not check the current payment result. Open the saved payment before collecting again.';}
+    finally{polling=false;check.disabled=false;}
+  };
+  check.addEventListener('click',()=>{clearTimeout(timer);deadline=Date.now()+60000;refresh();});
+  if(workspace.dataset.state==='processing')refresh();
 }
 // Zelle sender is relevant only to the selected method, including method switching.
 for(const form of document.querySelectorAll('form')){
