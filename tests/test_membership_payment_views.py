@@ -89,7 +89,7 @@ class MembershipPaymentViewTests(TestCase):
         response = self.client.get(f"/staff/memberships/purchased/{member.pk}/")
         self.assertContains(response, "No installment is due today")
         self.assertNotContains(response, "data-installment-payment")
-        self.assertContains(response, "Save membership card")
+        self.assertContains(response, "Save and use membership card")
 
     def test_billing_post_obeys_csrf_feature_and_collection_permissions(self):
         member, item = self.failed()

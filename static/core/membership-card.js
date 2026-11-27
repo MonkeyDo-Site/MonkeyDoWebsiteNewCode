@@ -1,9 +1,10 @@
 /* Banquest owns card-number/CVV fields. This form only exchanges its nonce. */
 (() => {
-  const form = document.querySelector('[data-membership-purchase]');
+  const form = document.querySelector('[data-membership-purchase], [data-membership-card-update]');
   const section = form?.querySelector('[data-membership-card-entry]');
   if (!section) return;
   const field = name => form.elements.namedItem(name);
+  const replacement = form.hasAttribute('data-membership-card-update');
   const button = form.querySelector('[data-membership-confirm]');
   const status = section.querySelector('[data-member-card-status]');
   const check = section.querySelector('[data-member-card-check]');
@@ -11,17 +12,18 @@
   let hosted, saving = false, uncertain = false, savedMethod = '', statusUrl = section.dataset.statusUrl;
   let setupKey = crypto.randomUUID();
   const address = new URL(location.href);
-  address.searchParams.set('purchase_key', field('request_key').value);
+  address.searchParams.set(replacement ? 'card_key' : 'purchase_key', field('request_key').value);
   history.replaceState(null, '', address);
   function option() {
     if (!Array.from(field('method').options).some(item => item.value === 'new')) field('method').add(new Option('Enter a new card', 'new'));
   }
   function display() {
     option();
-    const isNew = field('method').value === 'new' && !field('comped')?.checked && (field('billing').value === 'monthly' || field('expected_method').value === 'card');
+    const isNew = field('method').value === 'new' && !field('comped')?.checked && (replacement || field('billing').value === 'monthly' || field('expected_method').value === 'card');
     frame.hidden = !isNew;
     for (const choice of section.querySelectorAll('[name=member_retain]')) {choice.disabled = !isNew; choice.required = isNew && choice.type !== 'checkbox';}
     section.dataset.blocked = uncertain || saving ? '1' : '0';
+    if (replacement) button.disabled = uncertain || saving || !field('accepted').checked;
     form.dispatchEvent(new CustomEvent('membership-card-state'));
   }
   function report(message) {status.textContent = message; status.hidden = false;}
@@ -32,7 +34,7 @@
     field('card_authorization').value = data.offer_fingerprint === field('reviewed').value ? data.authorization_id : '';
     uncertain = false; check.hidden = true;
     saving = false;
-    report('The membership card is saved. No membership payment has been requested yet.');
+    report(replacement ? 'The card is saved. No payment has been requested.' : 'The membership card is saved. No membership payment has been requested yet.');
     display();
   }
   async function recover() {
@@ -67,7 +69,8 @@
       purchase.minimum_override = !!field('minimum_override')?.checked;
       purchase.comped = !!field('comped')?.checked;
       purchase.accepted = field('accepted').checked;
-      const payload = {purchase};
+      const payload = replacement ? {update: Object.fromEntries(['request_key', 'revision', 'reviewed'].map(name => [name, field(name).value]))} : {purchase};
+      if (replacement) payload.update.accepted = field('accepted').checked;
       if (field('method').value === 'new') {
         if (!hosted) throw new Error('Secure card entry is unavailable.');
         const surcharge = await hosted.getSurcharge();

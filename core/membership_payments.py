@@ -248,8 +248,41 @@ def collect_installment(
     return action
 
 
+def card_update_review(*, actor, member_id):
+    authorize(actor, collect=True)
+    member = member_record(member_id)
+    if member.purpose == "complimentary":
+        raise ValidationError("This complimentary membership has no scheduled card payments.")
+    text = (
+        f"The customer authorizes secure card storage for the remaining accepted payments of membership #{member.membership_number}, "
+        "including applicable card processing fees. The purchased term and installment dates stay unchanged. "
+        "Updating the card does not retry or collect any payment. Earlier uncertain transactions must be checked before another attempt."
+    )
+    data = dict(
+        operation="card_update",
+        origin={"prior_id": member.pk},
+        expected_method="card",
+        customer=member.customer_id,
+        customer_revision=member.customer.revision,
+        billing_revision=member.billing_state.revision,
+        original_terms=member.terms_text,
+        terms=text,
+    )
+    return data | {"fingerprint": fingerprint(data)}
+
+
 @transaction.atomic
-def change_card(*, actor, member_id, method_id, revision, request_key, accepted=False):
+def change_card(
+    *,
+    actor,
+    member_id,
+    method_id,
+    revision,
+    request_key,
+    accepted=False,
+    card_authorization_id=None,
+    reviewed=None,
+):
     authorize(actor, collect=True)
     writes_allowed()
     member = member_record(member_id)
@@ -258,6 +291,8 @@ def change_card(*, actor, member_id, method_id, revision, request_key, accepted=
     identity = dict(
         kind="card_update", membership=member_id, method=str(method_id), revision=revision
     )
+    if card_authorization_id:
+        identity["card_authorization"] = str(card_authorization_id)
     prior = previous_action(key, identity)
     if prior:
         return prior
@@ -274,7 +309,35 @@ def change_card(*, actor, member_id, method_id, revision, request_key, accepted=
     member.billing_state = billing
     if member.purpose == "complimentary":
         raise ValidationError("This complimentary membership has no scheduled card payments.")
-    method = available_cards(member).select_for_update().filter(pk=method_id).first()
+    current = card_update_review(actor=actor, member_id=member_id)
+    if reviewed is not None and reviewed != current["fingerprint"]:
+        raise ValidationError("The membership card review changed. Reload before confirming.")
+    method = None
+    if card_authorization_id:
+        from .membership_card_setup import reviewed_source
+
+        method = reviewed_source(
+            actor=actor,
+            authorization_id=card_authorization_id,
+            customer=member.customer,
+            request_key=key,
+            reviewed=current["fingerprint"],
+        )
+        if str(method.pk) != str(method_id):
+            raise ValidationError("Use the card authorized for this membership update.")
+        method = (
+            PaymentMethod.objects.select_for_update()
+            .filter(
+                pk=method.pk,
+                customer=member.customer,
+                state="active",
+                environment="sandbox",
+                provider_method__isnull=False,
+            )
+            .first()
+        )
+    else:
+        method = available_cards(member).select_for_update().filter(pk=method_id).first()
     if method is None:
         raise ValidationError("Choose an available card belonging to this customer.")
     previous = billing.mandate.method if billing.mandate else None
@@ -301,6 +364,10 @@ def change_card(*, actor, member_id, method_id, revision, request_key, accepted=
     )
     if previous and previous.pk != method.pk:
         queue_disposal(previous)
+    if card_authorization_id:
+        from .membership_card_setup import replace_future_card
+
+        replace_future_card(method, actor)
     AuditEvent.objects.create(
         actor=actor,
         action="membership.card_changed",

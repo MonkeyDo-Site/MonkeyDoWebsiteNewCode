@@ -36,6 +36,11 @@ from core.waivers import views as waiver_views
 
 urlpatterns = [
     path(
+        "staff/memberships/<int:pk>/card/",
+        membership_card_views.setup_replacement,
+        name="membership_card_replacement",
+    ),
+    path(
         "membership/renew/<str:token>/",
         public_membership_views.renewal,
         name="public_membership_renewal",

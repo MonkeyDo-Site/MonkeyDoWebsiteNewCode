@@ -2,7 +2,7 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37). These are actual application pages with fictional review data, captured at 1440px desktop and 390px phone widths. All names, card references and payment outcomes are synthetic. No card was charged and no customer email was delivered.
 
-These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution and verified private customer renewal. Public new-membership purchase, combined multi-cohort renewal checkout, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
+These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution, verified private customer renewal and replacement-card entry on the overview. Public new-membership purchase, combined multi-cohort renewal checkout, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
 
 ## 01 — Purchase membership on one page
 
@@ -136,8 +136,18 @@ The fictional browser confirmation creates exactly one customer-accepted renewal
 | --- | --- |
 | [![Customer renewal pending, desktop](16-customer-renewal-pending-desktop.png)](16-customer-renewal-pending-desktop.png) | [![Customer renewal pending, phone](16-customer-renewal-pending-phone.png)](16-customer-renewal-pending-phone.png) |
 
+## 17 — Replace a membership card on the overview
+
+Staff can enter a replacement card alongside the existing payment details. The customer’s future-visit Yes/No choice is separate from authorization for the remaining accepted membership payments. **Save and use membership card** saves the source and updates its mandate once; it requests no payment or retry. The fictional confirmation preserves **$71.96 received**, the original installment dates and every earlier transaction’s card. Changing the billing details invalidates an older review.
+
+The field area is visibly labelled **synthetic browser test**. A separate uncertain-save scenario verifies Check card setup and reload do not repeat the exchange or update the mandate. Real Banquest hosted-field rendering remains unverified.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Replace membership card, desktop](17-replacement-membership-card-desktop.png)](17-replacement-membership-card-desktop.png) | [![Replace membership card, phone](17-replacement-membership-card-phone.png)](17-replacement-membership-card-phone.png) |
+
 ## Checked so far
 
-The browser checks confirm no horizontal overflow or JavaScript errors on all sixteen desktop/phone pairs. The complete application suite passes 878 tests. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
+The browser checks confirm no horizontal overflow or JavaScript errors on all seventeen desktop/phone pairs. The complete application suite passes 888 tests. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
 
 The first review is about layout and clarity. Implementation and regression testing continue independently while the owner reviews. The final owner testing guide and release package follow completion and explicit release approval.

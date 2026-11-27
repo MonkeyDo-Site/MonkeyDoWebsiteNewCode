@@ -24,7 +24,17 @@ LIFETIME = 20 * 60
 CARD_VERSION = "MD-MEMBERSHIP-CARD-2026-01"
 
 
-def storage_text(retain):
+def storage_text(retain, *, replacement=False):
+    if replacement:
+        return (
+            "The customer authorizes secure card storage for the remaining accepted membership payments. "
+            "Saving and updating this card does not charge it or retry any payment. "
+            + (
+                "The customer also chooses to keep this card for future MonkeyDo visits, replacing any previously saved future-use card when this update is confirmed."
+                if retain
+                else "This authorization does not keep the card for unrelated future MonkeyDo visits."
+            )
+        )
     return (
         "The customer authorizes secure card storage for the reviewed membership purchase and its accepted fixed-term payments. "
         "Saving this card does not charge it. Only confirmation of the membership purchase requests the selected initial payment. "
@@ -96,6 +106,17 @@ def authorize_flow(flow, actor):
     identity(flow)
     if not flow.get("offer_fingerprint") or not flow.get("terms_text"):
         raise ValidationError("Review the membership terms before saving a card.")
+    if flow.get("operation") == "card_update":
+        from .membership_payments import card_update_review
+
+        current = card_update_review(actor=actor, member_id=flow.get("prior_id"))
+        if (
+            current["customer"] != flow["customer_id"]
+            or current["fingerprint"] != flow["offer_fingerprint"]
+        ):
+            raise ValidationError(
+                "The membership billing details changed. Review the card update again."
+            )
 
 
 def make_flow(*, actor, customer, request_key, offer, expires=None, authority=None):
@@ -140,7 +161,9 @@ def prepared_authorization(flow, setup, actor):
             offer_fingerprint=flow["offer_fingerprint"],
             terms_text=flow["terms_text"],
             storage_version=CARD_VERSION,
-            storage_text=storage_text(setup.reusable),
+            storage_text=storage_text(
+                setup.reusable, replacement=flow.get("operation") == "card_update"
+            ),
             expires_at=datetime.fromtimestamp(flow["expires"], dt_timezone.utc),
             retain=setup.reusable,
             actor=actor,

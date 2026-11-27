@@ -261,9 +261,11 @@ class MembershipCardForm(forms.Form):
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     request_key = forms.UUIDField(initial=uuid.uuid4, widget=forms.HiddenInput)
+    reviewed = forms.CharField(required=False, widget=forms.HiddenInput)
+    card_authorization = forms.UUIDField(required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, member, **kwargs):
-        from .membership_payments import available_cards
+    def __init__(self, *args, member, actor=None, **kwargs):
+        from .membership_payments import available_cards, card_update_review
 
         kwargs.setdefault("auto_id", "id_membership_card_%s")
         super().__init__(*args, **kwargs)
@@ -274,6 +276,31 @@ class MembershipCardForm(forms.Form):
         self.initial["revision"] = member.billing_state.revision
         if member.billing_state.mandate:
             self.initial["method"] = member.billing_state.mandate.method_id
+        if (
+            actor
+            and actor.has_perm("core.collect_payment")
+            and actor.has_perm("core.add_membershippurchase")
+            and member.purpose != "complimentary"
+        ):
+            self.initial["reviewed"] = card_update_review(actor=actor, member_id=member.pk)[
+                "fingerprint"
+            ]
+        if self.is_bound and self.data.get("card_authorization") and actor:
+            from .membership_card_setup import reviewed_source
+
+            try:
+                method = reviewed_source(
+                    actor=actor,
+                    authorization_id=self.data["card_authorization"],
+                    customer=member.customer,
+                    request_key=self.data.get("request_key"),
+                    reviewed=self.data.get("reviewed"),
+                )
+                self.fields["method"].queryset = PaymentMethod.objects.filter(
+                    Q(pk=method.pk) | Q(pk__in=self.fields["method"].queryset)
+                )
+            except ValidationError:
+                pass
 
 
 def check_enabled():
@@ -487,7 +514,18 @@ def membership_overview(request, pk):
         if request.method == "POST" and request.POST.get("action") == "card_update"
         else None,
         member=member,
+        actor=request.user,
     )
+    if not card_form.is_bound:
+        saved_key = request.GET.get("card_key")
+        saved_flow = request.session.get("membership_card_flows", {}).get(saved_key, {})
+        if (
+            saved_flow.get("operation") == "card_update"
+            and saved_flow.get("prior_id") == member.pk
+            and saved_flow.get("staff_actor") == request.user.pk
+            and saved_flow.get("offer_fingerprint") == card_form.initial.get("reviewed")
+        ):
+            card_form.initial["request_key"] = saved_key
     payment_quote = None
     public_renewal_url = ""
     if request.method == "POST" and request.POST.get("action") == "renewal_link":
@@ -528,6 +566,8 @@ def membership_overview(request, pk):
                         revision=values["revision"],
                         request_key=values["request_key"],
                         accepted=values["accepted"],
+                        card_authorization_id=values["card_authorization"],
+                        reviewed=values["reviewed"] or None,
                     )
                     messages.success(request, "Membership card updated. No payment was requested.")
                     return redirect("membership_overview", pk=member.pk)
@@ -607,6 +647,9 @@ def membership_overview(request, pk):
         renewal_problem = " ".join(exc.messages)
     first = installments[0] if installments else None
     next_item = next((item for item in installments if not item.paid and not item.cancelled), None)
+    setup_flow = request.session.get("membership_card_flows", {}).get(
+        str(card_form["request_key"].value()), {}
+    )
     return render(
         request,
         "core/active_membership_detail.html",
@@ -629,6 +672,20 @@ def membership_overview(request, pk):
             "today": today(),
             "payment_form": payment_form,
             "card_form": card_form,
+            "membership_card_replacement": True,
+            "membership_card_configured": bool(
+                settings.PAYMENT_SANDBOX_ENABLED
+                and settings.BANQUEST_API_SOURCE_KEY
+                and settings.BANQUEST_TOKENIZATION_PUBLIC_KEY.startswith("pk_")
+            ),
+            "membership_card_public_key": settings.BANQUEST_TOKENIZATION_PUBLIC_KEY,
+            "membership_card_endpoint": reverse("membership_card_replacement", args=[member.pk]),
+            "membership_card_status_prefix": reverse("membership_card_setup"),
+            "membership_card_status_url": reverse(
+                "membership_card_status", args=[setup_flow["setup_key"]]
+            )
+            if setup_flow.get("setup_key")
+            else "",
             "billing_history": member.billing_actions.select_related(
                 "actor", "mandate__method", "operation"
             ).order_by("-recorded_at")[:20],

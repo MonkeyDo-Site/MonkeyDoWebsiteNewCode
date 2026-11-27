@@ -10,9 +10,9 @@ from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_POST
 
-from .active_membership_views import PurchaseForm, check_enabled
+from .active_membership_views import MembershipCardForm, PurchaseForm, check_enabled
 from .membership_card_setup import authorize_flow, choose_saved, identity, make_flow, source
-from .membership_records import MembershipCardAuthorization
+from .membership_records import MembershipCardAuthorization, MembershipPurchase
 from .membership_sales import offer
 from .payments.gateway import ProviderFailure
 from .payments.models import PaymentMethod, PaymentSetup
@@ -94,6 +94,86 @@ def saved_response(authority):
             offer_fingerprint=authority.offer_fingerprint,
         )
     )
+
+
+@staff_permission("core.add_membershippurchase")
+@staff_permission("core.view_customer")
+@staff_permission("core.collect_payment")
+@require_POST
+@sensitive_post_parameters()
+@sensitive_variables()
+def setup_replacement(request, pk):
+    from .membership_payments import card_update_review, member_record
+
+    check_enabled()
+    try:
+        limit(request, "membership-card-setup", 10)
+        if len(request.body) > 8192:
+            raise ValidationError("Use the secure membership card form.")
+        payload = json.loads(request.body)
+        if not isinstance(payload, dict) or set(payload) - {"update", *CardInput.base_fields}:
+            raise ValidationError("Use the secure membership card form.")
+        update = payload.pop("update", None)
+        if not isinstance(update, dict) or set(update) - set(MembershipCardForm.base_fields):
+            raise ValidationError("Use the current membership card update form.")
+        member = member_record(pk)
+        form = MembershipCardForm(update, member=member, actor=request.user)
+        for name in ("method", "card_authorization"):
+            form.fields.pop(name, None)
+        card = CardInput(payload)
+        if not form.is_valid() or not card.is_valid() or card.cleaned_data.get("method"):
+            raise ValidationError("Review the card authorization and complete the secure fields.")
+        current = card_update_review(actor=request.user, member_id=pk)
+        if (
+            form.cleaned_data["reviewed"] != current["fingerprint"]
+            or form.cleaned_data["revision"] != current["billing_revision"]
+        ):
+            raise ValidationError(
+                "The membership billing details changed. Reload before saving a card."
+            )
+        flow = current_flow(
+            request,
+            dict(
+                request_key=form.cleaned_data["request_key"],
+                customer=member.customer,
+                offer=current,
+            ),
+        )
+        values = card.cleaned_data
+        flow["setup_key"] = str(values["setup_key"])
+        flows = request.session.get(SESSION_KEY, {})
+        flows[flow["key"]] = flow
+        request.session[SESSION_KEY] = flows
+        request.session.save()
+        setup = exchange(
+            actor=request.user,
+            flow=flow,
+            request_key=values["setup_key"],
+            nonce=values["nonce"],
+            expiry_month=values["expiry_month"],
+            expiry_year=values["expiry_year"],
+            retain=values["retention_choice"] == "yes",
+            payment_accepted=True,
+            cancellation_accepted=False,
+        )
+        if setup.state == "succeeded":
+            return saved_response(setup.membership_authorization)
+        return JsonResponse(
+            dict(
+                state="review",
+                error="We couldn't confirm whether the card was saved. Check card setup before another attempt. No payment was requested.",
+            ),
+            status=202,
+        )
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+    except (ProviderFailure, MembershipPurchase.DoesNotExist, ValueError, TypeError, KeyError):
+        return JsonResponse(
+            {
+                "error": "Card setup could not be confirmed. Review this membership or call/text 848-238-5147 before another attempt."
+            },
+            status=400,
+        )
 
 
 @staff_permission("core.add_membershippurchase")
