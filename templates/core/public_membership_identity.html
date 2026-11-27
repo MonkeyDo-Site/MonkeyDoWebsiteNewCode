@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}{% load booking_display %}
-{% block title %}Your membership · MonkeyDo{% endblock %}
+{% block title %}Your membership{% if receipt_only %} receipt{% endif %} · MonkeyDo{% endblock %}
 {% block content %}<div class="public-membership-page">
-<div class="page-heading"><p class="eyebrow">More MonkeyDo adventures</p><h1>Your membership</h1><p>Let’s start with your customer details.</p></div>
+<div class="page-heading"><p class="eyebrow">More MonkeyDo adventures</p><h1>Your membership{% if receipt_only %} receipt{% endif %}</h1><p>{% if receipt_only %}Enter your phone number and either your last name or email address to view your existing membership receipt. No payment will be requested.{% else %}Let’s start with your customer details.{% endif %}</p></div>
 {% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
 {% if form %}<section class="panel public-membership-verification">
 {% if flow.stage == 'name' %}<p>We found a customer profile with the phone number you entered — {{ flow.phone|phone_display }}. For verification, enter your last name{% if flow.verification_entry == 'returning_current' %} or email address{% endif %}.</p>{% endif %}
@@ -19,7 +19,7 @@
 {% if flow.stage == 'profile_choice' %}{% include 'core/partials/profile_choice.html' %}{% else %}
 <form method="post" class="record-form" id="membership-identity-form">{% include 'core/partials/wizard_identity.html' %}{% include 'core/partials/form_fields.html' %}
 <button class="button" type="submit">{% if flow.stage == 'recovered_confirm' %}Continue with this customer profile{% elif flow.stage == 'conflict_stop' %}Start again{% else %}Continue{% endif %}</button>
-{% if flow.stage == 'retry_phone' %}<button class="text-button" name="continue_new" value="1" formnovalidate>Continue as a new customer</button>{% endif %}
+{% if flow.stage == 'retry_phone' and not receipt_only %}<button class="text-button" name="continue_new" value="1" formnovalidate>Continue as a new customer</button>{% endif %}
 </form>{% endif %}
 {% if flow.stage == 'retry_phone' or flow.stage == 'contact' %}<form method="post">{% include 'core/partials/wizard_identity.html' %}<button class="text-button" name="action" value="email_recovery">Find my customer details by email</button></form>{% endif %}
 </section>{% endif %}

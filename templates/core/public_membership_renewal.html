@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}{% load static %}
 {% block title %}{% if initial_purchase %}Your membership{% else %}Renew membership{% endif %} · MonkeyDo{% endblock %}
 {% block content %}<div class="public-membership-page">
-<div class="page-heading"><p class="eyebrow">More MonkeyDo adventures</p><h1>{% if initial_purchase %}Your membership{% elif receipt %}Your membership renewal{% else %}Renew your membership{% endif %}</h1></div>
+<div class="page-heading"><p class="eyebrow">More MonkeyDo adventures</p><h1>{% if initial_purchase %}Your membership{% elif receipt %}Your membership renewal{% else %}Renew your membership{% endif %}</h1>{% if receipt_reverified %}<p>Receipt for your existing membership. No new payment was requested.</p>{% endif %}</div>
 {% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
 {% if verification_form %}<div class="panel public-membership-verification"><h2>Verify your details</h2><p>Enter your phone number and last name to open your membership renewal.</p><form method="post" class="record-form">{% csrf_token %}{{ verification_form.non_field_errors }}{% for field in verification_form %}<div class="form-field">{{ field.errors }}{{ field.label_tag }}{{ field }}</div>{% endfor %}<button type="submit" class="button" name="action" value="verify">Continue</button></form></div>{% endif %}
 {% if form %}<p>Family {{ customer.last_name }}</p><p>{% if initial_purchase %}Choose your membership and review the price, card and agreement together below.{% else %}Your current {{ prior.membership.get_kind_display }} membership ends {{ prior_ends_on|date:'M j, Y' }}. Review your renewal and payment together below.{% endif %}</p>

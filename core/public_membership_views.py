@@ -494,17 +494,32 @@ def setup_status(request, setup_id, token=None):
 @private_view
 @require_GET
 def receipt(request, token=None):
+    acceptance = None
+    receipt_reverified = False
     try:
         link, _, scope = state(request, token)
     except (PermissionDenied, ValidationError):
-        return redirect(public_url(token))
-    acceptance = (
-        MembershipPublicAcceptance.objects.select_related(
-            "purchase__membership", "purchase__customer"
+        if token is not None:
+            return redirect(public_url(token))
+        from .membership_receipt_access import owned_receipt, receipt_for
+
+        try:
+            acceptance = receipt_for(request)
+            receipt_reverified = True
+        except PermissionDenied:
+            try:
+                owned_receipt(request)
+            except PermissionDenied:
+                return redirect(public_url(token))
+            return redirect("public_membership_receipt_verify")
+    if acceptance is None:
+        acceptance = (
+            MembershipPublicAcceptance.objects.select_related(
+                "purchase__membership", "purchase__customer"
+            )
+            .filter(**acceptance_filter(scope))
+            .first()
         )
-        .filter(**acceptance_filter(scope))
-        .first()
-    )
     if not acceptance:
         return redirect(public_url(token))
     member = acceptance.purchase
@@ -531,6 +546,7 @@ def receipt(request, token=None):
         dict(
             receipt=member,
             initial_purchase=token is None,
+            receipt_reverified=receipt_reverified,
             paid=installment_paid(item),
             money_received=funds,
             credit_applied=credit_funds,

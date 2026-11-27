@@ -16,6 +16,7 @@ from core import (
     membership_views,
     public_booking_views,
     public_membership_join,
+    public_membership_receipt,
     public_membership_views,
     recurring_views,
     scheduling_views,
@@ -54,6 +55,11 @@ urlpatterns = [
         name="membership_card_replacement",
     ),
     path("membership/join/", public_membership_join.join, name="public_membership_join"),
+    path(
+        "membership/join/verify-receipt/",
+        public_membership_receipt.verify,
+        name="public_membership_receipt_verify",
+    ),
     path(
         "membership/join/offer/",
         public_membership_views.live_offer,

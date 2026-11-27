@@ -41,7 +41,7 @@ def can_restart(flow):
     )
 
 
-def display(request, flow, *, form=None, error=None, status=200):
+def display(request, flow, *, form=None, error=None, status=200, receipt_only=False):
     return render(
         request,
         "core/public_membership_identity.html",
@@ -49,7 +49,8 @@ def display(request, flow, *, form=None, error=None, status=200):
             "flow": flow,
             "form": form,
             "error": error,
-            "restart_allowed": can_restart(flow),
+            "receipt_only": receipt_only,
+            "restart_allowed": bool(flow) and can_restart(flow),
             **(public_verification.choice_context(flow) if form is not None else {}),
         },
         status=status,
@@ -89,6 +90,14 @@ def join(request):
             try:
                 _, record, scope = payment.state(request)
             except PermissionDenied:
+                from .membership_receipt_access import owned_receipt
+
+                try:
+                    owned_receipt(request)
+                except PermissionDenied:
+                    pass
+                else:
+                    return redirect("public_membership_receipt_verify")
                 return display(
                     request,
                     flow,

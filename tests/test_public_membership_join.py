@@ -180,7 +180,11 @@ class PublicMembershipJoinTests(TestCase):
         with patch(
             "django.utils.timezone.now", return_value=timezone.now() + timedelta(minutes=21)
         ):
-            self.assertContains(self.client.get(self.url), "verification expired", status_code=400)
+            self.assertRedirects(
+                self.client.get(self.url),
+                reverse("public_membership_receipt_verify"),
+                fetch_redirect_response=False,
+            )
             self.assertEqual(self.client.get(self.url + "?restart=1").status_code, 400)
         self.assertEqual(MembershipPurchase.objects.count(), 1)
         self.assertEqual(PaymentOperation.objects.count(), 1)
