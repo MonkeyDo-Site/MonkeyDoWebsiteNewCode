@@ -10,6 +10,7 @@ from core import (
     booking_views,
     customer_views,
     dashboard,
+    membership_card_views,
     membership_views,
     public_booking_views,
     recurring_views,
@@ -33,6 +34,12 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path("staff/memberships/card/", membership_card_views.setup_card, name="membership_card_setup"),
+    path(
+        "staff/memberships/card/<uuid:setup_id>/",
+        membership_card_views.setup_status,
+        name="membership_card_status",
+    ),
     path("staff/bookings/draft/<uuid:token>/card/", staff_create.card, name="staff_create_card"),
     path(
         "staff/bookings/draft/<uuid:token>/card/<uuid:setup_id>/",

@@ -40,6 +40,10 @@ from .policy import (
 
 
 def flow_identity(flow):
+    if flow and flow.get("purpose") == "membership":
+        from core.membership_card_setup import identity
+
+        return identity(flow)
     assert_flow(flow)
     if flow.get("workflow") != "integrated_v1":
         raise ValidationError("Use a new integrated booking for card setup.")
@@ -61,11 +65,20 @@ def reusable_methods(flow):
     current = PaymentSetup.objects.filter(flow_hash=digest, state="succeeded").values("method_id")
     scope = Q(pk__in=current)
     if customer:
-        scope |= Q(customer=customer, reusable=True, booking__isnull=False)
+        from core.membership_records import MembershipCardMandate
+
+        scope |= Q(customer=customer, reusable=True) & (
+            Q(booking__isnull=False) | Q(pk__in=MembershipCardMandate.objects.values("method_id"))
+        )
     return PaymentMethod.objects.filter(scope, state="active", environment="sandbox")
 
 
 def authorize_actor(flow, actor):
+    if flow.get("purpose") == "membership":
+        from core.membership_card_setup import authorize_flow
+
+        authorize_flow(flow, actor)
+        return
     if not flow.get("staff_actor") and actor is None:
         return
     if actor is None or flow.get("staff_actor") != actor.pk:
@@ -165,9 +178,10 @@ def prepare(
     digest, customer = flow_identity(flow)
     # Different request keys in this flow must not exchange a nonce concurrently.
     lock_request(uuid.UUID(digest[:32]))
+    membership = flow.get("purpose") == "membership"
     if (
         payment_accepted is not True
-        or cancellation_accepted is not True
+        or (cancellation_accepted is not False if membership else cancellation_accepted is not True)
         or type(retain) is not bool
     ):
         raise ValidationError("Accept the payment and cancellation policies before saving a card.")
@@ -196,13 +210,22 @@ def prepare(
             "customer_revision": customer.revision if customer else None,
             "reusable": retain,
             "actor": actor,
+            "kind": "membership" if membership else "booking",
             "expires_at": datetime.fromtimestamp(flow["expires"], tz=dt_timezone.utc),
         },
     )
     if not created and (
-        setup.flow_hash != digest or setup.nonce_hash != hashed or setup.reusable != retain
+        setup.flow_hash != digest
+        or setup.nonce_hash != hashed
+        or setup.reusable != retain
+        or setup.kind != ("membership" if membership else "booking")
     ):
         raise ValidationError("This card setup request has already been used.")
+    if membership:
+        from core.membership_card_setup import prepared_authorization
+
+        prepared_authorization(flow, setup, actor)
+        return setup
     from .policy import displayed_cancellation
 
     wording, pricing_id = displayed_cancellation(flow)
@@ -259,7 +282,7 @@ def persist_method(setup, data, flow=None):
             brand=brand,
             last_four=last_four,
             reusable=setup.reusable,
-            consent_version=VERSION,
+            consent_version="MD-MEMBERSHIP-CARD-2026-01" if setup.kind == "membership" else VERSION,
             consent_at=setup.created_at,
         )
         reviewed_terms = AuditEvent.objects.filter(
@@ -267,14 +290,18 @@ def persist_method(setup, data, flow=None):
             record_type="payment_setup",
             record_id=str(setup.pk),
         ).first()
-        accepted = consent(
-            terms=reviewed_terms.changes if reviewed_terms else None,
-            method=method,
-            digest=setup.flow_hash,
-            retain=setup.reusable,
-            accepted_at=setup.created_at,
-            flow=flow,
-            actor=setup.actor,
+        accepted = (
+            consent(
+                terms=reviewed_terms.changes if reviewed_terms else None,
+                method=method,
+                digest=setup.flow_hash,
+                retain=setup.reusable,
+                accepted_at=setup.created_at,
+                flow=flow,
+                actor=setup.actor,
+            )
+            if setup.kind == "booking"
+            else None
         )
         setup.method = method
         setup.consent = accepted
@@ -353,6 +380,8 @@ def exchange(
 def choose_saved(*, flow, method_id, payment_accepted, cancellation_accepted, actor=None):
     enabled()
     writes_allowed()
+    if flow.get("purpose") == "membership":
+        raise ValidationError("Use the membership card authorization before selecting this source.")
     authorize_actor(flow, actor)
     digest, customer = flow_identity(flow)
     if payment_accepted is not True or cancellation_accepted is not True:

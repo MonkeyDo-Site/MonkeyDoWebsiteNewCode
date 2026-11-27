@@ -100,6 +100,44 @@ class MembershipBilling(models.Model):
     revision = models.PositiveIntegerField(default=1)
 
 
+class MembershipCardAuthorization(FinancialFact):
+    """Card-storage authorization scoped to one reviewed membership purchase."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    setup = models.OneToOneField(
+        "core.PaymentSetup",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="membership_authorization",
+    )
+    method = models.ForeignKey(
+        "core.PaymentMethod",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="membership_authorizations",
+    )
+    customer = models.ForeignKey("core.Customer", on_delete=models.PROTECT)
+    request_key = models.UUIDField()
+    flow_hash = models.CharField(max_length=64, db_index=True)
+    offer_fingerprint = models.CharField(max_length=64)
+    terms_text = models.TextField()
+    storage_version = models.CharField(max_length=60)
+    storage_text = models.TextField()
+    retain = models.BooleanField(default=False)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    accepted_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(setup__isnull=False, method__isnull=True)
+                | models.Q(setup__isnull=True, method__isnull=False),
+                name="membership_card_authority_source",
+            )
+        ]
+
+
 class MembershipBillingAction(FinancialFact):
     """Accepted staff billing actions, independent of later provider outcomes."""
 

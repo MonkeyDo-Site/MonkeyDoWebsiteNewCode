@@ -13,6 +13,7 @@
 {% if user.is_superuser %}<details><summary>Owner exceptions</summary>{% for field in form.visible_fields %}{% if field.name == 'minimum_override' or field.name == 'comped' %}<div class="form-field checkbox-field">{{ field.errors }}<label>{{ field }} <span>{{ field.label }}</span></label></div>{% endif %}{% endfor %}<div class="form-field" data-comped-email hidden>{{ form.send_confirmation.errors }}{{ form.send_confirmation.label_tag }}{{ form.send_confirmation }}</div></details>{% endif %}
 <h2>Payment</h2>
 <div class="form-field" data-membership-card>{{ form.method.errors }}{{ form.method.label_tag }}{{ form.method }}<p class="caption" data-card-description>Monthly billing uses this card for the scheduled installments.</p></div>
+{% include 'core/partials/membership_card_entry.html' %}
 <div class="form-field checkbox-field" data-membership-receipt hidden>{{ form.verified_received.errors }}<label>{{ form.verified_received }} <span>{{ form.verified_received.label }}</span></label></div>
 <p class="caption" data-no-card-needed hidden>No saved card is required for this payment.</p>
 </div>
@@ -30,4 +31,5 @@
 </form>
 <p><a href="{% url 'active_memberships' %}">Return to memberships</a></p>
 <script src="{% static 'core/membership-purchase.js' %}" defer></script>
+{% if membership_card_configured %}<script src="https://tokenization.sandbox.banquestgateway.com/tokenization/v0.3" defer></script><script src="{% static 'core/membership-card.js' %}" defer></script>{% endif %}
 {% endblock %}

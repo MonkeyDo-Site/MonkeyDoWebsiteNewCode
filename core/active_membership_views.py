@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from .booking_forms import CustomerChoice, customer_picker
@@ -83,8 +84,9 @@ class PurchaseForm(forms.Form):
     )
     request_key = forms.UUIDField(initial=uuid.uuid4, widget=forms.HiddenInput)
     reviewed = forms.CharField(required=False, widget=forms.HiddenInput)
+    card_authorization = forms.UUIDField(required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, owner=False, prior=None, operation=None, **kwargs):
+    def __init__(self, *args, owner=False, prior=None, operation=None, actor=None, **kwargs):
         bound = args[0] if args and args[0] is not None else {}
         operation = operation or bound.get("operation") or "purchase"
         if prior is None:
@@ -163,6 +165,20 @@ class PurchaseForm(forms.Form):
             and len(str(customer_id)) <= 18
         ):
             available = Q(reusable=True)
+            if self.is_bound and self.data.get("card_authorization") and actor:
+                from .membership_card_setup import reviewed_source
+
+                try:
+                    selected = reviewed_source(
+                        actor=actor,
+                        authorization_id=self.data["card_authorization"],
+                        customer=Customer.objects.get(pk=customer_id),
+                        request_key=self.data.get("request_key"),
+                        reviewed=self.data.get("reviewed"),
+                    )
+                    available |= Q(pk=selected.pk)
+                except (ValidationError, Customer.DoesNotExist):
+                    pass
             if prior and prior.billing_state.mandate:
                 available |= Q(pk=prior.billing_state.mandate.method_id)
             self.fields["method"].queryset = PaymentMethod.objects.filter(
@@ -312,12 +328,20 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
     posted = request.POST.copy() if request.method == "POST" else None
     if prior and posted is not None:
         posted.update(customer=str(prior.customer_id), prior_id=str(prior.pk), operation=operation)
+    initial = {"customer": request.GET.get("customer", "")}
+    if request.method == "GET":
+        saved_key = request.GET.get("purchase_key")
+        owned_flow = request.session.get("membership_card_flows", {}).get(saved_key)
+        if owned_flow and owned_flow.get("staff_actor") == request.user.pk:
+            initial["request_key"] = saved_key
+            initial["customer"] = owned_flow["customer_id"]
     form = PurchaseForm(
         posted,
         owner=request.user.is_superuser,
-        initial={"customer": request.GET.get("customer", "")},
+        initial=initial,
         prior=prior,
         operation=operation,
+        actor=request.user,
     )
     reviewed_offer = None
     if request.method == "POST" and form.is_valid():
@@ -333,6 +357,7 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
                     method_id=form.cleaned_data["method"].pk
                     if form.cleaned_data["method"]
                     else None,
+                    card_authorization_id=form.cleaned_data.get("card_authorization"),
                     verified_received=form.cleaned_data["verified_received"],
                     send_confirmation={"yes": True, "no": False}.get(
                         form.cleaned_data.get("send_confirmation")
@@ -341,6 +366,9 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
                 return redirect("membership_overview", pk=member.pk)
         except ValidationError as exc:
             form.add_error(None, " ".join(exc.messages))
+    setup_flow = request.session.get("membership_card_flows", {}).get(
+        str(form["request_key"].value()), {}
+    )
     return render(
         request,
         "core/membership_purchase.html",
@@ -354,6 +382,17 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
                 "renewal": "Renew membership",
                 "addition": "Add membership places",
             }[operation],
+            "membership_card_configured": bool(
+                settings.PAYMENT_SANDBOX_ENABLED
+                and settings.BANQUEST_API_SOURCE_KEY
+                and settings.BANQUEST_TOKENIZATION_PUBLIC_KEY.startswith("pk_")
+            ),
+            "membership_card_public_key": settings.BANQUEST_TOKENIZATION_PUBLIC_KEY,
+            "membership_card_status_url": reverse(
+                "membership_card_status", args=[setup_flow["setup_key"]]
+            )
+            if setup_flow.get("setup_key")
+            else "",
         },
     )
 
@@ -394,6 +433,18 @@ def membership_offer(request):
         environment="sandbox",
         provider_method__isnull=False,
     ).order_by("last_four", "pk")
+    flow = request.session.get("membership_card_flows", {}).get(request.POST.get("request_key"))
+    if (
+        flow
+        and flow.get("staff_actor") == request.user.pk
+        and flow.get("customer_id") == form.cleaned_data["customer"].pk
+    ):
+        from .membership_card_setup import available_methods
+
+        try:
+            cards = available_methods(flow).order_by("last_four", "pk")
+        except ValidationError:
+            pass
     return JsonResponse(
         {
             "html": render_to_string(

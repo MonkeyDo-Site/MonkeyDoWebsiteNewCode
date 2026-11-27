@@ -232,6 +232,7 @@ def purchase(
     reviewed,
     accepted,
     method_id=None,
+    card_authorization_id=None,
     send_confirmation=None,
     verified_received=False,
     received_on=None,
@@ -269,6 +270,19 @@ def purchase(
     )
     if needs_card:
         available = Q(reusable=True)
+        if card_authorization_id:
+            from .membership_card_setup import reviewed_source
+
+            authorized_method = reviewed_source(
+                actor=actor,
+                authorization_id=card_authorization_id,
+                customer=customer,
+                request_key=key,
+                reviewed=reviewed,
+            )
+            if str(authorized_method.pk) != str(method_id):
+                raise ValidationError("Use the card authorized for this membership purchase.")
+            available |= Q(pk=authorized_method.pk)
         if data["origin"]:
             old = MembershipPurchase.objects.get(
                 pk=data["origin"]["prior_id"]
@@ -357,6 +371,10 @@ def purchase(
         else None
     )
     MembershipBilling.objects.create(purchase=member, mandate=mandate)
+    if mandate:
+        from .membership_card_setup import replace_future_card
+
+        replace_future_card(method, actor)
     if data["origin"]:
         MembershipOrigin.objects.create(
             purchase=member,

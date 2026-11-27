@@ -327,6 +327,11 @@ class PaymentSetup(models.Model):
     """One durable claim for a transient nonce exchange; the nonce is never saved."""
 
     id = models.UUIDField(primary_key=True, editable=False)
+    kind = models.CharField(
+        max_length=12,
+        default="booking",
+        choices=[("booking", "Booking"), ("membership", "Membership")],
+    )
     flow_hash = models.CharField(max_length=64, db_index=True)
     nonce_hash = models.CharField(max_length=64)
     customer = models.ForeignKey("core.Customer", null=True, on_delete=models.PROTECT)
