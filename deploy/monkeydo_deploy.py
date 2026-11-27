@@ -917,11 +917,11 @@ class Host:
         return candidate
 
     def ensure_visit_credit_compatible(self, target):
-        marker = target / "deploy/visit-credit-v1.capability"
+        marker = target / "deploy/visit-credit-v2.capability"
         if (
             marker.is_file()
             and hashlib.sha256(marker.read_bytes()).hexdigest()
-            == "81714ec336c7b9c848de0b523cddbbb90fc317f749c0ad64f837787d0a1082aa"
+            == "bd2c0d93924523d4e6a482ab4d045327c27c360b77451631d04636d108bfbb72"
         ):
             return True
         psql = [

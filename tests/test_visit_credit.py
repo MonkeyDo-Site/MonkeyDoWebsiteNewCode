@@ -26,7 +26,9 @@ from tests.test_payment_runtime_grants import RuntimeRoleMixin
 
 @override_settings(**SETTINGS)
 class VisitCreditTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
-    def prepare(self, *, value="10.00", method="card", supervised=False, socks=0):
+    def prepare(
+        self, *, value="10.00", method="card", supervised=False, socks=0, booked_children=2
+    ):
         self.original, self.original_sale, self.member_record, _ = self.conversion(card=True)
         if supervised:
             flow = self.ready()
@@ -42,7 +44,7 @@ class VisitCreditTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
                 return self.flow_data
 
             with patch.object(self, "ready", side_effect=save_flow):
-                self.play = self.booking(children=2)
+                self.play = self.booking(children=booked_children)
         self.inputs = self.arrival_inputs(self.play, method=method, visit_credit=value, socks=socks)
         self.options = dict(
             actor=self.staff, booking_id=self.play.pk, kind="arrival", data=self.inputs
@@ -416,6 +418,143 @@ class VisitCreditTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
             )
         self.assertFalse(CustomerCreditApplication.objects.exists())
         self.assertEqual(balance(self.customer.pk), Decimal("16.02"))
+
+    def test_partial_cancellation_credit_only_funds_eligible_admission_and_its_tax(self):
+        self.prepare(booked_children=3)
+        self.inputs["children"] = 2
+        record = self.complete()
+        self.assertEqual(total(record.sale), Decimal("19.26"))
+        card = record.sale.operations.get()
+        self.assertEqual(card.amount, Decimal("9.26"))
+        fee = record.sale.lines.get(category="partial_cancellation")
+        self.assertEqual(
+            (fee.net, fee.fee, fee.item_tax, fee.fee_tax), (Decimal("3.00"), Decimal("0.09"), 0, 0)
+        )
+        allocation = CustomerCreditAllocation.objects.get().allocation
+        self.assertTrue(
+            all(
+                Decimal(part[key]) == 0
+                for part in allocation
+                if part["line"] == str(fee.pk)
+                for key in ("net", "fee", "item_tax", "fee_tax")
+            )
+        )
+        self.assertEqual(applied(record.sale), 10)
+        self.assertEqual(received(record.sale), 0)
+
+    def test_full_eligible_credit_keeps_the_cancellation_charge_and_no_taxable_card_fee(self):
+        from core.payments.gateway import Gateway
+
+        self.prepare(booked_children=3, value="15.99")
+        self.inputs["children"] = 2
+        record = self.complete()
+        self.assertEqual(record.sale.operations.get().amount, Decimal("3.09"))
+        self.assertEqual(total(record.sale), Decimal("19.08"))
+        self.assertEqual(record.sale.sales_tax, Decimal("0.99"))
+        self.assertIsNone(self.play.card_agreement.resolved_at)
+        self.assertEqual(balance(self.customer.pk), Decimal("0.03"))
+        with patch.object(Gateway, "request") as request:
+            Gateway.__new__(Gateway).charge(record.sale.operations.get())
+        payload = request.call_args.args[2]
+        self.assertEqual(payload["amount"], Decimal("3.09"))
+        self.assertEqual(payload["amount_details"]["tax"], 0)
+
+    def test_mixed_fee_cash_remainder_and_declined_card_keep_credit_unchanged(self):
+        self.prepare(booked_children=3, value="15.99")
+        self.inputs["children"] = 2
+        record = self.complete()
+        record_result(
+            operation_id=record.sale.operations.get().pk,
+            state="declined",
+            source="provider",
+            provider_reference="441086",
+        )
+        options = dict(actor=self.staff, booking_id=self.play.pk, method="cash", context="arrival")
+        reviewed = preview_remaining(**options)
+        self.assertEqual(reviewed[2]["amount"], "3.00")
+        confirm_remaining(
+            **options, request_key=uuid.uuid4(), reviewed_hash=reviewed[3], confirmed=True
+        )
+        self.assertEqual(applied(record.sale), Decimal("15.99"))
+        self.assertEqual(received(record.sale), 3)
+        self.assertEqual(total(record.sale), Decimal("18.99"))
+        self.play.card_agreement.refresh_from_db()
+        self.assertIsNotNone(self.play.card_agreement.resolved_at)
+
+    def test_mixed_fee_prior_bank_allocation_limits_credit_before_any_new_payment(self):
+        self.prepare(booked_children=3, value="7.57")
+        record_receipt(
+            actor=self.staff,
+            booking_id=self.play.pk,
+            value="10.00",
+            sender_name="Fictional sender",
+            received_on=self.play.session.starts_at.date(),
+            verified=True,
+            request_key=uuid.uuid4(),
+        )
+        self.inputs["children"] = 2
+        record = self.complete()
+        self.assertEqual(total(record.sale), Decimal("19.03"))
+        self.assertEqual(record.sale.operations.get(tender="card").amount, Decimal("1.46"))
+        self.assertEqual(received(record.sale), 10)
+        self.assertEqual(applied(record.sale), Decimal("7.57"))
+
+    def test_mixed_fee_sql_guard_rejects_credit_reassigned_to_the_cancellation_line(self):
+        self.prepare(booked_children=3, value="3.00", method="cash")
+        self.inputs["children"] = 2
+        create = CustomerCreditAllocation.objects.create
+
+        def wrong_category(**kwargs):
+            for row in kwargs["allocation"]:
+                row.update(net="0.00", fee="0.00", item_tax="0.00", fee_tax="0.00")
+            kwargs["allocation"][-1]["net"] = "3.00"
+            return create(**kwargs)
+
+        with (
+            patch(
+                "core.visit_credit.CustomerCreditAllocation.objects.create",
+                side_effect=wrong_category,
+            ),
+            self.assertRaises(DatabaseError),
+        ):
+            self.complete()
+        self.assertFalse(CustomerCreditApplication.objects.exists())
+        self.assertEqual(balance(self.customer.pk), Decimal("16.02"))
+
+    def test_mixed_fee_native_live_review_caps_credit_and_keeps_remaining_card_charge(self):
+        self.prepare(booked_children=3, value="15.99")
+        self.client.force_login(self.staff)
+        url = reverse("booking_arrival", args=[self.play.pk])
+        initial = self.client.get(url)
+        values = self.inputs | {
+            "children": 2,
+            "waiver_confirmed": "yes",
+            "version": self.play.edit_version,
+            "request_key": str(self.key),
+            "arrival_draft": initial.context["arrival_draft"],
+        }
+        invalid = self.client.post(
+            url, values | {"visit_credit": "16.02"}, HTTP_ACCEPT="application/json"
+        )
+        self.assertEqual(invalid.status_code, 400)
+        self.assertEqual(invalid.json()["credit_limit"], "15.99")
+        self.assertEqual(invalid.json()["noncard_total"], "18.99")
+        proposed = self.client.post(url, values, HTTP_ACCEPT="application/json")
+        self.assertEqual(proposed.status_code, 200, proposed.content)
+        self.assertEqual(proposed.json()["credit_limit"], "15.99")
+        self.assertTrue(proposed.json()["can_confirm"])
+        self.assertIn("charge card $3.09", proposed.json()["label"])
+        final = self.client.post(
+            url,
+            values | {"confirm_review": "1", "reviewed_hash": proposed.json()["hash"]},
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(final.status_code, 200, final.content)
+        self.assertTrue(final.json()["confirmed"])
+        self.assertEqual(
+            PaymentOperation.objects.filter(sale__booking=self.play, tender="card").get().amount,
+            Decimal("3.09"),
+        )
 
     def test_unknown_card_remainder_cannot_repeat_or_be_replaced_by_cash(self):
         self.prepare()

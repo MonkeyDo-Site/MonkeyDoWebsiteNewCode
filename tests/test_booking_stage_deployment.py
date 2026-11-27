@@ -97,6 +97,11 @@ class ClosedBookingPlanTests(SimpleTestCase):
             (target / "deploy/booking-completion-v1.capability").write_bytes(
                 (ROOT / "deploy/booking-completion-v1.capability").read_bytes()
             )
+            # The earlier visit-credit capability cannot read the newer
+            # fee-eligible component format; it still requires the database probe.
+            (target / "deploy/visit-credit-v1.capability").write_bytes(
+                (ROOT / "deploy/visit-credit-v1.capability").read_bytes()
+            )
             with (
                 patch.object(host, "command", side_effect=["t", "t"]),
                 self.assertRaisesRegex(deploy.DeployError, "visit credit"),

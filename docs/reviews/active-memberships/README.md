@@ -17,7 +17,8 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Customer review and reservation of a released Unlimited benefit | 77–78 |
 | Split visit payments and a separate membership receipt | 79–80 |
 | Separate membership Zelle during arrival | 81–82 |
-| **New: customer credit on arrival and the private receipt** | **83–85** |
+| Customer credit on arrival and the private receipt | 83–85 |
+| **New: credit with a partial cancellation fee** | **86–87** |
 
 Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Allocating already recorded booking Zelle toward membership, splitting the membership payment itself, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
@@ -759,7 +760,7 @@ This is a review capture: no credit is spent and no visit payment exists yet. Th
 
 In the same fictional browser flow, staff uses the available-credit shortcut and explicitly confirms **$15.99 existing credit**. There is no new payment, card operation, financial posting or email. **$0.03 credit remains** for future use. The booking shows **Covered by customer credit**, **Total received: $0.00** and **Existing customer credit applied: $15.99**. The original booking estimate stays in history; its uncharged fee/tax adjustments explain the current total.
 
-Ordinary/supervised admission and socks are developer-tested. Recorded visit Zelle applies first; any actual new cash/check/card/gift/Zelle remainder stays separate. Source holds stop new spending and unstarted card dispatch. Simultaneous source use, repeated confirmation, runtime permissions, exact component budgets and migration reversal are guarded. Credit with partial cancellation fees, simultaneous new membership/visit credit allocation and credit returns are still in development; this sample does not claim those branches are finished.
+Ordinary/supervised admission and socks are developer-tested. Recorded visit Zelle applies first; any actual new cash/check/card/gift/Zelle remainder stays separate. Source holds stop new spending and unstarted card dispatch. Simultaneous source use, repeated confirmation, runtime permissions, exact component budgets and migration reversal are guarded. Samples 86–87 add credit alongside partial cancellation fees. Simultaneous new membership/visit credit allocation and credit returns remain in development.
 
 | Desktop | Phone |
 | --- | --- |
@@ -773,12 +774,32 @@ The customer's original verified receipt now shows the reviewed **$15.99 visit t
 | --- | --- |
 | [![Private credit receipt, desktop](85-private-credit-receipt-desktop.png)](85-private-credit-receipt-desktop.png) | [![Private credit receipt, phone](85-private-credit-receipt-phone.png)](85-private-credit-receipt-phone.png) |
 
+## 86 — Credit covers admission; the cancellation fee remains payable
+
+Three children were booked and two arrive. One member admission is included. The available-credit action chooses **$15.99 admission/tax credit**, leaving the itemized **$3.00 partial cancellation fee + $0.09 card fee = $3.09**. The adjusted visit total is **$19.08**, with **$0.03 credit left after confirmation**. The card-funded portion is nontaxable, so it has no additional processing-fee tax. Counts, waivers, the price adjustment, credit and remaining payment stay on the original page.
+
+A $10 credit selection instead leaves $9.26 on the card; cash for the full eligible-credit example is only $3. Preview creates no payment or credit application. Earlier recorded Zelle reduces the eligible credit first; it is not a second receipt. The maximum-credit action excludes the cancellation fee rather than filling the entire visit total.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Credit with cancellation review, desktop](86-credit-with-cancellation-review-desktop.png)](86-credit-with-cancellation-review-desktop.png) | [![Credit with cancellation review, phone](86-credit-with-cancellation-review-phone.png)](86-credit-with-cancellation-review-phone.png) |
+
+## 87 — Actual received money after the remaining card result
+
+The same fictional flow confirms **$15.99 credit** and queues one **$3.09 card** request. The booking initially reports **$0.00 received**, with that card pending. A simulated approval of the same operation changes it to **$3.09 received + $15.99 existing credit = $19.08 funded**. The original-to-adjusted price and cancellation fee remain visible. The booking-card obligation closes; future membership obligations and accepted history remain intact. No actual provider request or extra email occurs.
+
+The database still forbids moving credit onto a cancellation-fee line. Developer checks cover every credit cent in this mixed example, exact component totals, safe bank-first allocation, a known decline resolved by $3 cash, malformed funding data, native/JSON caps, unchanged historical pricing and release compatibility. Whole cancellation/no-show fees continue to use the original card/Zelle rules.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Credit with cancellation received, desktop](87-credit-with-cancellation-received-desktop.png)](87-credit-with-cancellation-received-desktop.png) | [![Credit with cancellation received, phone](87-credit-with-cancellation-received-phone.png)](87-credit-with-cancellation-received-phone.png) |
+
 ## Checked so far
 
-The complete **1,364-test PostgreSQL suite passed** (472.414s), including twenty new visit-credit cases, six PostgreSQL race/migration cases and the older financial, queue, runtime, private-receipt and additive-upgrade checks. After the final safe-preview recovery and funded-settlement/card-obligation correction, **58 focused credit, booking, gift and card-setup checks pass** (32.027s). Full/partial credit, supervised admission, socks, original source funds, recorded Zelle, receipt proof, staff permissions, stale/repeated/concurrent use, exact component budgets, rollback and migration reversal are covered.
+The complete **1,375-test PostgreSQL suite passes** (474.135s) after the final accounting, scope, compatibility and mocked Gateway-payload changes. The related **56-case integration run passed** (71.088s), including live/native review, six PostgreSQL races/reversal, runtime category/component guards and the actual additive upgrade. The final **five pricing cases pass** (0.283s), including the added mixed-tax socks assertion, all 1,599 positive credit cents in this cancellation example, exact tender/component conservation and invalid funding metadata. All financial changes are covered by the full run; the extra socks assertion was added afterward.
 
-The final real desktop/phone browser check passes in **15.294s**. It verifies a $10/$6.17 review without spending, a $5.99 split remainder, recovery from excessive credit after changed counts, stale physical proof reset, full $15.99 credit confirmation, $0 new money and $0.03 left, plus the original private receipt and closed booking-card obligation. It creates no new payment/posting/message and makes no provider call. All six final samples 83–85 were visually inspected with no overflow or JavaScript errors. The preceding f4d4e85 revision passed all four GitHub checks.
+The real desktop/phone scenario passes in **11.213s**: review-only $10/$9.26, a $15.99 eligible-credit cap, $3 cash split remainder, one queued $3.09 card request, $0 received while pending and $3.09 only after the same simulated successful result. The existing source/credit balance is conserved, the booking-card obligation closes and no new email/provider call occurs. All four samples 86–87 were visually inspected with no overflow or JavaScript errors.
 
-All **85 desktop/phone pairs**, 170 image links, Ruff/format (509 Python files), model drift, JavaScript syntax, whitespace and all **49 reviewed migration hashes** pass. All 48 previous hashes remain unchanged. The new migration and release compatibility check refuse to remove accepted visit-credit accounting; original source and scheduled-collection guards are retained. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
+All **87 desktop/phone pairs**, 174 image links, Ruff/format (511 Python files), model drift, JavaScript syntax, whitespace and all **49 unchanged reviewed migration hashes** pass. This increment needs no new schema migration. The scoped credit quote and v2 release capability protect actual remaining card/tax allocation while preserving earlier accepted formats and source budgets. The preceding 177a1dc revision passed all four GitHub checks. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
 
 Implementation continues while the owner reviews. The [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) identifies functional checks, unfinished scope and provider limitations. No merge, deployment, live financial action or external email delivery is included; release requires explicit authorization.

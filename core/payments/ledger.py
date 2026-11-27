@@ -172,6 +172,12 @@ def accept_booking_sale(*, actor, booking_id, quote_id, creation_key, kind="visi
     for line, taxable_fee in zip(lines, taxable_fee_parts):
         tax_weights.extend([amount(line["amount"]) if line["taxable"] else ZERO, taxable_fee])
     taxes = allocate(tax, tax_weights)
+    if "card_funding" in data:
+        from .credit_pricing import components
+
+        accepted = components(data)
+        fee_parts = [row["fee"] for row in accepted]
+        taxes = [row[key] for row in accepted for key in ("item_tax", "fee_tax")]
     sale = FinancialSale.objects.create(
         creation_key=creation_key,
         fingerprint=identity,

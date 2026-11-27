@@ -735,6 +735,11 @@ def checkout(request, pk, kind="arrival"):
                             request=request,
                         ),
                     )
+                    from .credit_pricing import credit_limit
+
+                    payload["credit_limit"] = str(
+                        credit_limit(booking.quotes.first().policy, lines, prepaid["available"])
+                    )
                 except ValidationError:
                     pass
             return JsonResponse(payload, status=400)
@@ -745,6 +750,9 @@ def checkout(request, pk, kind="arrival"):
             for row in quote["lines"]
         ]
         noncard = quote_lines(lines, booking.quotes.first().policy, card_base=Decimal("0"))
+        from .credit_pricing import credit_limit
+
+        eligible_credit = credit_limit(booking.quotes.first().policy, lines, prepaid["available"])
         return JsonResponse(
             {
                 "html": render_to_string(
@@ -795,6 +803,7 @@ def checkout(request, pk, kind="arrival"):
                 "noncard_total": noncard["total"],
                 "prepaid_available": str(prepaid["available"]),
                 "credit_available": str(getattr(form, "visit_credit_available", Decimal("0.00"))),
+                "credit_limit": str(eligible_credit),
                 "plan": [
                     {
                         "tender": p["tender"],

@@ -10,7 +10,6 @@ from .customer_credit_records import CustomerCreditAllocation, CustomerCreditApp
 from .models import AuditEvent
 from .payments.amounts import COMPONENTS, ZERO, allocate, amount
 from .payments.ledger import fingerprint
-from .pricing import quote_lines
 
 
 def configure(form, booking, actor):
@@ -92,17 +91,10 @@ def review(*, booking, policy, lines, value, kind, comped=False, combined=False)
         raise ValidationError(
             "Apply credit to the membership purchase above, or redeem visit credit without a new membership purchase. Combined credit allocation still needs its separate review."
         )
-    if any(
-        line.label in {"Partial cancellation fee", "Cancellation fee"} and line.quantity
-        for line in lines
-    ):
-        raise ValidationError(
-            "This visit includes a cancellation fee. Review that fee separately before applying admission credit. No credit was spent."
-        )
+    from .payments.credit_pricing import credit_limit
     from .payments.zelle import facts
 
-    gross = amount(quote_lines(lines, policy, card_base=ZERO)["total"])
-    remaining = max(ZERO, gross - facts(booking)["available"])
+    remaining = credit_limit(policy, lines, facts(booking)["available"])
     sources = available_issues(booking.customer_id)
     available = sum((source.remaining for source in sources), ZERO)
     if chosen > min(available, remaining):

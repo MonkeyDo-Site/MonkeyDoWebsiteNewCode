@@ -101,6 +101,21 @@ def plan_with_prepayment(policy, lines, method, split, available, *, credit=ZERO
             )
         if method not in {"card", "split", "cash", "check", "zelle", "gift_card"}:
             raise ValidationError("Choose the actual visit payment method.")
+        from .credit_pricing import mixed
+        from .credit_pricing import plan as credit_plan
+
+        if mixed(lines):
+            additional = (
+                dict(split or {})
+                if method == "split"
+                else {}
+                if method in {"card", "zelle"}
+                else {method: str(amount(base["total"]) - applied - credit)}
+            )
+            quote, plan = credit_plan(
+                policy, lines, split=additional, credit=credit, prepaid=applied
+            )
+            return quote, plan, applied
         additional = (
             dict(split or {})
             if method == "split"

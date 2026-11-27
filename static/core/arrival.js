@@ -168,7 +168,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   form.querySelector('[data-use-visit-credit]')?.addEventListener('click',async()=>{
     const requested=inputIdentity(payload());await update();
     if(inputIdentity(payload())!==requested||!lastQuote.noncard_total)return;
-    form.elements.visit_credit.value=(Math.min(cents(lastQuote.credit_available),Math.max(0,cents(lastQuote.noncard_total)-cents(lastQuote.prepaid_available)))/100).toFixed(2);
+    const limit=lastQuote.credit_limit??Math.max(0,Number(lastQuote.noncard_total)-Number(lastQuote.prepaid_available));
+    form.elements.visit_credit.value=(Math.min(cents(lastQuote.credit_available),cents(limit))/100).toFixed(2);
     form.elements.visit_credit.dispatchEvent(new Event('input',{bubbles:true}));
   });
   form.addEventListener('input',event=>{

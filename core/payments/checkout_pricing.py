@@ -40,6 +40,10 @@ def visit_lines(
 
 
 def line_components(quote):
+    if "card_funding" in quote:
+        from .credit_pricing import components
+
+        return components(quote)
     lines = quote["lines"]
     taxable_fees = allocate(
         amount(quote["taxable_processing_fee"]),
@@ -70,6 +74,18 @@ def tender_plan(policy, lines, *, method, split=None, credit=ZERO):
         raise ValidationError("Choose the actual payment method.")
     cash_quote = quote_lines(lines, policy, card_base=ZERO)
     credit = amount(credit)
+    from .credit_pricing import mixed
+    from .credit_pricing import plan as credit_plan
+
+    if credit and mixed(lines):
+        received = (
+            dict(split or {})
+            if method == "split"
+            else {}
+            if method == "card"
+            else {method: str(amount(cash_quote["total"]) - credit)}
+        )
+        return credit_plan(policy, lines, split=received, credit=credit)
     if credit > amount(cash_quote["total"]):
         raise ValidationError("Customer credit exceeds the non-card visit total.")
     if credit and method != "split":
