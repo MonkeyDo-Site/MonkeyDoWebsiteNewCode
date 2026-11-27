@@ -2,7 +2,7 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37). These are actual application pages with fictional review data, captured at 1440px desktop and 390px phone widths. All names, card references and payment outcomes are synthetic. No card was charged and no customer email was delivered.
 
-These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution, verified private customer renewal, replacement-card entry and owner decisions for overdue reserved bookings. Public new-membership purchase, combined multi-cohort renewal checkout, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
+These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution, verified private customer renewal, replacement-card entry, owner decisions for overdue reserved bookings and membership cancellation/refund tracking. Public new-membership purchase, combined multi-cohort renewal checkout, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
 
 ## 01 — Purchase membership on one page
 
@@ -166,8 +166,62 @@ The fictional phone scenario saves this edit and releases the reserved benefits.
 | --- | --- |
 | [![Owner selects ordinary prices, desktop](19-owner-ordinary-pricing-desktop.png)](19-owner-ordinary-pricing-desktop.png) | [![Owner selects ordinary prices, phone](19-owner-ordinary-pricing-phone.png)](19-owner-ordinary-pricing-phone.png) |
 
+## 20 — Cancel membership on the existing overview
+
+Two prepaid Subscription places originally cost **$215.88** for six months. The owner selects the end of the current membership month, **December 13**, and reviews a suggested **$71.96** unused-period refund. The owner controls the refund amount and explicitly chooses whether to send a cancellation email. Original funds, payment sources, dates and the final action stay together. Initial-commitment cancellation shows an additional owner approval only when needed.
+
+The fictional phone scenario confirms cancellation once and records **refund due**, without claiming any return or requesting a card transaction. Opening or changing the review creates no cancellation. Earlier dues and existing bookings remain separate.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Owner cancellation review, desktop](20-owner-cancellation-review-desktop.png)](20-owner-cancellation-review-desktop.png) | [![Owner cancellation review, phone](20-owner-cancellation-review-phone.png)](20-owner-cancellation-review-phone.png) |
+
+## 21 — Refund due is separate from money actually returned
+
+After cancellation is recorded, **$71.96 remains due and $0.00 has been returned**. The original receipt remains **$215.88**. Benefits remain available until the selected end when required dues are paid. The owner can record a completed cash return directly here, including a partial amount; the screen requires confirmation that the money was actually returned.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Refund due, desktop](21-refund-due-desktop.png)](21-refund-due-desktop.png) | [![Refund due, phone](21-refund-due-phone.png)](21-refund-due-phone.png) |
+
+## 22 — Partial refund, with actual totals
+
+The fictional owner records **$20.00 actually returned in cash**. The overview shows **$215.88 originally received**, **$20.00 in recorded refunds**, and **$195.88 held after refunds**. The approved refund is still **$71.96**, so **$51.96 remains due**. The original purchase and payment evidence remain in history. Recording a return creates no new receipt and no separate later refund email.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Partial refund recorded, desktop](22-partial-refund-recorded-desktop.png)](22-partial-refund-recorded-desktop.png) | [![Partial refund recorded, phone](22-partial-refund-recorded-phone.png)](22-partial-refund-recorded-phone.png) |
+
+## 23 — Persistent owner Dashboard reminder
+
+The **$51.96** remaining refund links back to the membership. A partial return keeps the reminder; confirmed completion clears it. Bookings whose reserved membership benefits end before their session have a separate review reminder. Cancellation neither cancels those bookings nor silently changes their saved prices.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Refund Dashboard reminder, desktop](23-refund-dashboard-desktop.png)](23-refund-dashboard-desktop.png) | [![Refund Dashboard reminder, phone](23-refund-dashboard-phone.png)](23-refund-dashboard-phone.png) |
+
+## 24 — Requested card refund is still pending
+
+The owner explicitly requests a **$50.00** refund against the original Visa ending **4242**. The screen shows **$0.00 returned and $50.00 still due** until a successful provider outcome is recorded. The original card processing fee is excluded. A pending or uncertain refund blocks another attempt; no automatic retry is made.
+
+This fictional review queues work only. No worker sent the refund to Banquest, and no external funds moved. Gateway behavior is developer-tested using simulated responses; real processor refund verification remains outstanding.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Card refund pending, desktop](24-card-refund-pending-desktop.png)](24-card-refund-pending-desktop.png) | [![Card refund pending, phone](24-card-refund-pending-phone.png)](24-card-refund-pending-phone.png) |
+
+## 25 — Record a card refund already completed in Banquest
+
+Synthetic provider evidence reports a **$5.00** external return. The unstarted outgoing refund stops before any provider POST. The owner enters the completed refund reference and confirms it was already returned. **Verify and record completed Banquest refund — $5.00** reads and verifies the existing provider transaction; it sends no new refund. The reference must match the original payment, exact amount and successful refund outcome. Partial imports leave the rest due, and the same provider refund cannot be recorded twice.
+
+These captures stop before verification, using a fictional reference. Developer tests exercise verified import with mock GET responses and assert no refund/void POST. Actual Banquest verification has not been performed. A whole-provider void that includes retained fees needs separate owner correction review; this action does not substitute a void for a net-only refund.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Record completed Banquest refund, desktop](25-record-completed-card-refund-desktop.png)](25-record-completed-card-refund-desktop.png) | [![Record completed Banquest refund, phone](25-record-completed-card-refund-phone.png)](25-record-completed-card-refund-phone.png) |
+
 ## Checked so far
 
-The browser checks confirm no horizontal overflow or JavaScript errors on all nineteen desktop/phone pairs. The complete application suite passes 902 tests. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
+The browser checks confirm no horizontal overflow or JavaScript errors on all twenty-five desktop/phone pairs. The complete application suite passes 944 tests, including the final external-return safeguards. All 80 final focused checks also pass, covering later collection of earlier dues, unavailable provider verification, affected bookings, private receipts and existing customer/message behavior. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
 
 The first review is about layout and clarity. Implementation and regression testing continue independently while the owner reviews. The final owner testing guide and release package follow completion and explicit release approval.

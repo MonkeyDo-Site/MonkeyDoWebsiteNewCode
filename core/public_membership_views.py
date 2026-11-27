@@ -458,6 +458,14 @@ def receipt(request, token):
     if not acceptance:
         return redirect("public_membership_renewal", token=token)
     member = acceptance.purchase
+    from .membership_cancellations import plan_paid
+
+    cancellation = member.cancellations.order_by("-created_at").first()
+    refund_remaining = (
+        sum((plan.amount - plan_paid(plan) for plan in cancellation.refund_plans.all()), ZERO)
+        if cancellation
+        else ZERO
+    )
     item = member.installments.select_related("invoice__sale").first()
     op = item.invoice.sale.operations.filter(kind="receipt").order_by("requested_at").last()
     funds = ZERO
@@ -473,5 +481,7 @@ def receipt(request, token):
             money_received=funds,
             payment_state=op.state if op else "ready",
             status=membership_status(member),
+            cancellation=cancellation,
+            refund_remaining=refund_remaining,
         ),
     )

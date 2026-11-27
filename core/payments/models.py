@@ -413,6 +413,7 @@ class FinancialLineAdjustment(FinancialFact):
         choices=[
             ("tender_change", "Uncharged card fee adjusted for payment method"),
             ("owner_price", "Owner price correction"),
+            ("membership_refund", "Membership cancellation refund"),
         ],
     )
     net = models.DecimalField(max_digits=14, decimal_places=2, default=0)

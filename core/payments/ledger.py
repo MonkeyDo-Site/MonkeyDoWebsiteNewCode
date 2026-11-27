@@ -88,6 +88,10 @@ def lock_sale(sale_id):
     Sales without a booking still get the same allocation/reversal protection.
     """
     sale = FinancialSale.objects.get(pk=sale_id)
+    if sale.kind == "membership":
+        from core.membership_reservations import lock_customer
+
+        lock_customer(sale.customer_id)
     if sale.booking_id:
         Booking.objects.select_for_update().get(pk=sale.booking_id)
     if connection.vendor == "postgresql":
@@ -267,8 +271,11 @@ def request_operation(
     purpose="arrival",
     received_on=None,
     public_membership_authority=None,
+    membership_refund_plan_id=None,
 ):
     enabled()
+    if membership_refund_plan_id is not None and kind != "refund":
+        raise PermissionDenied
     public = actor is None and public_membership_authority is not None
     if public:
         from core.membership_public_authority import verified_scope
@@ -323,6 +330,11 @@ def request_operation(
             if invoice.installment.number != 1:
                 raise PermissionDenied
         mandate = invoice.installment.purchase.billing_state.mandate
+        stopped = invoice.installment.purchase.billing_state.stopped_on
+        if stopped and invoice.installment.cycle.starts_on >= stopped:
+            raise ValidationError(
+                "This installment belongs to the cancelled part of the membership."
+            )
         if tender == "card" and (not mandate or str(mandate.method_id) != str(method_id)):
             raise ValidationError("Use the currently accepted membership payment method.")
         member_source = True
@@ -407,6 +419,10 @@ def request_operation(
         limits = {p["line"]: {k: amount(p[k]) for k in COMPONENTS} for p in original.allocation}
         if kind == "void" and cleaned != original.allocation:
             raise ValidationError("A void must reverse the whole original payment.")
+        if sale.kind == "membership" or membership_refund_plan_id is not None:
+            from core.membership_cancellations import protect_refund
+
+            protect_refund(original, cleaned, plan_id=membership_refund_plan_id)
     for part in cleaned:
         for key in COMPONENTS:
             if amount(part[key]) + used.get(part["line"], {}).get(key, ZERO) > limits.get(
@@ -441,11 +457,12 @@ def record_result(
     *, operation_id, state, source, provider_reference="", code="", occurred_at=None, actor=None
 ):
     enabled()
-    operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
-    if operation.sale.kind == "membership":
+    candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    if candidate.sale.kind == "membership":
         from core.membership_reservations import lock_customer
 
-        lock_customer(operation.sale.customer_id)
+        lock_customer(candidate.sale.customer_id)
+    operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
     if source not in {
         "provider",
         "staff",

@@ -354,3 +354,71 @@ class MembershipBookingOwnerTests(RuntimeRoleMixin, TestCase):
         self.assertFalse(booking.charge_state.comped)
         self.assertEqual(summary(booking)["status"], "No payment due")
         self.assertFalse(PaymentOperation.objects.filter(sale__booking=booking).exists())
+
+    def cancel_member(self, member):
+        from core.membership_cancellations import cancel, review
+
+        data = review(
+            actor=self.owner, member_id=member.pk, timing="immediate", refund_amount="0.00"
+        )
+        return cancel(
+            actor=self.owner,
+            member_id=member.pk,
+            timing="immediate",
+            refund_amount="0.00",
+            reviewed=data["fingerprint"],
+            request_key=uuid.uuid4(),
+            reason="Owner approved cancellation and will review the existing booking.",
+            early_override=True,
+            send_confirmation=False,
+        )
+
+    def test_membership_cancellation_preserves_future_booking_and_price_until_explicit_owner_review(
+        self,
+    ):
+        from core.membership_cancellations import notices
+
+        member = self.member()
+        booking = self.booking()
+        saved = booking.quotes.first()
+        self.cancel_member(member)
+        self.assertEqual(notices()["affected"][0].affected_count, 1)
+        with self.assertRaisesMessage(ValidationError, "has not been repriced"):
+            preview(
+                actor=self.staff,
+                booking_id=booking.pk,
+                kind="arrival",
+                data=self.arrival_inputs(booking),
+            )
+        with self.assertRaises(ValidationError):
+            self.complete(booking, self.chosen(booking))
+        booking.refresh_from_db()
+        self.assertEqual(booking.attendance, "")
+        self.assertEqual(booking.quotes.first().pk, saved.pk)
+        self.assertEqual(booking.membership_benefits.get().current.status, "reserved")
+        result = self.complete(booking, self.chosen(booking, "ordinary"))
+        self.assertEqual(result.sale.total, Decimal("15.99"))
+        self.assertFalse(notices()["affected"])
+        self.assertEqual(booking.membership_benefits.get().current.status, "released")
+
+    def test_prior_honor_decision_cannot_keep_using_a_later_cancelled_membership(self):
+        with self.overdue() as (member, booking):
+            edit_test_booking(
+                actor=self.owner,
+                booking_id=booking.pk,
+                **self.edit_values(
+                    booking,
+                    membership_resolution="honor",
+                    membership_resolution_reason="Honor existing benefits.",
+                ),
+            )
+            self.cancel_member(member)
+            booking.refresh_from_db()
+            with self.assertRaisesMessage(ValidationError, "has not been repriced"):
+                preview(
+                    actor=self.staff,
+                    booking_id=booking.pk,
+                    kind="arrival",
+                    data=self.arrival_inputs(booking),
+                )
+            self.assertEqual(booking.quotes.first().snapshot["total"], "0.00")

@@ -7,7 +7,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -502,6 +502,12 @@ def membership_overview(request, pk):
         ),
         pk=pk,
     )
+    from .membership_cancellation_views import ACTIONS as cancellation_actions
+    from .membership_cancellation_views import overview_controls
+
+    cancellation_response, cancellation_context = overview_controls(request, member)
+    if cancellation_response is not None:
+        return cancellation_response
     payment_form = InstallmentPaymentForm(
         request.POST
         if request.method == "POST"
@@ -546,7 +552,10 @@ def membership_overview(request, pk):
             )
         except ValidationError as exc:
             messages.error(request, " ".join(exc.messages))
-    if request.method == "POST" and request.POST.get("action") != "renewal_link":
+    if request.method == "POST" and request.POST.get("action") not in {
+        "renewal_link",
+        *cancellation_actions,
+    }:
         from .membership_payments import change_card, collect_installment, payment_review
 
         if not request.user.has_perm("core.collect_payment") or not request.user.has_perm(
@@ -638,6 +647,14 @@ def membership_overview(request, pk):
             item.effective_total = item.quote["total"]
         paid += item.money_received
     status = membership_status(member)
+    from .payments.models import PaymentOperation
+
+    funds = PaymentOperation.objects.filter(
+        sale__membership_invoice__installment__purchase=member, state="succeeded"
+    ).aggregate(
+        gross=Sum("amount", filter=Q(kind="receipt")),
+        returned=Sum("amount", filter=~Q(kind="receipt")),
+    )
     from .membership_renewals import remaining_places, renewal_details
 
     renewal_problem = ""
@@ -654,6 +671,7 @@ def membership_overview(request, pk):
         request,
         "core/active_membership_detail.html",
         {
+            **cancellation_context,
             "member": member,
             "public_renewal_url": public_renewal_url,
             "renewal_link_key": uuid.uuid4(),
@@ -666,6 +684,8 @@ def membership_overview(request, pk):
             "status": status,
             "installments": installments,
             "money_received": paid,
+            "gross_received": funds["gross"] or ZERO,
+            "money_returned": funds["returned"] or ZERO,
             "benefit_summary": summary_for(member),
             "next_item": next_item,
             "first": first,

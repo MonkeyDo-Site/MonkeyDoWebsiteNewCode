@@ -186,6 +186,37 @@ class PublicMembershipViewTests(TestCase):
         self.assertContains(receipt, "will be emailed")
         self.assertNotContains(receipt, "is sent")
 
+    def test_cancelled_private_renewal_reports_refund_due_without_claiming_new_confirmation(self):
+        from core.membership_cancellations import cancel, review
+
+        _, url, data = self.prepare()
+        result = self.client.post(url, data)
+        member = MembershipPublicAcceptance.objects.get().purchase
+        op = member.installments.first().invoice.sale.operations.get()
+        record_result(
+            operation_id=op.pk, state="succeeded", source="provider", provider_reference="8001"
+        )
+        reviewed = review(
+            actor=self.owner, member_id=member.pk, timing="immediate", refund_amount="10.00"
+        )
+        cancel(
+            actor=self.owner,
+            member_id=member.pk,
+            timing="immediate",
+            refund_amount="10.00",
+            reviewed=reviewed["fingerprint"],
+            request_key=uuid.uuid4(),
+            reason="Customer requested cancellation.",
+            early_override=True,
+            send_confirmation=False,
+        )
+        receipt = self.client.get(result.url)
+        self.assertContains(receipt, "Membership ended")
+        self.assertContains(receipt, "A refund of $10.00 remains due")
+        self.assertContains(receipt, "$18.53")
+        self.assertNotContains(receipt, "A renewal confirmation will be emailed")
+        self.assertNotContains(receipt, "Your renewal is confirmed")
+
     def test_feature_recovery_invalid_link_and_csrf_gates_are_preserved(self):
         c = self.context()
         url = reverse("public_membership_renewal", args=[c["token"]])

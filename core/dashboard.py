@@ -24,6 +24,7 @@ from .permissions import staff_permission
 @staff_permission("core.view_booking")
 @require_safe
 def dashboard(request):
+    from .membership_cancellations import notices as membership_cancellation_notices
     from .membership_notices import payment_notices
     from .payments.zelle import refund_notices
 
@@ -34,6 +35,9 @@ def dashboard(request):
         request,
         "core/dashboard.html",
         {
+            "membership_cancellation_issues": membership_cancellation_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else {},
             "membership_payment_issues": payment_notices()
             if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
             else [],

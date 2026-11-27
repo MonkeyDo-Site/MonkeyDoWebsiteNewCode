@@ -556,7 +556,7 @@ def membership_status(member, *, on=None):
     on = on or today()
     root = member.membership
     billing = member.billing_state
-    if billing.stopped_on and billing.stopped_on <= on:
+    if billing.stopped_on and (billing.stopped_on <= on or billing.stopped_on <= root.starts_on):
         return "cancelled"
     if root.ends_on < on:
         return "expired"
@@ -573,6 +573,9 @@ def membership_status(member, *, on=None):
 
 
 def payment_updated(operation):
+    from .membership_cancellations import refund_updated
+
+    refund_updated(operation)
     try:
         invoice = operation.sale.membership_invoice
     except MembershipInvoice.DoesNotExist:
@@ -598,6 +601,7 @@ def queue_confirmation(member):
         not member.send_confirmation
         or member.confirmation_mode == "combined"
         or not member.customer.email
+        or member.cancellations.exists()
     ):
         return
     from django.urls import reverse

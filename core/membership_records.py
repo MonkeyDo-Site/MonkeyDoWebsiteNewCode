@@ -228,6 +228,66 @@ class MembershipBillingAction(FinancialFact):
         ]
 
 
+class MembershipCancellation(FinancialFact):
+    id = models.UUIDField(primary_key=True, editable=False)
+    purchase = models.ForeignKey(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="cancellations"
+    )
+    stopped_on = models.DateField()
+    timing = models.CharField(
+        max_length=12, choices=[("immediate", "Immediate"), ("end_cycle", "End of current cycle")]
+    )
+    early_override = models.BooleanField(default=False)
+    reason = models.CharField(max_length=500)
+    refund_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    fingerprint = models.CharField(max_length=64)
+    snapshot = models.JSONField()
+    send_confirmation = models.BooleanField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(refund_amount__gte=0),
+                name="membership_cancel_nonnegative_refund",
+            )
+        ]
+
+
+class MembershipRefundPlan(FinancialFact):
+    id = models.UUIDField(primary_key=True, editable=False)
+    cancellation = models.ForeignKey(
+        MembershipCancellation, on_delete=models.PROTECT, related_name="refund_plans"
+    )
+    original = models.ForeignKey(
+        "core.PaymentOperation", on_delete=models.PROTECT, related_name="membership_refund_plans"
+    )
+    allocation = models.JSONField()
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="membership_refund_plan_positive"
+            )
+        ]
+
+
+class MembershipRefundAttempt(FinancialFact):
+    id = models.UUIDField(primary_key=True, editable=False)
+    plan = models.ForeignKey(
+        MembershipRefundPlan, on_delete=models.PROTECT, related_name="attempts"
+    )
+    operation = models.OneToOneField(
+        "core.PaymentOperation", on_delete=models.PROTECT, related_name="membership_refund_attempt"
+    )
+    fingerprint = models.CharField(max_length=64)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class MembershipBookingDecision(FinancialFact):
     id = models.UUIDField(primary_key=True, editable=False)
     booking = models.ForeignKey(

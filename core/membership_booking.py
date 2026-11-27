@@ -44,6 +44,15 @@ def require_paid_existing(
         if assignment.purchase_id in purchases:
             continue
         purchases.add(assignment.purchase_id)
+        root = assignment.purchase.membership
+        stopped = assignment.purchase.billing_state.stopped_on
+        if not root.starts_on <= assignment.appointment_on <= root.ends_on or (
+            stopped and stopped <= assignment.appointment_on
+        ):
+            raise ValidationError(
+                "This booking's reserved membership benefits no longer cover its visit. Ask the owner to review ordinary pricing or the membership first. This booking has not been repriced.",
+                code="membership_coverage_review",
+            )
         if assignment.purchase_id not in payment_exceptions and not payment_current(
             assignment.purchase
         ):

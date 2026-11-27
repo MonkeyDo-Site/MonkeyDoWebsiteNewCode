@@ -7,7 +7,7 @@ from .models import AuditEvent
 from .permissions import require_actor
 
 
-def overdue_memberships(booking):
+def unavailable_memberships(booking):
     from .membership_booking import active
     from .membership_reservations import payment_current
 
@@ -19,7 +19,13 @@ def overdue_memberships(booking):
     ).select_related("purchase__billing_state"):
         if assignment.purchase_id not in seen:
             seen.add(assignment.purchase_id)
-            if not payment_current(assignment.purchase):
+            root = assignment.purchase.membership
+            stopped = assignment.purchase.billing_state.stopped_on
+            if (
+                not payment_current(assignment.purchase)
+                or not root.starts_on <= assignment.appointment_on <= root.ends_on
+                or (stopped and stopped <= assignment.appointment_on)
+            ):
                 result.add(assignment.purchase_id)
     return sorted(result)
 
@@ -30,7 +36,7 @@ def controls_needed(booking):
     if not booking or not active(booking) or booking.attendance:
         return False
     state = getattr(booking, "charge_state", None)
-    return bool(overdue_memberships(booking) or (state and state.membership_decision_id))
+    return bool(unavailable_memberships(booking) or (state and state.membership_decision_id))
 
 
 def resolve(booking, *, actor=None, choice="", reason="", session=None):
@@ -45,7 +51,7 @@ def resolve(booking, *, actor=None, choice="", reason="", session=None):
             raise ValidationError("Choose a membership pricing decision.")
         if not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 240:
             raise ValidationError("Record a short reason for this booking's membership exception.")
-        members = overdue_memberships(booking) if choice == "honor" else []
+        members = unavailable_memberships(booking) if choice == "honor" else []
         if choice == "honor" and not members:
             raise ValidationError(
                 "This booking has no overdue reserved membership benefits to honor."
@@ -69,6 +75,18 @@ def resolve(booking, *, actor=None, choice="", reason="", session=None):
     decision = state.membership_decision if state and state.membership_decision_id else None
     if not decision or (decision.mode == "honor" and decision.session_id != target.pk):
         return None
+    if decision.mode == "honor":
+        from .availability import NEW_YORK
+        from .membership_records import MembershipPurchase
+
+        on = target.starts_at.astimezone(NEW_YORK).date()
+        for member in MembershipPurchase.objects.filter(pk__in=decision.memberships).select_related(
+            "membership", "billing_state"
+        ):
+            if not member.membership.starts_on <= on <= member.membership.ends_on or (
+                member.billing_state.stopped_on and member.billing_state.stopped_on <= on
+            ):
+                return None
     return dict(
         mode=decision.mode,
         memberships=decision.memberships,

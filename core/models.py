@@ -656,6 +656,7 @@ from .membership_records import (  # noqa: E402,F401
     MembershipBilling,
     MembershipBillingAction,
     MembershipBookingDecision,
+    MembershipCancellation,
     MembershipCardAuthorization,
     MembershipCardMandate,
     MembershipInstallment,
@@ -663,6 +664,8 @@ from .membership_records import (  # noqa: E402,F401
     MembershipOrigin,
     MembershipPublicAcceptance,
     MembershipPurchase,
+    MembershipRefundAttempt,
+    MembershipRefundPlan,
     MembershipRenewalLink,
     MembershipRenewalLinkRevocation,
 )

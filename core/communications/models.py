@@ -34,6 +34,7 @@ class MessageDelivery(models.Model):
             ("membership_confirmation", "Membership Confirmation"),
             ("membership_renewal", "Membership Renewal"),
             ("membership_addition", "Additional Membership Places"),
+            ("membership_cancellation", "Membership Cancellation"),
             ("payment_issue", "Owner Payment Alert"),
             ("backup_alert", "Owner Backup Alert"),
             ("email_issue", "Owner Email Alert"),

@@ -182,7 +182,9 @@ def owner_payment_issue(operation):
             member = item.purchase
             return "\n".join(
                 [
-                    "A MonkeyDo membership payment needs review.",
+                    "A MonkeyDo membership refund needs review."
+                    if operation.kind == "refund"
+                    else "A MonkeyDo membership payment needs review.",
                     "Family: " + operation.sale.customer.last_name,
                     "Phone: " + operation.sale.customer.phone,
                     f"Membership: #{member.membership_number} · {member.membership.get_kind_display()}",
@@ -193,7 +195,9 @@ def owner_payment_issue(operation):
                     "Review: "
                     + settings.BOOKING_STAGING_ORIGIN
                     + reverse("membership_overview", args=[member.pk]),
-                    "No automatic payment retry will be made. Existing bookings have not been cancelled or repriced.",
+                    "No automatic refund retry will be made. No returned funds are claimed until the outcome is confirmed."
+                    if operation.kind == "refund"
+                    else "No automatic payment retry will be made. Existing bookings have not been cancelled or repriced.",
                 ]
             )
     booking = operation.sale.booking

@@ -56,6 +56,7 @@ def send(delivery):
         "booking_waiver",
         "booking_cancelled",
         "booking_no_show",
+        "membership_cancellation",
     }:
         from .presentation import confirmation_html
 

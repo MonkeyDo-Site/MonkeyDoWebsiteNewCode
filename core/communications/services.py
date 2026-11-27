@@ -67,6 +67,14 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
+    if message.kind == "membership_cancellation" and message.membership_id:
+        from core.membership_cancellations import queue_cancellation
+
+        cancellation = message.membership.cancellations.order_by("-created_at").first()
+        if cancellation:
+            refreshed = queue_cancellation(cancellation, initial=False)
+            if refreshed and refreshed.pk != message.pk:
+                return None
     if (
         message.kind not in {"payment_issue", "email_issue", "backup_alert"}
         and message.customer_id

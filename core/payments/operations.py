@@ -150,6 +150,11 @@ def refresh_completed(operation):
 
 @transaction.atomic
 def begin_dispatch(operation_id):
+    candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    if candidate.sale.kind == "membership":
+        from core.membership_reservations import lock_customer
+
+        lock_customer(candidate.sale.customer_id)
     operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
     if operation.tender != "card":
         raise ValidationError("Non-card receipt must be explicitly recorded by staff.")
@@ -165,6 +170,21 @@ def begin_dispatch(operation_id):
         authorize_dispatch(operation)
     else:
         require_actor(operation.actor, "core.collect_payment", owner=operation.kind != "receipt")
+    if operation.sale.kind == "membership" and operation.kind != "receipt":
+        from core.membership_cancellations import unrecorded_provider_return
+
+        if unrecorded_provider_return(operation.original):
+            operation.state = "cancelled"
+            operation.result_code = "external_correction_review"
+            operation.completed_at = timezone.now()
+            operation.save(update_fields=["state", "result_code", "completed_at"])
+            PaymentEvent.objects.create(
+                operation=operation,
+                state="cancelled",
+                source="worker",
+                code="external_correction_review",
+            )
+            return None
     if operation.kind == "receipt":
         booking = (
             Booking.objects.select_for_update().get(pk=operation.sale.booking_id)
@@ -177,6 +197,10 @@ def begin_dispatch(operation_id):
             or not method.provider_method
             or method.customer_id != operation.sale.customer_id
         )
+        if operation.sale.kind == "membership":
+            invoice = operation.sale.membership_invoice
+            stopped = invoice.installment.purchase.billing_state.stopped_on
+            invalid |= bool(stopped and invoice.installment.cycle.starts_on >= stopped)
         if booking:
             invalid |= booking.workflow != "integrated_v1" or (
                 operation.sale.kind == "visit"
@@ -204,6 +228,9 @@ def begin_dispatch(operation_id):
 def execute(operation_id):
     enabled()
     writes_allowed()
+    existing = PaymentOperation.objects.get(pk=operation_id)
+    if existing.tender == "card" and existing.state in {"succeeded", "declined", "cancelled"}:
+        return existing
     gateway = Gateway()  # Fail before reserving/sending if configuration is absent.
     operation = begin_dispatch(operation_id)
     if operation is None:
