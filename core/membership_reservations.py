@@ -49,10 +49,15 @@ def payment_current(member, *, on=None):
     if member.purpose == "complimentary":
         return True
     installments = list(member.installments.select_related("invoice__sale"))
+    stop = member.billing_state.stopped_on
     return (
         bool(installments)
         and installment_paid(installments[0])
-        and all(installment_paid(item) for item in installments if item.due_on <= on)
+        and all(
+            installment_paid(item)
+            for item in installments
+            if item.due_on <= on and (stop is None or item.cycle.starts_on < stop)
+        )
     )
 
 

@@ -14,7 +14,7 @@ from .models import PaymentMethod, PaymentOperation
 
 def outstanding(method):
     from core.membership_records import MembershipBilling
-    from core.membership_sales import installment_paid, today
+    from core.membership_sales import installment_paid
 
     if (
         method.agreements.filter(resolved_at__isnull=True).exists()
@@ -23,25 +23,15 @@ def outstanding(method):
         ).exists()
     ):
         return True
-    on = today()
     for billing in MembershipBilling.objects.filter(mandate__method=method).select_related(
         "purchase__membership"
     ):
-        root = billing.purchase.membership
-        if (
-            root.billing == "monthly"
-            and root.ends_on >= on
-            and (billing.stopped_on is None or billing.stopped_on > on)
-        ):
-            return True
         # Expiry never settles an unpaid installment. Conversely, a prepaid,
         # fully paid term does not create a continuing scheduled-card obligation.
-        if any(
-            not installment_paid(item)
-            for item in billing.purchase.installments.filter(due_on__lte=on).select_related(
-                "invoice__sale"
-            )
-        ):
+        installments = billing.purchase.installments.all()
+        if billing.stopped_on is not None:
+            installments = installments.filter(cycle__starts_on__lt=billing.stopped_on)
+        if any(not installment_paid(item) for item in installments.select_related("invoice__sale")):
             return True
     return False
 
@@ -51,6 +41,19 @@ def queue_disposal(method):
         from .jobs import enqueue
 
         return enqueue(kind="method_remove", reference=method.pk, key=f"method-remove:{method.pk}")
+
+
+def expire_membership_sources():
+    """Queue an unwanted source only after all fixed-term obligations finish."""
+    enabled()
+    methods = (
+        PaymentMethod.objects.filter(
+            state="active", reusable=False, membership_mandates__isnull=False
+        )
+        .distinct()
+        .order_by("created_at", "pk")[:100]
+    )
+    return sum(bool(queue_disposal(method)) for method in methods)
 
 
 @transaction.atomic
@@ -68,7 +71,11 @@ def expire_unused_setups():
     count = 0
     for setup in expired:
         method = PaymentMethod.objects.select_for_update().get(pk=setup.method_id)
-        if method.booking_id is not None or outstanding(method):
+        if (
+            method.booking_id is not None
+            or method.membership_mandates.exists()
+            or outstanding(method)
+        ):
             continue
         method.reusable = False
         method.save(update_fields=["reusable"])

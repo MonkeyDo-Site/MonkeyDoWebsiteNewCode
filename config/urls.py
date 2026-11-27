@@ -197,6 +197,18 @@ urlpatterns = [
     ),
     path("staff/memberships/<int:pk>/edit/", membership_views.draft_edit, name="membership_edit"),
     path("staff/memberships/<int:pk>/", membership_views.draft_detail, name="membership_detail"),
+    path(
+        "staff/memberships/purchased/<int:prior_pk>/renew/",
+        active_membership_views.membership_purchase,
+        {"operation": "renewal"},
+        name="membership_renew",
+    ),
+    path(
+        "staff/memberships/purchased/<int:prior_pk>/add/",
+        active_membership_views.membership_purchase,
+        {"operation": "addition"},
+        name="membership_add",
+    ),
     path("staff/scheduling/", scheduling_views.scheduling, name="scheduling"),
     path("staff/scheduling/new/", scheduling_views.session_edit, name="session_create"),
     path("staff/scheduling/date/", scheduling_views.date_edit, name="date_edit"),

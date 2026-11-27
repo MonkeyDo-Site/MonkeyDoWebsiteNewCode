@@ -15,6 +15,7 @@ def confirmation_html(text):
             if line in {
                 "You're all set for your Monkey Do adventure!",
                 "You're all set for your MonkeyDo adventure!",
+                "You're all set for more Monkey Do adventures!",
             }:
                 safe = format_html('<strong style="color:#ad415d;font-size:24px">{}</strong>', safe)
             elif line.startswith(

@@ -1,6 +1,7 @@
 {% extends 'core/staff_base.html' %}{% load static %}
 {% block staff_content %}
-<h1>Purchase membership</h1>
+<h1>{{ heading|default:'Purchase membership' }}</h1>
+{% if prior %}<p><a href="{% url 'customer_detail' prior.customer_id %}">{{ prior.customer.last_name }}</a> · <a href="{% url 'membership_overview' prior.pk %}">Original membership #{{ prior.membership_number }}</a> · {{ prior.membership.places }} {{ prior.membership.get_kind_display }} place{{ prior.membership.places|pluralize }}</p><p class="caption">The original membership keeps its accepted dates, price and history. This purchase creates a separate membership record.</p>{% endif %}
 <p>Choose the membership, review the terms and collect the first payment together.</p>
 <form method="post" class="record-form membership-purchase" data-membership-purchase data-preview-url="{% url 'membership_offer' %}">{% csrf_token %}
 {{ form.non_field_errors }}{% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}

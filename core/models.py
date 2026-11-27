@@ -657,6 +657,7 @@ from .membership_records import (  # noqa: E402,F401
     MembershipCardMandate,
     MembershipInstallment,
     MembershipInvoice,
+    MembershipOrigin,
     MembershipPurchase,
 )
 from .payments.models import (  # noqa: E402,F401

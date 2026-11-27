@@ -15,10 +15,22 @@ def rules_snapshot():
     }
 
 
-def terms(*, kind, starts_on, months, billing, minimum_override=False, comped=False):
+def terms(
+    *,
+    kind,
+    starts_on,
+    months,
+    billing,
+    minimum_override=False,
+    comped=False,
+    renewal=False,
+    minimum_months=3,
+):
     opening = f"Your membership begins on {display_date(starts_on, 'F j, Y')} and continues for {months} months."
     minimum = (
-        "The owner has approved this shorter initial term."
+        "This qualifying renewal does not require a new three-month minimum."
+        if renewal and minimum_months == 1
+        else "The owner has approved this shorter initial term."
         if (minimum_override or comped) and months < 3
         else "New memberships require a minimum initial term of three months."
     )
@@ -35,7 +47,9 @@ def terms(*, kind, starts_on, months, billing, minimum_override=False, comped=Fa
         else "Each Unlimited place includes one free ordinary child visit per New York calendar day. Two free adults are included when Unlimited benefits apply. Members enjoy a 15% discount on parties. Supervised play and Chol Hamoed visits are excluded from membership benefits. Members can book supervised play and Chol Hamoed visits at full price."
     )
     cancellation = (
-        "This owner-approved shorter membership covers the selected fixed term."
+        "For cancellation, please call or text MonkeyDo."
+        if renewal and minimum_months == 1
+        else "This owner-approved shorter membership covers the selected fixed term."
         if (minimum_override or comped) and months < 3
         else "Membership cannot be cancelled during the initial three month term."
     )

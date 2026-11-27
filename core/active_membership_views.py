@@ -6,6 +6,7 @@ from datetime import date
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -14,6 +15,7 @@ from django.views.decorators.http import require_http_methods, require_POST, req
 from .booking_forms import CustomerChoice, customer_picker
 from .forms import payment_method_choices
 from .membership_records import MembershipInvoice, MembershipPurchase
+from .membership_renewals import renewal_details
 from .membership_reservations import summary_for
 from .membership_sales import installment_paid, membership_status, offer, purchase, today
 from .models import Customer, MembershipDraft, PaymentMethod, PricingPolicy
@@ -36,6 +38,13 @@ OFFER_FIELDS = (
 
 
 class PurchaseForm(forms.Form):
+    operation = forms.ChoiceField(
+        required=False,
+        initial="purchase",
+        choices=[(x, x.title()) for x in ("purchase", "renewal", "addition")],
+        widget=forms.HiddenInput,
+    )
+    prior_id = forms.IntegerField(required=False, min_value=1, widget=forms.HiddenInput)
     customer = CustomerChoice(queryset=Customer.objects.order_by("last_name", "pk"))
     kind = forms.ChoiceField(
         label="Membership", choices=MembershipDraft._meta.get_field("kind").choices
@@ -74,7 +83,46 @@ class PurchaseForm(forms.Form):
     request_key = forms.UUIDField(initial=uuid.uuid4, widget=forms.HiddenInput)
     reviewed = forms.CharField(required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, owner=False, **kwargs):
+    def __init__(self, *args, owner=False, prior=None, operation=None, **kwargs):
+        bound = args[0] if args and args[0] is not None else {}
+        operation = operation or bound.get("operation") or "purchase"
+        if prior is None:
+            prior_id = bound.get("prior_id")
+            if str(prior_id).isascii() and str(prior_id).isdigit() and len(str(prior_id)) <= 18:
+                prior = (
+                    MembershipPurchase.objects.select_related(
+                        "membership", "customer", "billing_state__mandate"
+                    )
+                    .filter(pk=prior_id)
+                    .first()
+                )
+        self.prior = prior
+        self.minimum_months = 3
+        initial = dict(kwargs.pop("initial", {}))
+        initial["operation"] = operation
+        if prior is not None:
+            initial.update(
+                customer=prior.customer_id,
+                prior_id=prior.pk,
+                kind=prior.membership.kind,
+                billing=prior.membership.billing,
+                places=1,
+            )
+            if prior.billing_state.mandate:
+                initial["method"] = prior.billing_state.mandate.method_id
+            if operation == "renewal":
+                try:
+                    details = renewal_details(prior)
+                except ValidationError:
+                    details = None
+                if details:
+                    self.minimum_months = details["minimum_months"]
+                    initial.update(
+                        starts_on=details["starts_on"],
+                        months=self.minimum_months,
+                        places=max(1, details["available_places"]),
+                    )
+        kwargs["initial"] = initial
         super().__init__(*args, **kwargs)
         self.fields["expected_method"].choices = payment_method_choices(
             PricingPolicy.objects.first()
@@ -92,8 +140,20 @@ class PurchaseForm(forms.Form):
         if owner:
             self.fields["months"] = forms.IntegerField(min_value=1, initial=3)
         else:
+            self.fields["months"] = forms.IntegerField(
+                min_value=self.minimum_months, initial=self.minimum_months
+            )
             for name in ("minimum_override", "comped", "send_confirmation"):
                 self.fields.pop(name)
+        if prior is not None:
+            self.fields["customer"].widget = forms.HiddenInput()
+            if operation == "renewal":
+                self.fields["starts_on"].disabled = True
+                self.fields[
+                    "starts_on"
+                ].help_text = (
+                    "Renewal starts after the current term, or today when renewing after expiry."
+                )
         customer_picker(self)
         customer_id = (self.data if self.is_bound else self.initial).get("customer")
         if (
@@ -101,10 +161,13 @@ class PurchaseForm(forms.Form):
             and str(customer_id).isdigit()
             and len(str(customer_id)) <= 18
         ):
+            available = Q(reusable=True)
+            if prior and prior.billing_state.mandate:
+                available |= Q(pk=prior.billing_state.mandate.method_id)
             self.fields["method"].queryset = PaymentMethod.objects.filter(
+                available,
                 customer_id=customer_id,
                 state="active",
-                reusable=True,
                 environment="sandbox",
                 provider_method__isnull=False,
             ).order_by("last_four", "pk")
@@ -113,7 +176,10 @@ class PurchaseForm(forms.Form):
         )
 
     def offer_values(self):
-        return {name: self.cleaned_data.get(name, False) for name in OFFER_FIELDS}
+        return {name: self.cleaned_data.get(name, False) for name in OFFER_FIELDS} | {
+            "operation": self.cleaned_data.get("operation") or "purchase",
+            "prior_id": self.cleaned_data.get("prior_id"),
+        }
 
 
 def check_enabled():
@@ -153,12 +219,27 @@ def memberships(request):
 @staff_permission("core.view_customer")
 @staff_permission("core.collect_payment")
 @require_http_methods(["GET", "POST"])
-def membership_purchase(request):
+def membership_purchase(request, operation="purchase", prior_pk=None):
     check_enabled()
+    prior = (
+        get_object_or_404(
+            MembershipPurchase.objects.select_related(
+                "membership", "customer", "billing_state__mandate"
+            ),
+            pk=prior_pk,
+        )
+        if prior_pk
+        else None
+    )
+    posted = request.POST.copy() if request.method == "POST" else None
+    if prior and posted is not None:
+        posted.update(customer=str(prior.customer_id), prior_id=str(prior.pk), operation=operation)
     form = PurchaseForm(
-        request.POST if request.method == "POST" else None,
+        posted,
         owner=request.user.is_superuser,
         initial={"customer": request.GET.get("customer", "")},
+        prior=prior,
+        operation=operation,
     )
     reviewed_offer = None
     if request.method == "POST" and form.is_valid():
@@ -185,7 +266,17 @@ def membership_purchase(request):
     return render(
         request,
         "core/membership_purchase.html",
-        {"form": form, "offer": display_offer(reviewed_offer)},
+        {
+            "form": form,
+            "offer": display_offer(reviewed_offer),
+            "prior": prior,
+            "operation": operation,
+            "heading": {
+                "purchase": "Purchase membership",
+                "renewal": "Renew membership",
+                "addition": "Add membership places",
+            }[operation],
+        },
     )
 
 
@@ -231,6 +322,8 @@ def membership_offer(request):
             ),
             "fingerprint": data["fingerprint"],
             "terms": data["terms"],
+            "starts_on": data["starts_on"],
+            "minimum_months": data["minimum_months"],
             "cards": [
                 {"id": str(card.pk), "label": f"{card.brand} ending in {card.last_four}"}
                 for card in cards
@@ -262,6 +355,13 @@ def membership_overview(request, pk):
             item.money_received, item.remaining, item.operations = ZERO, item.quote["total"], []
         paid += item.money_received
     status = membership_status(member)
+    from .membership_renewals import remaining_places, renewal_details
+
+    renewal_problem = ""
+    try:
+        renewal_details(member)
+    except ValidationError as exc:
+        renewal_problem = " ".join(exc.messages)
     first = installments[0] if installments else None
     next_item = next((item for item in installments if not item.paid), None)
     return render(
@@ -269,6 +369,11 @@ def membership_overview(request, pk):
         "core/active_membership_detail.html",
         {
             "member": member,
+            "renewal_places": remaining_places(member),
+            "renewal_problem": renewal_problem,
+            "follow_on": member.follow_on.select_related("purchase__membership").order_by(
+                "-purchased_on", "-purchase_id"
+            )[:20],
             "root": member.membership,
             "status": status,
             "installments": installments,

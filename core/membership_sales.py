@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from .availability import NEW_YORK
@@ -16,6 +17,7 @@ from .membership_records import (
     MembershipCardMandate,
     MembershipInstallment,
     MembershipInvoice,
+    MembershipOrigin,
     MembershipPurchase,
 )
 from .membership_terms import VERSION, rules_snapshot, terms
@@ -78,6 +80,8 @@ def offer(
     expected_method,
     minimum_override=False,
     comped=False,
+    operation="purchase",
+    prior_id=None,
 ):
     authorize(actor)
     if any(type(value) is not bool for value in (minimum_override, comped)):
@@ -88,7 +92,48 @@ def offer(
         raise ValidationError("Choose a supported membership and billing option.")
     if type(places) is not int or not 1 <= places <= 2147483647:
         raise ValidationError("Enter a positive whole number of membership places.")
-    if type(months) is not int or months < (1 if minimum_override or comped else 3):
+    if operation not in {"purchase", "renewal", "addition"}:
+        raise ValidationError("Choose a purchase, renewal or additional membership places.")
+    minimum = 3
+    origin = None
+    if operation != "purchase":
+        from .membership_renewals import effective_expiry, renewal_details
+
+        if type(prior_id) is not int or prior_id <= 0:
+            raise ValidationError("Choose the original membership for this purchase.")
+        prior = (
+            MembershipPurchase.objects.select_related("membership", "billing_state")
+            .filter(pk=prior_id, customer=customer)
+            .first()
+        )
+        if prior is None:
+            raise ValidationError(
+                "This original membership belongs to another customer or is unavailable."
+            )
+        expiry = effective_expiry(prior)
+        origin = {
+            "prior_id": prior.pk,
+            "prior_ends_on": expiry.isoformat(),
+            "purchased_on": today().isoformat(),
+        }
+        if operation == "renewal":
+            details = renewal_details(prior)
+            minimum = details["minimum_months"]
+            if starts_on != details["starts_on"]:
+                raise ValidationError(
+                    "Renewal begins after the current term, or on the purchase date when renewing after expiry. Review the start date."
+                )
+            if places > details["available_places"]:
+                raise ValidationError(
+                    "These membership places already have a renewal. Open that renewal or choose fewer places; new additional places require their own purchase."
+                )
+            origin["available_places"] = details["available_places"]
+        origin["minimum_months"] = minimum
+    elif prior_id is not None:
+        raise ValidationError(
+            "Use the renewal or additional-place action to link an original membership."
+        )
+    if type(months) is not int or months < (1 if minimum_override or comped else minimum):
         raise ValidationError(
             "New memberships require at least three months unless the owner approves an exception."
         )
@@ -145,6 +190,9 @@ def offer(
         "comped": comped,
         "minimum_override": minimum_override,
         "expected_method": expected_method,
+        "operation": operation,
+        "origin": origin,
+        "minimum_months": minimum,
         "installments": installments,
         "rules": rules_snapshot(),
         "terms_version": VERSION,
@@ -155,6 +203,8 @@ def offer(
             billing=billing,
             minimum_override=minimum_override,
             comped=comped,
+            renewal=operation == "renewal",
+            minimum_months=minimum,
         ),
     }
     if installments:
@@ -169,7 +219,7 @@ def offer(
                 f" Each is ${installments[1]['quote']['total'] if len(installments) > 1 else first['quote']['total']}, including the accepted card processing fee."
                 " Charge dates follow the original membership start day; if that day is absent, the charge falls on the month's last day and the benefits reset the following day."
                 if months > 1
-                else " There are no further installments in this owner-approved term."
+                else " There are no further installments in this term."
             )
     return data | {"fingerprint": fingerprint(data), "cycles": rows}
 
@@ -218,13 +268,20 @@ def purchase(
         data["billing"] == "monthly" or data["expected_method"] == "card"
     )
     if needs_card:
+        available = Q(reusable=True)
+        if data["origin"]:
+            old = MembershipPurchase.objects.get(
+                pk=data["origin"]["prior_id"]
+            ).billing_state.mandate
+            if old:
+                available |= Q(pk=old.method_id)
         method = (
             PaymentMethod.objects.select_for_update()
+            .filter(available)
             .filter(
                 pk=method_id,
                 customer=customer,
                 state="active",
-                reusable=True,
                 environment="sandbox",
             )
             .exclude(provider_method__isnull=True)
@@ -246,7 +303,7 @@ def purchase(
         billing=data["billing"],
         starts_on=values["starts_on"],
         ends_on=date.fromisoformat(data["ends_on"]),
-        unit_price=data["unit_price"],
+        unit_price=amount(data["unit_price"]),
         pricing_id=data["pricing_id"],
         fee_policy_id=data["policy_id"],
         expected_method=data["expected_method"],
@@ -288,7 +345,7 @@ def purchase(
         terms_version=VERSION,
         terms_text=data["terms"],
         benefit_rules=data["rules"],
-        purpose="complimentary" if data["comped"] else "purchase",
+        purpose="complimentary" if data["comped"] else data["operation"],
         send_confirmation=send_confirmation if data["comped"] else True,
         actor=actor,
     )
@@ -300,6 +357,16 @@ def purchase(
         else None
     )
     MembershipBilling.objects.create(purchase=member, mandate=mandate)
+    if data["origin"]:
+        MembershipOrigin.objects.create(
+            purchase=member,
+            prior_id=data["origin"]["prior_id"],
+            operation=data["operation"],
+            places=root.places,
+            prior_ends_on=date.fromisoformat(data["origin"]["prior_ends_on"]),
+            purchased_on=date.fromisoformat(data["origin"]["purchased_on"]),
+            minimum_months=data["origin"]["minimum_months"],
+        )
     for cycle in cycles:
         item = row_by_number.get(cycle.number)
         if item:
@@ -322,6 +389,9 @@ def purchase(
             "ends_on": data["ends_on"],
             "billing": root.billing,
             "comped": data["comped"],
+            "operation": data["operation"],
+            "prior_id": data["origin"]["prior_id"] if data["origin"] else None,
+            "minimum_override": data["minimum_override"],
             "terms_version": VERSION,
             "received": False,
         },
@@ -449,6 +519,8 @@ def queue_confirmation(member):
         or not member.customer.email
     ):
         return
+    from django.urls import reverse
+
     from .communications.models import MessageDelivery
     from .communications.services import enqueue
     from .date_display import display_date
@@ -477,15 +549,74 @@ def queue_confirmation(member):
         "The purchased term ends without automatic renewal.",
     ]
     next_payment = member.installments.filter(number__gt=1).order_by("number").first()
+    subject = f"Your Monkey Do {root.get_kind_display()} Membership is ready!"
+    message_kind = "membership_confirmation"
+    origin = getattr(member, "origin", None)
+    if origin and member.purpose != "complimentary":
+        label = f"{root.places} {root.get_kind_display()} Membership" + (
+            "s" if root.places != 1 else ""
+        )
+        dates = f"Begins: {display_date(root.starts_on, 'F j, Y')}\nEnds: {display_date(root.ends_on, 'F j, Y')}"
+        content = [
+            f"Dear Family {member.customer.last_name},",
+            "",
+            "You're all set for more Monkey Do adventures!",
+            "",
+        ]
+        if origin.operation == "renewal":
+            subject = "Your Monkey Do membership is renewed!"
+            message_kind = "membership_renewal"
+            content += ["Your renewed membership is ready:", "", label, dates]
+            previous_kind = origin.prior.membership.kind
+            if previous_kind != root.kind:
+                content += [
+                    "",
+                    f"Your membership is changing from {origin.prior.membership.get_kind_display()} to {root.get_kind_display()}.",
+                ]
+            content += ["", "You can always renew your membership."]
+        else:
+            subject = "More Monkey Do adventures are ready!"
+            message_kind = "membership_addition"
+            content += [
+                f"You've added {label}.",
+                "",
+                f"These memberships begin on {display_date(root.starts_on, 'F j, Y')} and continue through {display_date(root.ends_on, 'F j, Y')}. Your membership can always be renewed.",
+            ]
+        content += [
+            "",
+            f"Your first payment of ${paid:.2f} was received."
+            if root.billing == "monthly"
+            else f"Your payment of ${paid:.2f} was received for a {root.months}-month membership.",
+        ]
+        if origin.operation == "addition":
+            content += [
+                "",
+                "Your existing memberships keep their own dates and benefits.",
+                "After the initial three months, qualifying renewals do not require a new three-month minimum.",
+            ]
+        content += [
+            "",
+            "The purchased term ends without automatic renewal.",
+        ]
+    elif member.purpose == "complimentary":
+        subject = "A little more Monkey Do fun, on us!"
     if next_payment:
         content.append(
             f"Your next scheduled membership payment is ${next_payment.quote['total']} on {display_date(next_payment.due_on, 'F j, Y')}."
         )
+    if origin and member.purpose != "complimentary":
+        content += [
+            "",
+            settings.BOOKING_STAGING_ORIGIN + reverse("schedule"),
+            "",
+            "Get ready to go bananas,",
+            "The Monkey Do team",
+        ]
     enqueue(
         key=f"membership-confirmation:{member.pk}",
-        kind="membership_confirmation",
+        kind=message_kind,
         recipient=member.customer.email,
-        subject=f"Your Monkey Do {root.get_kind_display()} Membership is ready!",
+        subject=subject,
         text="\n".join(content),
         customer=member.customer,
         membership=member,

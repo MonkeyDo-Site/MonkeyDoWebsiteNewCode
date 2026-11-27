@@ -18,7 +18,8 @@
     form.querySelector('[data-card-description]').textContent = field('billing').value === 'monthly' ? 'Monthly billing uses this card for the scheduled installments.' : 'This card will be charged for the full selected term.';
     if (!needsCard) field('method').value = '';
     button.disabled = !field('reviewed').value || !checked('accepted') || (needsCard && !field('method').value) || (!comped && field('expected_method').value !== 'card' && !checked('verified_received')) || (comped && !field('send_confirmation')?.value);
-    button.textContent = comped ? 'Confirm complimentary membership' : field('expected_method').value === 'card' ? 'Confirm membership and charge card' : 'Confirm membership and record payment';
+    const noun = field('operation')?.value === 'renewal' ? 'renewal' : field('operation')?.value === 'addition' ? 'additional places' : 'membership';
+    button.textContent = comped ? `Confirm complimentary ${noun}` : field('expected_method').value === 'card' ? `Confirm ${noun} and charge card` : `Confirm ${noun} and record payment`;
   }
   async function preview() {
     const current = ++sequence;
@@ -33,6 +34,8 @@
       offer.innerHTML = result.html;
       form.querySelector('[data-membership-terms]').textContent = result.terms;
       field('reviewed').value = result.fingerprint;
+      if (result.starts_on) field('starts_on').value = result.starts_on;
+      if (result.minimum_months) field('months').min = checked('minimum_override') || checked('comped') ? 1 : result.minimum_months;
       const selected = field('method').value;
       field('method').replaceChildren(new Option('Choose a saved card', ''), ...result.cards.map(card => new Option(card.label, card.id)));
       if (result.cards.some(card => card.id === selected)) field('method').value = selected;

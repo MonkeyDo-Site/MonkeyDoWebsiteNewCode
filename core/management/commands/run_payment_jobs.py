@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from core.payments.jobs import run_one
-from core.payments.methods import expire_unused_setups
+from core.payments.methods import expire_membership_sources, expire_unused_setups
 
 
 class Command(BaseCommand):
@@ -20,6 +20,7 @@ class Command(BaseCommand):
         if not 1 <= limit <= 100:
             raise CommandError("Use a limit between 1 and 100.")
         expire_unused_setups()
+        expire_membership_sources()
         completed = 0
         while completed < limit and run_one():
             completed += 1

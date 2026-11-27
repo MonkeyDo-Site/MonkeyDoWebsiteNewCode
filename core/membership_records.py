@@ -182,3 +182,33 @@ class MembershipBenefitState(models.Model):
         max_length=10, choices=[(x, x.title()) for x in ("reserved", "used", "released")]
     )
     event = models.OneToOneField(MembershipBenefitEvent, on_delete=models.PROTECT)
+
+
+class MembershipOrigin(FinancialFact):
+    """An explicit follow-on cohort never edits the membership it follows."""
+
+    purchase = models.OneToOneField(
+        MembershipPurchase, primary_key=True, on_delete=models.PROTECT, related_name="origin"
+    )
+    prior = models.ForeignKey(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="follow_on"
+    )
+    operation = models.CharField(
+        max_length=10, choices=[("renewal", "Renewal"), ("addition", "Additional places")]
+    )
+    places = models.PositiveIntegerField()
+    prior_ends_on = models.DateField()
+    purchased_on = models.DateField()
+    minimum_months = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(places__gte=1, minimum_months__gte=1),
+                name="membership_origin_valid_amounts",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(purchase=models.F("prior")),
+                name="membership_origin_distinct_cohort",
+            ),
+        ]
