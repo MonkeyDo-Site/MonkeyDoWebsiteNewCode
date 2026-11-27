@@ -20,7 +20,7 @@
 <p class="caption">Recorded booking Zelle available: ${{ form.membership_zelle_available|floatformat:2 }}. Apply an amount to membership here; the remaining recorded funds stay with the visit.</p>
 {% include 'core/partials/arrival_field.html' with field=form.member_recorded_zelle %}
 </div>
-<p class="caption">Enter the membership amounts received, after recorded funds and credit. Its card remainder is charged first. Visit card payment follows confirmed membership funding. New manual visit receipts with a pending membership card are still completed separately.</p>
+<p class="caption">Enter the membership amounts received, after recorded funds and credit. Its card remainder is charged first. Visit card payment follows confirmed membership funding. Received visit funds are saved immediately and applied once when arrival completes.</p>
 <div class="arrival-counts">
 {% include 'core/partials/arrival_field.html' with field=form.member_cash_amount %}
 {% include 'core/partials/arrival_field.html' with field=form.member_check_amount %}

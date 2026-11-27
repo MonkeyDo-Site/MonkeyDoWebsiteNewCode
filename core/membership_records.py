@@ -116,6 +116,45 @@ class MembershipArrivalIntent(FinancialFact):
     expires_at = models.DateTimeField()
 
 
+class MembershipArrivalReceipt(FinancialFact):
+    """Actual visit money received before its conditional arrival is completed."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    intent = models.ForeignKey(
+        MembershipArrivalIntent, on_delete=models.PROTECT, related_name="visit_receipts"
+    )
+    tender = models.CharField(
+        max_length=12, choices=[(x, x.title()) for x in ("cash", "check", "zelle", "gift_card")]
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    received_on = models.DateField()
+    sender = models.CharField(max_length=160, blank=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["intent", "tender"], name="pending_visit_one_tender"),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="pending_visit_positive"),
+            models.CheckConstraint(
+                condition=models.Q(tender__in=["cash", "check", "zelle", "gift_card"]),
+                name="pending_visit_manual_tender",
+            ),
+        ]
+
+
+class MembershipArrivalReceiptApplication(FinancialFact):
+    """Application of the original receipt, rather than another receipt of money."""
+
+    receipt = models.OneToOneField(
+        MembershipArrivalReceipt,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="application",
+    )
+    operation = models.OneToOneField("core.PaymentOperation", on_delete=models.PROTECT)
+
+
 class MembershipArrivalState(models.Model):
     intent = models.OneToOneField(
         MembershipArrivalIntent, primary_key=True, on_delete=models.PROTECT, related_name="progress"

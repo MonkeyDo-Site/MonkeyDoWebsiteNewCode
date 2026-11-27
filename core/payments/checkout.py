@@ -365,6 +365,10 @@ def preview(
         from core.membership_arrival_recovery import marker
 
         facts["membership_arrival_recovery"] = marker(actor, membership_intent, data)
+    if membership_intent:
+        from core.membership_arrival_receipts import validate
+
+        validate(membership_intent, plan)
     return booking, state, quote, plan, facts, fingerprint(facts)
 
 
@@ -562,6 +566,18 @@ def confirm(
             ]
             if not amount(part["amount"]):
                 continue
+            if part["tender"] != "card" and membership_intent:
+                from core.membership_arrival_receipts import apply as apply_pending_receipt
+
+                if apply_pending_receipt(
+                    intent=membership_intent,
+                    actor=actor,
+                    sale=sale,
+                    part=part,
+                    key=key,
+                    allocation=allocation,
+                ):
+                    continue
             op = request_operation(
                 actor=actor,
                 sale_id=sale.pk,

@@ -148,12 +148,13 @@ class FirstSplitCardArrivalTests(InitialCreditFixtures, RuntimeRoleMixin, TestCa
         self.assertIsNone(MembershipArrivalCheckout.objects.get(pk=intent.pk).checkout.sale_id)
         self.assertEqual(PaymentOperation.objects.count(), 2)
 
-    def test_received_visit_cash_cannot_be_silently_deferred_while_first_card_is_pending(self):
+    def test_received_visit_cash_is_saved_before_the_first_card_result(self):
         self.start()
         self.input["split"] = {"cash": "1"}
-        with self.assertRaisesMessage(ValidationError, "received manual payments"):
-            review(**self.options)
-        self.assertFalse(PaymentOperation.objects.exists())
+        intent = self.accept()
+        self.assertEqual(intent.visit_receipts.get().amount, Decimal("1"))
+        self.assertEqual(status_data(intent)["visit_received"], "1.00")
+        self.assertEqual(PaymentOperation.objects.count(), 3)
 
     def test_unknown_first_card_keeps_received_money_and_blocks_replacement(self):
         self.start()

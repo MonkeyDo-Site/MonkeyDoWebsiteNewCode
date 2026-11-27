@@ -123,11 +123,10 @@ class ReceivedSplitMembershipArrivalTests(InitialCreditFixtures, RuntimeRoleMixi
             Decimal("5"),
         )
 
-    def test_partial_card_split_is_guarded_without_creating_or_collecting_anything(self):
+    def test_partial_card_split_review_creates_no_purchase_or_receipt(self):
         self.start()
         self.input["member_zelle_amount"] = "2"
-        with self.assertRaisesMessage(ValidationError, "membership purchase page first"):
-            review(**self.options)
+        self.assertEqual(review(**self.options)["facts"]["membership_card_due"], "19.55")
         self.assertFalse(MembershipPurchase.objects.exists())
         self.assertFalse(PaymentOperation.objects.exists())
         self.assertFalse(FinancialPosting.objects.exists())

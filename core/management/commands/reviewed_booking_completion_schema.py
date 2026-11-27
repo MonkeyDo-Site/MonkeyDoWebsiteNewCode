@@ -66,9 +66,12 @@ REVIEWED_NAMES = (
     "0076_membership_first_split",
     "0077_membership_booking_zelle",
     "0078_split_membership_arrival",
+    "0079_pending_visit_receipts",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "membershiparrivalreceipt",
+    "membershiparrivalreceiptapplication",
     "membershipbankallocation",
     "membershipcollectionclaim",
     "membershippubliccheckout",

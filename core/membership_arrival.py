@@ -124,17 +124,14 @@ def review(
         validate_waivers=validate_waivers,
         proposed_membership=ProposedMembership(proposed),
     )
-    if (
-        first_plan
-        and amount(first_plan["card_total"])
-        and any(
-            part["tender"] != "card" and not part.get("advance") and amount(part["amount"])
-            for part in result[3]
-        )
-    ):
-        raise ValidationError(
-            "The membership still has a card balance and the visit includes received manual payments. Complete that split payment on the membership purchase page first, then return here to apply its benefits and finish arrival. No payments have been recorded here."
-        )
+    if first_plan and amount(first_plan["card_total"]):
+        from .membership_arrival_receipts import manual_parts
+        from .membership_schema import available
+
+        if manual_parts(result[3]) and not available("core_membershiparrivalreceipt"):
+            raise ValidationError(
+                "Complete that split payment on the membership purchase page first, then return here to finish arrival. No payments have been recorded here."
+            )
     visit_due = sum((amount(p["amount"]) for p in result[3] if not p.get("advance")), ZERO)
     from .models import PaymentMethod
 

@@ -25,7 +25,7 @@ from .membership_records import (
 )
 from .models import Booking, BookingCapacityHold, DurableJob, OwnerNotice, Session
 from .payments import checkout
-from .payments.amounts import ZERO
+from .payments.amounts import ZERO, amount
 from .payments.jobs import enqueue
 from .payments.ledger import lock_request
 
@@ -42,6 +42,10 @@ FIELDS = (
     "special_admissions",
     "membership_resolution",
     "membership_resolution_reason",
+    "gift_card_verified",
+    "zelle_verified",
+    "received_on",
+    "zelle_sender",
 )
 
 
@@ -102,6 +106,10 @@ def create(*, actor, key, booking, member, data, reviewed):
         "data": {name: data[name] for name in FIELDS if name in data},
         "waivers": reviewed["facts"]["waiver_evidence"],
     }
+    from .membership_arrival_receipts import VERSION, manual_parts, record
+
+    if manual_parts(reviewed["facts"]["arrival"]["plan"]):
+        facts["visit_receipt_version"] = VERSION
     operation = member.installments.first().invoice.sale.operations.get(
         kind="receipt", tender="card"
     )
@@ -119,6 +127,7 @@ def create(*, actor, key, booking, member, data, reviewed):
     )
     MembershipArrivalState.objects.create(intent=intent, booking=booking)
     MembershipArrivalEvent.objects.create(intent=intent, status="waiting", actor=actor)
+    record(intent)
     delta = {
         name: max(0, data.get(name, getattr(booking, name)) - getattr(booking, name))
         for name in ("children", "adults", "babies")
@@ -137,7 +146,15 @@ def create(*, actor, key, booking, member, data, reviewed):
 
 
 def data_for(intent):
-    return intent.facts["data"] | {"apply_available_benefits": True}
+    data = intent.facts["data"] | {"apply_available_benefits": True}
+    if isinstance(data.get("received_on"), str):
+        try:
+            data["received_on"] = date.fromisoformat(data["received_on"])
+        except ValueError as error:
+            raise ValidationError(
+                "Review the saved visit receipt date before continuing."
+            ) from error
+    return data
 
 
 def restore_offer(intent):
@@ -285,6 +302,17 @@ def status_data(intent):
     from .membership_bank import applied as bank_applied
 
     prior_bank = bank_applied(intent.purchase)
+    from .membership_arrival_receipts import summary as visit_receipt_summary
+
+    visit_funds = visit_receipt_summary(intent)
+    visit_prepaid = sum(
+        (
+            amount(p["amount"])
+            for p in intent.facts["review"]["arrival"]["plan"]
+            if p.get("advance")
+        ),
+        ZERO,
+    )
     status = membership_status(intent.purchase)
     states = set(sale.operations.values_list("state", flat=True))
     if not settings.MEMBERSHIP_SALES_ENABLED:
@@ -368,7 +396,20 @@ def status_data(intent):
         membership_amount=str(total(sale)),
         credit_applied=applied(sale),
         membership_balance=str(max(ZERO, total(sale) - settled(sale))),
-        received=str(received(sale)),
+        received=str(received(sale) + visit_funds["total"] + visit_prepaid),
+        visit_received=str(visit_funds["total"]),
+        visit_prepaid=str(visit_prepaid),
+        visit_total_received=str(visit_funds["total"] + visit_prepaid),
+        visit_receipts=[
+            {
+                "tender": r.tender,
+                "label": "Gift card" if r.tender == "gift_card" else r.tender.title(),
+                "amount": str(r.amount),
+                "received_on": r.received_on.isoformat(),
+                "sender": r.sender,
+            }
+            for r in visit_funds["receipts"]
+        ],
         code=intent.progress.code,
         pending_membership=True,
         can_check=True,

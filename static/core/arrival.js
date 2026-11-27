@@ -17,7 +17,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     if(!member&&!form.elements.visit_credit)return;
     if(member){form.elements.member_received.checked=false;form.elements.member_zelle_verified.checked=false;}
     if(['gift_card','split'].includes(form.elements.method.value))form.elements.gift_card_verified.checked=false;
-    if(form.elements.visit_credit&&form.elements.method.value==='split')form.elements.zelle_verified.checked=false;
+    if(form.elements.method.value==='split')form.elements.zelle_verified.checked=false;
   };
   const rows=()=>[...rowHost.querySelectorAll('[data-payment-row]')];
   const totals=()=>Object.fromEntries(Object.keys(kinds).map(kind=>[kind,rows().filter(row=>row.querySelector('select').value===kind).reduce((sum,row)=>sum+cents(row.querySelector('input').value),0)]));

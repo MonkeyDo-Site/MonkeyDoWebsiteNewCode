@@ -46,6 +46,9 @@ def booking_detail(request, pk):
     pending_arrival = active_for_booking(pk)
     if pending_arrival and request.user.has_perm("core.view_membershippurchase"):
         payment_context["pending_membership_arrival"] = pending_arrival
+        from .membership_arrival_receipts import summary as pending_funds
+
+        payment_context["pending_visit_received"] = pending_funds(pending_arrival)["total"]
     if (
         settings.BOOKING_COMPLETION_ENABLED
         and request.user.has_perm("core.view_paymentoperation")

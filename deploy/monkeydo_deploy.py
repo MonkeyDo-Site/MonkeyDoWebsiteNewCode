@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0079_pending_visit_receipts.py": "47332a8cea223239700cd882c6827e97304c1f6a1014044415d80535f878348c",
     "0078_split_membership_arrival.py": "f7858df2caff7f1f6ed196b312688a9a681901171c8e82876d4ce33e5fc7854f",
     "0077_membership_booking_zelle.py": "2c393689bcc7ed1b870d03d3e02d5f947fc9fad9127d527e0cda9bdbc7bc9170",
     "0076_membership_first_split.py": "2d421da06f91daa90760ef7f796d55cb42705585aefa4432e19a2b59329682de",
@@ -1089,6 +1090,44 @@ class Host:
             )
         return True
 
+    def ensure_pending_visit_compatible(self, target):
+        marker = target / "deploy/pending-visit-receipts-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "98ac8c638022d629404dece199f6fa0044cf42e6cbca5a1ebc8216a8988ac7e9"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershiparrivalreceipt') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify pending-visit receipt compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershiparrivalreceipt)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted pending visit receipts. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
@@ -1098,7 +1137,8 @@ class Host:
             self.ensure_visit_credit_compatible(target)
             self.ensure_membership_split_compatible(target)
             self.ensure_membership_bank_compatible(target)
-            return self.ensure_split_arrival_compatible(target)
+            self.ensure_split_arrival_compatible(target)
+            return self.ensure_pending_visit_compatible(target)
         psql = [
             "/usr/sbin/runuser",
             "-u",

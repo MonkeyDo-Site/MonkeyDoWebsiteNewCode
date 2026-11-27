@@ -344,7 +344,7 @@ Ordinary full cancellation/no-show still uses the booking card or verified recor
 
 ## Split the membership first payment on its purchase page
 
-Review samples 88–89. This is the standalone staff purchase/renewal/addition page. Its product, first receipts, credit, card, price, terms and final action stay together. Fully received manual splits also work during arrival (samples 90–91). Samples 94–96 also support a membership split with a card balance during arrival when the visit uses only card and/or previously recorded bank funds.
+Review samples 88–89. This is the standalone staff purchase/renewal/addition page. Its product, first receipts, credit, card, price, terms and final action stay together. Fully received manual splits also work during arrival (samples 90–91). Samples 94–99 also support its card balance during arrival, including new manual visit receipts and previously recorded bank funds.
 
 | Scenario | Actions | Expected result |
 | --- | --- | --- |
@@ -374,7 +374,7 @@ Review samples 90–91. Choose **Split payment** for the visit, **Split received
 | Confirmed visit-card result | $52.15 is received, with membership $35.98 and visit $16.17 shown separately. One combined confirmation is queued. Checking status never charges again. |
 | Keep funding sources separate | Recorded booking Zelle applies to the visit by default; samples 92–93 add an explicit membership allocation. Newly entered membership Zelle is a separate verified transfer. Existing credit reduces only the membership amount selected and is never reported as new money. |
 | Preserve card authority | Monthly membership requires its accepted future-installment card. A newly entered private membership card does not replace or fund the visit's booking card. Fully received prepaid needs no membership card. |
-| Membership split still has a card balance | Samples 94–96 support the visit card and/or previously recorded bank funds. New manual visit funds with that pending membership card remain guarded before writes; complete the membership purchase first for that combination. |
+| Membership split still has a card balance | Samples 94–99 retain received membership and visit funds while the first card is pending. Arrival and its separate visit card follow confirmed funding and current validation. |
 
 
 ## Apply recorded booking Zelle to membership
@@ -392,12 +392,12 @@ Review samples 92–93. On the same arrival page, choose **Split payment** for t
 | Combine bank and backed credit | Both reduce only the remaining membership principal. New money is separate from both. Bank funds left after a fully covered visit remain a refund balance for that visit, without including money already assigned to membership. |
 | Cover the first payment completely from bank | No new cash/bank proof or fabricated new bank receipt is needed. A monthly term still needs its accepted future card. Any unassigned excess is calculated as a manual Zelle refund due. |
 | Return only unused bank money | Allocated membership/visit amounts cannot also be returned through the booking's unallocated Zelle-refund action. Record only the actual unused refund after manually returning it. |
-| Keep the scope explicit | This allocation belongs to the original customer's combined booking/first membership installment. Standalone/public purchases and another customer's booking cannot consume it. A first membership card remainder also supports this allocation, as described below; new manual visit receipts with that pending membership card remain guarded. |
+| Keep the scope explicit | This allocation belongs to the original customer's combined booking/first membership installment. Standalone/public purchases and another customer's booking cannot consume it. A first membership card remainder also supports this allocation, as described below; new manual visit funds are saved immediately as in samples 97–99. |
 
 
 ## First membership card remainder during arrival
 
-Review samples 94–96. Use **Split payment** for the visit and **Split received payment** for membership. Enter received membership amounts separately; leave visit manual amounts blank when the visit is paid only by card and/or already recorded bank funds.
+Review samples 94–96. Use **Split payment** for the visit and **Split received payment** for membership. Enter received membership amounts separately; leave visit manual amounts blank when it uses only card and/or prior bank funds. Samples 97–99 also support new manual visit receipts.
 
 | Check | Expected behavior |
 | --- | --- |
@@ -410,13 +410,31 @@ Review samples 94–96. Use **Split payment** for the visit and **Split received
 | Prepaid or fully manual membership | A one-place prepaid term with $50 cash needs only its $4.09 card remainder. A fully manual prepaid purchase needs no card. A fully funded manual membership can also accompany an entirely card-paid visit without a fabricated manual visit row. |
 | Confirmed decline | Explicitly receive the remaining $20.98 principal from the cash/check example, removing the uncharged $0.63 card fee. Earlier $15 is not recorded twice. The reviewed visit can continue after funding. |
 | Unknown result | Keep the original operation and received funds visible. No automatic retry, replacement receipt or visit card request until reconciled. |
-| New manual visit money while first membership card is pending | This combination still stops before any purchase or receipts. Complete the membership purchase first and return here. Durable recording/application/return of those new visit receipts is unfinished; they are not silently treated as received later. |
+| New manual visit money while first membership card is pending | Record the actual visit sources now, as in samples 97–99 below. They remain separate from membership funds and apply once after funding. Their later return/reallocation remains guarded pending the owner flow. |
 
 Migration 0078 binds the pending first card to its accepted split remainder, exact actor/customer/booking and original capacity deadline. Used migration reversal and release compatibility refuse older code that cannot preserve that split. No actual processor behavior is established by simulated results.
 
+## Manual visit receipts while membership funding is pending
+
+Review samples 97–99. Enter received membership amounts above, and received visit tenders in the separate visit payment rows. Bank/gift proof is required for each applicable source; an older transfer already recorded for the booking must not be re-entered as new money.
+
+| Check | Expected behavior |
+| --- | --- |
+| Review once | Membership $10 cash/$5 check/$21.61 card; visit $3 cash/$2 check/$1 Zelle/$1 gift/$9.26 card. Combined new funds $52.87. Preview records nothing. |
+| Confirm actual receipts | Save $15 received for membership and four original visit receipts totalling $7. Only the first membership card is requested. Received visit funds appear on pending arrival and booking; no completed visit or active benefits yet. |
+| Preserve dates and proof | Cash/check/gift use the actual confirmation day. The separate verified Zelle keeps its earlier bank date/sender. Changing amounts clears obsolete verification; changing membership payment terms clears its acceptance. |
+| Reload and inspect unknown outcomes | Original visit funds remain $7 and keep their collecting actor/date. Unknown membership card outcomes cannot trigger a visit charge or replacement collection. No extra-capacity deadline extension. |
+| Membership funding succeeds | Revalidate the original reviewed visit, apply each original source once to its accepted invoice with its original date, then request $9.26 visit card. Repeated confirmation and worker continuation create no duplicate receipt/application. |
+| Visit result succeeds | Received money becomes $52.87, separately membership $36.61 and visit $16.26. Queue one combined confirmation after actual funding. Source facts and invoice applications are not two receipts of money. |
+| Earlier original bank funds | Explicitly assign original booking Zelle between membership and visit, then add new cash/check visit funds. Original bank uses its established allocation; the new manual receipts remain distinct. |
+| Fresh owner review | After the original extra-capacity deadline, the owner can review current arrival and apply unchanged received tender amounts. The original collecting staff member and receipt dates remain intact even when the owner completes the visit. |
+| Changed manual amounts or a return | Current source checks stop before altering or replacing received funds. Owner return/reallocation and terminal closure of this unfinished visit are not yet complete; retain the original records for that continuing workflow. |
+
+Migration 0079 adds immutable source/application facts. Database constraints bind them to the original accepted visit/tenders and require all received sources before commit and a completed original arrival before applying them. Used reversal and older release switching refuse to discard those facts. No external bank, gift-card balance or provider call is performed by these samples.
+
 ## Known unfinished areas
 
-Durable new manual visit receipts while the first membership card is pending; combined multi-cohort renewal checkout; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and remaining broader redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, explicit private-receipt benefit reservation, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment and ordinary/supervised arrival credit application, and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
+Returning/reallocating received pending visit funds and terminal unfinished-visit closure; combined multi-cohort renewal checkout; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and remaining broader redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, explicit private-receipt benefit reservation, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment and ordinary/supervised arrival credit application, and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
 
 Actual Banquest hosted fields and installment processor flags are not verified by the fictional gallery. Three policy answers about later installments after failure, parent arrears after prepaid early renewal, and credit-funded cancellation refund destinations remain pending in the [implementation record](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). The disputed automatic branches are not enabled, and no credit-refund destination is assumed.
 
