@@ -11,6 +11,8 @@
   const frame = section.querySelector('[data-member-new-card]');
   let hosted, saving = false, uncertain = false, savedMethod = '', statusUrl = section.dataset.statusUrl;
   let setupKey = crypto.randomUUID();
+  let authorizationExpired = false, previousAuthorization = '';
+  let authorizationDeadline = Infinity;
   const address = new URL(location.href);
   address.searchParams.set(replacement ? 'card_key' : 'purchase_key', field('request_key').value);
   history.replaceState(null, '', address);
@@ -31,10 +33,16 @@
     if (!Array.from(field('method').options).some(item => item.value === data.method_id)) field('method').add(new Option(`${data.brand} ending in ${data.last_four}`, data.method_id));
     field('method').value = data.method_id;
     savedMethod = data.method_id;
+    authorizationExpired = Boolean(data.authorization_expired);
+    authorizationDeadline = data.authorization_seconds_remaining === undefined ? Infinity : Date.now()+Number(data.authorization_seconds_remaining)*1000;
+    previousAuthorization = data.authorization_id;
     field('card_authorization').value = data.offer_fingerprint === field('reviewed').value ? data.authorization_id : '';
     uncertain = false; check.hidden = true;
     saving = false;
-    report(replacement ? 'The card is saved. No payment has been requested.' : 'The membership card is saved. No membership payment has been requested yet.');
+    if (data.purchase_recorded) {uncertain = true; report('This membership purchase is already recorded. Open its existing record before another payment.');}
+    else if (authorizationExpired && replacement) {uncertain = true; field('accepted').checked = false; report('This card update review expired. Return to the membership and start a fresh card update.');}
+    else if (authorizationExpired) {field('accepted').checked = false; report('Card saved. Its review expired. Review the current terms and confirm to authorize this saved card again.');}
+    else report(replacement ? 'The card is saved. No payment has been requested.' : 'The membership card is saved. No membership payment has been requested yet.');
     display();
   }
   async function recover() {
@@ -59,8 +67,14 @@
   });
   check.addEventListener('click', () => recover().catch(() => {report('The card setup outcome could not yet be checked. No new exchange or payment was sent.');}));
   form.addEventListener('submit', async event => {
+    if(field('method').value===savedMethod&&Date.now()>=authorizationDeadline&&!authorizationExpired){
+      event.preventDefault();event.stopImmediatePropagation();authorizationExpired=true;field('accepted').checked=false;
+      if(replacement){uncertain=true;report('This card update review expired. Return to the membership and start a fresh card update.');}
+      else report('This card review expired. Review the current terms and confirm to authorize this saved card again.');
+      display();return;
+    }
     const requiresAuthority = section.dataset.requireAuthorization === '1' || field('method').value === savedMethod;
-    if (field('method').value !== 'new' && (!requiresAuthority || field('card_authorization').value)) return;
+    if (field('method').value !== 'new' && (!requiresAuthority || (field('card_authorization').value && !authorizationExpired))) return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (saving || uncertain || !field('accepted').checked || !field('reviewed').value || !form.reportValidity()) return;
     saving = true; display();
@@ -80,13 +94,13 @@
         const retain = field('member_retain');
         Object.assign(payload, {setup_key: setupKey, nonce: token.nonce.startsWith('nonce-') ? token.nonce : `nonce-${token.nonce}`, expiry_month: token.expiryMonth, expiry_year: token.expiryYear, retention_choice: retain.type === 'checkbox' ? (retain.checked ? 'yes' : 'no') : retain.value});
         statusUrl = `${section.dataset.statusPrefix}${setupKey}/`;
-      } else payload.method = field('method').value;
+      } else {payload.method = field('method').value; if (authorizationExpired) payload.previous_authorization = previousAuthorization;}
       uncertain = true;
       const response = await fetch(section.dataset.endpoint, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':field('csrfmiddlewaretoken').value},body:JSON.stringify(payload)});
       const data = await response.json();
       if (response.ok && data.state === 'saved') {
         apply(data);
-        window.setTimeout(() => form.requestSubmit(button), 0);
+        if (!data.purchase_recorded) window.setTimeout(() => form.requestSubmit(button), 0);
       } else if (response.status === 202) {check.hidden = false; report(data.error);}
       else {uncertain = false; report(data.error || 'Review the membership and card details before confirming.');}
     } catch (failure) {

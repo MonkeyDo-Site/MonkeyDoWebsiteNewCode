@@ -7,7 +7,6 @@ from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.utils import timezone
 
 from .availability import NEW_YORK
 from .models import PaymentMethod
@@ -43,7 +42,6 @@ def configure(form, booking, actor):
                 actor=actor,
                 customer=booking.customer,
                 request_key=purchase_key(values.get("request_key")),
-                expires_at__gte=timezone.now(),
             )
             selected = source(authority)
             if selected.customer_id == booking.customer_id:

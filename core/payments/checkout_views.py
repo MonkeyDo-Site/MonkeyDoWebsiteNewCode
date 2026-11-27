@@ -722,6 +722,10 @@ def checkout(request, pk, kind="arrival"):
                 ).offer_fingerprint
                 if getattr(form, "arrival_card_authority", None)
                 else "",
+                "membership_card_authorization_expired": bool(
+                    getattr(form, "arrival_card_authority", None)
+                    and form.arrival_card_authority.expires_at < timezone.now()
+                ),
                 "membership_ready": membership_ready(form.cleaned_data, combined),
                 "membership_needs_card": bool(
                     combined

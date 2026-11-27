@@ -528,7 +528,7 @@ def membership_offer(request):
         from .membership_card_setup import available_methods
 
         try:
-            cards = available_methods(flow).order_by("last_four", "pk")
+            cards = available_methods(flow, allow_expired=True).order_by("last_four", "pk")
         except ValidationError:
             pass
     return JsonResponse(

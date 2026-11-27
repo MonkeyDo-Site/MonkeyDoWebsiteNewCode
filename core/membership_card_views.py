@@ -11,7 +11,14 @@ from django.views.decorators.debug import sensitive_post_parameters, sensitive_v
 from django.views.decorators.http import require_GET, require_POST
 
 from .active_membership_views import MembershipCardForm, PurchaseForm, check_enabled
-from .membership_card_setup import authorize_flow, choose_saved, identity, make_flow, source
+from .membership_card_setup import (
+    authorize_flow,
+    choose_saved,
+    make_flow,
+    refreshable_source,
+    source,
+    status_scope,
+)
 from .membership_records import MembershipCardAuthorization, MembershipPurchase
 from .membership_sales import offer
 from .payments.gateway import ProviderFailure
@@ -24,6 +31,7 @@ SESSION_KEY = "membership_card_flows"
 
 
 class CardInput(forms.Form):
+    previous_authorization = forms.UUIDField(required=False)
     setup_key = forms.UUIDField(required=False)
     method = forms.UUIDField(required=False)
     nonce = forms.CharField(max_length=26, required=False)
@@ -36,6 +44,8 @@ class CardInput(forms.Form):
         if data.get("method"):
             if data.get("nonce"):
                 raise forms.ValidationError("Choose a saved card or enter a new card.")
+        elif data.get("previous_authorization"):
+            raise forms.ValidationError("Use the original known saved card for this fresh review.")
         elif not all(
             data.get(name)
             for name in ("setup_key", "nonce", "expiry_month", "expiry_year", "retention_choice")
@@ -46,12 +56,36 @@ class CardInput(forms.Form):
         return data
 
 
-def current_flow(request, data):
+def current_flow(request, data, *, card=None):
     flows = request.session.get(SESSION_KEY, {})
     key = str(data["request_key"])
+    if MembershipPurchase.objects.filter(request_key=key).exists():
+        raise ValidationError(
+            "This purchase is already recorded. Open its existing membership record."
+        )
     previous = flows.get(key)
+    if previous is None and (
+        (card and card.get("previous_authorization"))
+        or MembershipCardAuthorization.objects.filter(
+            request_key=key, actor=request.user, customer=data["customer"]
+        ).exists()
+    ):
+        raise ValidationError(
+            "Return to the original card browser session or start a new reviewed checkout."
+        )
+    fresh = False
     if previous:
-        authorize_flow(previous, request.user)
+        if previous.get("expires", 0) < timezone.now().timestamp() and card and card.get("method"):
+            refreshable_source(
+                actor=request.user,
+                flow=previous,
+                authorization_id=card.get("previous_authorization"),
+                method_id=card["method"],
+                offer=data["offer"],
+            )
+            fresh = True
+        else:
+            authorize_flow(previous, request.user)
         if (
             previous["customer_id"] != data["customer"].pk
             or previous["customer_revision"] != data["customer"].revision
@@ -64,8 +98,16 @@ def current_flow(request, data):
         customer=data["customer"],
         request_key=key,
         offer=data["offer"],
-        expires=previous["expires"] if previous else None,
+        expires=previous["expires"] if previous and not fresh else None,
     )
+    if previous and card and card.get("method") and previous.get("setup_key"):
+        if PaymentSetup.objects.filter(
+            pk=previous["setup_key"],
+            method_id=card["method"],
+            state="succeeded",
+            actor=request.user,
+        ).exists():
+            flow["setup_key"] = previous["setup_key"]
     flows = {
         key: value
         for key, value in flows.items()
@@ -92,6 +134,13 @@ def saved_response(authority):
             brand=method.brand,
             last_four=method.last_four,
             offer_fingerprint=authority.offer_fingerprint,
+            authorization_expired=authority.expires_at < timezone.now(),
+            authorization_seconds_remaining=max(
+                0, (authority.expires_at - timezone.now()).total_seconds()
+            ),
+            purchase_recorded=MembershipPurchase.objects.filter(
+                request_key=authority.request_key
+            ).exists(),
         )
     )
 
@@ -214,7 +263,7 @@ def setup_card(request):
             current["billing"] == "prepaid" and current["expected_method"] != "card"
         ):
             raise ValidationError("This selected membership payment does not require a card.")
-        flow = current_flow(request, data | {"offer": current})
+        flow = current_flow(request, data | {"offer": current}, card=card.cleaned_data)
         values = card.cleaned_data
         if values["method"]:
             return saved_response(
@@ -276,10 +325,22 @@ def setup_status(request, setup_id):
         )
         authority = setup.membership_authorization
         flow = request.session.get(SESSION_KEY, {}).get(str(authority.request_key))
-        authorize_flow(flow, request.user)
-        if identity(flow)[0] != setup.flow_hash:
+        if status_scope(flow, request.user)[0] != setup.flow_hash:
             raise ValidationError("Use the original membership card session.")
         if setup.state == "succeeded":
+            current = (
+                MembershipCardAuthorization.objects.filter(
+                    customer=setup.customer,
+                    actor=request.user,
+                    request_key=authority.request_key,
+                    flow_hash=setup.flow_hash,
+                    method_id=setup.method_id,
+                    offer_fingerprint=flow["offer_fingerprint"],
+                )
+                .order_by("-accepted_at", "-pk")
+                .first()
+            )
+            authority = current or authority
             return saved_response(authority)
         return JsonResponse(
             dict(

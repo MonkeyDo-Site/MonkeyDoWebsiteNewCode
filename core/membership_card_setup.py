@@ -46,11 +46,11 @@ def storage_text(retain, *, replacement=False):
     )
 
 
-def identity(flow):
+def identity(flow, *, allow_expired=False):
     if (
         not flow
         or flow.get("purpose") != "membership"
-        or timezone.now().timestamp() > flow.get("expires", 0)
+        or (not allow_expired and timezone.now().timestamp() > flow.get("expires", 0))
     ):
         raise ValidationError("This membership card session expired. Review the purchase again.")
     try:
@@ -61,6 +61,8 @@ def identity(flow):
             "Customer details changed. Review the membership purchase again."
         ) from None
     if flow.get("public_authority"):
+        if allow_expired:
+            raise ValidationError("Use the verified customer renewal session.")
         from .membership_public_authority import verified_scope
 
         scope = verified_scope(flow["public_authority"])
@@ -80,6 +82,46 @@ def identity(flow):
             f"{key}:{customer.pk}:{customer.revision}:{flow.get('staff_actor')}",
         ).hexdigest()
     return digest, customer
+
+
+def status_scope(flow, actor):
+    """Read an existing staff setup without extending its authorization."""
+    authorize(actor, collect=True)
+    if not isinstance(flow, dict) or actor is None or flow.get("staff_actor") != actor.pk:
+        raise ValidationError("Use the original membership card session.")
+    return identity(flow, allow_expired=True)
+
+
+def refreshable_source(*, actor, flow, authorization_id, method_id, offer):
+    """Explicit fresh terms may reauthorize a known source, never an unknown save."""
+    from .payments.models import PaymentSetup
+
+    digest, customer = status_scope(flow, actor)
+    if (
+        flow.get("operation") != offer["operation"]
+        or flow.get("prior_id") != (offer.get("origin") or {}).get("prior_id")
+        or flow.get("operation") == "card_update"
+        or MembershipPurchase.objects.filter(request_key=flow["key"]).exists()
+    ):
+        raise ValidationError("Open the existing purchase or start a new reviewed checkout.")
+    if PaymentSetup.objects.filter(
+        flow_hash=digest, state__in=["prepared", "customer_sending", "method_sending", "unknown"]
+    ).exists():
+        raise ValidationError("Check the existing uncertain card setup before another attempt.")
+    try:
+        prior = MembershipCardAuthorization.objects.select_related("method", "setup__method").get(
+            pk=authorization_id,
+            actor=actor,
+            customer=customer,
+            request_key=flow["key"],
+            flow_hash=digest,
+        )
+    except (MembershipCardAuthorization.DoesNotExist, ValueError, TypeError):
+        raise ValidationError("Use the known saved card from this original review.") from None
+    method = source(prior)
+    if str(method.pk) != str(method_id) or method.state != "active":
+        raise ValidationError("Review the same known saved card before continuing.")
+    return method
 
 
 def authorize_flow(flow, actor):
@@ -179,8 +221,8 @@ def prepared_authorization(flow, setup, actor):
     return authorization
 
 
-def available_methods(flow):
-    digest, customer = identity(flow)
+def available_methods(flow, *, allow_expired=False):
+    digest, customer = identity(flow, allow_expired=allow_expired)
     authorizations = MembershipCardAuthorization.objects.filter(flow_hash=digest)
     scoped = Q(pk__in=authorizations.exclude(method=None).values("method_id")) | Q(
         pk__in=authorizations.filter(setup__state="succeeded").values("setup__method_id")

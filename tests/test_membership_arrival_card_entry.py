@@ -218,7 +218,10 @@ class CombinedArrivalNewCardTests(InitialCreditFixtures, RuntimeRoleMixin, TestC
         with patch(
             "django.utils.timezone.now", return_value=timezone.now() + timedelta(minutes=21)
         ):
-            invalid = self.client.post(self.url, self.inputs, HTTP_ACCEPT="application/json")
+            reviewed = self.client.post(self.url, self.inputs, HTTP_ACCEPT="application/json")
+            self.assertEqual(reviewed.status_code, 200)
+            self.assertTrue(reviewed.json()["membership_card_authorization_expired"])
+            invalid = self.finish(reviewed)
         self.assertEqual(invalid.status_code, 400)
         self.assertFalse(MembershipPurchase.objects.exists())
         self.assertFalse(PaymentOperation.objects.exists())
