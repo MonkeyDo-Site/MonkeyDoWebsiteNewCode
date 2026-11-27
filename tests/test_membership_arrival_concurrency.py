@@ -35,6 +35,9 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
     def test_separate_membership_zelle_is_recorded_only_once_during_overlapping_confirmations(self):
         self.check_duplicate_confirmation(split=True, member="zelle")
 
+    def test_membership_receipt_split_and_visit_remainder_are_not_duplicated(self):
+        self.check_duplicate_confirmation(split=True, member="split")
+
     def check_duplicate_confirmation(self, *, split, member="cash"):
         if connection.vendor != "postgresql":
             self.skipTest("PostgreSQL transaction/advisory-lock race")
@@ -47,6 +50,8 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
                 member_received_on=timezone.localdate() - timedelta(days=1),
                 member_zelle_verified=True,
             )
+        if member == "split":
+            self.input.update(member_cash_amount="10.00", member_check_amount="25.98")
         accepted = membership_arrival.review(**self.options)
         bought, waiting = Event(), Event()
         original_purchase, original_lock = (
@@ -93,7 +98,9 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
         self.assertEqual(booking.attendance, "arrived")
         self.assertEqual(MembershipArrivalCheckout.objects.count(), 1)
         self.assertEqual(MembershipPurchase.objects.count(), 1)
-        self.assertEqual(PaymentOperation.objects.count(), 3 if split else 2)
+        self.assertEqual(
+            PaymentOperation.objects.count(), 4 if member == "split" else 3 if split else 2
+        )
         if split:
             self.assertEqual(PaymentOperation.objects.get(tender="card").amount, Decimal("6.17"))
         self.assertEqual(

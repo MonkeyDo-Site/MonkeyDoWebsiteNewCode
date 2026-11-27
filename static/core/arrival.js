@@ -76,6 +76,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     const method=form.elements.method.value;
     const splitMember=Boolean(form.elements.member_add?.checked&&method==='split');
     const firstTender=splitMember?(form.elements.member_first_method.value||'cash'):method;
+    const memberSplit=splitMember&&firstTender==='split';
+    const memberParts=Object.fromEntries(Object.keys(kinds).map(kind=>[kind,memberSplit?cents(form.elements['member_'+kind+'_amount'].value):0]));
     const memberDue=lastQuote.membership_due_today!=='0.00'&&!form.elements.member_comped?.checked;
     const giftLabel=form.querySelector('[data-arrival-field="gift_card_verified"] label');
     if(giftLabel)giftLabel.textContent=splitMember?'All physical gift-card amounts shown have been presented and verified.':form.elements.member_add?.checked&&method==='gift_card'?'The physical gift card has been presented and verified for the combined amount shown.':'The physical gift card has been presented and verified.';
@@ -86,6 +88,9 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       for(const input of memberFields.querySelectorAll('input,select,textarea'))input.disabled=!active;
       const first=form.querySelector('[data-arrival-field="member_first_method"]');
       first.hidden=!splitMember||!memberDue;form.elements.member_first_method.disabled=!splitMember;
+      const firstParts=memberFields.querySelector('[data-membership-first-split]');
+      firstParts.hidden=!memberSplit||!memberDue;
+      for(const field of firstParts.querySelectorAll('[data-arrival-field]')){field.hidden=firstParts.hidden;for(const input of field.querySelectorAll('input'))input.disabled=firstParts.hidden;}
       const card=memberFields.querySelector('[data-membership-monthly-card]');
       const needsCard=active&&!form.elements.member_comped?.checked&&(form.elements.member_billing.value==='monthly'||(firstTender==='card'&&lastQuote.membership_needs_card!==false));
       card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;
@@ -94,9 +99,9 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       if(email){email.hidden=!form.elements.member_comped.checked;form.elements.member_send_confirmation.disabled=!active||email.hidden;}
       const receipt=form.querySelector('[data-arrival-field="member_received"]');
       receipt.querySelector('label').textContent=splitMember?'The membership cash or check payment shown was actually received.':'The combined cash or check amount shown was actually received.';
-      receipt.hidden=['card','gift_card','zelle'].includes(firstTender)||(splitMember&&!memberDue);form.elements.member_received.disabled=!active||receipt.hidden;
+      receipt.hidden=['card','gift_card','zelle'].includes(firstTender)||(memberSplit&&!(memberParts.cash+memberParts.check))||(splitMember&&!memberDue);form.elements.member_received.disabled=!active||receipt.hidden;
       const bank=memberFields.querySelector('[data-membership-zelle]');
-      bank.hidden=!splitMember||!memberDue||firstTender!=='zelle';
+      bank.hidden=!splitMember||!memberDue||!(firstTender==='zelle'||(memberSplit&&memberParts.zelle));
       for(const field of bank.querySelectorAll('[data-arrival-field]')){field.hidden=bank.hidden;for(const input of field.querySelectorAll('input'))input.disabled=bank.hidden;}
       if(!compedMethods)form.querySelector('[data-arrival-field="method"] label').textContent=splitMember?'Visit payment:':'Actual payment:';
     }
@@ -111,7 +116,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     if(method==='split'&&!rows().length)makeRow();
     if(method==='split')serialize();
     const visitGift=lastQuote.plan===undefined||lastQuote.plan.some(part=>part.tender==='gift_card'&&cents(part.amount)>0);
-    const values=totals(),zelle=method==='split'&&values.zelle>0,gift=(method==='gift_card'&&visitGift)||(method==='split'&&values.gift_card>0)||(form.elements.member_add?.checked&&memberDue&&firstTender==='gift_card');
+    const values=totals(),zelle=method==='split'&&values.zelle>0,gift=(method==='gift_card'&&visitGift)||(method==='split'&&values.gift_card>0)||(form.elements.member_add?.checked&&memberDue&&(firstTender==='gift_card'||memberParts.gift_card>0));
     for(const field of form.querySelectorAll('[data-noncard-fields] [data-arrival-field]')){
       const visible={zelle_verified:zelle,gift_card_verified:gift,received_on:zelle,zelle_sender:zelle}[field.dataset.arrivalField];
       field.hidden=!visible;for(const input of field.querySelectorAll('input,select'))input.disabled=!visible;

@@ -344,7 +344,7 @@ Ordinary full cancellation/no-show still uses the booking card or verified recor
 
 ## Split the membership first payment on its purchase page
 
-Review samples 88–89. This is the standalone staff purchase/renewal/addition page. Its product, first receipts, credit, card, price, terms and final action stay together. Extending this membership split to the combined membership-and-arrival checkout is still in progress; that page retains its existing separately selected first tender.
+Review samples 88–89. This is the standalone staff purchase/renewal/addition page. Its product, first receipts, credit, card, price, terms and final action stay together. Fully received manual splits also work during arrival (samples 90–91). A membership split with a card balance currently completes on this standalone page before returning to arrival.
 
 | Scenario | Actions | Expected result |
 | --- | --- | --- |
@@ -360,9 +360,26 @@ Review samples 88–89. This is the standalone staff purchase/renewal/addition p
 
 Staff-only split payments do not add manual-payment or credit authority to private public checkout, which retains its card-only flow. Migration 0076 records the model choice without adding a new money table/column; reversal and release compatibility refuse older code after accepted split purchases. No production financial action is exercised by these examples.
 
+## Received membership split with arrival
+
+Review samples 90–91. Choose **Split payment** for the visit, **Split received payment** under Membership paid by, and enter the membership amounts separately. For two monthly Subscription places, enter $10 cash, $5 check and $20.98 separate verified Zelle. Enter $10 cash in the visit's payment rows; its card remainder is $6.17.
+
+| Check | Expected behavior |
+| --- | --- |
+| Review together | Membership $35.98; visit $16.17; combined $52.15. Cash to record $20, check $5, Zelle $20.98 and booking card $6.17. Review creates no money or membership. |
+| Verify actual receipts | Cash/check need their receipt confirmation, Zelle needs bank date/sender and its separate bank verification, and a positive gift amount needs physical verification. One proof cannot substitute for another. |
+| Change amounts or bank details | Old proofs and terms acceptance clear. The current financial review must be accepted again. A private draft reload keeps the entered amounts. |
+| Confirm once | One membership and its actual manual receipts are recorded atomically with arrival. A repeated confirmation returns the same records. A late failure leaves no partial purchase or receipt. |
+| Card is pending | $45.98 is received. Membership benefits are active because its entire first installment is funded; the visit card is pending. No paid combined email is queued yet. |
+| Confirmed visit-card result | $52.15 is received, with membership $35.98 and visit $16.17 shown separately. One combined confirmation is queued. Checking status never charges again. |
+| Keep funding sources separate | Previously recorded booking Zelle still applies to the visit. New membership Zelle is a separate verified transfer. Existing credit reduces only the membership amount selected and is never reported as new money. |
+| Preserve card authority | Monthly membership requires its accepted future-installment card. A newly entered private membership card does not replace or fund the visit's booking card. Fully received prepaid needs no membership card. |
+| Membership split still has a card balance | No purchase or receipt is recorded on arrival. Complete the split on the membership purchase page first, then return to arrival. In-place handling of that remaining card balance is still being implemented. |
+
+
 ## Known unfinished areas
 
-Applying already recorded booking Zelle toward the membership and extending membership-first-payment splits to the combined arrival checkout; combined multi-cohort renewal checkout; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and remaining broader redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, explicit private-receipt benefit reservation, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment and ordinary/supervised arrival credit application, and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
+Applying already recorded booking Zelle toward the membership and completing membership-card remainders within the combined arrival checkout; combined multi-cohort renewal checkout; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and remaining broader redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, explicit private-receipt benefit reservation, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment and ordinary/supervised arrival credit application, and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
 
 Actual Banquest hosted fields and installment processor flags are not verified by the fictional gallery. Three policy answers about later installments after failure, parent arrears after prepaid early renewal, and credit-funded cancellation refund destinations remain pending in the [implementation record](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). The disputed automatic branches are not enabled, and no credit-refund destination is assumed.
 

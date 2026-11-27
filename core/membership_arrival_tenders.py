@@ -11,10 +11,20 @@ from .payments.amounts import ZERO, amount
 MANUAL = {"cash": "Cash", "check": "Check", "gift_card": "Gift card", "zelle": "Zelle"}
 
 
+def first_selection(data):
+    if data.get("method") != "split" or data.get("member_first_method") != "split":
+        return {}
+    return dict(
+        split={kind: data.get(f"member_{kind}_amount") or ZERO for kind in MANUAL},
+        split_sender=data.get("member_zelle_sender", ""),
+        split_received_on=data.get("member_received_on"),
+    )
+
+
 def first_tender(data, *, comped=False):
     if data.get("method") == "split":
         selected = data.get("member_first_method")
-        if selected and (not isinstance(selected, str) or selected not in MANUAL):
+        if selected and (not isinstance(selected, str) or selected not in {*MANUAL, "split"}):
             raise ValidationError(
                 "Choose cash, check, a verified physical gift card or a separate verified Zelle transfer for the membership payment."
             )
@@ -29,8 +39,14 @@ def first_tender(data, *, comped=False):
     return tender
 
 
-def split_facts(*, tender, membership_due, plan, selection):
-    manual = {tender: membership_due} if membership_due else {}
+def split_facts(*, tender, membership_due, plan, selection, first_plan=None):
+    manual = (
+        {part["tender"]: amount(part["amount"]) for part in first_plan["parts"]}
+        if first_plan
+        else {tender: membership_due}
+        if membership_due
+        else {}
+    )
     card = ZERO
     for part in plan:
         if part.get("advance"):
@@ -73,6 +89,19 @@ def zelle_receipt(data, *, tender, due):
 
 def receipt_ready(data, reviewed):
     tender, facts = reviewed["offer"]["expected_method"], reviewed["facts"]
+    if reviewed["offer"].get("first_payment_plan"):
+        from .membership_first_split import verify
+
+        try:
+            verify(
+                reviewed["offer"]["first_payment_plan"],
+                verified_received=data.get("member_received"),
+                gift_card_verified=data.get("gift_card_verified"),
+                zelle_verified=data.get("member_zelle_verified"),
+            )
+        except ValidationError:
+            return False
+        return True
     due = facts["membership_due"] if facts.get("split_visit") else facts["received_today"]
     if facts.get("split_visit") and due != "0.00" and not data.get("member_first_method"):
         return False
@@ -100,6 +129,16 @@ def verify_receipt(data, reviewed, verified_received):
         ):
             raise ValidationError(message)
     due = amount(facts["membership_due"] if facts.get("split_visit") else facts["received_today"])
+    if tender == "split":
+        from .membership_first_split import verify
+
+        verify(
+            reviewed["offer"]["first_payment_plan"],
+            verified_received=verified_received,
+            gift_card_verified=data.get("gift_card_verified"),
+            zelle_verified=data.get("member_zelle_verified"),
+        )
+        return verified_received
     if facts.get("split_visit") and due and data.get("member_first_method") not in MANUAL:
         raise ValidationError("Choose how the membership payment was received.")
     if tender == "gift_card" and due:

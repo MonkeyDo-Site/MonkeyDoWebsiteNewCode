@@ -112,9 +112,10 @@ def configure(form, booking, actor):
                 ("check", "Check"),
                 ("gift_card", "Physical gift card (verified)"),
                 ("zelle", "Separate Zelle transfer (verified)"),
+                ("split", "Split received payment"),
             ],
             label="Membership paid by",
-            help_text="For a split visit payment, record the membership payment separately here.",
+            help_text="These amounts are for the membership. Visit payments stay separate.",
         ),
         "member_received": forms.BooleanField(
             required=False, label="The combined cash or check amount shown was actually received."
@@ -134,6 +135,20 @@ def configure(form, booking, actor):
             help_text="A customer screenshot alone does not confirm receipt.",
         ),
     }
+    for kind, label in (
+        ("cash", "Membership cash received"),
+        ("check", "Membership check received"),
+        ("zelle", "Separate membership Zelle received"),
+        ("gift_card", "Membership physical gift card (verified)"),
+    ):
+        fields[f"member_{kind}_amount"] = forms.DecimalField(
+            required=False,
+            min_value=0,
+            max_digits=14,
+            decimal_places=2,
+            initial=0,
+            label=label,
+        )
     if actor.is_superuser:
         fields.update(
             member_minimum_override=forms.BooleanField(
@@ -151,10 +166,13 @@ def configure(form, booking, actor):
     form.fields.update(fields)
     split = values.get("method") == "split"
     tender = values.get("member_first_method") if split else values.get("method")
+    first_split = split and tender == "split"
+    for kind in ("cash", "check", "zelle", "gift_card"):
+        form.fields[f"member_{kind}_amount"].arrival_hidden = not first_split
     form.fields["member_first_method"].arrival_hidden = not split
     form.fields["member_received"].arrival_hidden = tender in {"card", "gift_card", "zelle"}
     for name in ("member_received_on", "member_zelle_sender", "member_zelle_verified"):
-        form.fields[name].arrival_hidden = not (split and tender == "zelle")
+        form.fields[name].arrival_hidden = not (split and tender in {"zelle", "split"})
     if split:
         form.fields[
             "member_received"
@@ -238,6 +256,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True, pending_int
 
 def ready(data, combined):
     from .membership_arrival_tenders import receipt_ready
+    from .membership_sales import card_required
 
     if combined is None:
         return True
@@ -245,14 +264,7 @@ def ready(data, combined):
         data.get("member_accepted")
         and receipt_ready(data, combined)
         and (
-            combined["offer"]["comped"]
-            or (
-                combined["offer"]["billing"] != "monthly"
-                and not (
-                    combined["offer"]["expected_method"] == "card"
-                    and combined["facts"]["membership_due"] != "0.00"
-                )
-            )
+            not card_required(combined["offer"])
             or data.get("member_card")
             or data.get("member_card_new")
         )
@@ -314,10 +326,12 @@ def purchase_key(arrival_key):
 
 
 def card_purchase(booking, data, combined):
+    from .membership_arrival_tenders import first_selection
+
     if not combined or combined["offer"]["comped"]:
         return None
     offer = combined["offer"]
-    return dict(
+    result = dict(
         operation="purchase",
         prior_id="",
         customer=booking.customer_id,
@@ -330,6 +344,16 @@ def card_purchase(booking, data, combined):
         request_key=str(purchase_key(data["request_key"])),
         reviewed=offer["fingerprint"],
     )
+    split = first_selection(data)
+    if split:
+        result.update(
+            {f"first_{kind}": str(value) for kind, value in split["split"].items()},
+            first_zelle_sender=split["split_sender"],
+            first_zelle_received_on=split["split_received_on"].isoformat()
+            if split["split_received_on"]
+            else "",
+        )
+    return result
 
 
 def card_review(combined):

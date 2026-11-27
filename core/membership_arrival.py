@@ -15,7 +15,13 @@ from django.db import transaction
 
 from .availability import NEW_YORK
 from .calendar import lock_calendar
-from .membership_arrival_tenders import first_tender, split_facts, verify_receipt, zelle_receipt
+from .membership_arrival_tenders import (
+    first_selection,
+    first_tender,
+    split_facts,
+    verify_receipt,
+    zelle_receipt,
+)
 from .membership_benefits import Place
 from .membership_records import MembershipArrivalCheckout
 from .membership_reservations import accepted_rules, lock_customer
@@ -88,8 +94,20 @@ def review(
         raise ValidationError("Combine a membership purchase with arrival on the visit date.")
     tender = first_tender(data, comped=selection.get("comped", False))
     # These values are derived from this booking, never supplied by the browser.
-    values = selection | {"customer": booking.customer, "expected_method": tender}
+    values = (
+        selection
+        | (first_selection(data) if tender == "split" else {})
+        | {
+            "customer": booking.customer,
+            "expected_method": tender,
+        }
+    )
     proposed = offer(actor=actor, **values)
+    first_plan = proposed.get("first_payment_plan")
+    if first_plan and amount(first_plan["card_total"]):
+        raise ValidationError(
+            "The membership still has a card balance. Complete that split payment on the membership purchase page first, then return here to apply its benefits and finish arrival. No payments have been recorded here."
+        )
     membership_due = (
         amount(proposed.get("first_payment_total", proposed["installments"][0]["quote"]["total"]))
         if proposed["installments"]
@@ -136,9 +154,16 @@ def review(
                 membership_due=membership_due,
                 plan=result[3],
                 selection=data.get("member_first_method"),
+                first_plan=first_plan,
             )
         )
     facts.update(zelle_receipt(data, tender=tender, due=membership_due))
+    if first_plan:
+        bank = next((part for part in first_plan["parts"] if part["tender"] == "zelle"), None)
+        if bank:
+            facts["membership_zelle"] = {
+                name: bank[name] for name in ("amount", "received_on", "sender")
+            }
     if card_authorization_id:
         facts["card_authorization_id"] = str(card_authorization_id)
     return {
@@ -226,8 +251,11 @@ def confirm(
         received_on=date.fromisoformat(bank_date) if bank_date else None,
         send_confirmation=send_confirmation,
         combined_booking=booking,
+        gift_card_verified=data.get("gift_card_verified", False),
+        zelle_verified=data.get("member_zelle_verified", False),
         customer=booking.customer,
         expected_method=reviewed["offer"]["expected_method"],
+        **(first_selection(data) if reviewed["offer"]["expected_method"] == "split" else {}),
         **selection,
     )
     if data["method"] == "card" and amount(reviewed["facts"]["membership_due"]):

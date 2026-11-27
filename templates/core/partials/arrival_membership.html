@@ -15,7 +15,16 @@
 <div data-membership-monthly-card>{% include 'core/partials/arrival_field.html' with field=form.member_card %}</div>
 {% include 'core/partials/arrival_field.html' with field=form.member_first_method %}
 </div>
-<div data-membership-zelle{% if form.member_first_method.value != 'zelle' %} hidden{% endif %}>
+<div data-membership-first-split{% if form.member_first_method.value != 'split' %} hidden{% endif %}>
+<p class="caption">Enter the full membership payment received, after any existing credit. Visit amounts remain in the visit payment section below. A membership split with a card balance is completed on the membership purchase page first.</p>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_cash_amount %}
+{% include 'core/partials/arrival_field.html' with field=form.member_check_amount %}
+{% include 'core/partials/arrival_field.html' with field=form.member_zelle_amount %}
+{% include 'core/partials/arrival_field.html' with field=form.member_gift_card_amount %}
+</div>
+</div>
+<div data-membership-zelle{% if form.member_first_method.value != 'zelle' and form.member_first_method.value != 'split' %} hidden{% endif %}>
 <p class="caption">Use a separate membership transfer. Zelle already recorded for this booking remains allocated to the visit.</p>
 <div class="arrival-counts">
 {% include 'core/partials/arrival_field.html' with field=form.member_received_on %}

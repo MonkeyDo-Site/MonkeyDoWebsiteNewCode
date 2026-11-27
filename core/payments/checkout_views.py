@@ -19,6 +19,7 @@ from core.membership_arrival_forms import card_purchase, card_review
 from core.membership_arrival_forms import confirm as arrival_confirm
 from core.membership_arrival_forms import preview as arrival_preview
 from core.membership_arrival_forms import ready as membership_ready
+from core.membership_sales import card_required
 from core.models import Booking
 from core.permissions import staff_permission
 
@@ -789,17 +790,7 @@ def checkout(request, pk, kind="arrival"):
                     and form.arrival_card_authority.expires_at < timezone.now()
                 ),
                 "membership_ready": membership_ready(form.cleaned_data, combined),
-                "membership_needs_card": bool(
-                    combined
-                    and not combined["offer"]["comped"]
-                    and (
-                        combined["offer"]["billing"] == "monthly"
-                        or (
-                            combined["offer"]["expected_method"] == "card"
-                            and combined["facts"]["membership_due"] != "0.00"
-                        )
-                    )
-                ),
+                "membership_needs_card": bool(combined and card_required(combined["offer"])),
                 "noncard_total": noncard["total"],
                 "prepaid_available": str(prepaid["available"]),
                 "credit_available": str(getattr(form, "visit_credit_available", Decimal("0.00"))),

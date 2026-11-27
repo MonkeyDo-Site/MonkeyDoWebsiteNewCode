@@ -74,6 +74,40 @@ class CombinedArrivalNewCardTests(InitialCreditFixtures, RuntimeRoleMixin, TestC
             HTTP_ACCEPT="application/json",
         )
 
+    def test_received_membership_split_binds_new_future_card_without_using_it_for_visit(self):
+        self.start()
+        self.inputs.update(
+            method="split",
+            member_first_method="split",
+            member_cash_amount="10.00",
+            member_check_amount="25.98",
+            cash_amount="10.00",
+            member_received="on",
+        )
+        quote = self.client.post(self.url, self.inputs, HTTP_ACCEPT="application/json")
+        self.assertEqual(quote.status_code, 200, quote.content)
+        self.assertTrue(quote.json()["can_confirm"])
+        self.card_payload["purchase"] = quote.json()["membership_card_purchase"] | {
+            "accepted": True
+        }
+        self.assertEqual(self.card_payload["purchase"]["first_check"], "25.98")
+        saved = self.store()
+        self.assertEqual(saved.status_code, 200, saved.content)
+        reviewed = self.reviewed_source(saved)
+        self.assertEqual(reviewed.status_code, 200, reviewed.content)
+        accepted = self.finish(reviewed)
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        self.assertTrue(accepted.json()["confirmed"])
+        self.assertFalse(MembershipArrivalIntent.objects.exists())
+        member = MembershipPurchase.objects.get()
+        self.assertEqual(member.billing_state.mandate.method.last_four, "1111")
+        member_sale = member.installments.first().invoice.sale
+        self.assertEqual(member_sale.operations.count(), 2)
+        self.assertFalse(member_sale.operations.filter(tender="card").exists())
+        visit_card = self.play.checkouts.get(kind="arrival").sale.operations.get(tender="card")
+        self.assertEqual(visit_card.method_id, self.play.card_agreement.method_id)
+        self.assertEqual(visit_card.amount, Decimal("6.17"))
+
     def test_new_nonretained_card_saves_without_payment_then_funds_only_membership(self):
         self.start()
         self.assertTrue(self.quote["can_confirm"])
