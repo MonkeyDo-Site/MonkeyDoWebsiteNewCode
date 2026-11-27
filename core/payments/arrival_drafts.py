@@ -27,6 +27,8 @@ FIELDS = (
     "override_capacity",
     "special_admissions",
     "apply_available_benefits",
+    "membership_resolution",
+    "membership_resolution_reason",
     "waiver_confirmed",
     "waiver_mismatch_accepted",
     "split_rows",

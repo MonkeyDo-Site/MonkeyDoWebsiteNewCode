@@ -6,7 +6,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const splitBox=form.querySelector('[data-split-payments]'), rowState=form.querySelector('[data-split-rows]');
   const kinds={cash:'Cash',check:'Check',zelle:'Zelle',gift_card:'Gift card'};
   const paperForm=document.querySelector('[data-arrival-paper-form]');
-  let timer,generation=0,finalizing=false,departing=false,pending=Promise.resolve(),lastQuote={},previousMethod=form.elements.method.value,statusUrl;
+  let timer,generation=0,finalizing=false,departing=false,pending=Promise.resolve(),lastQuote={},previousMethod=form.elements.method.value,statusUrl,lastRequestedInput='';
   const cents=value=>Math.round(Number(value||0)*100);
   const rows=()=>[...rowHost.querySelectorAll('[data-payment-row]')];
   const totals=()=>Object.fromEntries(Object.keys(kinds).map(kind=>[kind,rows().filter(row=>row.querySelector('select').value===kind).reduce((sum,row)=>sum+cents(row.querySelector('input').value),0)]));
@@ -65,6 +65,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     if(paperForm)for(const [key,value] of new FormData(paperForm))if(key.startsWith('paper-'))data.set(key,value);
     return data;
   };
+  const inputIdentity=data=>JSON.stringify([...data].filter(([name])=>name!=='reviewed_hash'));
   const applyFeedback=(data,ok)=>{
     lastQuote={...lastQuote,...data};
     if(data.html)form.querySelector('[data-arrival-price]').innerHTML=data.html;
@@ -90,15 +91,16 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     if(finalizing||serial!==generation)return;
     sync();button.disabled=true;status.textContent='Updating price and balance…';
     try{
-      const response=await fetch(location.href,{method:'POST',body:payload(),headers:{Accept:'application/json'},cache:'no-store'});
+      const dataToReview=payload();lastRequestedInput=inputIdentity(dataToReview);
+      const response=await fetch(location.href,{method:'POST',body:dataToReview,headers:{Accept:'application/json'},cache:'no-store'});
       const data=await response.json();if(serial!==generation||finalizing)return;
       for(const error of form.querySelectorAll('.errorlist'))error.remove();
       applyFeedback(data,response.ok);
-    }catch(error){if(serial===generation)status.textContent='The updated price could not be loaded. Please check your connection and try again.';}
+    }catch(error){lastRequestedInput='';if(serial===generation)status.textContent='The updated price could not be loaded. Please check your connection and try again.';}
     });
     return pending;
   };
-  const schedule=()=>{if(finalizing)return;button.disabled=true;clearTimeout(timer);timer=setTimeout(update,200);};
+  const schedule=()=>{if(finalizing||inputIdentity(payload())===lastRequestedInput)return;button.disabled=true;clearTimeout(timer);timer=setTimeout(update,200);};
   add.addEventListener('click',()=>{const used=new Set(rows().map(row=>row.querySelector('select').value));const next=Object.keys(kinds).find(kind=>!used.has(kind));if(next){makeRow(next);schedule();}});
   form.addEventListener('input',event=>{
     if(event.target.form!==form)return;

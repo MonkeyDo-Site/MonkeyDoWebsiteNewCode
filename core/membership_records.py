@@ -228,6 +228,21 @@ class MembershipBillingAction(FinancialFact):
         ]
 
 
+class MembershipBookingDecision(FinancialFact):
+    id = models.UUIDField(primary_key=True, editable=False)
+    booking = models.ForeignKey(
+        "core.Booking", on_delete=models.PROTECT, related_name="membership_decisions"
+    )
+    session = models.ForeignKey("core.Session", on_delete=models.PROTECT)
+    mode = models.CharField(
+        max_length=10, choices=[(x, x.title()) for x in ("normal", "ordinary", "honor")]
+    )
+    memberships = models.JSONField(default=list)
+    reason = models.CharField(max_length=240)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class MembershipBenefitBatch(FinancialFact):
     id = models.UUIDField(primary_key=True, editable=False)
     booking = models.ForeignKey(

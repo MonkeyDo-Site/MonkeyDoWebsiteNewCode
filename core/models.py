@@ -655,6 +655,7 @@ from .membership_records import (  # noqa: E402,F401
     MembershipBenefitState,
     MembershipBilling,
     MembershipBillingAction,
+    MembershipBookingDecision,
     MembershipCardAuthorization,
     MembershipCardMandate,
     MembershipInstallment,

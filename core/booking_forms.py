@@ -194,6 +194,9 @@ class TestBookingForm(forms.Form):
             self.fields.pop("special_admissions")
         else:
             self.initial["special_admissions"] = special.special_subtotal
+        from .membership_booking_exceptions import add_fields
+
+        add_fields(self, booking=booking, owner=owner)
         session_date_picker(self, booking)
         customer_picker(self)
         from .membership_booking import has_available_daily

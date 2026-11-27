@@ -421,6 +421,8 @@ def edit_test_booking(
     special_admissions=None,
     supervised_exception=False,
     apply_available_benefits=False,
+    membership_resolution="",
+    membership_resolution_reason="",
 ):
     lock_calendar(exclusive=close_session or reopen_affected_sessions)
     if close_session or reopen_affected_sessions:
@@ -431,6 +433,17 @@ def edit_test_booking(
         raise ValidationError("Review the available membership benefit choice.")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
     check_editable(booking, version)
+    from .membership_booking_exceptions import persist as persist_membership_decision
+    from .membership_booking_exceptions import resolve as resolve_membership_decision
+
+    if membership_resolution:
+        resolve_membership_decision(
+            booking,
+            actor=actor,
+            choice=membership_resolution,
+            reason=membership_resolution_reason,
+            session=session,
+        )
     target_id = session.pk if session is not None else booking.session_id
     supervised = booking.supervised if supervised is None else supervised
     sessions = {
@@ -487,6 +500,20 @@ def edit_test_booking(
         from .waivers.models import BookingWaiverReview
 
         state, _ = BookingChargeState.objects.get_or_create(booking=booking)
+        if membership_resolution:
+            from .membership_booking import lock
+
+            lock(booking)
+            persist_membership_decision(
+                actor=actor,
+                booking=booking,
+                state=state,
+                choice=membership_resolution,
+                reason=membership_resolution_reason,
+                request_key=uuid.uuid5(
+                    booking.reference, f"owner-membership:{booking.edit_version}"
+                ),
+            )
         if supervised_exception:
             require_actor(actor, "core.change_booking", owner=True)
             state.supervised_exception_session = session
@@ -507,7 +534,15 @@ def edit_test_booking(
             else max(0, state.pending_fee_units + before["children"] - booking.children)
         )
         state.revision += 1
-        state.save(update_fields=["pending_fee_units", "revision", "special_subtotal"])
+        state.save(
+            update_fields=[
+                "pending_fee_units",
+                "revision",
+                "special_subtotal",
+                "membership_decision",
+            ]
+        )
+        booking.charge_state = state
         from .payments.comped import notify_count_change
 
         notify_count_change(
@@ -542,7 +577,12 @@ def edit_test_booking(
     from . import membership_booking
 
     if membership_booking.active(booking):
-        price_changed = price_changed or old_session.pk != session.pk or apply_available_benefits
+        price_changed = (
+            price_changed
+            or old_session.pk != session.pk
+            or apply_available_benefits
+            or bool(membership_resolution)
+        )
     if booking.workflow == "integrated_v1" and special_admissions is not None:
         price_changed = price_changed or old_special != state.special_subtotal
     quote = (

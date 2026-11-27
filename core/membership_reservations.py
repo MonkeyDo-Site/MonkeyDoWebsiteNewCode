@@ -93,6 +93,7 @@ def places_for(
     exclude_booking=None,
     supervised=False,
     unlimited_places=None,
+    payment_exceptions=frozenset(),
 ):
     if type(appointment_on) is not date or type(children) is not int or not 0 <= children <= 32767:
         raise ValidationError("Use the appointment date and valid child count.")
@@ -115,7 +116,7 @@ def places_for(
         cycle = root.cycles.filter(
             starts_on__lte=appointment_on, ends_on__gte=appointment_on
         ).first()
-        if cycle is None or not payment_current(member):
+        if cycle is None or (member.pk not in payment_exceptions and not payment_current(member)):
             continue
         rules = accepted_rules(member.benefit_rules)
         states = MembershipBenefitState.objects.filter(
@@ -182,16 +183,23 @@ def visit_plan(
     special_admissions=None,
     comped=False,
     unlimited_places=None,
+    payment_exceptions=frozenset(),
+    ordinary_pricing=False,
 ):
     enabled()
     chol_hamoed = CalendarDate.objects.filter(day=appointment_on, chol_hamoed=True).exists()
-    places = places_for(
-        customer_id,
-        appointment_on=appointment_on,
-        children=children,
-        exclude_booking=exclude_booking,
-        supervised=supervised,
-        unlimited_places=unlimited_places,
+    places = (
+        []
+        if ordinary_pricing
+        else places_for(
+            customer_id,
+            appointment_on=appointment_on,
+            children=children,
+            exclude_booking=exclude_booking,
+            supervised=supervised,
+            unlimited_places=unlimited_places,
+            payment_exceptions=payment_exceptions,
+        )
     )
     return plan_visit(
         policy,
@@ -316,6 +324,8 @@ def reserve(*, actor, booking_id, quote_id, request_key, for_arrival=False):
             ).values_list("purchase_id", "place")
         )
     )
+    from .membership_booking_exceptions import flags, resolve
+
     plan = visit_plan(
         quote.policy,
         customer_id=booking.customer_id,
@@ -329,6 +339,7 @@ def reserve(*, actor, booking_id, quote_id, request_key, for_arrival=False):
         comped=comped,
         special_admissions=special,
         unlimited_places=allowed,
+        **flags(resolve(booking)),
     )
     if current != plan.snapshot():
         raise ValidationError(

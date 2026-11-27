@@ -131,6 +131,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
         require_actor(actor, "core.change_session", owner=True)
     saved = booking.quotes.first()
     membership_meta = {}
+    membership_resolution = None
     if saved is None:
         raise ValidationError("No accepted pricing policy exists for this booking.")
     counts = {
@@ -143,6 +144,14 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
     if type(override) is not bool:
         raise ValidationError("Review the arrival capacity choice.")
     if kind == "arrival":
+        from core.membership_booking_exceptions import resolve
+
+        membership_resolution = resolve(
+            booking,
+            actor=actor,
+            choice=data.get("membership_resolution", ""),
+            reason=data.get("membership_resolution_reason", ""),
+        )
         if booking.setup_pending:
             raise ValidationError(
                 "Complete booking setup before arrival. Complimentary bookings require no card."
@@ -185,6 +194,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
                 special_admissions=special,
                 comped=state.comped,
                 apply_available=data.get("apply_available_benefits", False),
+                resolution=membership_resolution,
             )
             if units:
                 lines.append(Line("Partial cancellation fee", units, Decimal("3.00"), False))
@@ -216,7 +226,8 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
     from .zelle import facts as zelle_facts
 
     quote.update(membership_meta)
-    if membership_meta and amount(quote["total"]) == ZERO:
+    quote["owner_comped"] = state.comped
+    if amount(quote["total"]) == ZERO:
         plan = []
     prepaid = zelle_facts(booking)
     if any(part["tender"] == "card" for part in plan):
@@ -257,6 +268,13 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
         "waiver_review": coverage_facts(booking, counts) if kind == "arrival" else None,
         "waiver_mismatch_accepted": data.get("waiver_mismatch_accepted") is True,
         "comped": state.comped,
+        "membership_resolution_choice": data.get("membership_resolution", "")
+        if kind == "arrival"
+        else "",
+        "membership_resolution_reason": data.get("membership_resolution_reason", "")
+        if kind == "arrival"
+        else "",
+        "membership_resolution_decision": membership_resolution,
         "owner_special_admissions": str(special)
         if kind == "arrival" and special is not None
         else None,
@@ -322,6 +340,17 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         reopen_for_booking(actor, booking, booking.session)
     if state.pk is None:
         state.booking = booking
+    if kind == "arrival" and facts["membership_resolution_choice"]:
+        from core.membership_booking_exceptions import persist
+
+        persist(
+            actor=actor,
+            booking=booking,
+            state=state,
+            choice=facts["membership_resolution_choice"],
+            reason=facts["membership_resolution_reason"],
+            request_key=uuid.uuid5(key, "owner-membership-decision"),
+        )
     if kind == "arrival" and facts["owner_special_admissions"] is not None:
         state.special_subtotal = amount(facts["owner_special_admissions"])
     state.pending_fee_units = facts["fee_units"] if kind == "arrival" else 0
@@ -553,6 +582,8 @@ def summary(booking):
             else "Covered by membership"
             if checkout.kind == "arrival"
             and checkout.details.get("quote", {}).get("membership_benefits_applied")
+            else "No payment due"
+            if checkout.kind == "arrival"
             else "No fee",
             "received": ZERO,
             "total_received": prepaid["received"] - prepaid["refunded"],

@@ -189,7 +189,7 @@ def booking_edit(request, pk):
     show_reminder = False
     if request.method == "POST" and request.POST.get("load_sessions") != "1" and form.is_valid():
         try:
-            estimate = edit_estimate(booking, form.cleaned_data)
+            estimate = edit_estimate(booking, form.cleaned_data, actor=request.user)
             if estimate["amount_changed"] and not amount_reviewed(
                 form.cleaned_data.get("estimate_token", ""), estimate
             ):
@@ -251,7 +251,7 @@ def booking_estimate(request, pk):
     if not form.is_valid():
         return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
     try:
-        estimate = edit_estimate(booking, form.cleaned_data)
+        estimate = edit_estimate(booking, form.cleaned_data, actor=request.user)
     except ValidationError as exc:
         return JsonResponse({"error": " ".join(exc.messages)}, status=400)
     return JsonResponse(

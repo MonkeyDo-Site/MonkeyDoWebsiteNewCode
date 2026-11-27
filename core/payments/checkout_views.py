@@ -102,6 +102,9 @@ class ArrivalForm(ReceiptForm):
         self.previewing = previewing
         self.fields["waiver_confirmed"].required = not previewing
         self.booking = booking
+        from core.membership_booking_exceptions import add_fields
+
+        add_fields(self, booking=booking, owner=owner)
         from core.membership_booking import has_available_daily
 
         if not has_available_daily(booking):
@@ -242,7 +245,7 @@ def confirm_label(kind, quote, plan):
             f"Confirm {noun} without a fee"
             if kind != "arrival"
             else "Confirm arrival — no payment due"
-            if quote.get("membership_benefits_applied")
+            if not quote.get("owner_comped")
             else "Confirm arrival — owner-comped $0"
         )
     if any(p.get("advance") for p in plan):

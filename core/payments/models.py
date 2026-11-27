@@ -431,6 +431,12 @@ class FinancialLineAdjustment(FinancialFact):
 
 
 class BookingChargeState(models.Model):
+    membership_decision = models.ForeignKey(
+        "core.MembershipBookingDecision",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="current_booking_states",
+    )
     supervised_exception_session = models.ForeignKey(
         "core.Session",
         null=True,

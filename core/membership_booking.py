@@ -27,8 +27,15 @@ def existing_daily_places(booking):
     )
 
 
-def require_paid_existing(booking, *, special_admissions=None, comped=False):
-    if booking is None or comped or special_admissions is not None:
+def require_paid_existing(
+    booking,
+    *,
+    special_admissions=None,
+    comped=False,
+    payment_exceptions=frozenset(),
+    ordinary_pricing=False,
+):
+    if booking is None or comped or special_admissions is not None or ordinary_pricing:
         return
     purchases = set()
     for assignment in booking.membership_benefits.filter(
@@ -37,7 +44,9 @@ def require_paid_existing(booking, *, special_admissions=None, comped=False):
         if assignment.purchase_id in purchases:
             continue
         purchases.add(assignment.purchase_id)
-        if not payment_current(assignment.purchase):
+        if assignment.purchase_id not in payment_exceptions and not payment_current(
+            assignment.purchase
+        ):
             raise ValidationError(
                 "A membership payment needs attention. Resolve it before using the reserved benefits, or have the owner review an admissions-price exception. This booking has not been repriced.",
                 code="membership_payment_review",
@@ -54,8 +63,21 @@ def lines_for(
     special_admissions=None,
     comped=False,
     apply_available=False,
+    resolution=None,
 ):
-    require_paid_existing(booking, special_admissions=special_admissions, comped=comped)
+    from .membership_booking_exceptions import flags, resolve
+
+    resolution = (
+        resolution
+        if resolution is not None
+        else resolve(booking, session=session)
+        if booking
+        else None
+    )
+    overrides = flags(resolution)
+    require_paid_existing(
+        booking, special_admissions=special_admissions, comped=comped, **overrides
+    )
     on = session.starts_at.astimezone(NEW_YORK).date()
     allow_daily = booking is None or booking.setup_pending or apply_available
     if booking is not None:
@@ -77,6 +99,7 @@ def lines_for(
         special_admissions=special_admissions,
         comped=comped,
         unlimited_places=None if allow_daily else existing_daily_places(booking),
+        **overrides,
     )
     meta = {
         "membership_benefits_applied": bool(plan.uses),
@@ -85,6 +108,8 @@ def lines_for(
         "membership_appointment_on": on.isoformat(),
         "membership_attendees": {key: values[key] for key in COUNTS},
     }
+    if resolution:
+        meta["membership_owner_decision"] = resolution
     return list(plan.lines), meta
 
 
@@ -144,6 +169,7 @@ def booking_quote(booking, policy, values=None):
         special_admissions=special,
         comped=comped,
         apply_available=values.get("apply_available_benefits", False),
+        resolution=values.get("membership_resolution_decision"),
     )
     if units:
         lines.append(Line("Partial cancellation fee", units, Decimal("3.00"), False))

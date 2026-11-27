@@ -13,3 +13,4 @@
 </dd>{% endif %}
 </dl>
 {% if adjustment %}{% include 'core/partials/price_adjustment.html' %}{% endif %}
+{% if request.user.is_staff and data.membership_owner_decision and data.membership_owner_decision.mode != 'normal' %}<p class="caption">{% if data.membership_owner_decision.mode == 'honor' %}Owner approved reserved membership benefits for this booking. Membership dues remain separate.{% elif data.membership_owner_decision.mode == 'ordinary' %}Owner selected ordinary admission prices for this booking.{% endif %}</p>{% endif %}

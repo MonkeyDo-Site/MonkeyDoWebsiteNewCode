@@ -1202,3 +1202,5 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 @media(max-width:760px){.membership-purchase-grid{grid-template-columns:minmax(0,1fr)}.membership-totals dd{max-width:12rem}.membership-price-card{padding:1rem}.membership-choice-grid{gap:0 .7rem}}
 .membership-availability{border-top:1px solid #cbd3c7;border-bottom:1px solid #cbd3c7;padding:.6rem 0;margin:1rem 0}.membership-availability h3{margin:.2rem 0}.membership-availability p{margin:.3rem 0}
 .booking-membership-summary{background:#e4ebdf;border-radius:1rem;padding:1rem 1.2rem;margin:0 0 1rem}.booking-membership-summary h2{font-size:1.1rem;margin:0 0 .4rem}.booking-membership-row p{margin:.2rem 0}.booking-membership-row+.booking-membership-row{border-top:1px solid #cbd3c7;margin-top:.6rem;padding-top:.5rem}
+
+.compact-edit>.booking-edit-actions{grid-column:1/-1;display:flex;align-items:center;gap:18px;flex-wrap:wrap}.booking-edit-actions .button,.booking-edit-actions a{white-space:nowrap}.record-form .booking-edit-actions a{margin-left:0}.arrival-field textarea{width:100%;min-width:0;resize:vertical;font:inherit;padding:12px;border:1px solid #657567;border-radius:10px}
