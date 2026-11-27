@@ -1,3 +1,11 @@
 <h2>Visit payment details</h2>{% include 'core/quote_items.html' with data=reviewed.quote adjustment=reviewed.adjustment %}{% if reviewed.prepaid %}<div class="receipt-summary"><p><span>Zelle already received</span><strong>${{ reviewed.prepaid|floatformat:2 }}</strong></p>{% if reviewed.refund_due %}<p class="refund-due"><span>Refund due through Zelle</span><strong>${{ reviewed.refund_due|floatformat:2 }}</strong></p><p class="caption">The owner will receive a Dashboard notice until the manual refund is recorded.</p>{% else %}<p><span>Remaining to collect</span><strong>${{ reviewed.remaining|floatformat:2 }}</strong></p>{% endif %}</div>{% endif %}
 
 {% if reviewed.plan %}<div class="arrival-tender-plan"><h3>Payment to record</h3>{% for part in reviewed.plan %}<p><span>{% if part.advance %}Recorded Zelle to apply{% elif part.tender == 'card' %}Card to charge{% elif part.tender == 'gift_card' %}Gift card{% else %}{{ part.tender|title }}{% endif %}</span><strong>${{ part.amount|floatformat:2 }}</strong></p>{% endfor %}</div>{% endif %}
+{% if reviewed.combined %}<div class="receipt-summary"><h3>Membership and visit</h3>
+<p><span>{{ reviewed.combined.offer.places }} {{ reviewed.combined.offer.kind|title }} place{{ reviewed.combined.offer.places|pluralize }} · {{ reviewed.combined.offer.months }} months</span></p>
+<p><span>Membership due today</span><strong>${{ reviewed.combined.facts.membership_due }}</strong></p>
+{% if reviewed.combined.offer.credit %}<p><span>Existing credit applied to membership</span><strong>${{ reviewed.combined.offer.credit.amount }}</strong></p>{% endif %}
+<p><span>Visit payment today</span><strong>${{ reviewed.combined.facts.visit_due }}</strong></p>
+<p><strong>{{ reviewed.combined.offer.expected_method|title }} received today</strong><strong>${{ reviewed.combined.facts.received_today }}</strong></p>
+<p class="caption">One confirmation records the membership purchase and this arrival.</p>
+</div>{% endif %}

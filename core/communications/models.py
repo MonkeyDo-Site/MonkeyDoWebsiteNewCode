@@ -32,6 +32,7 @@ class MessageDelivery(models.Model):
             ("booking_cancelled", "Booking Cancellation"),
             ("booking_no_show", "Booking No-show"),
             ("membership_confirmation", "Membership Confirmation"),
+            ("membership_visit_confirmation", "Membership and Visit Confirmation"),
             ("membership_renewal", "Membership Renewal"),
             ("membership_addition", "Additional Membership Places"),
             ("membership_cancellation", "Membership Cancellation"),

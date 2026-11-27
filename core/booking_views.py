@@ -49,6 +49,16 @@ def booking_detail(request, pk):
         from .payments.checkout import summary
 
         payment_context["payment_summary"] = summary(booking)
+        if settings.MEMBERSHIP_SALES_ENABLED and request.user.has_perm(
+            "core.view_membershippurchase"
+        ):
+            from .membership_records import MembershipArrivalCheckout
+
+            payment_context["combined_arrival"] = (
+                MembershipArrivalCheckout.objects.filter(checkout__booking=booking)
+                .select_related("purchase__membership")
+                .first()
+            )
     if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature"):
         from .waivers.forms import NamedPaperWaiverForm
 

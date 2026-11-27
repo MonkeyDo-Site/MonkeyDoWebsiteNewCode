@@ -1,0 +1,27 @@
+{% if form.member_add %}
+<section class="panel arrival-membership">
+{% include 'core/partials/arrival_field.html' with field=form.member_add %}
+<div data-arrival-membership-fields>
+<p class="caption">Record cash or check for both the membership and adjusted visit using the payment choice below. Monthly installments require the customer’s accepted saved card.</p>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_kind %}
+{% include 'core/partials/arrival_field.html' with field=form.member_places %}
+{% include 'core/partials/arrival_field.html' with field=form.member_months %}
+{% include 'core/partials/arrival_field.html' with field=form.member_billing %}
+</div>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_starts_on %}
+{% include 'core/partials/arrival_field.html' with field=form.member_credit %}
+<div data-membership-monthly-card>{% include 'core/partials/arrival_field.html' with field=form.member_card %}</div>
+</div>
+{% if form.member_minimum_override %}<details><summary>Owner membership exceptions</summary>
+{% include 'core/partials/arrival_field.html' with field=form.member_minimum_override %}
+{% include 'core/partials/arrival_field.html' with field=form.member_comped %}
+<div data-membership-comped-email>{% include 'core/partials/arrival_field.html' with field=form.member_send_confirmation %}</div>
+</details>{% endif %}
+<details><summary>Membership terms to review with the customer</summary><p data-arrival-membership-terms>{{ reviewed.combined.offer.terms }}</p></details>
+{% include 'core/partials/arrival_field.html' with field=form.member_accepted %}
+{% include 'core/partials/arrival_field.html' with field=form.member_received %}
+</div>
+</section>
+{% endif %}

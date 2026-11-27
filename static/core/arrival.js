@@ -50,6 +50,17 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   }
   const sync=()=>{
     const method=form.elements.method.value;
+    const memberFields=form.querySelector('[data-arrival-membership-fields]');
+    if(memberFields){
+      const active=form.elements.member_add.checked;
+      memberFields.hidden=!active;
+      for(const input of memberFields.querySelectorAll('input,select,textarea'))input.disabled=!active;
+      const card=memberFields.querySelector('[data-membership-monthly-card]');
+      const needsCard=active&&form.elements.member_billing.value==='monthly'&&!form.elements.member_comped?.checked;
+      card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;
+      const email=memberFields.querySelector('[data-membership-comped-email]');
+      if(email){email.hidden=!form.elements.member_comped.checked;form.elements.member_send_confirmation.disabled=!active||email.hidden;}
+    }
     splitBox.hidden=method!=='split';
     if(method==='split'&&!rows().length)makeRow();
     if(method==='split')serialize();
@@ -69,6 +80,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const applyFeedback=(data,ok)=>{
     lastQuote={...lastQuote,...data};
     if(data.html)form.querySelector('[data-arrival-price]').innerHTML=data.html;
+    const terms=form.querySelector('[data-arrival-membership-terms]');
+    if(terms)terms.textContent=data.membership_terms||'';
     form.elements.reviewed_hash.value=ok?data.hash||'':'';
     label.textContent=data.label||'Confirm arrival';
     const warning=form.querySelector('[data-waiver-mismatch]');
@@ -81,6 +94,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     else if(form.elements.waiver_confirmed.value==='no')status.textContent='Complete waiver coverage before confirming arrival.';
     else if(form.elements.waiver_confirmed.value!=='yes')status.textContent='The waiver confirmation field is required.';
     else if(!warning.hidden&&form.elements.waiver_mismatch_accepted.value!=='yes')status.textContent='Review the waiver-count warning before completing arrival.';
+    else if(data.membership_ready===false)status.textContent='Review the membership terms, saved installment card and combined payment confirmation above.';
     else if(!data.can_confirm)status.textContent='Verify the received Zelle or physical gift card before completing arrival.';
     else status.textContent='';
   };
@@ -104,11 +118,17 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   add.addEventListener('click',()=>{const used=new Set(rows().map(row=>row.querySelector('select').value));const next=Object.keys(kinds).find(kind=>!used.has(kind));if(next){makeRow(next);schedule();}});
   form.addEventListener('input',event=>{
     if(event.target.form!==form)return;
+    if(form.elements.member_add?.checked&&!['member_accepted','member_received','waiver_confirmed','waiver_mismatch_accepted'].includes(event.target.name)){
+      form.elements.member_received.checked=false;
+    }
     if(['children','babies'].includes(event.target.name))for(const input of form.querySelectorAll('[name=waiver_mismatch_accepted]'))input.checked=false;
     schedule();
   });
   form.addEventListener('change',event=>{
     if(event.target.form!==form)return;
+    if(form.elements.member_add?.checked&&(event.target.name==='method'||(event.target.name.startsWith('member_')&&!['member_accepted','member_received'].includes(event.target.name)))){
+      form.elements.member_accepted.checked=false;form.elements.member_received.checked=false;
+    }
     if(event.target===form.elements.method){
       if(previousMethod==='split'&&event.target.value!=='split'){
         rowHost.replaceChildren();rowState.value='[]';

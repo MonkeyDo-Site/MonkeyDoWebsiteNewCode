@@ -58,6 +58,7 @@ def send(delivery):
         "booking_no_show",
         "membership_cancellation",
         "membership_confirmation",
+        "membership_visit_confirmation",
         "membership_renewal",
         "membership_addition",
         "membership_expiry_notice",

@@ -189,6 +189,7 @@ def visit_plan(
     unlimited_places=None,
     payment_exceptions=frozenset(),
     ordinary_pricing=False,
+    proposed_membership=None,
 ):
     enabled()
     chol_hamoed = CalendarDate.objects.filter(day=appointment_on, chol_hamoed=True).exists()
@@ -205,6 +206,12 @@ def visit_plan(
             payment_exceptions=payment_exceptions,
         )
     )
+    if proposed_membership is not None and not ordinary_pricing:
+        # This input exists only on the read-only combined checkout preview.
+        # Reservation/consumption always rebuilds eligibility from paid records.
+        from .membership_arrival import proposed_places
+
+        places.extend(proposed_places(proposed_membership, appointment_on, children))
     return plan_visit(
         policy,
         places,

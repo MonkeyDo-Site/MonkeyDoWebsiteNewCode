@@ -32,6 +32,19 @@ FIELDS = (
     "waiver_confirmed",
     "waiver_mismatch_accepted",
     "split_rows",
+    "member_add",
+    "member_kind",
+    "member_places",
+    "member_months",
+    "member_billing",
+    "member_starts_on",
+    "member_card",
+    "member_credit",
+    "member_accepted",
+    "member_received",
+    "member_minimum_override",
+    "member_comped",
+    "member_send_confirmation",
 )
 PAPER_FIELDS = ("paper_signed", "signed_on", "signer_name", "relationship", "minors", "request_key")
 

@@ -59,7 +59,12 @@ def enqueue(
 @transaction.atomic
 def claim(message_id):
     notice_kinds = {"membership_expiry_notice", "membership_grace_notice"}
-    confirmation_kinds = {"membership_confirmation", "membership_renewal", "membership_addition"}
+    confirmation_kinds = {
+        "membership_confirmation",
+        "membership_renewal",
+        "membership_addition",
+        "membership_visit_confirmation",
+    }
     scope = MessageDelivery.objects.only("kind", "customer_id", "membership_id").get(pk=message_id)
     if (scope.kind in notice_kinds or scope.membership_id) and scope.customer_id:
         from core.membership_reservations import lock_customer

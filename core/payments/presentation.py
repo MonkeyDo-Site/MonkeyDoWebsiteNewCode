@@ -21,6 +21,10 @@ def invoice_breakdown(sale):
         "total": f"{sum(totals.values(), ZERO):.2f}",
     }
     if sale.booking_id:
+        # Member adult allowances change billable quantities without changing
+        # who attended. Preserve the accepted counts for the price explanation.
+        if "membership_attendees" in sale.quote.snapshot:
+            result["membership_attendees"] = sale.quote.snapshot["membership_attendees"]
         from core.customer_credit_records import VisitMembershipConversion
 
         conversion = (
@@ -35,4 +39,6 @@ def invoice_breakdown(sale):
                 for key in ("subtotal", "processing_fee", "sales_tax", "total")
             ):
                 result["lines"] = saved["lines"]
+                if "membership_attendees" in saved:
+                    result["membership_attendees"] = saved["membership_attendees"]
     return result

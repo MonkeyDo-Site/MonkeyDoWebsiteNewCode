@@ -13,10 +13,20 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from core.membership_arrival_forms import confirm as arrival_confirm
+from core.membership_arrival_forms import preview as arrival_preview
+from core.membership_arrival_forms import ready as membership_ready
 from core.models import Booking
 from core.permissions import staff_permission
 
-from .checkout import charge_state, confirm, coverage_facts, preview
+from .checkout import charge_state, coverage_facts, preview
+
+
+def combined_label(combined):
+    tender = combined["offer"]["expected_method"]
+    return (
+        f"Confirm arrival and membership — record {tender} ${combined['facts']['received_today']}"
+    )
 
 
 class ReceiptForm(forms.Form):
@@ -97,11 +107,14 @@ class ArrivalForm(ReceiptForm):
         help_text="Attendee counts changed? Keep or adjust the agreed total. Socks stay separate; no automatic partial cancellation fee is added.",
     )
 
-    def __init__(self, *args, booking, owner=False, previewing=False, **kwargs):
+    def __init__(self, *args, booking, owner=False, previewing=False, actor=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.previewing = previewing
         self.fields["waiver_confirmed"].required = not previewing
         self.booking = booking
+        from core.membership_arrival_forms import configure
+
+        configure(self, booking, actor)
         from core.membership_booking_exceptions import add_fields
 
         add_fields(self, booking=booking, owner=owner)
@@ -169,6 +182,9 @@ class ArrivalForm(ReceiptForm):
             kind: str(data.get(kind + "_amount") or "0.00")
             for kind in ("cash", "check", "zelle", "gift_card")
         }
+        from core.membership_arrival_forms import clean
+
+        clean(self)
         return data
 
 
@@ -289,6 +305,8 @@ def checkout(request, pk, kind="arrival"):
     else:
         initial["method"] = "card"
     args = {"booking": booking, "owner": request.user.is_superuser}
+    if kind == "arrival":
+        args["actor"] = request.user
     if kind != "arrival":
         args["kind"] = kind
         args["owner"] = request.user.is_superuser
@@ -330,12 +348,13 @@ def checkout(request, pk, kind="arrival"):
         args["previewing"] = request.method == "POST" and request.POST.get("confirm_review") != "1"
     form = form_type(request.POST if request.method == "POST" else None, initial=initial, **args)
     reviewed = None
+    combined = None
     label = None
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         try:
             if request.POST.get("confirm_review") == "1":
-                result = confirm(
+                result = arrival_confirm(
                     actor=request.user,
                     booking_id=pk,
                     kind=kind,
@@ -376,7 +395,7 @@ def checkout(request, pk, kind="arrival"):
                 raise ValidationError(
                     "The booking changed. Reload it and review the current details."
                 )
-            _, _, quote, plan, _, digest = preview(
+            (_, _, quote, plan, _, digest), combined = arrival_preview(
                 actor=request.user,
                 booking_id=pk,
                 kind=kind,
@@ -387,8 +406,8 @@ def checkout(request, pk, kind="arrival"):
             values["reviewed_hash"] = digest
             form = form_type(values, **args)
             form.is_valid()
-            reviewed = {"quote": quote, "plan": plan}
-            label = confirm_label(kind, quote, plan)
+            reviewed = {"quote": quote, "plan": plan, "combined": combined}
+            label = combined_label(combined) if combined else confirm_label(kind, quote, plan)
         except ValidationError as error:
             form.add_error(None, " ".join(error.messages))
     from core.waivers.paper import active_customer_waivers
@@ -419,16 +438,16 @@ def checkout(request, pk, kind="arrival"):
         preview_form = ArrivalForm(values, **(args | {"previewing": True}))
         if preview_form.is_valid():
             try:
-                _, _, quote, plan, _, digest = preview(
+                (_, _, quote, plan, _, digest), combined = arrival_preview(
                     actor=request.user,
                     booking_id=pk,
                     kind=kind,
                     data=preview_form.cleaned_data,
                     validate_waivers=False,
                 )
-                reviewed = {"quote": quote, "plan": plan}
+                reviewed = {"quote": quote, "plan": plan, "combined": combined}
                 form.initial["reviewed_hash"] = digest
-                label = confirm_label(kind, quote, plan)
+                label = combined_label(combined) if combined else confirm_label(kind, quote, plan)
             except ValidationError as error:
                 form = preview_form
                 form.add_error(None, error)
@@ -460,7 +479,7 @@ def checkout(request, pk, kind="arrival"):
                 "can_confirm": False,
                 "waiver": waiver,
             }
-            if kind == "arrival":
+            if kind == "arrival" and not form.cleaned_data.get("member_add"):
                 try:
                     from core.pricing import Line, quote_lines
 
@@ -511,6 +530,7 @@ def checkout(request, pk, kind="arrival"):
                 "hash": form["reviewed_hash"].value(),
                 "label": label,
                 "can_confirm": form.cleaned_data.get("waiver_confirmed") is True
+                and membership_ready(form.cleaned_data, combined)
                 and (
                     not waiver["mismatch"]
                     or form.cleaned_data.get("waiver_mismatch_accepted") is True
@@ -524,6 +544,8 @@ def checkout(request, pk, kind="arrival"):
                     or form.cleaned_data.get("zelle_verified") is True
                 ),
                 "waiver": waiver,
+                "membership_terms": combined["offer"]["terms"] if combined else "",
+                "membership_ready": membership_ready(form.cleaned_data, combined),
                 "noncard_total": noncard["total"],
                 "prepaid_available": str(prepaid["available"]),
                 "plan": [
@@ -778,11 +800,18 @@ def arrival_status(request, pk, checkout_id):
             "succeeded",
             "Arrival confirmed. The reviewed received payment was recorded.",
         )
+    combined = getattr(checkout, "membership_purchase", None)
+    new_received = received(checkout.sale) if checkout.sale_id else Decimal("0.00")
+    if combined:
+        # The visit status must include the simultaneously collected membership
+        # payment, while applied credit and earlier Zelle stay separate.
+        new_received = Decimal(combined.facts["received_today"])
+        message = "Arrival and membership confirmed. The reviewed received payment was recorded."
     return JsonResponse(
         {
             "state": state,
             "message": message,
-            "received": str(received(checkout.sale)) if checkout.sale_id else "0.00",
+            "received": str(new_received),
             "booking_url": reverse("booking_detail", args=[pk]),
         },
         headers={"Cache-Control": "no-store"},

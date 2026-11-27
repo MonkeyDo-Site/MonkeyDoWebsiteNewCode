@@ -657,6 +657,7 @@ from .customer_credit_records import (  # noqa: E402,F401
     VisitMembershipConversion,
 )
 from .membership_records import (  # noqa: E402,F401
+    MembershipArrivalCheckout,
     MembershipBenefitAssignment,
     MembershipBenefitBatch,
     MembershipBenefitEvent,

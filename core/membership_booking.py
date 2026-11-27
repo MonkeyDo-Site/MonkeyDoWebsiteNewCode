@@ -73,6 +73,7 @@ def lines_for(
     comped=False,
     apply_available=False,
     resolution=None,
+    proposed_membership=None,
 ):
     from .membership_booking_exceptions import flags, resolve
 
@@ -88,7 +89,12 @@ def lines_for(
         booking, special_admissions=special_admissions, comped=comped, **overrides
     )
     on = session.starts_at.astimezone(NEW_YORK).date()
-    allow_daily = booking is None or booking.setup_pending or apply_available
+    allow_daily = (
+        booking is None
+        or booking.setup_pending
+        or apply_available
+        or proposed_membership is not None
+    )
     if booking is not None:
         saved = booking.quotes.first()
         old_on = saved.snapshot.get("membership_appointment_on") if saved else None
@@ -108,6 +114,7 @@ def lines_for(
         special_admissions=special_admissions,
         comped=comped,
         unlimited_places=None if allow_daily else existing_daily_places(booking),
+        proposed_membership=proposed_membership,
         **overrides,
     )
     meta = {

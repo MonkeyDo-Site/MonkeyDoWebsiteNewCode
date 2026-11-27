@@ -117,7 +117,7 @@ def verify_coverage(booking, counts, confirmed, acknowledged=False):
         )
 
 
-def preview(*, actor, booking_id, kind, data, validate_waivers=True):
+def preview(*, actor, booking_id, kind, data, validate_waivers=True, proposed_membership=None):
     authorize(actor)
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
     require_current(booking, kind)
@@ -195,6 +195,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
                 comped=state.comped,
                 apply_available=data.get("apply_available_benefits", False),
                 resolution=membership_resolution,
+                proposed_membership=proposed_membership,
             )
             if units:
                 lines.append(Line("Partial cancellation fee", units, Decimal("3.00"), False))

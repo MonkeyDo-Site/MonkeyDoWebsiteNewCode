@@ -270,6 +270,7 @@ def purchase(
     verified_received=False,
     received_on=None,
     authority=None,
+    combined_booking=None,
     **values,
 ):
     authorize(actor, collect=True, authority=authority)
@@ -312,6 +313,12 @@ def purchase(
                 "This renewal needs its current card authorization, or already has a purchase recorded."
             )
     values["customer"] = customer
+    if combined_booking is not None:
+        from .payments.checkout import authorize as authorize_arrival
+
+        authorize_arrival(actor)
+        if combined_booking.customer_id != customer.pk or authority is not None:
+            raise ValidationError("Use this customer's staff arrival to combine the purchase.")
     data = offer(actor=actor, authority=authority, **values)
     if data["fingerprint"] != reviewed:
         raise ValidationError(
@@ -424,6 +431,7 @@ def purchase(
         purpose="complimentary" if data["comped"] else data["operation"],
         send_confirmation=send_confirmation if data["comped"] else True,
         source="staff" if actor else "public",
+        confirmation_mode="combined" if combined_booking is not None else "separate",
         actor=actor,
     )
     mandate = (

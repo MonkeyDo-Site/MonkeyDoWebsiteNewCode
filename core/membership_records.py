@@ -57,6 +57,22 @@ class MembershipPurchase(FinancialFact):
         return self.membership.membership_number
 
 
+class MembershipArrivalCheckout(FinancialFact):
+    """One reviewed purchase completed with an arrival, never a preview/hold."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    purchase = models.OneToOneField(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="arrival_purchase"
+    )
+    checkout = models.OneToOneField(
+        "core.BookingCheckout", on_delete=models.PROTECT, related_name="membership_purchase"
+    )
+    fingerprint = models.CharField(max_length=64)
+    facts = models.JSONField()
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class MembershipInstallment(FinancialFact):
     purchase = models.ForeignKey(
         MembershipPurchase, on_delete=models.PROTECT, related_name="installments"
