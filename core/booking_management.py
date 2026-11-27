@@ -183,6 +183,10 @@ def check_editable(booking, version):
 
 
 def calculate_quote(booking, policy, values=None):
+    from . import membership_booking
+
+    if membership_booking.active(booking):
+        return membership_booking.booking_quote(booking, policy, values)
     fields = ("children", "adults", "babies", "socks", "supervised", "expected_method")
     editing = values is not None
     values = values or {key: getattr(booking, key) for key in fields}
@@ -243,12 +247,32 @@ def calculate_quote(booking, policy, values=None):
     return data
 
 
-def write_quote(booking, policy, actor):
+def write_quote(booking, policy, actor, *, apply_available_benefits=False):
+    from .membership_booking import lock
+
+    lock(booking)
     return BookingQuote.objects.create(
         booking=booking,
         policy=policy,
         revision=booking.edit_version,
-        snapshot=calculate_quote(booking, policy),
+        snapshot=calculate_quote(
+            booking,
+            policy,
+            {
+                key: getattr(booking, key)
+                for key in (
+                    "children",
+                    "adults",
+                    "babies",
+                    "socks",
+                    "supervised",
+                    "expected_method",
+                )
+            }
+            | {"apply_available_benefits": True}
+            if apply_available_benefits
+            else None,
+        ),
         actor=actor,
     )
 
@@ -396,12 +420,15 @@ def edit_test_booking(
     zelle_sender=None,
     special_admissions=None,
     supervised_exception=False,
+    apply_available_benefits=False,
 ):
     lock_calendar(exclusive=close_session or reopen_affected_sessions)
     if close_session or reopen_affected_sessions:
         require_actor(actor, "core.change_session", owner=True)
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
+    if type(apply_available_benefits) is not bool:
+        raise ValidationError("Review the available membership benefit choice.")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
     check_editable(booking, version)
     target_id = session.pk if session is not None else booking.session_id
@@ -512,9 +539,21 @@ def edit_test_booking(
         before[field] != getattr(booking, field)
         for field in ("children", "adults", "babies", "socks", "supervised", "expected_method")
     )
+    from . import membership_booking
+
+    if membership_booking.active(booking):
+        price_changed = price_changed or old_session.pk != session.pk or apply_available_benefits
     if booking.workflow == "integrated_v1" and special_admissions is not None:
         price_changed = price_changed or old_special != state.special_subtotal
-    quote = write_quote(booking, current.policy, actor) if price_changed else current
+    quote = (
+        write_quote(
+            booking, current.policy, actor, apply_available_benefits=apply_available_benefits
+        )
+        if price_changed
+        else current
+    )
+    if price_changed and not booking.setup_pending:
+        membership_booking.confirm(booking, actor=actor)
     AuditEvent.objects.create(
         actor=actor,
         action="booking.updated",
@@ -582,6 +621,15 @@ def move_test_booking(
     booking.session = target
     booking.edit_version += 1
     booking.save()
+    from . import membership_booking
+
+    if membership_booking.active(booking):
+        saved = booking.quotes.first()
+        if saved is None:
+            raise ValidationError("Review the current membership price before changing timing.")
+        write_quote(booking, saved.policy, actor)
+        if not booking.setup_pending:
+            membership_booking.confirm(booking, actor=actor)
     AuditEvent.objects.create(
         actor=actor,
         action="booking.timing_changed",

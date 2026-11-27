@@ -325,6 +325,13 @@ def display(request, flow, *, form=None, error=None, notice=None):
     session = public_session(flow["session_id"])
     customer = customer_from_flow(flow) if flow.get("proof") else None
     completing = flow.get("workflow") == "integrated_v1"
+    from .membership_booking import summaries
+
+    membership_rows = (
+        summaries(customer.pk if customer else None, session, flow.get("quote"))
+        if completing
+        else []
+    )
     card = {}
     if completing and flow["stage"] == "review":
         from .payments.setup import selected_consent
@@ -350,6 +357,7 @@ def display(request, flow, *, form=None, error=None, notice=None):
                 waivers=completing,
             ),
             "flow": flow,
+            "membership_rows": membership_rows,
             "booking_history_page": True,
             "waiver_choices": form if flow["stage"] == "waiver" else None,
             **card,

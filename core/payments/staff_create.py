@@ -219,6 +219,17 @@ def quote_for(data, owner_price):
     policy = PricingPolicy.objects.first()
     if not policy:
         raise ValidationError("Pricing is unavailable.")
+    from core import membership_booking
+
+    if membership_booking.active():
+        return membership_booking.new_quote(
+            policy,
+            customer_id=data["customer"].pk,
+            session=data["session"],
+            values=data,
+            special_admissions=owner_price["custom_admissions"],
+            comped=owner_price["price_mode"] == "comped",
+        )
     lines = visit_lines(
         policy,
         **{k: data[k] for k in DETAILS if k != "expected_method"},
@@ -366,6 +377,17 @@ def context_card(flow):
     return context
 
 
+def membership_context(flow):
+    from core.membership_booking import active, summaries
+    from core.models import Session
+
+    session = Session.objects.filter(pk=flow.get("session_id")).first() if active() else None
+    return {
+        "session": session,
+        "membership_rows": summaries(flow.get("customer_id"), session, flow.get("quote")),
+    }
+
+
 def response_context(request, flow, forms_tuple):
     from core.booking_holds import describe
 
@@ -383,6 +405,9 @@ def response_context(request, flow, forms_tuple):
         "html": render_to_string("core/quote_items.html", {"data": quote}, request=request)
         if quote
         else "",
+        "membership_html": render_to_string(
+            "core/partials/booking_memberships.html", membership_context(flow), request=request
+        ),
         "waivers_html": render_to_string(
             "core/partials/staff_create_waivers.html", {"waiver_form": waivers}, request=request
         )
@@ -487,8 +512,16 @@ def commit_booking(request, flow, post, result):
         )
     saved_quote = booking.quotes.first().snapshot
     if any(
-        saved_quote[key] != quote[key]
-        for key in ("policy_id", "lines", "subtotal", "processing_fee", "sales_tax", "total")
+        saved_quote.get(key) != quote.get(key)
+        for key in (
+            "policy_id",
+            "lines",
+            "subtotal",
+            "processing_fee",
+            "sales_tax",
+            "total",
+            "membership_plan",
+        )
     ):
         raise ValidationError(
             "Pricing changed while confirming. Review the new estimate and confirm again."
@@ -673,6 +706,7 @@ def page_content(request):
         request,
         "core/staff_booking_create.html",
         context_card(flow)
+        | membership_context(flow)
         | {
             "flow": flow,
             "form": booking_form,

@@ -193,6 +193,9 @@ def finalize(*, actor, booking_id, flow, values):
         review.coverage_confirmed = True
         review.revision += 1
         review.save(update_fields=["coverage_confirmed", "revision", "updated_at"])
+    from core.membership_booking import confirm as confirm_membership
+
+    confirm_membership(booking, actor=actor)
     booking.setup_pending = False
     booking.save(update_fields=["setup_pending"])
     if booking.customer.email:

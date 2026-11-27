@@ -37,6 +37,9 @@ class ReceiptForm(forms.Form):
 
 
 class ArrivalForm(ReceiptForm):
+    apply_available_benefits = forms.BooleanField(
+        required=False, label="Apply available Unlimited benefit"
+    )
     request_key = forms.UUIDField(widget=forms.HiddenInput)
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     reviewed_hash = forms.CharField(required=False, max_length=64, widget=forms.HiddenInput)
@@ -99,6 +102,10 @@ class ArrivalForm(ReceiptForm):
         self.previewing = previewing
         self.fields["waiver_confirmed"].required = not previewing
         self.booking = booking
+        from core.membership_booking import has_available_daily
+
+        if not has_available_daily(booking):
+            self.fields.pop("apply_available_benefits")
         special = charge_state(booking)
         if not owner or special.special_subtotal is None or special.comped:
             self.fields.pop("special_admissions")
@@ -234,6 +241,8 @@ def confirm_label(kind, quote, plan):
         return (
             f"Confirm {noun} without a fee"
             if kind != "arrival"
+            else "Confirm arrival — no payment due"
+            if quote.get("membership_benefits_applied")
             else "Confirm arrival — owner-comped $0"
         )
     if any(p.get("advance") for p in plan):

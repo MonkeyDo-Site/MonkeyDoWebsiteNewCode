@@ -80,7 +80,15 @@ def fresh_numbers(size, occupied, limit):
         number += 1
 
 
-def places_for(customer_id, *, appointment_on, children, exclude_booking=None, supervised=False):
+def places_for(
+    customer_id,
+    *,
+    appointment_on,
+    children,
+    exclude_booking=None,
+    supervised=False,
+    unlimited_places=None,
+):
     if type(appointment_on) is not date or type(children) is not int or not 0 <= children <= 32767:
         raise ValidationError("Use the appointment date and valid child count.")
     if not children:
@@ -116,7 +124,17 @@ def places_for(customer_id, *, appointment_on, children, exclude_booking=None, s
                     assignment__kind="unlimited_daily", assignment__appointment_on=appointment_on
                 ).values_list("assignment__place", flat=True)
             )
-            numbers = fresh_numbers(root.places, occupied, children)
+            numbers = (
+                fresh_numbers(root.places, occupied, children)
+                if unlimited_places is None
+                else sorted(
+                    number
+                    for membership_id, number in unlimited_places
+                    if membership_id == member.pk
+                    and 1 <= number <= root.places
+                    and number not in occupied
+                )
+            )
         elif supervised:
             numbers = range(1, min(children, root.places) + 1)
         else:
@@ -158,6 +176,7 @@ def visit_plan(
     exclude_booking=None,
     special_admissions=None,
     comped=False,
+    unlimited_places=None,
 ):
     enabled()
     chol_hamoed = CalendarDate.objects.filter(day=appointment_on, chol_hamoed=True).exists()
@@ -167,6 +186,7 @@ def visit_plan(
         children=children,
         exclude_booking=exclude_booking,
         supervised=supervised,
+        unlimited_places=unlimited_places,
     )
     return plan_visit(
         policy,
@@ -249,14 +269,18 @@ def transition(assignment, batch):
 
 
 @transaction.atomic
-def reserve(*, actor, booking_id, quote_id, request_key):
+def reserve(*, actor, booking_id, quote_id, request_key, for_arrival=False):
     enabled()
     booking = Booking.objects.select_for_update().select_related("session").get(pk=booking_id)
     actor_allowed(actor, booking)
     request_key = lock_request(request_key)
     lock_customer(booking.customer_id)
     quote = BookingQuote.objects.select_related("policy").get(pk=quote_id, booking=booking)
-    if quote.pk != booking.quotes.first().pk or booking.attendance:
+    if type(for_arrival) is not bool or (
+        for_arrival and (actor is None or booking.attendance != "arrived")
+    ):
+        raise ValidationError("Use the staff arrival confirmation for benefit usage.")
+    if quote.pk != booking.quotes.first().pk or (booking.attendance and not for_arrival):
         raise ValidationError("Review the current upcoming booking before reserving benefits.")
     prior = MembershipBenefitBatch.objects.filter(pk=request_key).first()
     if prior:
@@ -275,6 +299,18 @@ def reserve(*, actor, booking_id, quote_id, request_key):
     state = getattr(booking, "charge_state", None)
     comped = bool(state and state.comped)
     special = state.special_subtotal if state else None
+    options = quote.snapshot.get("membership_options", {})
+    if type(options.get("allow_new_unlimited", True)) is not bool:
+        raise ValidationError("Review the membership benefit choices.")
+    allowed = (
+        None
+        if options.get("allow_new_unlimited", True)
+        else set(
+            booking.membership_benefits.filter(
+                current__status__in=["reserved", "used"], kind="unlimited_daily"
+            ).values_list("purchase_id", "place")
+        )
+    )
     plan = visit_plan(
         quote.policy,
         customer_id=booking.customer_id,
@@ -287,6 +323,7 @@ def reserve(*, actor, booking_id, quote_id, request_key):
         exclude_booking=booking.pk,
         comped=comped,
         special_admissions=special,
+        unlimited_places=allowed,
     )
     if current != plan.snapshot():
         raise ValidationError(

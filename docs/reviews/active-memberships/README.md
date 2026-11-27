@@ -2,7 +2,7 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37). These are actual application pages with fictional review data, captured at 1440px desktop and 390px phone widths. All names, card references and payment outcomes are synthetic. No card was charged and no customer email was delivered.
 
-These first samples cover staff purchase and the membership overview. Booking-screen benefit integration, public purchase, renewals/additions, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not shown or verified here.
+These samples cover staff purchase, the membership overview and member-aware staff booking/edit/arrival. Public purchase, renewals/additions, conversion/credit and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not shown or verified here.
 
 ## 01 — Purchase membership on one page
 
@@ -28,8 +28,42 @@ One Subscription place: **$18.53 due**. No received funds or active benefits are
 | --- | --- |
 | [![Pending membership payment, desktop](03-pending-desktop.png)](03-pending-desktop.png) | [![Pending membership payment, phone](03-pending-phone.png)](03-pending-phone.png) |
 
+## 04 — Member-aware booking on the existing combined page
+
+Three children, two adults and one pair of socks; two Subscription places cover two children and both adults. One ordinary child admission remains: $15.00 + $1.99 socks + $0.51 card fee + $1.02 tax = **$18.52 at arrival**. Membership information sits above the existing attendee/price, waiver and card controls. Capacity counts, the 30-minute temporary reservation, session blocking, owner pricing and waiver-link choice remain visible. No member benefit is reserved by the unfinished draft itself.
+
+The card setup shown here was simulated. Its configuration warning belongs to the isolated review environment and does not diagnose the deployed Banquest setup. No actual hosted card fields were verified.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Member booking, desktop](04-member-booking-desktop.png)](04-member-booking-desktop.png) | [![Member booking, phone](04-member-booking-phone.png)](04-member-booking-phone.png) |
+
+## 05 — Edit member booking
+
+The estimate includes member admissions before saving. A count or timing change recalculates the applicable membership month/day and atomically transfers reservations when saved. Current capacity controls remain in place.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Edit member booking, desktop](05-member-edit-desktop.png)](05-member-edit-desktop.png) | [![Edit member booking, phone](05-member-edit-phone.png)](05-member-edit-phone.png) |
+
+## 06 — Member arrival
+
+The existing combined arrival page shows two free member admissions, one ordinary admission and socks. Waiver coverage and the selected payment action are reviewed before the single final confirmation. Only confirmation records usage and requests payment.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Member arrival, desktop](06-member-arrival-desktop.png)](06-member-arrival-desktop.png) | [![Member arrival, phone](06-member-arrival-phone.png)](06-member-arrival-phone.png) |
+
+## 07 — One fewer child arrives
+
+Two member-covered children attend, along with two adults and one pair of socks. The revised total is **$5.14**: $1.99 socks + $3 cancellation fee + $0.15 card fee. The adjustment explains the original **$18.52**, the **$15 ordinary admission removed**, the fee/tax adjustments and the cancellation fee. No attendance or payment is recorded in these review captures.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Reduced member arrival, desktop](07-member-reduced-arrival-desktop.png)](07-member-reduced-arrival-desktop.png) | [![Reduced member arrival, phone](07-member-reduced-arrival-phone.png)](07-member-reduced-arrival-phone.png) |
+
 ## Checked so far
 
-The browser checks confirm no horizontal overflow or JavaScript errors on these desktop/phone pages. A separate functional browser scenario completes a prepaid cash purchase on the same form, requires new acceptance after changing places and shows the recorded receipt on the active overview. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants.
+The browser checks confirm no horizontal overflow or JavaScript errors on all seven desktop/phone pairs. The complete application suite passes 798 tests, including the corrected mixed-admission price explanations. A separate functional browser scenario completes a prepaid cash purchase on the same form, requires new acceptance after changing places and shows the recorded receipt on the active overview. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants.
 
 The first review is about layout and clarity. Implementation and regression testing continue independently while the owner reviews. The final owner testing guide and release package follow completion and explicit release approval.

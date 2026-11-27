@@ -24,10 +24,17 @@ def edit_estimate(booking, data):
     }
     if data.get("special_admissions") is not None:
         values["special_admissions"] = data["special_admissions"]
+    values["session"] = data["session"]
+    if data.get("apply_available_benefits"):
+        values["apply_available_benefits"] = True
     quote = calculate_quote(booking, saved.policy, values)
     payload = {
         **{
-            key: str(value) if key == "special_admissions" else value
+            key: str(value)
+            if key == "special_admissions"
+            else value.pk
+            if key == "session"
+            else value
             for key, value in values.items()
         },
         "session": data["session"].pk,

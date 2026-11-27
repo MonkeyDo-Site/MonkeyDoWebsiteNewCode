@@ -27,6 +27,10 @@ from .models import (
 )
 
 CATEGORIES = {
+    "Child admissions — Unlimited membership": "member_unlimited_visit",
+    "Child admissions — Subscription free visits": "member_subscription_free",
+    "Child admissions — Subscription additional visits": "member_subscription_additional",
+    "Supervised child admissions — Subscription discount": "member_subscription_supervised",
     "Child admissions": "open_child",
     "Owner-priced admissions": "owner_priced_admissions",
     "Supervised child admissions": "supervised_child",

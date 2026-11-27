@@ -48,6 +48,23 @@ def set_price(*, actor, booking_id, version, comped, special_admissions=None):
         booking.setup_pending = True
     booking.save(update_fields=["edit_version", "setup_pending"])
     write_quote(booking, quote.policy, actor)
+    from core import membership_booking
+
+    if membership_booking.active(booking):
+        if booking.setup_pending:
+            import uuid
+
+            from core.membership_reservations import finish
+
+            finish(
+                actor=actor,
+                booking_id=booking.pk,
+                request_key=uuid.uuid5(booking.reference, f"owner-price:{booking.edit_version}"),
+                action="released",
+                reason="booking_changed",
+            )
+        else:
+            membership_booking.confirm(booking, actor=actor)
     if comped:
         try:
             agreement = booking.card_agreement

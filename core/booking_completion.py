@@ -31,6 +31,9 @@ def complete(flow, booking):
     enabled()
     bind_card(flow=flow, booking=booking)
     bind_waivers(flow=flow, booking=booking)
+    from .membership_booking import confirm as confirm_membership
+
+    confirm_membership(booking, actor=None)
     booking.setup_pending = False
     booking.save(update_fields=["setup_pending"])
 

@@ -130,6 +130,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
     if reopen:
         require_actor(actor, "core.change_session", owner=True)
     saved = booking.quotes.first()
+    membership_meta = {}
     if saved is None:
         raise ValidationError("No accepted pricing policy exists for this booking.")
     counts = {
@@ -172,6 +173,21 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
             fee_units=units,
             special_admissions=special,
         )
+        from core import membership_booking
+
+        if membership_booking.active(booking):
+            lines, membership_meta = membership_booking.lines_for(
+                saved.policy,
+                customer_id=booking.customer_id,
+                session=booking.session,
+                values=counts | {"supervised": booking.supervised},
+                booking=booking,
+                special_admissions=special,
+                comped=state.comped,
+                apply_available=data.get("apply_available_benefits", False),
+            )
+            if units:
+                lines.append(Line("Partial cancellation fee", units, Decimal("3.00"), False))
     else:
         if data.get("method", "card") != "card":
             raise ValidationError(
@@ -199,6 +215,9 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
         )
     from .zelle import facts as zelle_facts
 
+    quote.update(membership_meta)
+    if membership_meta and amount(quote["total"]) == ZERO:
+        plan = []
     prepaid = zelle_facts(booking)
     if any(part["tender"] == "card" for part in plan):
         try:
@@ -270,6 +289,9 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
     lock_calendar(exclusive=data.get("reopen_affected_sessions") is True)
     booking = Booking.objects.select_for_update().get(pk=booking_id)
     Session.objects.select_for_update().get(pk=booking.session_id)
+    from core import membership_booking
+
+    membership_booking.lock(booking)
     booking, state, quote, plan, facts, digest = preview(
         actor=actor, booking_id=booking_id, kind=kind, data=data
     )
@@ -337,6 +359,33 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         snapshot=quote,
         actor=actor,
     )
+    if membership_booking.active(booking):
+        from core.membership_reservations import finish as finish_benefits
+        from core.membership_reservations import reserve as reserve_benefits
+
+        if kind == "arrival":
+            reserve_benefits(
+                actor=actor,
+                booking_id=booking.pk,
+                quote_id=saved.pk,
+                request_key=uuid.uuid5(key, "member-arrival-reserve"),
+                for_arrival=True,
+            )
+            finish_benefits(
+                actor=actor,
+                booking_id=booking.pk,
+                request_key=uuid.uuid5(key, "member-arrival-use"),
+                action="used",
+                reason="arrival",
+            )
+        else:
+            finish_benefits(
+                actor=actor,
+                booking_id=booking.pk,
+                request_key=uuid.uuid5(key, "member-release"),
+                action="released",
+                reason=kind,
+            )
     sale = None
     if amount(quote["total"]):
         sale = accept_booking_sale(
@@ -501,6 +550,9 @@ def summary(booking):
             if prepaid["refund_due"]
             else "Comped"
             if state.comped
+            else "Covered by membership"
+            if checkout.kind == "arrival"
+            and checkout.details.get("quote", {}).get("membership_benefits_applied")
             else "No fee",
             "received": ZERO,
             "total_received": prepaid["received"] - prepaid["refunded"],

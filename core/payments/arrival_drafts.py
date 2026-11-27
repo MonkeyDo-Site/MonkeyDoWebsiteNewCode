@@ -26,6 +26,7 @@ FIELDS = (
     "zelle_sender",
     "override_capacity",
     "special_admissions",
+    "apply_available_benefits",
     "waiver_confirmed",
     "waiver_mismatch_accepted",
     "split_rows",
