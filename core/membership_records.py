@@ -119,8 +119,59 @@ class MembershipRenewalLink(FinancialFact):
     )
     customer = models.ForeignKey("core.Customer", on_delete=models.PROTECT)
     expires_at = models.DateTimeField()
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    notice = models.OneToOneField(
+        "core.MembershipRenewalNotice",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="renewal_link",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(actor__isnull=False, notice__isnull=True)
+                | models.Q(actor__isnull=True, notice__isnull=False),
+                name="membership_renewal_link_authority",
+            )
+        ]
+
+
+class MembershipRenewalNotice(FinancialFact):
+    """A system notice has its own authority, rather than a pretend staff actor."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    purchase = models.ForeignKey(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="renewal_notices"
+    )
+    kind = models.CharField(
+        max_length=6,
+        choices=[("expiry", "Five days before expiry"), ("grace", "One day before grace ends")],
+    )
+    ends_on = models.DateField()
+    due_on = models.DateField(db_index=True)
+    places = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["purchase", "kind", "ends_on"], name="membership_notice_once_per_term"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(places__gt=0), name="membership_notice_positive_places"
+            ),
+        ]
+
+
+class MembershipRenewalNoticeDelivery(FinancialFact):
+    notice = models.ForeignKey(
+        MembershipRenewalNotice, on_delete=models.PROTECT, related_name="deliveries"
+    )
+    message = models.OneToOneField(
+        "core.MessageDelivery", on_delete=models.PROTECT, related_name="renewal_notice_evidence"
+    )
 
 
 class MembershipRenewalLinkRevocation(FinancialFact):

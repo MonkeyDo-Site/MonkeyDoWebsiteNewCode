@@ -35,6 +35,8 @@ class MessageDelivery(models.Model):
             ("membership_renewal", "Membership Renewal"),
             ("membership_addition", "Additional Membership Places"),
             ("membership_cancellation", "Membership Cancellation"),
+            ("membership_expiry_notice", "Membership Expiry Notice"),
+            ("membership_grace_notice", "Membership Grace Notice"),
             ("payment_issue", "Owner Payment Alert"),
             ("backup_alert", "Owner Backup Alert"),
             ("email_issue", "Owner Email Alert"),

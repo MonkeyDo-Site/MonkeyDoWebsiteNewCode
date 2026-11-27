@@ -17,6 +17,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from .booking_forms import CustomerChoice, customer_picker
 from .forms import payment_method_choices
 from .membership_records import MembershipInstallment, MembershipInvoice, MembershipPurchase
+from .membership_renewal_notices import overview_context as renewal_notice_context
 from .membership_renewals import renewal_details
 from .membership_reservations import summary_for
 from .membership_sales import installment_paid, membership_status, offer, purchase, today
@@ -706,6 +707,7 @@ def membership_overview(request, pk):
         request,
         "core/active_membership_detail.html",
         {
+            **renewal_notice_context(member),
             **cancellation_context,
             **credit_context,
             "member": member,

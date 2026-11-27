@@ -58,6 +58,12 @@ def enqueue(
 
 @transaction.atomic
 def claim(message_id):
+    notice_kinds = {"membership_expiry_notice", "membership_grace_notice"}
+    scope = MessageDelivery.objects.only("kind", "customer_id").get(pk=message_id)
+    if scope.kind in notice_kinds and scope.customer_id:
+        from core.membership_reservations import lock_customer
+
+        lock_customer(scope.customer_id)
     # Lock this attempt only; its optional customer uses a nullable outer join.
     message = MessageDelivery.objects.select_for_update().get(pk=message_id)
     if message.state != "queued":
@@ -67,6 +73,23 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
+    if message.kind in notice_kinds:
+        from core.membership_records import MembershipRenewalNoticeDelivery
+        from core.membership_renewal_notices import refresh_notice
+
+        evidence = (
+            MembershipRenewalNoticeDelivery.objects.select_related("notice")
+            .filter(message=message)
+            .first()
+        )
+        if evidence is None:
+            message.state, message.code = "cancelled", "membership_notice_invalid"
+            message.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+            return None
+        refreshed = refresh_notice(evidence.notice)
+        if refreshed is None or refreshed.pk != message.pk:
+            return None
     if message.kind == "membership_cancellation" and message.membership_id:
         from core.membership_cancellations import queue_cancellation
 

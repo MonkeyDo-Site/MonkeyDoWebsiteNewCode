@@ -21,6 +21,10 @@ class Command(BaseCommand):
             raise CommandError("Use a limit between 1 and 100.")
         expire_unused_setups()
         expire_membership_sources()
+        if settings.MEMBERSHIP_SALES_ENABLED:
+            from core.membership_renewal_notices import prepare_due
+
+            prepare_due(limit=limit)
         completed = 0
         while completed < limit and run_one():
             completed += 1

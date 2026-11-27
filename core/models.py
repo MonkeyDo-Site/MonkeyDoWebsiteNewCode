@@ -676,6 +676,8 @@ from .membership_records import (  # noqa: E402,F401
     MembershipRefundPlan,
     MembershipRenewalLink,
     MembershipRenewalLinkRevocation,
+    MembershipRenewalNotice,
+    MembershipRenewalNoticeDelivery,
 )
 from .payments.models import (  # noqa: E402,F401
     BookingCardAgreement,
