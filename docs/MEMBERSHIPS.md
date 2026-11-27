@@ -1,5 +1,7 @@
 # Membership requirements
 
+Active-membership implementation is now authorized and underway in draft PR #37. The [implementation plan](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md) tracks the full scope, early sample review and actual evidence. Initial work adds a tested, nonmutating benefit-pricing planner; active purchase/payment/reservation integration is still being built. Existing draft records remain inactive until an explicit purchase.
+
 Current owner decisions consolidated November 5, 2026. [Main requirements](MONKEYDO_REQUIREMENTS.md), [payments](PAYMENTS.md), and [email wording](EMAIL_TEMPLATES.md) supply shared behavior. These rules are not implemented by this documentation change.
 
 ## Current foundation and next-stage inheritance

@@ -29,4 +29,8 @@ The existing public 20-minute booking-form limit and backend 30-minute temporary
 
 ## Current evidence
 
+First implementation increment: `core/membership_benefits.py` plans member pricing from trusted accepted-place/current-payment/usage inputs without mutating any record. Twenty-six focused tests cover the saved mixed-membership examples, per-place limits, benefit order and expiry, stacked adult allowances, supervised/Chol Hamoed exclusions, future appointment months/lapses, overdue state, accepted prices, nontaxable socks and owner-price/comped separation. It is not yet wired to active membership persistence, booking prices, benefit reservation locks or payment collection; those remain in progress. No existing draft or booking has been activated or repriced.
+
+Integration check to complete before wiring owner-priced visits: the existing custom-admissions branch in `checkout_pricing.visit_lines` marks its separately added sock line taxable, unlike ordinary socks and the approved category. Reconcile that shared defect and its regression cases without rewriting historical snapshots.
+
 The baseline is merged PR #36 (`91612c8bea19cd951afb390ab7194da61edd3f57`), with 712 passing application tests and passing GitHub checks. The owner said deployment was about to begin; this document does not independently confirm completion on the Droplet. Actual Banquest hosted-field layout and some provider-specific installment behavior remain technical verification items. No new provider call, hosted deployment or production billing is authorized by recording this scope.
