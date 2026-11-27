@@ -59,6 +59,13 @@ def preview(
     if checkout is None or checkout.sale is None:
         raise ValidationError("There is no reviewed balance to collect.")
     sale = checkout.sale
+    from core.membership_arrival import for_sale, membership_funded
+
+    combined = for_sale(sale.pk)
+    if combined and not membership_funded(combined):
+        raise ValidationError(
+            "The membership funding needs owner reconciliation before another visit payment. No new charge was requested."
+        )
     if (
         retry_declined
         and not sale.operations.filter(kind="receipt", tender="card", state="declined").exists()

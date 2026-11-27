@@ -157,7 +157,11 @@ def ready(data, combined):
         return True
     return bool(
         data.get("member_accepted")
-        and (data.get("member_received") or combined["facts"]["received_today"] == "0.00")
+        and (
+            combined["offer"]["expected_method"] == "card"
+            or data.get("member_received")
+            or combined["facts"]["received_today"] == "0.00"
+        )
         and (
             combined["offer"]["comped"]
             or combined["offer"]["billing"] != "monthly"

@@ -59,6 +59,12 @@ def booking_detail(request, pk):
                 .select_related("purchase__membership")
                 .first()
             )
+            if payment_context["combined_arrival"]:
+                from .membership_arrival import receipt_summary
+
+                payment_context["combined_payment"] = receipt_summary(
+                    payment_context["combined_arrival"]
+                )
     if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature"):
         from .waivers.forms import NamedPaperWaiverForm
 

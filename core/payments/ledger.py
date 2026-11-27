@@ -473,6 +473,9 @@ def record_result(
 ):
     enabled()
     candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    from core.membership_arrival import lock_payment
+
+    lock_payment(candidate)
     if candidate.sale.kind == "membership":
         from core.membership_reservations import lock_customer
 
@@ -536,6 +539,9 @@ def record_result(
         from .checkout import resolve_if_settled
 
         resolve_if_settled(operation.sale.booking_id)
+        from core.membership_arrival import payment_updated as combined_payment_updated
+
+        combined_payment_updated(operation)
     if state == "succeeded" and operation.sale.kind == "membership":
         from core.membership_sales import payment_updated
 

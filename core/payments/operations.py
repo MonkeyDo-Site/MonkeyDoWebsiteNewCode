@@ -151,6 +151,9 @@ def refresh_completed(operation):
 @transaction.atomic
 def begin_dispatch(operation_id):
     candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    from core.membership_arrival import lock_payment
+
+    combined = lock_payment(candidate)
     if candidate.sale.kind == "membership":
         from core.membership_reservations import lock_customer
 
@@ -209,6 +212,10 @@ def begin_dispatch(operation_id):
                 operation.sale.kind == "visit"
                 and operation.sale.booking_version != booking.edit_version
             )
+            if combined:
+                from core.membership_arrival import membership_funded
+
+                invalid |= not membership_funded(combined)
         if invalid:
             operation.state = "cancelled"
             operation.result_code = "changed_before_dispatch"

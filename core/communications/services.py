@@ -88,6 +88,28 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
             return None
+    if message.kind == "membership_visit_confirmation":
+        from core.membership_arrival import queue_confirmation as refresh_combined
+        from core.membership_records import MembershipArrivalCheckout
+
+        combined = (
+            MembershipArrivalCheckout.objects.filter(
+                purchase_id=message.membership_id, checkout__booking_id=message.booking_id
+            )
+            .select_related(
+                "purchase__billing_state", "checkout__booking__session", "checkout__sale"
+            )
+            .first()
+        )
+        if combined is None:
+            message.state, message.code = "cancelled", "combined_payment_changed"
+            message.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+            return None
+        refreshed = refresh_combined(combined)
+        if refreshed is None or refreshed.pk != message.pk or refreshed.state != "queued":
+            return None
+        scoped_refresh = (refresh_combined, combined)
     if message.kind == "membership_requested_renewal":
         from core.membership_prompt_emails import refresh
         from core.membership_records import MembershipPromptEmail

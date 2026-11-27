@@ -24,6 +24,8 @@ from .checkout import charge_state, coverage_facts, preview
 
 def combined_label(combined):
     tender = combined["offer"]["expected_method"]
+    if tender == "card":
+        return f"Confirm arrival and membership — charge card ${combined['facts']['payment_due_today']}"
     return (
         f"Confirm arrival and membership — record {tender} ${combined['facts']['received_today']}"
     )
@@ -800,12 +802,21 @@ def arrival_status(request, pk, checkout_id):
             "succeeded",
             "Arrival confirmed. The reviewed received payment was recorded.",
         )
-    combined = getattr(checkout, "membership_purchase", None)
+    combined = (
+        getattr(checkout, "membership_purchase", None)
+        if settings.MEMBERSHIP_SALES_ENABLED
+        else None
+    )
     new_received = received(checkout.sale) if checkout.sale_id else Decimal("0.00")
-    if combined:
+    if combined and state == "succeeded":
         # The visit status must include the simultaneously collected membership
         # payment, while applied credit and earlier Zelle stay separate.
-        new_received = Decimal(combined.facts["received_today"])
+        from .amounts import ZERO, amount
+
+        first = combined.purchase.installments.first()
+        member_paid = received(first.invoice.sale) if first else ZERO
+        prepaid = sum((amount(p["amount"]) for p in checkout.details["plan"] if p["advance"]), ZERO)
+        new_received = member_paid + max(ZERO, new_received - prepaid)
         message = "Arrival and membership confirmed. The reviewed received payment was recorded."
     return JsonResponse(
         {

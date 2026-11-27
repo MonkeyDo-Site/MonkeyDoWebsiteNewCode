@@ -10,6 +10,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import date
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -75,13 +76,22 @@ def review(*, actor, booking_id, data, selection, method_id=None, validate_waive
     if booking.session.starts_at.astimezone(NEW_YORK).date() != today():
         raise ValidationError("Combine a membership purchase with arrival on the visit date.")
     tender = data.get("method")
-    if tender not in {"cash", "check"}:
+    if tender not in {"cash", "check", "card"}:
         raise ValidationError(
-            "Choose cash or check for this combined payment, or clear the membership purchase to use another arrival payment."
+            "Choose cash, check or card for this combined payment, or clear the membership purchase to use another arrival payment."
         )
     # These values are derived from this booking, never supplied by the browser.
     values = selection | {"customer": booking.customer, "expected_method": tender}
     proposed = offer(actor=actor, **values)
+    membership_due = (
+        amount(proposed.get("first_payment_total", proposed["installments"][0]["quote"]["total"]))
+        if proposed["installments"]
+        else ZERO
+    )
+    if tender == "card" and membership_due:
+        raise ValidationError(
+            "To use the card in this combined checkout, apply existing credit to cover today's membership payment, or choose cash/check. The membership was not purchased and no card was charged."
+        )
     result = checkout.preview(
         actor=actor,
         booking_id=booking_id,
@@ -89,11 +99,6 @@ def review(*, actor, booking_id, data, selection, method_id=None, validate_waive
         data=data | {"apply_available_benefits": True},
         validate_waivers=validate_waivers,
         proposed_membership=ProposedMembership(proposed),
-    )
-    membership_due = (
-        amount(proposed.get("first_payment_total", proposed["installments"][0]["quote"]["total"]))
-        if proposed["installments"]
-        else ZERO
     )
     visit_due = sum((amount(p["amount"]) for p in result[3] if not p.get("advance")), ZERO)
     facts = {
@@ -106,6 +111,8 @@ def review(*, actor, booking_id, data, selection, method_id=None, validate_waive
         "visit_due": str(visit_due),
         "received_today": str(membership_due + visit_due),
     }
+    if tender == "card":
+        facts.update(payment_due_today=str(visit_due), received_today="0.00")
     return {
         "offer": proposed,
         "quote": result[2],
@@ -162,7 +169,11 @@ def confirm(
         raise ValidationError(
             "The membership, visit or payments changed. Review the current combined total."
         )
-    if amount(reviewed["facts"]["received_today"]) > ZERO and verified_received is not True:
+    if (
+        data["method"] != "card"
+        and amount(reviewed["facts"]["received_today"]) > ZERO
+        and verified_received is not True
+    ):
         raise ValidationError(
             "Confirm that the combined cash or check payment was actually received."
         )
@@ -206,21 +217,115 @@ def confirm(
     return record
 
 
-def queue_confirmation(record):
-    """One combined immutable message; normal membership-only hooks are suppressed."""
+def membership_funded(record):
+    from .membership_funding import member_needs_review
+    from .membership_sales import installment_paid
+
+    member = record.purchase
+    if member_needs_review(member):
+        return False
+    stopped = member.billing_state.stopped_on
+    on = record.checkout.booking.session.starts_at.astimezone(NEW_YORK).date()
+    if stopped and stopped <= on:
+        return False
+    first = member.installments.first()
+    return member.purpose == "complimentary" or (first is not None and installment_paid(first))
+
+
+def ready_for_confirmation(record):
+    from .membership_funding import sale_needs_review
+    from .membership_sales import membership_status
+    from .payments.invoices import settled, total
+
+    if not membership_funded(record) or record.checkout.booking.attendance != "arrived":
+        return False
+    if membership_status(record.purchase) not in {"active", "scheduled"}:
+        return False
+    arrival = record.checkout
+    if arrival.sale_id:
+        if (
+            sale_needs_review(arrival.sale)
+            or settled(arrival.sale) < total(arrival.sale)
+            or arrival.sale.operations.exclude(kind="receipt").filter(state="succeeded").exists()
+            or arrival.sale.operations.filter(
+                state__in=["ready", "sending", "unknown", "action"]
+            ).exists()
+        ):
+            return False
+    return True
+
+
+def for_sale(sale_id):
+    if not settings.MEMBERSHIP_SALES_ENABLED:
+        return None
+    return (
+        MembershipArrivalCheckout.objects.select_related(
+            "purchase__membership",
+            "purchase__customer",
+            "purchase__billing_state",
+            "checkout__booking__session",
+            "checkout__sale",
+        )
+        .filter(checkout__sale_id=sale_id)
+        .first()
+    )
+
+
+def lock_payment(operation):
+    """Keep known funding corrections ordered with this dependent visit charge."""
+    if operation.kind != "receipt" or operation.sale.kind != "visit":
+        return None
+    record = for_sale(operation.sale_id)
+    if record:
+        Booking.objects.select_for_update().get(pk=record.checkout.booking_id)
+        lock_customer(operation.sale.customer_id)
+        record = for_sale(operation.sale_id)
+    return record
+
+
+def payment_updated(operation):
+    record = for_sale(operation.sale_id)
+    if record:
+        queue_confirmation(record)
+
+
+def receipt_summary(record):
+    from .customer_credit import applied
+    from .payments.invoices import received
+
+    first = record.purchase.installments.first()
+    member_paid = received(first.invoice.sale) if first else ZERO
+    prepaid = sum(
+        (amount(p["amount"]) for p in record.checkout.details["plan"] if p["advance"]), ZERO
+    )
+    visit_paid = (
+        max(ZERO, received(record.checkout.sale) - prepaid) if record.checkout.sale_id else ZERO
+    )
+    return {
+        "membership_received": member_paid,
+        "visit_received": visit_paid,
+        "new_received": member_paid + visit_paid,
+        "credit_applied": applied(first.invoice.sale) if first else ZERO,
+    }
+
+
+def confirmation_payload(record):
+    """Pure current content; queued snapshots can be superseded before any send."""
     from .communications.content import session_subject
-    from .communications.services import enqueue
     from .date_display import display_date, display_time_range
     from .payments.invoices import received
 
     member, arrival = record.purchase, record.checkout
     customer, root, booking = member.customer, member.membership, arrival.booking
-    if not member.send_confirmation or not customer.email:
-        return
-    member_paid = sum(
-        (received(i.invoice.sale) for i in member.installments.filter(invoice__isnull=False)), ZERO
-    )
-    quote = arrival.details["quote"]
+    first = member.installments.first()
+    member_paid = received(first.invoice.sale) if first else ZERO
+    prepaid = sum((amount(p["amount"]) for p in arrival.details["plan"] if p["advance"]), ZERO)
+    visit_paid = max(ZERO, received(arrival.sale) - prepaid) if arrival.sale_id else ZERO
+    quote = dict(arrival.details["quote"])
+    if arrival.sale_id:
+        from .payments.presentation import invoice_breakdown
+
+        quote.update(invoice_breakdown(arrival.sale))
     content = [
         f"Dear Family {customer.last_name},",
         "",
@@ -247,12 +352,11 @@ def queue_confirmation(record):
     if used:
         free = sum(u["kind"] in {"subscription_free", "unlimited_daily"} for u in used)
         content += [
-            f"Today's visit uses {free} free membership visit(s)."
+            f"Today's visit uses {free} free membership visit{'s' if free != 1 else ''}."
             if free
             else "Today's visit uses the membership prices shown below."
         ]
     content += ["", "Here's your payment details for the membership and visit:"]
-    first = member.installments.first()
     combined_total = (amount(first.quote["total"]) if first else ZERO) + amount(quote["total"])
     content += [
         f"Membership{'—first month' if root.billing == 'monthly' else '—full selected term'}: ${first.quote['total']}"
@@ -264,18 +368,26 @@ def queue_confirmation(record):
         f"Visit total: ${quote['total']}",
         f"Membership and visit total: ${combined_total:.2f}",
         f"Membership payment received: ${member_paid:.2f}",
-        f"Visit payment received today: ${record.facts['visit_due']}",
-        f"New payment received: ${record.facts['received_today']}",
+        f"Visit payment received: ${visit_paid:.2f}",
+        f"New payment received: ${member_paid + visit_paid:.2f}",
     ]
     from .customer_credit import applied
 
     credited = applied(first.invoice.sale) if first else ZERO
     if credited:
         content += [f"Existing customer credit applied to membership: ${credited:.2f}"]
-    prepaid = sum((amount(p["amount"]) for p in arrival.details["plan"] if p["advance"]), ZERO)
     if prepaid:
         content += [f"Previously received Zelle applied to visit: ${prepaid:.2f}"]
-    next_item = member.installments.filter(number__gt=1).first()
+    from .membership_sales import installment_paid
+
+    next_item = next(
+        (
+            item
+            for item in member.installments.filter(number__gt=1).select_related("invoice__sale")
+            if not installment_paid(item)
+        ),
+        None,
+    )
     if next_item:
         content += [
             f"Your next scheduled membership payment is ${next_item.quote['total']} on {display_date(next_item.due_on, 'F j, Y')}."
@@ -293,14 +405,67 @@ def queue_confirmation(record):
         "Get ready to go bananas,",
         "The Monkey Do team",
     ]
-    return enqueue(
-        key=f"membership-arrival:{record.pk}",
+    return {
+        "recipient": customer.email,
+        "subject": session_subject(booking, "Your Monkey Do membership and visit are ready!"),
+        "text": "\n".join(content),
+    }
+
+
+@transaction.atomic
+def queue_confirmation(record):
+    """Refresh unsent content; an attempted/unknown message is never repeated."""
+    from .communications.models import MessageDelivery, MessageEvent
+    from .communications.services import enqueue
+
+    lock_customer(record.purchase.customer_id)
+    record = MembershipArrivalCheckout.objects.select_related(
+        "purchase__membership",
+        "purchase__customer",
+        "purchase__billing_state",
+        "checkout__booking__session",
+        "checkout__sale",
+    ).get(pk=record.pk)
+    messages = MessageDelivery.objects.filter(
         kind="membership_visit_confirmation",
-        recipient=customer.email,
-        subject=session_subject(booking, "Your Monkey Do membership and visit are ready!"),
-        text="\n".join(content),
-        customer=customer,
-        booking=booking,
-        membership=member,
+        membership=record.purchase,
+        booking_id=record.checkout.booking_id,
+    ).order_by("created_at", "pk")
+    attempted = messages.exclude(state__in=["queued", "cancelled"]).first()
+    if attempted:
+        return attempted
+    current = messages.filter(state="queued").last() or messages.last()
+    if current and current.state == "cancelled":
+        return current
+    if (
+        not record.purchase.send_confirmation
+        or not record.purchase.customer.email
+        or not ready_for_confirmation(record)
+    ):
+        if current:
+            current.state, current.code = "cancelled", "combined_payment_changed"
+            current.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=current, state="cancelled", code=current.code)
+        return None
+    payload = confirmation_payload(record)
+    if current and (current.recipient, current.subject, current.text_body) == (
+        payload["recipient"],
+        payload["subject"],
+        payload["text"],
+    ):
+        return current
+    key = f"membership-arrival:{record.pk}"
+    if current:
+        current.state, current.code = "cancelled", "combined_confirmation_changed"
+        current.save(update_fields=["state", "code"])
+        MessageEvent.objects.create(delivery=current, state="cancelled", code=current.code)
+        key += ":" + str(current.pk) + ":" + fingerprint(payload)[:32]
+    return enqueue(
+        key=key,
+        kind="membership_visit_confirmation",
+        **payload,
+        customer=record.purchase.customer,
+        booking=record.checkout.booking,
+        membership=record.purchase,
         actor=record.actor,
     )

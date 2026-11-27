@@ -60,6 +60,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;
       const email=memberFields.querySelector('[data-membership-comped-email]');
       if(email){email.hidden=!form.elements.member_comped.checked;form.elements.member_send_confirmation.disabled=!active||email.hidden;}
+      const receipt=form.querySelector('[data-arrival-field="member_received"]');
+      receipt.hidden=method==='card';form.elements.member_received.disabled=!active||receipt.hidden;
     }
     splitBox.hidden=method!=='split';
     if(method==='split'&&!rows().length)makeRow();
