@@ -78,7 +78,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     const firstTender=splitMember?(form.elements.member_first_method.value||'cash'):method;
     const memberSplit=splitMember&&firstTender==='split';
     const memberParts=Object.fromEntries(Object.keys(kinds).map(kind=>[kind,memberSplit?cents(form.elements['member_'+kind+'_amount'].value):0]));
-    const memberDue=lastQuote.membership_due_today!=='0.00'&&!form.elements.member_comped?.checked;
+    const memberDue=(lastQuote.membership_due_today!=='0.00'||cents(form.elements.member_recorded_zelle?.value)>0)&&!form.elements.member_comped?.checked;
     const giftLabel=form.querySelector('[data-arrival-field="gift_card_verified"] label');
     if(giftLabel)giftLabel.textContent=splitMember?'All physical gift-card amounts shown have been presented and verified.':form.elements.member_add?.checked&&method==='gift_card'?'The physical gift card has been presented and verified for the combined amount shown.':'The physical gift card has been presented and verified.';
     const memberFields=form.querySelector('[data-arrival-membership-fields]');
@@ -91,6 +91,9 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       const firstParts=memberFields.querySelector('[data-membership-first-split]');
       firstParts.hidden=!memberSplit||!memberDue;
       for(const field of firstParts.querySelectorAll('[data-arrival-field]')){field.hidden=firstParts.hidden;for(const input of field.querySelectorAll('input'))input.disabled=firstParts.hidden;}
+      const recorded=memberFields.querySelector('[data-membership-recorded-zelle]');
+      recorded.hidden=!memberSplit||!(cents(lastQuote.membership_zelle_available??recorded.dataset.available)||cents(form.elements.member_recorded_zelle.value));
+      form.elements.member_recorded_zelle.disabled=recorded.hidden;
       const card=memberFields.querySelector('[data-membership-monthly-card]');
       const needsCard=active&&!form.elements.member_comped?.checked&&(form.elements.member_billing.value==='monthly'||(firstTender==='card'&&lastQuote.membership_needs_card!==false));
       card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;

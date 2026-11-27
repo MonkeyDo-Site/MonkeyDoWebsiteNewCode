@@ -38,6 +38,9 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
     def test_membership_receipt_split_and_visit_remainder_are_not_duplicated(self):
         self.check_duplicate_confirmation(split=True, member="split")
 
+    def test_original_bank_transfer_is_applied_once_across_membership_and_visit(self):
+        self.check_duplicate_confirmation(split=True, member="recorded_bank")
+
     def check_duplicate_confirmation(self, *, split, member="cash"):
         if connection.vendor != "postgresql":
             self.skipTest("PostgreSQL transaction/advisory-lock race")
@@ -52,6 +55,26 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
             )
         if member == "split":
             self.input.update(member_cash_amount="10.00", member_check_amount="25.98")
+        if member == "recorded_bank":
+            import uuid
+
+            from core.payments.zelle import record_receipt
+
+            record_receipt(
+                actor=self.staff,
+                booking_id=booking.pk,
+                request_key=uuid.uuid4(),
+                value="25",
+                sender_name="Fictional original bank transfer",
+                verified=True,
+            )
+            self.input.update(
+                member_first_method="split",
+                member_recorded_zelle="20",
+                member_cash_amount="10",
+                member_check_amount="5.98",
+                split={"cash": "10.99"},
+            )
         accepted = membership_arrival.review(**self.options)
         bought, waiting = Event(), Event()
         original_purchase, original_lock = (
@@ -99,13 +122,14 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
         self.assertEqual(MembershipArrivalCheckout.objects.count(), 1)
         self.assertEqual(MembershipPurchase.objects.count(), 1)
         self.assertEqual(
-            PaymentOperation.objects.count(), 4 if member == "split" else 3 if split else 2
+            PaymentOperation.objects.count(),
+            5 if member == "recorded_bank" else 4 if member == "split" else 3 if split else 2,
         )
-        if split:
+        if split and member != "recorded_bank":
             self.assertEqual(PaymentOperation.objects.get(tender="card").amount, Decimal("6.17"))
         self.assertEqual(
             MessageDelivery.objects.filter(kind="membership_visit_confirmation").count(),
-            0 if split else 1,
+            0 if split and member != "recorded_bank" else 1,
         )
 
 

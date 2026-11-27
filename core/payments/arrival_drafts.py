@@ -45,6 +45,7 @@ FIELDS = (
     "member_check_amount",
     "member_zelle_amount",
     "member_gift_card_amount",
+    "member_recorded_zelle",
     "member_received_on",
     "member_zelle_sender",
     "member_zelle_verified",

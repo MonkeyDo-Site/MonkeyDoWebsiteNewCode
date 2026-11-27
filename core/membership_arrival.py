@@ -94,9 +94,12 @@ def review(
         raise ValidationError("Combine a membership purchase with arrival on the visit date.")
     tender = first_tender(data, comped=selection.get("comped", False))
     # These values are derived from this booking, never supplied by the browser.
+    source = first_selection(data) if tender == "split" else {}
+    if source:
+        source["bank_booking_id"] = booking.pk
     values = (
         selection
-        | (first_selection(data) if tender == "split" else {})
+        | source
         | {
             "customer": booking.customer,
             "expected_method": tender,
@@ -159,6 +162,11 @@ def review(
         )
     facts.update(zelle_receipt(data, tender=tender, due=membership_due))
     if first_plan:
+        if first_plan.get("recorded_zelle"):
+            facts["membership_prepaid"] = first_plan["recorded_zelle"]["amount"]
+            facts["membership_bank_receipts"] = [
+                row for row in first_plan["recorded_zelle"]["sources"] if amount(row["amount"])
+            ]
         bank = next((part for part in first_plan["parts"] if part["tender"] == "zelle"), None)
         if bank:
             facts["membership_zelle"] = {
@@ -255,7 +263,11 @@ def confirm(
         zelle_verified=data.get("member_zelle_verified", False),
         customer=booking.customer,
         expected_method=reviewed["offer"]["expected_method"],
-        **(first_selection(data) if reviewed["offer"]["expected_method"] == "split" else {}),
+        **(
+            first_selection(data) | {"bank_booking_id": booking.pk}
+            if reviewed["offer"]["expected_method"] == "split"
+            else {}
+        ),
         **selection,
     )
     if data["method"] == "card" and amount(reviewed["facts"]["membership_due"]):
@@ -369,6 +381,9 @@ def receipt_summary(record):
 
     first = record.purchase.installments.first()
     member_paid = received(first.invoice.sale) if first else ZERO
+    from .membership_bank import applied as bank_applied
+
+    member_prepaid = bank_applied(record.purchase)
     prepaid = sum(
         (amount(p["amount"]) for p in record.checkout.details["plan"] if p["advance"]), ZERO
     )
@@ -377,8 +392,10 @@ def receipt_summary(record):
     )
     return {
         "membership_received": member_paid,
+        "membership_new_received": max(ZERO, member_paid - member_prepaid),
         "visit_received": visit_paid,
-        "new_received": member_paid + visit_paid,
+        "new_received": max(ZERO, member_paid - member_prepaid) + visit_paid,
+        "membership_prepaid": member_prepaid,
         "credit_applied": applied(first.invoice.sale) if first else ZERO,
     }
 
@@ -393,6 +410,9 @@ def confirmation_payload(record):
     customer, root, booking = member.customer, member.membership, arrival.booking
     first = member.installments.first()
     member_paid = received(first.invoice.sale) if first else ZERO
+    from .membership_bank import applied as bank_applied
+
+    member_prepaid = bank_applied(member)
     prepaid = sum((amount(p["amount"]) for p in arrival.details["plan"] if p["advance"]), ZERO)
     visit_paid = max(ZERO, received(arrival.sale) - prepaid) if arrival.sale_id else ZERO
     quote = dict(arrival.details["quote"])
@@ -450,9 +470,9 @@ def confirmation_payload(record):
         f"Sales tax: ${combined_tax:.2f}",
         f"Visit total: ${quote['total']}",
         f"Membership and visit total: ${combined_total:.2f}",
-        f"Membership payment received: ${member_paid:.2f}",
+        f"Membership payment received: ${max(ZERO, member_paid - member_prepaid):.2f}",
         f"Visit payment received: ${visit_paid:.2f}",
-        f"New payment received: ${member_paid + visit_paid:.2f}",
+        f"New payment received: ${max(ZERO, member_paid - member_prepaid) + visit_paid:.2f}",
     ]
     from .customer_credit import applied
 
@@ -461,6 +481,8 @@ def confirmation_payload(record):
         content += [f"Existing customer credit applied to membership: ${credited:.2f}"]
     if prepaid:
         content += [f"Previously received Zelle applied to visit: ${prepaid:.2f}"]
+    if member_prepaid:
+        content += [f"Previously received Zelle applied to membership: ${member_prepaid:.2f}"]
     from .membership_sales import installment_paid
 
     next_item = next(

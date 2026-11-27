@@ -92,6 +92,8 @@ def offer(
     split=None,
     split_sender="",
     split_received_on=None,
+    bank_booking_id=None,
+    bank_amount=ZERO,
 ):
     authorize(actor, authority=authority)
     if actor is None:
@@ -163,6 +165,15 @@ def offer(
         raise ValidationError("Choose a supported membership payment method.")
     if split and expected_method != "split":
         raise ValidationError("Choose split payment before entering separate received amounts.")
+    from .membership_bank import review as review_bank
+
+    if amount(bank_amount) and (expected_method != "split" or operation != "purchase"):
+        raise ValidationError(
+            "Apply recorded booking Zelle through the combined first-payment split."
+        )
+    bank = review_bank(
+        actor=actor, customer=customer, booking_id=bank_booking_id, value=bank_amount, comped=comped
+    )
     from .membership_initial_credit import review as review_credit
 
     credit = review_credit(actor=actor, customer=customer, value=credit_amount, comped=comped)
@@ -192,6 +203,7 @@ def offer(
                 policy=policy,
                 sender_name=split_sender,
                 received_on=split_received_on,
+                recorded=bank,
             )
         quote = quote_lines(
             [
@@ -266,6 +278,13 @@ def offer(
             data["credit"] = credit
             data["first_payment_total"] = str(
                 amount(first["quote"]["total"]) - amount(credit["amount"])
+            )
+        if bank:
+            data["first_payment_total"] = str(
+                amount(data["first_payment_total"]) - amount(bank["amount"])
+            )
+            data["terms"] += (
+                f" Previously recorded booking Zelle of ${bank['amount']} is applied to this first membership payment."
             )
         if data.get("first_payment_plan"):
             labels = {
@@ -555,6 +574,13 @@ def purchase(
 
             if data.get("credit"):
                 apply_credit(actor=actor, member=member, sale=invoice.sale, plan=data["credit"])
+            bank = data["first_payment_plan"].get("recorded_zelle")
+            if bank:
+                from .membership_bank import apply as apply_bank
+
+                apply_bank(
+                    actor=actor, member=member, invoice=invoice, plan=bank, booking=combined_booking
+                )
             record(
                 actor=actor,
                 member=member,

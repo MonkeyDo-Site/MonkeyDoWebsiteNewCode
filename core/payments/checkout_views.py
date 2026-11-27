@@ -674,8 +674,14 @@ def checkout(request, pk, kind="arrival"):
     if reviewed:
         from core.price_adjustments import booking_price_adjustment
 
+        member_prepaid = (
+            Decimal(combined["facts"].get("membership_prepaid", "0.00"))
+            if combined
+            else Decimal("0.00")
+        )
+        prepaid = prepaid | {"available": prepaid["available"] - member_prepaid}
         reviewed["adjustment"] = booking_price_adjustment(booking, reviewed["quote"])
-        reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"]
+        reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"] - member_prepaid
         reviewed["refund_due"] = max(0, prepaid["available"] - Decimal(reviewed["quote"]["total"]))
         reviewed["remaining"] = max(0, Decimal(reviewed["quote"]["total"]) - prepaid["available"])
     waiver = (
@@ -778,6 +784,7 @@ def checkout(request, pk, kind="arrival"):
                 "waiver": waiver,
                 "membership_terms": combined["offer"]["terms"] if combined else "",
                 "membership_due_today": combined["facts"]["membership_due"] if combined else None,
+                "membership_zelle_available": str(getattr(form, "membership_zelle_available", 0)),
                 "membership_card_purchase": card_purchase(booking, form.cleaned_data, combined),
                 "membership_card_review": card_review(combined),
                 "membership_card_authorization_offer": getattr(
@@ -1125,12 +1132,10 @@ def arrival_status(request, pk, checkout_id):
     if combined and state == "succeeded":
         # The visit status must include the simultaneously collected membership
         # payment, while applied credit and earlier Zelle stay separate.
-        from .amounts import ZERO, amount
 
-        first = combined.purchase.installments.first()
-        member_paid = received(first.invoice.sale) if first else ZERO
-        prepaid = sum((amount(p["amount"]) for p in checkout.details["plan"] if p["advance"]), ZERO)
-        new_received = member_paid + max(ZERO, new_received - prepaid)
+        from core.membership_arrival import receipt_summary
+
+        new_received = receipt_summary(combined)["new_received"]
         message = "Arrival and membership confirmed. The reviewed received payment was recorded."
     pending_data = {}
     if pending:

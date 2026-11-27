@@ -108,6 +108,46 @@ class CombinedArrivalNewCardTests(InitialCreditFixtures, RuntimeRoleMixin, TestC
         self.assertEqual(visit_card.method_id, self.play.card_agreement.method_id)
         self.assertEqual(visit_card.amount, Decimal("6.17"))
 
+    def test_recorded_bank_split_authorizes_only_its_exact_new_future_card_selection(self):
+        from core.membership_records import MembershipBankAllocation
+        from core.payments.zelle import record_receipt
+
+        self.start()
+        record_receipt(
+            actor=self.staff,
+            booking_id=self.play.pk,
+            request_key=uuid.uuid4(),
+            value="25",
+            sender_name="Fictional original transfer",
+            verified=True,
+        )
+        self.inputs.update(
+            method="split",
+            member_first_method="split",
+            member_recorded_zelle="20",
+            member_cash_amount="10",
+            member_check_amount="5.98",
+            cash_amount="10.99",
+            member_received="on",
+        )
+        quote = self.client.post(self.url, self.inputs, HTTP_ACCEPT="application/json")
+        self.assertEqual(quote.status_code, 200, quote.content)
+        self.card_payload["purchase"] = quote.json()["membership_card_purchase"] | {
+            "accepted": True
+        }
+        self.assertEqual(self.card_payload["purchase"]["first_bank_booking"], self.play.pk)
+        saved = self.store()
+        self.assertEqual(saved.status_code, 200, saved.content)
+        reviewed = self.reviewed_source(saved)
+        self.assertEqual(reviewed.status_code, 200, reviewed.content)
+        accepted = self.finish(reviewed)
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        self.assertTrue(accepted.json()["confirmed"])
+        self.assertEqual(MembershipBankAllocation.objects.get().amount, Decimal("20"))
+        member = MembershipPurchase.objects.get()
+        self.assertEqual(member.billing_state.mandate.method.last_four, "1111")
+        self.assertFalse(PaymentOperation.objects.filter(tender="card").exists())
+
     def test_new_nonretained_card_saves_without_payment_then_funds_only_membership(self):
         self.start()
         self.assertTrue(self.quote["can_confirm"])

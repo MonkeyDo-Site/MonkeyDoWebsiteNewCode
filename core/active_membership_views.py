@@ -50,6 +50,10 @@ OFFER_FIELDS = (
 
 
 class PurchaseForm(forms.Form):
+    first_bank_booking = forms.IntegerField(required=False, min_value=1, widget=forms.HiddenInput)
+    first_bank_amount = forms.DecimalField(
+        required=False, min_value=ZERO, max_digits=14, decimal_places=2, widget=forms.HiddenInput
+    )
     first_cash = forms.DecimalField(
         required=False,
         min_value=ZERO,
@@ -273,6 +277,8 @@ class PurchaseForm(forms.Form):
                 },
                 split_sender=self.cleaned_data.get("first_zelle_sender", ""),
                 split_received_on=self.cleaned_data.get("first_zelle_received_on"),
+                bank_booking_id=self.cleaned_data.get("first_bank_booking"),
+                bank_amount=self.cleaned_data.get("first_bank_amount") or ZERO,
             )
         return values
 

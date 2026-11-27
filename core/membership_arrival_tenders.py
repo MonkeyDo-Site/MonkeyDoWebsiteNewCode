@@ -18,6 +18,8 @@ def first_selection(data):
         split={kind: data.get(f"member_{kind}_amount") or ZERO for kind in MANUAL},
         split_sender=data.get("member_zelle_sender", ""),
         split_received_on=data.get("member_received_on"),
+        bank_booking_id=data.get("member_bank_booking"),
+        bank_amount=data.get("member_recorded_zelle") or ZERO,
     )
 
 

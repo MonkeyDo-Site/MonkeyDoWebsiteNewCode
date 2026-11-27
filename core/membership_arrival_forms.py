@@ -100,6 +100,14 @@ def configure(form, booking, actor):
             initial=0,
             label="Existing customer credit to apply",
         ),
+        "member_recorded_zelle": forms.DecimalField(
+            required=False,
+            min_value=0,
+            max_digits=14,
+            decimal_places=2,
+            initial=0,
+            label="Recorded booking Zelle to apply to membership",
+        ),
         "member_accepted": forms.BooleanField(
             required=False,
             label="The customer accepts these membership terms and the scheduled card payments shown.",
@@ -164,11 +172,17 @@ def configure(form, booking, actor):
             ),
         )
     form.fields.update(fields)
+    from .payments.zelle import facts as zelle_facts
+
+    form.membership_zelle_available = zelle_facts(booking)["available"]
     split = values.get("method") == "split"
     tender = values.get("member_first_method") if split else values.get("method")
     first_split = split and tender == "split"
     for kind in ("cash", "check", "zelle", "gift_card"):
         form.fields[f"member_{kind}_amount"].arrival_hidden = not first_split
+    form.fields["member_recorded_zelle"].arrival_hidden = not first_split or not (
+        form.membership_zelle_available or values.get("member_recorded_zelle")
+    )
     form.fields["member_first_method"].arrival_hidden = not split
     form.fields["member_received"].arrival_hidden = tender in {"card", "gift_card", "zelle"}
     for name in ("member_received_on", "member_zelle_sender", "member_zelle_verified"):
@@ -352,6 +366,8 @@ def card_purchase(booking, data, combined):
             first_zelle_received_on=split["split_received_on"].isoformat()
             if split["split_received_on"]
             else "",
+            first_bank_booking=booking.pk,
+            first_bank_amount=str(split["bank_amount"]),
         )
     return result
 

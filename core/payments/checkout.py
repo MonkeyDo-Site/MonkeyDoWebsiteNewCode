@@ -249,6 +249,9 @@ def preview(
         from .zelle import plan_with_prepayment
 
         prepaid = zelle_facts(booking)
+        from core.membership_bank import preview_facts
+
+        prepaid = preview_facts(proposed_membership, prepaid)
         quote, plan, _ = plan_with_prepayment(
             saved.policy,
             lines,
@@ -264,6 +267,9 @@ def preview(
     if amount(quote["total"]) == ZERO:
         plan = []
     prepaid = zelle_facts(booking)
+    from core.membership_bank import preview_facts
+
+    prepaid = preview_facts(proposed_membership, prepaid)
     if any(part["tender"] == "card" for part in plan):
         try:
             agreement = booking.card_agreement
@@ -630,12 +636,17 @@ def summary(booking):
     prepaid = zelle_facts(booking)
     state = charge_state(booking)
     checkout = booking.checkouts.select_related("sale").order_by("-created_at").first()
+    held = prepaid["received"] - prepaid["refunded"]
+    if held and (checkout is None or checkout.sale_id is None):
+        from core.membership_bank import assigned_from_booking
+
+        held -= assigned_from_booking(booking)
     if checkout is None:
         return {
             "zelle": prepaid,
             "status": "Comped" if state.comped else "Awaiting arrival",
-            "received": prepaid["received"],
-            "total_received": prepaid["received"] - prepaid["refunded"],
+            "received": held,
+            "total_received": held,
             "due": ZERO if state.comped else None,
             "sale": None,
             "pending": False,
@@ -655,7 +666,7 @@ def summary(booking):
             if checkout.kind == "arrival"
             else "No fee",
             "received": ZERO,
-            "total_received": prepaid["received"] - prepaid["refunded"],
+            "total_received": held,
             "due": ZERO,
             "sale": None,
             "pending": False,

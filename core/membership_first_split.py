@@ -13,13 +13,15 @@ from .pricing import money
 MANUAL = {"cash": "Cash", "check": "Check", "zelle": "Zelle", "gift_card": "Gift card"}
 
 
-def review(*, principal, credit, split, policy, sender_name="", received_on=None):
+def review(*, principal, credit, split, policy, sender_name="", received_on=None, recorded=None):
     if not isinstance(split, dict) or set(split) - set(MANUAL):
         raise ValidationError(
             "Enter supported first-payment amounts for cash, check, Zelle or a physical gift card."
         )
     values = {kind: amount(split.get(kind, ZERO)) for kind in MANUAL}
-    remaining = principal - credit
+    remaining = principal - credit - (amount(recorded["amount"]) if recorded else ZERO)
+    if remaining < ZERO:
+        raise ValidationError("Recorded Zelle and credit exceed the initial membership principal.")
     manual = sum(values.values(), ZERO)
     if manual > remaining:
         raise ValidationError(
@@ -42,7 +44,7 @@ def review(*, principal, credit, split, policy, sender_name="", received_on=None
             parts.append(part)
     if net + fee:
         parts.append(dict(tender="card", net=str(net), fee=str(fee), amount=str(net + fee)))
-    return dict(
+    result = dict(
         version="membership-first-split-v1",
         parts=parts,
         manual_total=str(manual),
@@ -50,6 +52,9 @@ def review(*, principal, credit, split, policy, sender_name="", received_on=None
         card_net=str(net),
         credit_amount=str(credit),
     )
+    if recorded:
+        result["recorded_zelle"] = recorded
+    return result
 
 
 def verify(plan, *, verified_received=False, gift_card_verified=False, zelle_verified=False):

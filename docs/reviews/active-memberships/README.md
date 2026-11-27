@@ -20,9 +20,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Customer credit on arrival and the private receipt | 83–85 |
 | Credit with a partial cancellation fee | 86–87 |
 | Split the membership first payment | [88–89](#88--split-the-membership-payment-on-the-same-purchase-page) |
-| **New: received membership split during arrival** | **[90–91](#90--received-membership-split-and-visit-on-one-page)** |
+| Received membership split during arrival | [90–91](#90--received-membership-split-and-visit-on-one-page) |
+| **New: apply recorded booking Zelle to membership** | **[92–93](#92--assign-recorded-zelle-between-membership-and-visit)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Allocating already recorded booking Zelle toward membership, completing membership-card remainders within combined arrival, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Completing membership-card remainders within combined arrival, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -822,7 +823,7 @@ Two monthly Subscription places are funded by **$10 cash + $5 check + $20.98 sep
 
 Counts, membership choices, original-to-adjusted visit price, waivers, receipt proofs and the final confirmation stay on the existing arrival page. A private draft reload retains the entered membership and visit amounts. Changing amounts clears cash/bank/gift proofs and requires reviewing terms again. Monthly membership still needs its accepted future-installment card; that card is separate from the booking's visit card.
 
-**Current boundary:** the membership split must already cover its entire first payment after existing credit. If a membership card balance remains, the page records nothing and directs staff to complete that split on the membership purchase page, then return to arrival. Already recorded booking Zelle continues to fund the visit only. Those remaining combined-payment integrations are still in development.
+**Current boundary:** the membership split must already cover its entire first payment after existing credit. If a membership card balance remains, the page records nothing and directs staff to complete that split on the membership purchase page, then return to arrival. Samples 92–93 add an explicit allocation of already recorded booking Zelle between membership and visit. Membership-card remainders within combined arrival remain in development.
 
 | Desktop | Phone |
 | --- | --- |
@@ -838,10 +839,30 @@ Developer checks cover strict independent cash/bank/gift proofs, old booking Zel
 | --- | --- |
 | [![Combined received membership split complete, desktop](91-combined-received-membership-split-complete-desktop.png)](91-combined-received-membership-split-complete-desktop.png) | [![Combined received membership split complete, phone](91-combined-received-membership-split-complete-phone.png)](91-combined-received-membership-split-complete-phone.png) |
 
+## 92 — Assign recorded Zelle between membership and visit
+
+The fictional customer already transferred **$25** on **March 7**. Staff explicitly assign **$20** of that original receipt to membership, leaving **$5** for the visit. Two monthly Subscription places total **$35.98**, so new membership money is **$10 cash + $5.98 check = $15.98**. The visit totals **$15.99**, with **$10.99 new cash** after its $5 bank allocation. New money to record is **$26.97**; the earlier $25 remains separate.
+
+The amount selection lives on the same arrival page, alongside counts, member choices, original-to-adjusted visit price, waivers, accepted future card and final confirmation. The visit's **Use remaining balance** shortcut subtracts only its remaining $5 bank allocation. Changing the membership bank assignment clears old cash proof/terms. A private draft reload retains the explicit assignment. Review allocates nothing and creates no receipt.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Recorded booking Zelle membership review, desktop](92-recorded-zelle-membership-review-desktop.png)](92-recorded-zelle-membership-review-desktop.png) | [![Recorded booking Zelle membership review, phone](92-recorded-zelle-membership-review-phone.png)](92-recorded-zelle-membership-review-phone.png) |
+
+## 93 — Original transfer once, accurate new funds and reusable bank history
+
+One final confirmation records one membership and **$26.97 new cash/check funds**, and applies the same original $25 once across both invoices. There is still **one original bank receipt**, with **$20 membership + $5 visit** allocations. No additional bank transfer or card charge is claimed. The completed booking separates the $15.99 visit funding, new membership/visit amounts and the prior membership bank allocation, retaining its original date/sender. One combined confirmation is queued, with none delivered externally. Later membership installments keep their original **$37.06** amount and dates.
+
+Developer checks cover exact source/customer/booking/invoice scope, original-date FIFO across multiple receipts, partial/full first-payment funding, stale receipt reviews, atomic rollback, repeated/concurrent confirmation, fresh nonretained future-card authority and unused-balance refunds. PostgreSQL serializes the original receipt budget across allocations and refunds; immutable metadata ties membership use to its accepted first installment and actual combined booking. A used migration/release cannot be reversed into code that loses those source facts. The first membership payment must currently be fully funded by recorded funds, credit and received tenders; its card-remainder integration is still in development.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Recorded booking Zelle membership complete, desktop](93-recorded-zelle-membership-complete-desktop.png)](93-recorded-zelle-membership-complete-desktop.png) | [![Recorded booking Zelle membership complete, phone](93-recorded-zelle-membership-complete-phone.png)](93-recorded-zelle-membership-complete-phone.png) |
+
 ## Checked so far
 
-The complete **1,410-test PostgreSQL suite passes** (490.871s) after every final application change. Eleven new cases cover the combined received membership split: nine service/JSON/draft/source cases, one actual PostgreSQL overlapping-confirmation case and one new nonretained future-card authority case. The final focused run passes 36 cases in 19.641s. Exact dates/totals, source budgets, independent proofs, prior receipts, backed credit, monthly/prepaid rules, stale review, atomic rollback, original card bindings and unchanged older flows are covered.
+The complete **1,426-test PostgreSQL suite passes** (492.489s), including ten new bank service/JSON/source cases, three PostgreSQL race/reversal cases, overlapping combined confirmation, fresh nonretained future-card authority and release compatibility. It covers exact source budgets, original-date FIFO, immutable/runtime scope, stale review, rollback, original source cards, unused-bank refunds and unchanged older flows. Existing credit plus recorded Zelle is tested against the same remaining membership principal. A fully covered visit retains only its unused bank refund balance, excluding funds already assigned to membership.
 
-The final real desktop/phone scenario passes in **12.440s**, verifying private draft restoration, receipt-proof reset, one membership/five operations, **$45.98 actual received** while the visit card is pending, **$52.15** only after the same simulated card success, and one queued unsent combined confirmation. All four final samples 90–91 were recaptured and visually inspected, with no overflow or JavaScript errors. No provider or external mail call occurs.
+The final real desktop/phone scenario passes in **9.101s**, with one original $25 receipt, $20 membership/$5 visit allocations, **$26.97 new money** ($15.98 membership + $10.99 visit), one membership/five operations and one queued unsent combined confirmation. It verifies proof/terms reset, draft restoration, the correctly reduced visit remaining-balance shortcut and readable original bank facts. All four final samples 92–93 were recaptured and visually inspected, with no overflow, JavaScript errors or external bank/provider/mail calls.
 
-All **91 desktop/phone pairs**, 182 image links, Ruff/format (516 Python files), model drift, JavaScript syntax, whitespace and **50 unchanged reviewed migration hashes** pass. No migration/grant/capability change is needed for this increment. The preceding 9018f5b revision passed all four GitHub checks. Feature switches remain off by default; the same PR stays draft. Membership-card remainders within combined arrival and the other explicitly listed scope remain in progress. No merge, deployment or live financial action is included.
+All **93 desktop/phone pairs**, 186 image links, Ruff/format (520 Python files), model drift, JavaScript syntax, whitespace and **51 reviewed migration hashes** pass. All 50 prior migration hashes remain unchanged. Migration/release guards preserve accepted bank allocations; the earlier 4039755 revision passed all four GitHub checks. Feature switches remain off and the same PR stays draft. Membership-card remainders within combined arrival and the other explicitly listed scope remain in progress. No merge, deployment or live financial action is included.

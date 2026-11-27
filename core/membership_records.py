@@ -9,6 +9,27 @@ from django.db import models
 from .payments.models import FinancialFact
 
 
+class MembershipBankAllocation(FinancialFact):
+    """A prior booking transfer funds one accepted first membership invoice."""
+
+    operation = models.OneToOneField(
+        "core.PaymentOperation", primary_key=True, on_delete=models.PROTECT
+    )
+    purchase = models.ForeignKey(
+        "core.MembershipPurchase", on_delete=models.PROTECT, related_name="bank_allocations"
+    )
+    receipt = models.ForeignKey("core.ZelleReceipt", on_delete=models.PROTECT)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="member_bank_positive"),
+            models.UniqueConstraint(
+                fields=["purchase", "receipt"], name="member_bank_one_source_per_purchase"
+            ),
+        ]
+
+
 class MembershipPurchase(FinancialFact):
     membership = models.OneToOneField(
         "core.MembershipDraft",
