@@ -660,6 +660,7 @@ from .membership_records import (  # noqa: E402,F401
     MembershipArrivalCheckout,
     MembershipArrivalEvent,
     MembershipArrivalIntent,
+    MembershipArrivalResolution,
     MembershipArrivalState,
     MembershipBenefitAssignment,
     MembershipBenefitBatch,

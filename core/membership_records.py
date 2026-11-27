@@ -129,6 +129,25 @@ class MembershipArrivalEvent(FinancialFact):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class MembershipArrivalResolution(FinancialFact):
+    """A fresh owner approval of the visit; original purchase consent is retained."""
+
+    intent = models.OneToOneField(
+        MembershipArrivalIntent,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="resolution",
+    )
+    checkout = models.OneToOneField(
+        "core.BookingCheckout", on_delete=models.PROTECT, related_name="membership_resolution"
+    )
+    request_key = models.UUIDField(unique=True)
+    fingerprint = models.CharField(max_length=64)
+    reason = models.CharField(max_length=500)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class MembershipInstallment(FinancialFact):
     purchase = models.ForeignKey(
         MembershipPurchase, on_delete=models.PROTECT, related_name="installments"

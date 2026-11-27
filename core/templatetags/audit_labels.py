@@ -88,6 +88,8 @@ def audit_event(event):
                 "after": "This booking only; honoring benefits is limited to the approved session",
             },
         ]
+    elif event.action == "membership.arrival_re_reviewed":
+        changes = [{"label": "Reason", "after": data.get("reason", "")}]
     elif event.action == "membership.draft_created":
         changes = [
             {"label": LABELS[key], "before": "—", "after": value(key, item)}
@@ -104,6 +106,8 @@ def audit_event(event):
         "membership.draft_created": "Membership draft created",
         "membership.draft_edited": "Membership draft edited",
         "membership.booking_exception_recorded": "Owner membership decision recorded",
+        "membership.arrival_review_started": "Owner arrival review started",
+        "membership.arrival_re_reviewed": "Arrival confirmed after owner review",
     }
     return {
         "event": event,

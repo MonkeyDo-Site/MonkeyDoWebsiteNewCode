@@ -9,6 +9,8 @@ from django.utils import timezone
 
 KEY = "arrival_review_drafts"
 FIELDS = (
+    "pending_review",
+    "pending_reason",
     "request_key",
     "version",
     "children",

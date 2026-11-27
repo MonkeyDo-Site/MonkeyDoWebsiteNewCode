@@ -287,6 +287,11 @@ def status_data(intent):
             "review",
             "Membership processing is paused. The accepted payments and visit details are saved for review.",
         )
+    elif intent.progress.code == "owner_review_requested":
+        state, message = (
+            "review",
+            "The owner is reviewing the current visit details. The visit card payment has not been requested.",
+        )
     elif intent.progress.status == "review" or timezone.now() >= intent.expires_at:
         state, message = (
             "review",
@@ -337,6 +342,7 @@ def status_data(intent):
     job = DurableJob.objects.filter(kind="membership_arrival", reference=str(intent.pk)).first()
     can_continue = bool(
         settings.MEMBERSHIP_SALES_ENABLED
+        and intent.progress.code != "owner_review_requested"
         and status in {"active", "scheduled"}
         and installment_paid(first)
         and timezone.now() < intent.expires_at
@@ -363,6 +369,19 @@ def status_data(intent):
     )
 
 
+def finish(intent, state, *, code=""):
+    BookingCapacityHold.objects.filter(pk=intent.hold_key).delete()
+    state.status, state.code = "completed", code
+    state.revision += 1
+    state.save(update_fields=["status", "code", "revision", "updated_at"])
+    MembershipArrivalEvent.objects.create(intent=intent, status="completed", code=code)
+    OwnerNotice.objects.filter(
+        details__kind="membership_arrival",
+        details__intent_id=str(intent.pk),
+        reviewed_at__isnull=True,
+    ).update(reviewed_at=timezone.now())
+
+
 @transaction.atomic
 def complete(intent_id):
     from .membership_arrival import queue_confirmation
@@ -379,7 +398,7 @@ def complete(intent_id):
     lock_customer(intent.purchase.customer_id)
     intent = MembershipArrivalIntent.objects.select_related("purchase", "actor").get(pk=intent_id)
     state = MembershipArrivalState.objects.select_for_update().get(intent=intent)
-    if state.status == "completed":
+    if state.status == "completed" or state.code == "owner_review_requested":
         return state
     try:
         with transaction.atomic():
@@ -402,16 +421,7 @@ def complete(intent_id):
                 facts=intent.facts["review"],
                 actor=intent.actor,
             )
-            BookingCapacityHold.objects.filter(pk=intent.hold_key).delete()
-            state.status, state.code = "completed", ""
-            state.revision += 1
-            state.save(update_fields=["status", "code", "revision", "updated_at"])
-            MembershipArrivalEvent.objects.create(intent=intent, status="completed")
-            OwnerNotice.objects.filter(
-                details__kind="membership_arrival",
-                details__intent_id=str(intent.pk),
-                reviewed_at__isnull=True,
-            ).update(reviewed_at=timezone.now())
+            finish(intent, state)
             queue_confirmation(record)
     except (ValidationError, PermissionDenied):
         return mark_review(intent, "visit_review_required")

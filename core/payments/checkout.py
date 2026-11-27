@@ -299,6 +299,10 @@ def preview(
             for p in plan
         ],
     }
+    if membership_intent and data.get("pending_review"):
+        from core.membership_arrival_recovery import marker
+
+        facts["membership_arrival_recovery"] = marker(actor, membership_intent, data)
     return booking, state, quote, plan, facts, fingerprint(facts)
 
 

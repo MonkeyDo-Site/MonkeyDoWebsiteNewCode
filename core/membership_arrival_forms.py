@@ -121,10 +121,16 @@ def selection(data):
     }
 
 
-def preview(*, actor, booking_id, kind, data, validate_waivers=True):
+def preview(*, actor, booking_id, kind, data, validate_waivers=True, pending_intent=None):
     from . import membership_arrival
     from .payments import checkout
 
+    if pending_intent:
+        from . import membership_arrival_recovery
+
+        return membership_arrival_recovery.preview(
+            actor=actor, intent=pending_intent, data=data, validate_waivers=validate_waivers
+        )
     if kind != "arrival" or not data.get("member_add"):
         return checkout.preview(
             actor=actor,
@@ -179,10 +185,23 @@ def ready(data, combined):
     )
 
 
-def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confirmed):
+def confirm(
+    *, actor, booking_id, kind, data, request_key, reviewed_hash, confirmed, pending_intent=None
+):
     from . import membership_arrival
     from .payments import checkout
 
+    if pending_intent:
+        from . import membership_arrival_recovery
+
+        return membership_arrival_recovery.confirm(
+            actor=actor,
+            intent_id=pending_intent.pk,
+            data=data,
+            request_key=request_key,
+            reviewed_hash=reviewed_hash,
+            confirmed=confirmed,
+        )
     if kind != "arrival" or not data.get("member_add"):
         return checkout.confirm(
             actor=actor,
