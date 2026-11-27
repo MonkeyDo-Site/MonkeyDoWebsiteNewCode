@@ -1,7 +1,7 @@
-"""A split visit keeps its separate, fully received membership payment explicit.
+"""A split visit keeps its separate membership receipts and card remainder explicit.
 
 Split rows describe the visit only. The membership amount comes from its current
-accepted offer, never a posted receipt amount. A card remainder is a visit charge.
+accepted offer, never a posted receipt amount. Each card has its own scope.
 """
 
 from django.core.exceptions import ValidationError
@@ -43,7 +43,11 @@ def first_tender(data, *, comped=False):
 
 def split_facts(*, tender, membership_due, plan, selection, first_plan=None):
     manual = (
-        {part["tender"]: amount(part["amount"]) for part in first_plan["parts"]}
+        {
+            part["tender"]: amount(part["amount"])
+            for part in first_plan["parts"]
+            if part["tender"] != "card"
+        }
         if first_plan
         else {tender: membership_due}
         if membership_due
@@ -72,6 +76,14 @@ def split_facts(*, tender, membership_due, plan, selection, first_plan=None):
     }
     if card:
         result["payment_due_today"] = str(card)
+    member_card = amount(first_plan["card_total"]) if first_plan else ZERO
+    if member_card:
+        result.update(
+            membership_card_due=str(member_card),
+            visit_card_due=str(card),
+            payment_due_today=str(member_card + card),
+            total_due_today=str(sum(manual.values(), ZERO) + card + member_card),
+        )
     return result
 
 

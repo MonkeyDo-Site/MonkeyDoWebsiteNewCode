@@ -192,7 +192,9 @@ def fresh_preview(intent, *, proposed):
         booking_id=intent.booking_id,
         kind="arrival",
         data=data_for(intent),
-        proposed_membership=ProposedMembership(restore_offer(intent)) if proposed else None,
+        proposed_membership=ProposedMembership(restore_offer(intent), bank_applied=True)
+        if proposed
+        else None,
         membership_intent=intent,
     )
     member_id = 9223372036854775807 if proposed else intent.purchase_id
@@ -280,6 +282,9 @@ def status_data(intent):
 
     first = intent.purchase.installments.first()
     sale = first.invoice.sale
+    from .membership_bank import applied as bank_applied
+
+    prior_bank = bank_applied(intent.purchase)
     status = membership_status(intent.purchase)
     states = set(sale.operations.values_list("state", flat=True))
     if not settings.MEMBERSHIP_SALES_ENABLED:
@@ -358,6 +363,8 @@ def status_data(intent):
         state=state,
         message=message,
         membership_received=str(received(sale)),
+        membership_new_received=str(max(ZERO, received(sale) - prior_bank)),
+        membership_prepaid=str(prior_bank),
         membership_amount=str(total(sale)),
         credit_applied=applied(sale),
         membership_balance=str(max(ZERO, total(sale) - settled(sale))),

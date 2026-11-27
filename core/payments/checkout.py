@@ -130,10 +130,28 @@ def preview(
     validate_waivers=True,
     proposed_membership=None,
     membership_intent=None,
+    combined_purchase=None,
 ):
     authorize(actor)
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
     require_current(booking, kind, membership_intent)
+    if combined_purchase is not None:
+        from core.membership_sales import installment_paid
+
+        first = combined_purchase.installments.first()
+        if (
+            kind != "arrival"
+            or combined_purchase.customer_id != booking.customer_id
+            or combined_purchase.actor_id != actor.pk
+            or combined_purchase.confirmation_mode != "combined"
+            or (
+                combined_purchase.purpose != "complimentary"
+                and (first is None or not installment_paid(first))
+            )
+        ):
+            raise ValidationError(
+                "Use this actor's funded combined membership purchase for arrival."
+            )
     state = charge_state(booking)
     if kind != "arrival" and type(data.get("send_email", False)) is not bool:
         raise ValidationError("Choose whether to send a customer email.")
@@ -245,6 +263,17 @@ def preview(
         plan = []
     else:
         method = data.get("method", "card")
+        if (
+            method == "split"
+            and (
+                proposed_membership is not None
+                or membership_intent is not None
+                or combined_purchase is not None
+            )
+            and isinstance(data.get("split"), dict)
+            and not any(amount(value) for value in data["split"].values())
+        ):
+            method = "card"
         from .zelle import facts as zelle_facts
         from .zelle import plan_with_prepayment
 
@@ -341,7 +370,16 @@ def preview(
 
 @transaction.atomic
 def confirm(
-    *, actor, booking_id, kind, data, request_key, reviewed_hash, confirmed, membership_intent=None
+    *,
+    actor,
+    booking_id,
+    kind,
+    data,
+    request_key,
+    reviewed_hash,
+    confirmed,
+    membership_intent=None,
+    combined_purchase=None,
 ):
     authorize(actor)
     if confirmed is not True:
@@ -369,6 +407,7 @@ def confirm(
         kind=kind,
         data=data,
         membership_intent=membership_intent,
+        combined_purchase=combined_purchase,
     )
     if digest != reviewed_hash:
         raise ValidationError(

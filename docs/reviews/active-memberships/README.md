@@ -21,9 +21,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Credit with a partial cancellation fee | 86–87 |
 | Split the membership first payment | [88–89](#88--split-the-membership-payment-on-the-same-purchase-page) |
 | Received membership split during arrival | [90–91](#90--received-membership-split-and-visit-on-one-page) |
-| **New: apply recorded booking Zelle to membership** | **[92–93](#92--assign-recorded-zelle-between-membership-and-visit)** |
+| Apply recorded booking Zelle to membership | [92–93](#92--assign-recorded-zelle-between-membership-and-visit) |
+| **New: membership card remainder during arrival** | **[94–96](#94--split-membership-receipts-and-card-with-arrival)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Completing membership-card remainders within combined arrival, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Recording new manual visit receipts while the first membership card is pending, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -811,7 +812,7 @@ The accepted card also covers later **$37.06** installments on their original da
 
 After one confirmation, the fictional membership initially has **$17 received**, one **$19.55 card request pending**, and pending benefits. A simulated success of that same card operation then gives **$36.55 received**, active benefits and one queued unsent customer confirmation. The overview retains cash/check/Zelle/card amounts, the **October 30** bank receipt date/sender, and the next **$37.06 November 30** installment. Future dates, accepted terms and receipt history are preserved.
 
-Developer checks also cover cash/check/gift prepaid splits, monthly manual-first/future-card rules, backed credit, strict proofs, actual receipt dates, stale reviews, atomic rollback, known-decline recovery, unknown outcomes, source holds, concurrent confirmations/source spending, public rejection, migration reversal and release compatibility. This first-payment split is available on the standalone staff purchase/renewal/addition page. Fully received manual splits also work during arrival, as shown in samples 90–91; a membership split with a card remainder currently finishes on the standalone page first. No actual financial POST or external email occurs.
+Developer checks also cover cash/check/gift prepaid splits, monthly manual-first/future-card rules, backed credit, strict proofs, actual receipt dates, stale reviews, atomic rollback, known-decline recovery, unknown outcomes, source holds, concurrent confirmations/source spending, public rejection, migration reversal and release compatibility. This first-payment split is available on the standalone staff purchase/renewal/addition page. Fully received manual splits also work during arrival (samples 90–91). Samples 94–96 add a membership card remainder when the visit uses card and/or previously recorded bank funds. No actual financial POST or external email occurs.
 
 | Desktop | Phone |
 | --- | --- |
@@ -823,7 +824,7 @@ Two monthly Subscription places are funded by **$10 cash + $5 check + $20.98 sep
 
 Counts, membership choices, original-to-adjusted visit price, waivers, receipt proofs and the final confirmation stay on the existing arrival page. A private draft reload retains the entered membership and visit amounts. Changing amounts clears cash/bank/gift proofs and requires reviewing terms again. Monthly membership still needs its accepted future-installment card; that card is separate from the booking's visit card.
 
-**Current boundary:** the membership split must already cover its entire first payment after existing credit. If a membership card balance remains, the page records nothing and directs staff to complete that split on the membership purchase page, then return to arrival. Samples 92–93 add an explicit allocation of already recorded booking Zelle between membership and visit. Membership-card remainders within combined arrival remain in development.
+Samples 92–93 add an explicit allocation of already recorded booking Zelle between membership and visit. Samples 94–96 support a membership card balance when the visit uses only card and/or those prior bank funds. **Current boundary:** new manual visit receipts while the membership card is pending still require completing the membership purchase first; that guarded combination records nothing here.
 
 | Desktop | Phone |
 | --- | --- |
@@ -853,16 +854,46 @@ The amount selection lives on the same arrival page, alongside counts, member ch
 
 One final confirmation records one membership and **$26.97 new cash/check funds**, and applies the same original $25 once across both invoices. There is still **one original bank receipt**, with **$20 membership + $5 visit** allocations. No additional bank transfer or card charge is claimed. The completed booking separates the $15.99 visit funding, new membership/visit amounts and the prior membership bank allocation, retaining its original date/sender. One combined confirmation is queued, with none delivered externally. Later membership installments keep their original **$37.06** amount and dates.
 
-Developer checks cover exact source/customer/booking/invoice scope, original-date FIFO across multiple receipts, partial/full first-payment funding, stale receipt reviews, atomic rollback, repeated/concurrent confirmation, fresh nonretained future-card authority and unused-balance refunds. PostgreSQL serializes the original receipt budget across allocations and refunds; immutable metadata ties membership use to its accepted first installment and actual combined booking. A used migration/release cannot be reversed into code that loses those source facts. The first membership payment must currently be fully funded by recorded funds, credit and received tenders; its card-remainder integration is still in development.
+Developer checks cover exact source/customer/booking/invoice scope, original-date FIFO across multiple receipts, partial/full first-payment funding, stale receipt reviews, atomic rollback, repeated/concurrent confirmation, fresh nonretained future-card authority and unused-balance refunds. PostgreSQL serializes the original receipt budget across allocations and refunds; immutable metadata ties membership use to its accepted first installment and actual combined booking. A used migration/release cannot be reversed into code that loses those source facts. Samples 94–96 extend this original-bank allocation to a first membership card remainder while keeping its bank assignment separate from new receipts.
 
 | Desktop | Phone |
 | --- | --- |
 | [![Recorded booking Zelle membership complete, desktop](93-recorded-zelle-membership-complete-desktop.png)](93-recorded-zelle-membership-complete-desktop.png) | [![Recorded booking Zelle membership complete, phone](93-recorded-zelle-membership-complete-phone.png)](93-recorded-zelle-membership-complete-phone.png) |
 
+## 94 — Split membership receipts and card with arrival
+
+Two monthly Subscription places have **$35.98 principal**. Membership receives **$10 cash + $5 check**; its remaining $20.98 principal attracts only **$0.63 fee**, so the first membership card request is **$21.61** and the membership total is **$36.61**. The separate visit card is **$16.47**, payable only after membership funding. New payments total **$53.08**. Counts, receipts, waivers, both exact card amounts, original-to-adjusted visit price and the final action stay on the existing page.
+
+Preview records nothing. Monthly terms retain the accepted future card and original **$37.06** installments. A partially manual prepaid purchase needs its card only for the remainder; fully manual prepaid hides it. This saved-card sample does not verify real Banquest fields.
+
+| Desktop | Phone |
+| --- | --- |
+| [![First card split arrival review, desktop](94-first-card-split-arrival-review-desktop.png)](94-first-card-split-arrival-review-desktop.png) | [![First card split arrival review, phone](94-first-card-split-arrival-review-phone.png)](94-first-card-split-arrival-review-phone.png) |
+
+## 95 — Received membership money while its card is pending
+
+One confirmation records **$15 actually received** and queues the one **$21.61 membership card** request. Benefits and attendance remain pending. The separate **$16.47 visit card has not been requested**. Checking status reads the original request; it does not charge again or extend the original thirty-minute extra-capacity hold.
+
+Developer checks also cover $25 earlier booking Zelle assigned as $20 membership/$5 visit, plus $10 new membership cash and its $6.16 card remainder. Prior bank funds and new money remain separate. Restoring the saved intent after a database reload neither subtracts that bank assignment twice nor wrongly rejects its original source identity. An unknown first-card result preserves received funds and blocks replacement collection. A confirmed decline permits explicit remaining-principal collection, removing only the uncharged card fee.
+
+| Desktop | Phone |
+| --- | --- |
+| [![First card split arrival pending, desktop](95-first-card-split-arrival-pending-desktop.png)](95-first-card-split-arrival-pending-desktop.png) | [![First card split arrival pending, phone](95-first-card-split-arrival-pending-phone.png)](95-first-card-split-arrival-pending-phone.png) |
+
+## 96 — Funded membership, then the separately confirmed visit
+
+A simulated success of that same membership card request makes **$36.61 membership funds** received. Current counts, sources, capacity, waivers and benefits are rechecked before arrival and the **$16.47 visit card** request. The paid combined email still waits for that visit result. Its simulated success yields **$53.08 new funds**, split into **$36.61 membership + $16.47 visit**, and one queued unsent combined confirmation. No actual provider call or email delivery occurs.
+
+**Current boundary:** this pending membership-card flow supports card and previously recorded bank funds for the visit. New manual visit cash/check/Zelle/gift receipts with a pending first membership card remain guarded before writes, while their durable receipt/return handling is completed. Fully received manual membership splits with manual visit funds continue to work in samples 90–93. A fully funded manual membership with a card-only visit is also tested.
+
+| Desktop | Phone |
+| --- | --- |
+| [![First card split arrival complete, desktop](96-first-card-split-arrival-complete-desktop.png)](96-first-card-split-arrival-complete-desktop.png) | [![First card split arrival complete, phone](96-first-card-split-arrival-complete-phone.png)](96-first-card-split-arrival-complete-phone.png) |
+
 ## Checked so far
 
-The complete **1,426-test PostgreSQL suite passes** (492.489s), including ten new bank service/JSON/source cases, three PostgreSQL race/reversal cases, overlapping combined confirmation, fresh nonretained future-card authority and release compatibility. It covers exact source budgets, original-date FIFO, immutable/runtime scope, stale review, rollback, original source cards, unused-bank refunds and unchanged older flows. Existing credit plus recorded Zelle is tested against the same remaining membership principal. A fully covered visit retains only its unused bank refund balance, excluding funds already assigned to membership.
+The complete **1,439-test PostgreSQL suite passes** (506.213s), including nine new functional/native/JSON split-card cases, three PostgreSQL overlap/reversal cases and a release-compatibility case. Tests cover exact first-card amounts, preserved manual receipts, original bank allocation after saved-intent reload, partial prepaid, fully manual membership/card-only visit, unknown outcomes, explicit known-decline fee removal and refusal of unrecorded manual visit funds.
 
-The final real desktop/phone scenario passes in **9.101s**, with one original $25 receipt, $20 membership/$5 visit allocations, **$26.97 new money** ($15.98 membership + $10.99 visit), one membership/five operations and one queued unsent combined confirmation. It verifies proof/terms reset, draft restoration, the correctly reduced visit remaining-balance shortcut and readable original bank facts. All four final samples 92–93 were recaptured and visually inspected, with no overflow, JavaScript errors or external bank/provider/mail calls.
+The final real desktop/phone scenario passes in **8.475s**: $15 received while membership card $21.61 is pending, then the exact $16.47 visit card after simulated membership funding, $53.08 new funds and one queued unsent combined confirmation. It checks proof/terms reset, prepaid card visibility, unchanged future installments, no overflow/JavaScript errors and no provider/storage/nonce/mail requests. All six final samples 94–96 were visually inspected.
 
-All **93 desktop/phone pairs**, 186 image links, Ruff/format (520 Python files), model drift, JavaScript syntax, whitespace and **51 reviewed migration hashes** pass. All 50 prior migration hashes remain unchanged. Migration/release guards preserve accepted bank allocations; the earlier 4039755 revision passed all four GitHub checks. Feature switches remain off and the same PR stays draft. Membership-card remainders within combined arrival and the other explicitly listed scope remain in progress. No merge, deployment or live financial action is included.
+All **96 desktop/phone pairs**, 192 image links, Ruff/format (523 Python files), model drift, JavaScript syntax, whitespace and **52 reviewed migration hashes** pass. All 51 prior hashes remain unchanged. Used migration/release guards preserve accepted split-arrival scope. The preceding 28a1158 revision passed all four GitHub checks. Feature switches remain off and the same PR stays draft. New manual visit receipts while the membership card is pending and the other explicitly listed scope remain in progress. No merge, deployment or live financial action is included.

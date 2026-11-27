@@ -95,7 +95,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       recorded.hidden=!memberSplit||!(cents(lastQuote.membership_zelle_available??recorded.dataset.available)||cents(form.elements.member_recorded_zelle.value));
       form.elements.member_recorded_zelle.disabled=recorded.hidden;
       const card=memberFields.querySelector('[data-membership-monthly-card]');
-      const needsCard=active&&!form.elements.member_comped?.checked&&(form.elements.member_billing.value==='monthly'||(firstTender==='card'&&lastQuote.membership_needs_card!==false));
+      const needsCard=active&&!form.elements.member_comped?.checked&&(lastQuote.membership_needs_card??(form.elements.member_billing.value==='monthly'||['card','split'].includes(firstTender)));
       card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;
       const entry=memberFields.querySelector('[data-arrival-membership-card]');if(entry)entry.hidden=!needsCard;
       const email=memberFields.querySelector('[data-membership-comped-email]');
@@ -314,6 +314,7 @@ for(const workspace of document.querySelectorAll('[data-membership-arrival-pendi
       workspace.querySelector('[data-pending-continue]').hidden=!(data.can_continue&&workspace.dataset.mayRecheck==='true');
       if(data.membership_amount!==undefined)workspace.querySelector('[data-pending-amount]').textContent='$'+Number(data.membership_amount).toFixed(2);
       if(data.membership_received!==undefined)workspace.querySelector('[data-pending-received]').textContent='$'+Number(data.membership_received).toFixed(2);
+      if(data.membership_new_received!==undefined&&workspace.querySelector('[data-pending-new-received]'))workspace.querySelector('[data-pending-new-received]').textContent='$'+Number(data.membership_new_received).toFixed(2);
       if(data.membership_balance!==undefined)workspace.querySelector('[data-pending-balance]').textContent='$'+Number(data.membership_balance).toFixed(2);
       if(data.state==='succeeded'){location.assign(data.booking_url);return;}
       if(data.state==='processing'&&Date.now()<deadline)timer=setTimeout(refresh,1500);

@@ -29,6 +29,10 @@ from .checkout import charge_state, coverage_facts, preview
 def combined_label(combined):
     tender = combined["offer"]["expected_method"]
     facts = combined["facts"]
+    if facts.get("membership_card_due"):
+        manual = Decimal(facts["received_today"])
+        prefix = f"record ${manual:.2f} and " if manual else ""
+        return f"Confirm arrival and membership — {prefix}charge membership card ${facts['membership_card_due']}"
     if facts.get("split_visit"):
         manual = Decimal(facts["received_today"])
         card = Decimal(facts.get("payment_due_today", "0.00"))

@@ -39,6 +39,7 @@ PROPOSED_ID = 9223372036854775807
 @dataclass(frozen=True)
 class ProposedMembership:
     offer: dict
+    bank_applied: bool = False
 
 
 def proposed_places(proposed, appointment_on, children):
@@ -69,6 +70,9 @@ def proposed_places(proposed, appointment_on, children):
 
 def normalized(facts, member_id=PROPOSED_ID):
     result = copy.deepcopy(facts)
+    # JSON storage turns source identity tuples into arrays. Compare the same
+    # representation both during review and after a worker reloads the intent.
+    result["prepayments"] = [list(item) for item in result["prepayments"]]
     for use in result["quote"].get("membership_plan", {}).get("uses", []):
         if use["membership_id"] == member_id:
             use["membership_id"] = "new_membership"
@@ -107,10 +111,6 @@ def review(
     )
     proposed = offer(actor=actor, **values)
     first_plan = proposed.get("first_payment_plan")
-    if first_plan and amount(first_plan["card_total"]):
-        raise ValidationError(
-            "The membership still has a card balance. Complete that split payment on the membership purchase page first, then return here to apply its benefits and finish arrival. No payments have been recorded here."
-        )
     membership_due = (
         amount(proposed.get("first_payment_total", proposed["installments"][0]["quote"]["total"]))
         if proposed["installments"]
@@ -124,6 +124,17 @@ def review(
         validate_waivers=validate_waivers,
         proposed_membership=ProposedMembership(proposed),
     )
+    if (
+        first_plan
+        and amount(first_plan["card_total"])
+        and any(
+            part["tender"] != "card" and not part.get("advance") and amount(part["amount"])
+            for part in result[3]
+        )
+    ):
+        raise ValidationError(
+            "The membership still has a card balance and the visit includes received manual payments. Complete that split payment on the membership purchase page first, then return here to apply its benefits and finish arrival. No payments have been recorded here."
+        )
     visit_due = sum((amount(p["amount"]) for p in result[3] if not p.get("advance")), ZERO)
     from .models import PaymentMethod
 
@@ -270,12 +281,20 @@ def confirm(
         ),
         **selection,
     )
-    if data["method"] == "card" and amount(reviewed["facts"]["membership_due"]):
+    if amount(reviewed["facts"].get("membership_card_due", "0.00")) or (
+        data["method"] == "card" and amount(reviewed["facts"]["membership_due"])
+    ):
         return create_pending(
             actor=actor, key=key, booking=booking, member=member, data=data, reviewed=reviewed
         )
     final_data = data | {"apply_available_benefits": True}
-    real = checkout.preview(actor=actor, booking_id=booking_id, kind="arrival", data=final_data)
+    real = checkout.preview(
+        actor=actor,
+        booking_id=booking_id,
+        kind="arrival",
+        data=final_data,
+        combined_purchase=member,
+    )
     if normalized(real[4], member.pk) != reviewed["facts"]["arrival"]:
         raise ValidationError(
             "The available membership benefits changed. Review the combined price again."
@@ -288,6 +307,7 @@ def confirm(
         request_key=key,
         reviewed_hash=real[-1],
         confirmed=True,
+        combined_purchase=member,
     )
     record = MembershipArrivalCheckout.objects.create(
         id=key,

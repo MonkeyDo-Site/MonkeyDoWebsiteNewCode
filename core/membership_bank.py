@@ -79,7 +79,7 @@ def review(*, actor, customer, booking_id, value, comped=False):
 
 
 def preview_facts(proposed, prepaid):
-    if proposed is None:
+    if proposed is None or proposed.bank_applied:
         return prepaid
     plan = (proposed.offer.get("first_payment_plan") or {}).get("recorded_zelle")
     if not plan:

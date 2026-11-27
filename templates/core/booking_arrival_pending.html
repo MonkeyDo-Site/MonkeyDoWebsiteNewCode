@@ -17,7 +17,7 @@
 <dl class="quote-lines"><dt>Membership amount</dt><dd data-pending-amount>${{ progress.membership_amount }}</dd>
 <dt>Membership payment received</dt><dd data-pending-received>${{ progress.membership_received }}</dd>
 {% if progress.credit_applied %}<dt>Existing credit applied</dt><dd>${{ progress.credit_applied|floatformat:2 }}</dd>{% endif %}
-<dt>Membership balance</dt><dd data-pending-balance>${{ progress.membership_balance }}</dd></dl>
+{% if progress.membership_prepaid != '0.00' %}<dt>Previously recorded Zelle applied</dt><dd>${{ progress.membership_prepaid }}</dd><dt>New membership funds received</dt><dd data-pending-new-received>${{ progress.membership_new_received }}</dd>{% endif %}<dt>Membership balance</dt><dd data-pending-balance>${{ progress.membership_balance }}</dd></dl>
 <h3>Visit payment details</h3>{% include 'core/quote_items.html' with data=quote %}
 <p class="caption">The visit charge follows confirmed membership funding and a check that the reviewed details are still current.</p>
 </section></div>
