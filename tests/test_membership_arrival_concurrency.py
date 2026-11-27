@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from unittest.mock import patch
 
-from django.db import close_old_connections, connections
+from django.db import close_old_connections, connection, connections
 from django.test import TransactionTestCase, override_settings
 
 from core import membership_arrival
@@ -22,6 +22,8 @@ class CombinedArrivalRaceTests(InitialCreditFixtures, TransactionTestCase):
     prepare = arrival_fixtures.CombinedMembershipArrivalTests.prepare
 
     def test_second_submission_waits_for_first_and_returns_its_completed_receipt(self):
+        if connection.vendor != "postgresql":
+            self.skipTest("PostgreSQL transaction/advisory-lock race")
         booking = self.prepare()
         accepted = membership_arrival.review(**self.options)
         bought, waiting = Event(), Event()
