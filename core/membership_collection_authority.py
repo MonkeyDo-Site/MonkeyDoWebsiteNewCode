@@ -67,25 +67,16 @@ def authorize(value):
     return claim
 
 
-def card_only(claim):
-    if amount(claim.details["credit_to_apply"]) != ZERO:
-        raise ValidationError(
-            "Scheduled customer credit requires review. No card payment was requested."
-        )
-
-
 def authorize_invoice(value, *, installment_id, tender):
     claim = authorize(value)
-    card_only(claim)
     if claim.installment_id != installment_id or tender != "card":
         raise PermissionDenied
     return claim
 
 
-def prepared_invoice(value):
-    """Recheck the accepted plan, allowing only this claim's own pristine invoice."""
+def prepared_invoice(value, *, before_credit=False):
+    """Recheck this claim's invoice and its exact own credit application."""
     claim = current_claim(value)
-    card_only(claim)
     try:
         invoice = MembershipInvoice.objects.select_related("sale", "installment__purchase").get(
             installment_id=claim.installment_id
@@ -105,18 +96,17 @@ def prepared_invoice(value):
             {"membership": item.purchase_id, "installment": item.number, "quote": item.quote}
         )
         or sale.subtotal != amount(claim.details["principal_due"])
-        or sale.processing_fee != amount(claim.details["card_fee"])
-        or sale.total != amount(claim.details["card_total"])
+        or sale.processing_fee != amount(item.quote["processing_fee"])
+        or sale.total != amount(item.quote["total"])
         or sale.sales_tax != ZERO
         or sale.fee_rate != Decimal(item.quote["rates"]["card_fee_rate"])
-        or sale.credit_applications.exists()
-        or sale.lines.filter(adjustments__isnull=False).exists()
         or sale.operations.exclude(request_key=claim.payment_key).exists()
     ):
         raise ValidationError("The scheduled invoice changed and needs payment review.")
     plan = installment_plan(item.pk)
-    if plan["status"] == "paid":
-        raise ValidationError("This scheduled installment is already funded.")
+    from .membership_collection_credit import restore_projection
+
+    plan = restore_projection(claim, invoice, plan, before_credit=before_credit)
     # The original no-invoice projection remains the accepted scope. Only the
     # invoice just created under that claim may be omitted from this comparison.
     plan["reasons"] = [reason for reason in plan["reasons"] if reason != "existing_invoice"]
@@ -136,7 +126,7 @@ def authorize_operation(value, *, sale_id, request_key, method_id, allocation):
     expected = [
         dict(
             line=str(lines[0].pk),
-            net=claim.details["principal_due"],
+            net=claim.details["remaining_principal"],
             fee=claim.details["card_fee"],
             item_tax="0.00",
             fee_tax="0.00",
@@ -149,7 +139,7 @@ def authorize_operation(value, *, sale_id, request_key, method_id, allocation):
         or request_key != claim.payment_key
         or str(method_id) != claim.details["method"]
         or allocation != expected
-        or full_allocation(invoice.sale) != expected
+        or full_allocation(invoice.sale) != [expected[0] | {"net": claim.details["principal_due"]}]
     ):
         raise PermissionDenied
     return claim

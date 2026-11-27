@@ -58,14 +58,27 @@ class CustomerCreditApplication(FinancialFact):
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     fingerprint = models.CharField(max_length=64)
     details = models.JSONField()
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    scheduled_claim = models.OneToOneField(
+        "core.MembershipCollectionClaim",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="credit_application",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0), name="customer_credit_application_positive"
-            )
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(actor__isnull=False, scheduled_claim__isnull=True)
+                    | models.Q(actor__isnull=True, scheduled_claim__isnull=False)
+                ),
+                name="customer_credit_application_authority",
+            ),
         ]
 
 

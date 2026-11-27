@@ -422,14 +422,27 @@ class FinancialLineAdjustment(FinancialFact):
     fee = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     item_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     fee_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    scheduled_claim = models.OneToOneField(
+        "core.MembershipCollectionClaim",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="fee_adjustment",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["request_key", "line"], name="invoice_adjustment_line_unique"
-            )
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(actor__isnull=False, scheduled_claim__isnull=True)
+                    | models.Q(actor__isnull=True, scheduled_claim__isnull=False)
+                ),
+                name="invoice_adjustment_authority",
+            ),
         ]
 
 

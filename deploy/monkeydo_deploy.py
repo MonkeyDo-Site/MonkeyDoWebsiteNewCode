@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0074_scheduled_membership_credit_authority.py": "6d7c9a7f364a682832169c35a7323668b96b98fda526c3719b58a67a851df135",
     "0073_scheduled_membership_claims.py": "d75728f4b761f9f04f5e2b8c44ba693f83b940c9d30c1229316659a8e5bda783",
     "0072_initial_public_membership_authority.py": "472a7643f28ba0fd383eb269d4a54135b90b1c2bb687e56fe7e3f6be063bb51e",
     "0071_membership_arrival_owner_resolution.py": "2f603844cf425c9ffb0c05056f9ee2b48ccc1cf0023e6932ab6e23f87b031ad1",

@@ -49,7 +49,7 @@ class MembershipCollectionTests(RuntimeRoleMixin, TestCase):
     def queued(self):
         member, item = self.funded()
         with clock(item.due_on):
-            operation = schedule_installment(item.pk)
+            operation = schedule_installment(item.pk).operation
         return member, item, operation
 
     def approved(self, gateway, operation):
@@ -71,8 +71,8 @@ class MembershipCollectionTests(RuntimeRoleMixin, TestCase):
             self.runtime_role(),
             patch("core.payments.operations.Gateway") as provider,
         ):
-            op = schedule_installment(item.pk)
-            self.assertEqual(schedule_installment(item.pk).pk, op.pk)
+            op = schedule_installment(item.pk).operation
+            self.assertEqual(schedule_installment(item.pk).operation.pk, op.pk)
             provider.assert_not_called()
         self.assertIsNone(op.actor_id)
         self.assertEqual(str(op.amount), "37.06")
@@ -100,7 +100,7 @@ class MembershipCollectionTests(RuntimeRoleMixin, TestCase):
             self.approved(gateway, op)
             self.assertEqual(execute(op.pk).state, "succeeded")
             self.assertEqual(execute(op.pk).state, "succeeded")
-            self.assertEqual(schedule_installment(item.pk).pk, op.pk)
+            self.assertEqual(schedule_installment(item.pk).operation.pk, op.pk)
             self.assertEqual(gateway.return_value.charge.call_count, 1)
         self.assertEqual(FinancialPosting.objects.count(), postings + 1)
         self.assertEqual(MessageDelivery.objects.count(), before)
@@ -126,7 +126,7 @@ class MembershipCollectionTests(RuntimeRoleMixin, TestCase):
             }
             self.assertEqual(execute(op.pk).state, "declined")
             self.assertEqual(execute(op.pk).state, "declined")
-            self.assertEqual(schedule_installment(item.pk).pk, op.pk)
+            self.assertEqual(schedule_installment(item.pk).operation.pk, op.pk)
             self.assertEqual(gateway.return_value.charge.call_count, 1)
         op.refresh_from_db()
         self.assertIsNone(op.followup.resolved_at)
@@ -143,7 +143,7 @@ class MembershipCollectionTests(RuntimeRoleMixin, TestCase):
             gateway.return_value.charge.side_effect = ProviderFailure()
             self.assertEqual(execute(op.pk).state, "unknown")
             self.assertEqual(execute(op.pk).state, "unknown")
-            self.assertEqual(schedule_installment(item.pk).pk, op.pk)
+            self.assertEqual(schedule_installment(item.pk).operation.pk, op.pk)
             self.assertEqual(gateway.return_value.charge.call_count, 1)
         self.assertEqual(op.sale.operations.count(), 1)
 
@@ -155,7 +155,7 @@ class MembershipCollectionTests(RuntimeRoleMixin, TestCase):
         with clock(item.due_on), patch("core.payments.operations.Gateway") as gateway:
             self.assertTrue(run_one())
             gateway.assert_not_called()
-            self.assertEqual(schedule_installment(item.pk).pk, op.pk)
+            self.assertEqual(schedule_installment(item.pk).operation.pk, op.pk)
         op.refresh_from_db()
         self.assertEqual(op.state, "unknown")
         self.assertEqual(DurableJob.objects.get(reference=str(op.pk)).state, "blocked")
@@ -168,7 +168,7 @@ class MembershipCollectionTests(RuntimeRoleMixin, TestCase):
         ):
             self.assertEqual(execute(op.pk).state, "cancelled")
             gateway.return_value.charge.assert_not_called()
-            self.assertEqual(schedule_installment(item.pk).pk, op.pk)
+            self.assertEqual(schedule_installment(item.pk).operation.pk, op.pk)
             notice = next(row for row in payment_notices() if row.pk == item.pk)
             self.assertEqual(notice.issue_label, "Installment due")
             data = payment_review(
@@ -306,27 +306,20 @@ class MembershipCollectionCreditGuardTests(RuntimeRoleMixin, TestCase):
     conversion = authority_fixtures.MembershipCollectionCreditAuthorityTests.conversion
     correction = corrections.CreditFixtures.correction
 
-    def test_backed_credit_cannot_be_skipped_to_charge_the_full_card_amount(self):
+    def test_backed_credit_reduces_the_card_amount_under_runtime_permissions(self):
         _, _, member, _ = self.conversion(card=True)
         item = member.installments.get(number=2)
-        before = (MembershipInvoice.objects.count(), PaymentOperation.objects.count())
-        with (
-            clock(item.due_on),
-            self.runtime_role(),
-            self.assertRaisesMessage(ValidationError, "customer credit"),
-        ):
-            schedule_installment(item.pk)
-        self.assertFalse(MembershipCollectionClaim.objects.exists())
-        self.assertEqual(
-            (MembershipInvoice.objects.count(), PaymentOperation.objects.count()), before
-        )
+        with clock(item.due_on), self.runtime_role():
+            result = schedule_installment(item.pk)
+        self.assertEqual(str(result.operation.amount), "2.03")
+        self.assertEqual(str(result.credit_application.amount), "16.02")
 
     def test_credit_restored_before_dispatch_stops_the_older_full_card_amount(self):
         _, _, member, _ = self.conversion(card=True)
         removed = self.correction("16.02")
         item = member.installments.get(number=2)
         with clock(item.due_on):
-            op = schedule_installment(item.pk)
+            op = schedule_installment(item.pk).operation
             self.assertEqual(str(op.amount), "18.53")
             self.correction("1.00", kind="restore", original=removed)
             with patch("core.payments.operations.Gateway") as gateway:
@@ -353,7 +346,7 @@ class MembershipCollectionRaceTests(TransactionTestCase):
             close_old_connections()
             try:
                 ready.wait(timeout=10)
-                return schedule_installment(item.pk).pk
+                return schedule_installment(item.pk).operation.pk
             finally:
                 connections.close_all()
 
@@ -388,7 +381,7 @@ class MembershipCollectionRaceTests(TransactionTestCase):
             return {"status_code": "A", "reference_number": 97771}
 
         with clock(item.due_on), patch("core.payments.operations.Gateway") as gateway:
-            op = schedule_installment(item.pk)
+            op = schedule_installment(item.pk).operation
             self.approved(gateway, op)
             gateway.return_value.charge.side_effect = charge
             with ThreadPoolExecutor(max_workers=2) as pool:
