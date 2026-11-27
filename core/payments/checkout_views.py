@@ -28,9 +28,7 @@ def combined_label(combined):
     tender = combined["offer"]["expected_method"]
     if tender == "card":
         return f"Confirm arrival and membership — charge card ${combined['facts']['payment_due_today']}"
-    return (
-        f"Confirm arrival and membership — record {tender} ${combined['facts']['received_today']}"
-    )
+    return f"Confirm arrival and membership — record {tender.replace('_', ' ')} ${combined['facts']['received_today']}"
 
 
 class ReceiptForm(forms.Form):
@@ -95,7 +93,8 @@ class ArrivalForm(ReceiptForm):
         help_text="A customer screenshot alone does not confirm receipt.",
     )
     gift_card_verified = forms.BooleanField(
-        required=False, label="The physical gift card has been presented and verified."
+        required=False,
+        label="The physical gift card has been presented and verified.",
     )
     override_capacity = forms.BooleanField(
         required=False,

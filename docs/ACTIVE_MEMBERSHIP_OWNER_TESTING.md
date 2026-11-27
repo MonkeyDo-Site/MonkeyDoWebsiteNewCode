@@ -141,6 +141,18 @@ Review gallery samples 46–48 using fictional data only. These are the first ma
 | Completed booking | Review Payment and Saved price breakdown. | Visit money remains separate; a linked membership block records the combined payment split at confirmation. Adults included by membership are not described as cancelled attendees. |
 | Combined email | Review the queued confirmation without delivering externally. | One combined membership/visit update includes actual amounts and the next scheduled installment, without a Book a visit CTA. The original earlier booking email remains in history. No additional membership-only confirmation is queued. |
 
+## Physical gift card with membership and arrival
+
+Review sample 75 with fictional data. This is verified in-person tender recording, not a gift-card sale or balance service. Gift cards remain unavailable for cancellation/no-show fees.
+
+| Scenario | Action | Expected result |
+| --- | --- | --- |
+| One physical card | Select Physical gift card presented and buy two monthly Subscription places for the three-child example. | One page shows $35.98 membership + $15.99 visit = $51.97. Verify the presented card for that combined amount; there is no second cash/check acknowledgment. |
+| Change the review | Change counts, membership options or remove/reinclude the membership after verifying. | Verification clears. Review the current total and verify again before confirmation. |
+| Future installments | Compare monthly and prepaid. | Monthly requires the accepted future saved card. Prepaid physical-gift-card purchase needs no future card. Neither requests a provider charge today. |
+| Confirm once | Confirm the verified tender and repeat the same confirmation key. | Exactly one membership receipt and one visit receipt, one arrival and one combined email entry. No zero receipt or repeated tender. A late local failure rolls everything back. |
+| Existing Zelle | Keep $10 already recorded for the visit in this example. | Prior Zelle applies once to the visit; only $41.97 new gift-card funds are recorded. Choosing Zelle or split payment as the combined new tender remains under development. |
+
 ## Credit-funded membership with visit-card recovery
 
 Review samples 49–52 for the fully credit-funded initial membership. Samples 53–56 cover a positive first membership card payment with a protected dependent visit. Complimentary memberships also keep their visit charge and owner email choice separate.
@@ -239,7 +251,7 @@ The existing bounded payment worker now prepares installments on their original 
 
 ## Known unfinished areas
 
-Other-tender combined purchase-and-visit checkout; combined multi-cohort renewal checkout; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; private public-booking benefit actions; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and ordinary-visit/broader credit redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment credit application and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
+Zelle/split-tender combined purchase-and-visit checkout; combined multi-cohort renewal checkout; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; private public-booking benefit actions; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and ordinary-visit/broader credit redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment credit application and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
 
 Actual Banquest hosted fields and installment processor flags are not verified by the fictional gallery. Three policy answers about later installments after failure, parent arrears after prepaid early renewal, and credit-funded cancellation refund destinations remain pending in the [implementation record](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). The disputed automatic branches are not enabled, and no credit-refund destination is assumed.
 

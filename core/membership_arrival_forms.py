@@ -123,6 +123,13 @@ def configure(form, booking, actor):
             ),
         )
     form.fields.update(fields)
+    form.fields["member_received"].arrival_hidden = values.get("method") in {"card", "gift_card"}
+    if values.get("member_add") and values.get("method") == "gift_card":
+        form.fields[
+            "gift_card_verified"
+        ].label = (
+            "The physical gift card has been presented and verified for the combined amount shown."
+        )
     if values.get("member_card") == "new":
         form.fields["member_card"].widget.choices = [
             *form.fields["member_card"].choices,
@@ -201,6 +208,10 @@ def ready(data, combined):
         data.get("member_accepted")
         and (
             combined["offer"]["expected_method"] == "card"
+            or (
+                combined["offer"]["expected_method"] == "gift_card"
+                and data.get("gift_card_verified")
+            )
             or data.get("member_received")
             or combined["facts"]["received_today"] == "0.00"
         )

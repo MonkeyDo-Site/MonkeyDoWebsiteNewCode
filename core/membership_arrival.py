@@ -86,9 +86,9 @@ def review(
     if booking.session.starts_at.astimezone(NEW_YORK).date() != today():
         raise ValidationError("Combine a membership purchase with arrival on the visit date.")
     tender = data.get("method")
-    if tender not in {"cash", "check", "card"}:
+    if tender not in {"cash", "check", "card", "gift_card"}:
         raise ValidationError(
-            "Choose cash, check or card for this combined payment, or clear the membership purchase to use another arrival payment."
+            "Choose cash, check, card or a verified physical gift card for this combined payment, or clear the membership purchase to use another arrival payment."
         )
     # These values are derived from this booking, never supplied by the browser.
     values = selection | {"customer": booking.customer, "expected_method": tender}
@@ -206,6 +206,12 @@ def confirm(
         raise ValidationError(
             "The membership, visit or payments changed. Review the current combined total."
         )
+    if data["method"] == "gift_card":
+        if data.get("gift_card_verified") is not True:
+            raise ValidationError(
+                "Present and verify the physical gift card for the combined amount shown."
+            )
+        verified_received = True
     if (
         data["method"] != "card"
         and amount(reviewed["facts"]["received_today"]) > ZERO
