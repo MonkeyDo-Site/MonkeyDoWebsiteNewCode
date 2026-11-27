@@ -660,10 +660,13 @@ def membership_overview(request, pk):
                 },
                 status=400,
             )
+    from .membership_funding import sale_needs_review
+
     installments = list(member.installments.select_related("invoice__sale", "cycle"))
     paid = ZERO
     for item in installments:
         item.paid = installment_paid(item)
+        item.needs_review = hasattr(item, "invoice") and sale_needs_review(item.invoice.sale)
         item.cancelled = bool(
             member.billing_state.stopped_on
             and item.cycle.starts_on >= member.billing_state.stopped_on
@@ -720,6 +723,7 @@ def membership_overview(request, pk):
             )[:20],
             "root": member.membership,
             "status": status,
+            "funding_review": any(item.needs_review for item in installments),
             "installments": installments,
             "money_received": paid,
             "credit_applied": credit_used,

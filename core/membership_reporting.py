@@ -7,6 +7,7 @@ from django.db.models import Case, CharField, DateField, Exists, F, OuterRef, Q,
 from django.db.models.functions import Cast, Least
 
 from .forms import phone_search_digits
+from .membership_funding import held_members
 from .membership_notices import installment_balances
 from .membership_records import MembershipInstallment, MembershipPurchase
 from .membership_sales import today
@@ -52,26 +53,6 @@ class MembershipFilters(forms.Form):
         if start and end and start > end:
             self.add_error("ends_to", "The last end date must be on or after the first.")
         return values
-
-
-def held_members():
-    from .customer_credit import source_on_hold
-    from .customer_credit_records import CustomerCreditAllocation
-    from .models import PaymentOperation
-
-    sources = PaymentOperation.objects.filter(
-        Q(events__code="external_correction_review")
-        | Q(observations__provider_status__in=["external_credit", "voided", "returned"]),
-        credit_issues__applications__application__sale__membership_invoice__isnull=False,
-    ).distinct()
-    held = [source.pk for source in sources if source_on_hold(source)]
-    if not held:
-        return []
-    return list(
-        CustomerCreditAllocation.objects.filter(issue__original_id__in=held)
-        .values_list("application__sale__membership_invoice__installment__purchase_id", flat=True)
-        .distinct()
-    )
 
 
 def reporting_members(*, on=None):

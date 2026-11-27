@@ -29,31 +29,6 @@ from .payments.ledger import fingerprint, writes_allowed
 KINDS = {"expiry": "membership_expiry_notice", "grace": "membership_grace_notice"}
 
 
-def direct_payment_review(member_id=None):
-    from .membership_cancellations import unrecorded_provider_return
-    from .models import PaymentOperation
-
-    sources = (
-        PaymentOperation.objects.filter(
-            Q(events__code="external_correction_review")
-            | Q(observations__provider_status__in=["external_credit", "voided", "returned"]),
-            sale__membership_invoice__isnull=False,
-            kind="receipt",
-            tender="card",
-            state="succeeded",
-        )
-        .select_related("sale__membership_invoice__installment")
-        .distinct()
-    )
-    if member_id is not None:
-        sources = sources.filter(sale__membership_invoice__installment__purchase_id=member_id)
-    return {
-        source.sale.membership_invoice.installment.purchase_id
-        for source in sources
-        if unrecorded_provider_return(source)
-    }
-
-
 def notice_dates(ends_on):
     try:
         return dict(
@@ -77,7 +52,7 @@ def eligible(member, kind):
         or not member.customer.email
     ):
         return None
-    if not payment_current(member) or direct_payment_review(member.pk):
+    if not payment_current(member):
         return None
     places = remaining_places(member)
     return (dates, places) if places else None
@@ -265,7 +240,6 @@ def candidates(*, limit):
         )
         .exclude(customer__email="")
         .exclude(pk__in=held_members())
-        .exclude(pk__in=direct_payment_review())
         .annotate(
             _notice_exists=Exists(existing),
             _renewed=Coalesce(

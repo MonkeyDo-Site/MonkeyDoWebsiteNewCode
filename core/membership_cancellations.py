@@ -214,7 +214,7 @@ def review(*, actor, member_id, timing="end_cycle", refund_amount=None):
     if any(
         unrecorded_provider_return(op)
         for op in operations
-        if op.kind == "receipt" and op.tender == "card" and op.state == "succeeded"
+        if op.kind == "receipt" and op.tender == "card"
     ):
         raise ValidationError(
             "Banquest has reported a return that still needs recording. Reconcile the existing payment before cancelling or requesting another refund."

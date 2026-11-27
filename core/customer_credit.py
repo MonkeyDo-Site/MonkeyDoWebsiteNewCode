@@ -184,6 +184,12 @@ def review(*, actor, member_id, installment_id, value=None):
         raise ValidationError(
             "Use an installment that is due and remains part of the accepted membership."
         )
+    from .membership_funding import member_needs_review
+
+    if member_needs_review(member):
+        raise ValidationError(
+            "A membership payment or credit source needs owner reconciliation before another allocation or payment."
+        )
     sale = item.invoice.sale if hasattr(item, "invoice") else None
     operations = list(sale.operations.order_by("requested_at", "pk")) if sale else []
     if any(
@@ -195,10 +201,6 @@ def review(*, actor, member_id, installment_id, value=None):
     from .payments.invoices import effective_components
 
     if sale:
-        if held_on(sale):
-            raise ValidationError(
-                "A credit source needs owner reconciliation before another allocation or payment."
-            )
         current = effective_components(sale)
         if len(current) != 1:
             raise ValidationError("Review the combined invoice before applying customer credit.")

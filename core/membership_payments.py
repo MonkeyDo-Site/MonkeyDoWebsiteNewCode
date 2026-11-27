@@ -76,6 +76,12 @@ def payment_review(*, actor, member_id, installment_id, tender, received_on=None
         raise ValidationError("This installment belongs to the cancelled part of the membership.")
     if received_on is not None and tender != "zelle":
         raise ValidationError("An earlier receipt date is available for Zelle only.")
+    from .membership_funding import member_needs_review
+
+    if member_needs_review(member):
+        raise ValidationError(
+            "A membership payment or credit source needs owner reconciliation. No replacement charge or receipt was recorded."
+        )
     when = receipt_date(received_on) if tender != "card" else None
     try:
         sale = installment.invoice.sale
@@ -84,12 +90,6 @@ def payment_review(*, actor, member_id, installment_id, tender, received_on=None
     operations = []
     taken = {key: ZERO for key in COMPONENTS}
     if sale is not None:
-        from .customer_credit import held_on
-
-        if held_on(sale):
-            raise ValidationError(
-                "A credit source needs owner reconciliation. No replacement charge or receipt was recorded."
-            )
         operations = list(sale.operations.order_by("requested_at", "pk"))
         if any(op.state in {"ready", "sending", "unknown", "action"} for op in operations):
             raise ValidationError(

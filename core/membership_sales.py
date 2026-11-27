@@ -549,9 +549,9 @@ def installment_paid(installment):
         sale = installment.invoice.sale
     except MembershipInvoice.DoesNotExist:
         return False
-    from .customer_credit import held_on
+    from .membership_funding import sale_needs_review
 
-    return not held_on(sale) and settled(sale) >= total(sale)
+    return not sale_needs_review(sale) and settled(sale) >= total(sale)
 
 
 def membership_status(member, *, on=None):
@@ -562,13 +562,9 @@ def membership_status(member, *, on=None):
         return "cancelled"
     if root.ends_on < on:
         return "expired"
-    from .customer_credit import held_on
+    from .membership_funding import member_needs_review
 
-    if any(
-        held_on(item.invoice.sale)
-        for item in member.installments.select_related("invoice__sale")
-        if hasattr(item, "invoice")
-    ):
+    if member_needs_review(member):
         return "review"
     if member.purpose != "complimentary":
         required = member.installments.select_related("invoice__sale", "cycle").order_by("number")

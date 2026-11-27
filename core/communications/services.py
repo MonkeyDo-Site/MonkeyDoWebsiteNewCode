@@ -59,8 +59,9 @@ def enqueue(
 @transaction.atomic
 def claim(message_id):
     notice_kinds = {"membership_expiry_notice", "membership_grace_notice"}
-    scope = MessageDelivery.objects.only("kind", "customer_id").get(pk=message_id)
-    if scope.kind in notice_kinds and scope.customer_id:
+    confirmation_kinds = {"membership_confirmation", "membership_renewal", "membership_addition"}
+    scope = MessageDelivery.objects.only("kind", "customer_id", "membership_id").get(pk=message_id)
+    if (scope.kind in notice_kinds or scope.membership_id) and scope.customer_id:
         from core.membership_reservations import lock_customer
 
         lock_customer(scope.customer_id)
@@ -73,6 +74,14 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
+    if message.kind in confirmation_kinds and message.membership_id:
+        from core.membership_funding import member_needs_review
+
+        if member_needs_review(message.membership):
+            message.state, message.code = "cancelled", "membership_funding_review"
+            message.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+            return None
     if message.kind in notice_kinds:
         from core.membership_records import MembershipRenewalNoticeDelivery
         from core.membership_renewal_notices import refresh_notice
