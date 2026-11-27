@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import DatabaseError
 
@@ -24,6 +24,15 @@ class Command(BaseCommand):
         expire_unused_setups()
         expire_membership_sources()
         if settings.MEMBERSHIP_SALES_ENABLED:
+            if settings.MEMBERSHIP_COLLECTIONS_ENABLED:
+                from core.membership_collection_queue import prepare_due as prepare_collections
+
+                try:
+                    prepare_collections(limit=limit)
+                except (DatabaseError, ValidationError, PermissionDenied):
+                    self.stderr.write(
+                        "Scheduled membership preparation needs review; existing queued jobs will continue."
+                    )
             from core.communications.transport import MailUnavailable
             from core.membership_prompt_emails import prepare_due as prepare_requested
             from core.membership_renewal_notices import prepare_due

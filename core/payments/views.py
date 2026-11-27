@@ -347,6 +347,15 @@ def background_job(request, pk):
         raise PermissionDenied
     job = get_object_or_404(DurableJob, pk=pk)
     action, explanation = disposition(job)
+    collection_item = None
+    if settings.MEMBERSHIP_SALES_ENABLED and job.kind == "membership_collection":
+        from core.membership_collection_queue import installment_for
+        from core.membership_records import MembershipInstallment
+
+        try:
+            collection_item = installment_for(job)
+        except (ValidationError, MembershipInstallment.DoesNotExist):
+            pass
     error = None
     if request.method == "POST":
         try:
@@ -366,7 +375,13 @@ def background_job(request, pk):
     return render(
         request,
         "core/background_job.html",
-        {"job": job, "action": action, "explanation": explanation, "error": error},
+        {
+            "job": job,
+            "action": action,
+            "explanation": explanation,
+            "error": error,
+            "collection_item": collection_item,
+        },
     )
 
 
