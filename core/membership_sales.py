@@ -88,6 +88,7 @@ def offer(
     operation="purchase",
     prior_id=None,
     authority=None,
+    credit_amount=ZERO,
 ):
     authorize(actor, authority=authority)
     if actor is None:
@@ -157,6 +158,9 @@ def offer(
         raise ValidationError("Choose today or a future membership start date.")
     if expected_method not in {"card", "cash", "check", "zelle", "gift_card"}:
         raise ValidationError("Choose a supported membership payment method.")
+    from .membership_initial_credit import review as review_credit
+
+    credit = review_credit(actor=actor, customer=customer, value=credit_amount, comped=comped)
     pricing, policy = MembershipPricing.objects.first(), PricingPolicy.objects.first()
     if not pricing or not policy:
         raise ValidationError("Membership pricing is unavailable.")
@@ -168,6 +172,10 @@ def offer(
         if not due or comped:
             continue
         tender = expected_method if row["number"] == 1 else "card"
+        principal = unit * places * (months if billing == "prepaid" else 1)
+        applied_credit = amount(credit["amount"]) if credit and row["number"] == 1 else ZERO
+        if applied_credit > principal:
+            raise ValidationError("Apply credit only within the initial membership principal.")
         quote = quote_lines(
             [
                 Line(
@@ -178,7 +186,7 @@ def offer(
                 )
             ],
             policy,
-            card_base=None if tender == "card" else ZERO,
+            card_base=(principal - applied_credit) if tender == "card" else ZERO,
         )
         if amount(quote["total"]) > Decimal("20000000.00"):
             raise ValidationError(
@@ -225,10 +233,19 @@ def offer(
     }
     if installments:
         first = installments[0]
+        if credit:
+            data["credit"] = credit
+            data["first_payment_total"] = str(
+                amount(first["quote"]["total"]) - amount(credit["amount"])
+            )
         data["terms"] += (
             f" The accepted price is ${unit:.2f} per place per month for {places} place(s)."
-            f" The first payment due today is ${first['quote']['total']}, including a card processing fee of ${first['quote']['processing_fee']}. Membership and membership processing fees are not subject to sales tax."
+            f" The first payment due today is ${data.get('first_payment_total', first['quote']['total'])}, including a card processing fee of ${first['quote']['processing_fee']}. Membership and membership processing fees are not subject to sales tax."
         )
+        if credit:
+            data["terms"] += (
+                f" Existing customer credit of ${credit['amount']} is applied to this purchase. This is not a new receipt. Only the remaining payment is collected today."
+            )
         if billing == "monthly":
             data["terms"] += (
                 f" The remaining {months - 1} monthly installments use the accepted saved card."
@@ -276,7 +293,9 @@ def purchase(
         return prior
     if accepted is not True:
         raise ValidationError("Review and accept the membership terms before confirming.")
-    customer = Customer.objects.select_for_update().get(pk=values["customer"].pk)
+    # Protect identity/contact updates while allowing customer FK checks from
+    # an already-locked credit correction to finish before our advisory lock.
+    customer = Customer.objects.select_for_update(no_key=True).get(pk=values["customer"].pk)
     from .membership_reservations import lock_customer
 
     lock_customer(customer.pk)
@@ -303,8 +322,13 @@ def purchase(
             "Choose Yes or No for sending the complimentary membership confirmation."
         )
     method = None
+    due_now = (
+        amount(data.get("first_payment_total", data["installments"][0]["quote"]["total"]))
+        if data["installments"]
+        else ZERO
+    )
     needs_card = not data["comped"] and (
-        data["billing"] == "monthly" or data["expected_method"] == "card"
+        data["billing"] == "monthly" or (data["expected_method"] == "card" and due_now > ZERO)
     )
     if needs_card:
         available = Q(reusable=True)
@@ -345,7 +369,7 @@ def purchase(
             )
     elif method_id:
         raise ValidationError("No card is needed for this selected membership payment.")
-    if not data["comped"] and data["expected_method"] != "card" and verified_received is not True:
+    if due_now > ZERO and data["expected_method"] != "card" and verified_received is not True:
         raise ValidationError("Confirm that the membership payment was actually received.")
     root = MembershipDraft.objects.create(
         customer=customer,
@@ -464,12 +488,23 @@ def purchase(
             )
         first = member.installments.first()
         invoice = invoice_for(first, actor=actor, tender=root.expected_method, authority=authority)
+        if data.get("credit"):
+            from .membership_initial_credit import apply as apply_initial_credit
+
+            apply_initial_credit(actor=actor, member=member, plan=data["credit"])
+        if not due_now and data.get("credit"):
+            return member
+        allocation = full_allocation(invoice.sale)
+        if data.get("credit"):
+            allocation[0]["net"] = str(
+                amount(allocation[0]["net"]) - amount(data["credit"]["amount"])
+            )
         operation = request_operation(
             actor=actor,
             sale_id=invoice.sale_id,
             request_key=uuid.uuid5(key, "first-payment"),
             tender=root.expected_method,
-            allocation=full_allocation(invoice.sale),
+            allocation=allocation,
             method_id=method.pk if root.expected_method == "card" else None,
             purpose="member_purchase",
             received_on=received_on,

@@ -123,6 +123,7 @@ class RenewalForm(PurchaseForm):
             if len(candidates) == 1:
                 self.initial["method"] = candidates[0].pk
         self.fields["method"].label = "Your membership card"
+        self.fields.pop("credit_amount", None)
         self.fields["kind"].label = "Membership type"
         self.fields["places"] = forms.IntegerField(
             min_value=1,
@@ -138,6 +139,8 @@ class RenewalForm(PurchaseForm):
 
     def clean(self):
         data = super().clean()
+        if self.data.get("credit_amount") not in (None, "", "0", "0.00"):
+            raise ValidationError("Ask staff to review customer credit for this purchase.")
         if set(self.data) - {
             *PurchaseForm.base_fields,
             "csrfmiddlewaretoken",

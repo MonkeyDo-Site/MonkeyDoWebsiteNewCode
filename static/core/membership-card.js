@@ -65,7 +65,7 @@
     if (saving || uncertain || !field('accepted').checked || !field('reviewed').value || !form.reportValidity()) return;
     saving = true; display();
     try {
-      const purchase = Object.fromEntries(['operation','prior_id','customer','kind','places','months','billing','starts_on','expected_method','request_key','reviewed'].map(name => [name, field(name)?.value || '']));
+      const purchase = Object.fromEntries(['operation','prior_id','customer','kind','places','months','billing','starts_on','expected_method','credit_amount','request_key','reviewed'].map(name => [name, field(name)?.value || '']));
       purchase.minimum_override = !!field('minimum_override')?.checked;
       purchase.comped = !!field('comped')?.checked;
       purchase.accepted = field('accepted').checked;

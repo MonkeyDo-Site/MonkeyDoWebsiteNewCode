@@ -168,8 +168,10 @@ def protect_source(original, allocation):
                 )
 
 
-def review(*, actor, member_id, installment_id, value=None):
+def review(*, actor, member_id, installment_id, value=None, remaining_tender="card"):
     authorize(actor, collect=True)
+    if remaining_tender not in {"card", "cash", "check", "zelle", "gift_card"}:
+        raise ValidationError("Choose a supported remaining payment method.")
     member = member_record(member_id)
     item = (
         member.installments.select_related("cycle", "invoice__sale")
@@ -230,7 +232,7 @@ def review(*, actor, member_id, installment_id, value=None):
             "Apply a positive amount within the available credit and unpaid membership amount."
         )
     rate = sale.fee_rate if sale else Decimal(item.quote["rates"]["card_fee_rate"])
-    remaining_fee = money((outstanding - chosen) * rate)
+    remaining_fee = money((outstanding - chosen) * rate) if remaining_tender == "card" else ZERO
     data = dict(
         membership=member.pk,
         installment=item.pk,
@@ -257,24 +259,37 @@ def review(*, actor, member_id, installment_id, value=None):
         ],
     )
     data["credit_applications"] = [str(key) for key in data["credit_applications"]]
+    if remaining_tender != "card":
+        data["remaining_tender"] = remaining_tender
     return data | dict(fingerprint=fingerprint(data))
 
 
 @transaction.atomic
-def apply(*, actor, member_id, installment_id, reviewed, request_key, value=None, confirmed=False):
+def apply(
+    *,
+    actor,
+    member_id,
+    installment_id,
+    reviewed,
+    request_key,
+    value=None,
+    confirmed=False,
+    remaining_tender="card",
+):
     authorize(actor, collect=True)
     writes_allowed()
     key = lock_request(request_key)
     member = member_record(member_id)
     lock_customer(member.customer_id)
-    identity = fingerprint(
-        dict(
-            member=member_id,
-            installment=installment_id,
-            reviewed=reviewed,
-            value=str(amount(value)) if value is not None else None,
-        )
+    identity_data = dict(
+        member=member_id,
+        installment=installment_id,
+        reviewed=reviewed,
+        value=str(amount(value)) if value is not None else None,
     )
+    if remaining_tender != "card":
+        identity_data["remaining_tender"] = remaining_tender
+    identity = fingerprint(identity_data)
     prior = CustomerCreditApplication.objects.filter(pk=key).first()
     if prior:
         if prior.actor_id != actor.pk or prior.fingerprint != identity:
@@ -282,7 +297,13 @@ def apply(*, actor, member_id, installment_id, reviewed, request_key, value=None
         return prior
     if confirmed is not True:
         raise ValidationError("Confirm the reviewed customer credit application.")
-    data = review(actor=actor, member_id=member_id, installment_id=installment_id, value=value)
+    data = review(
+        actor=actor,
+        member_id=member_id,
+        installment_id=installment_id,
+        value=value,
+        remaining_tender=remaining_tender,
+    )
     if data["fingerprint"] != reviewed:
         raise ValidationError("The credit or payment changed. Review the current amounts again.")
     item = member.installments.get(pk=installment_id)

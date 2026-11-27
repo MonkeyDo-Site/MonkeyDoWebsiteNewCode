@@ -24,7 +24,7 @@ from .membership_reservations import summary_for
 from .membership_sales import installment_paid, membership_status, offer, purchase, today
 from .models import Customer, MembershipDraft, PaymentMethod, PricingPolicy
 from .pagination import paginate
-from .payments.amounts import ZERO
+from .payments.amounts import ZERO, amount
 from .payments.invoices import received, settled, total
 from .permissions import staff_permission
 
@@ -38,10 +38,19 @@ OFFER_FIELDS = (
     "expected_method",
     "minimum_override",
     "comped",
+    "credit_amount",
 )
 
 
 class PurchaseForm(forms.Form):
+    credit_amount = forms.DecimalField(
+        required=False,
+        min_value=ZERO,
+        max_digits=14,
+        decimal_places=2,
+        initial=ZERO,
+        label="Customer credit to apply",
+    )
     operation = forms.ChoiceField(
         required=False,
         initial="purchase",
@@ -196,6 +205,7 @@ class PurchaseForm(forms.Form):
 
     def offer_values(self):
         return {name: self.cleaned_data.get(name, False) for name in OFFER_FIELDS} | {
+            "credit_amount": self.cleaned_data.get("credit_amount") or ZERO,
             "operation": self.cleaned_data.get("operation") or "purchase",
             "prior_id": self.cleaned_data.get("prior_id"),
         }
@@ -313,7 +323,18 @@ def check_enabled():
 def display_offer(data):
     if data is None:
         return None
+    first_total = (
+        amount(data.get("first_payment_total", data["installments"][0]["quote"]["total"]))
+        if data["installments"]
+        else ZERO
+    )
     return data | {
+        "payment_due_today": first_total,
+        "needs_card": not data["comped"]
+        and (
+            data["billing"] == "monthly"
+            or (data["expected_method"] == "card" and first_total > ZERO)
+        ),
         "starts_on": date.fromisoformat(data["starts_on"]),
         "ends_on": date.fromisoformat(data["ends_on"]),
         "installments": [
@@ -421,12 +442,23 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
     setup_flow = request.session.get("membership_card_flows", {}).get(
         str(form["request_key"].value()), {}
     )
+    from .customer_credit import balance
+
+    selected_customer = str(form["customer"].value() or "")
+    credit_available = (
+        balance(int(selected_customer))
+        if selected_customer.isascii()
+        and selected_customer.isdigit()
+        and len(selected_customer) <= 18
+        else ZERO
+    )
     return render(
         request,
         "core/membership_purchase.html",
         {
             "form": form,
             "offer": display_offer(reviewed_offer),
+            "credit_available": credit_available,
             "prior": prior,
             "operation": operation,
             "heading": {
@@ -475,6 +507,8 @@ def membership_offer(request):
         data = offer(actor=request.user, **form.offer_values())
     except ValidationError as exc:
         return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+    from .customer_credit import balance
+
     available = Q(reusable=True)
     if form.prior and form.prior.billing_state.mandate:
         available |= Q(pk=form.prior.billing_state.mandate.method_id)
@@ -505,6 +539,12 @@ def membership_offer(request):
                 request=request,
             ),
             "fingerprint": data["fingerprint"],
+            "payment_due_today": display_offer(data)["payment_due_today"],
+            "needs_card": display_offer(data)["needs_card"],
+            "credit_available": balance(form.cleaned_data["customer"].pk),
+            "initial_net": data["installments"][0]["quote"]["subtotal"]
+            if data["installments"]
+            else "0.00",
             "terms": data["terms"],
             "starts_on": data["starts_on"],
             "minimum_months": data["minimum_months"],
