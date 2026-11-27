@@ -126,16 +126,34 @@ def compare_prices(original, current):
             original.get("membership_attendees", {}),
             current.get("membership_attendees", {}),
         )
-        if "adults" in old_attendees and "adults" in new_attendees:
+        # Pre-membership ordinary quotes did not store attendee metadata. Their
+        # paid adult quantity excludes the first free adult. Recover that bound
+        # for comparison with a member quote so an allowance is not described
+        # as adults leaving the visit. Never infer an older member allowance.
+        old_adults_known = "adults" in old_attendees or not any(
+            line["label"] in MEMBER_CHILDREN for line in old_lines
+        )
+        new_adults_known = "adults" in new_attendees or not any(
+            line["label"] in MEMBER_CHILDREN for line in new_lines
+        )
+        if (
+            old_adults_known
+            and new_adults_known
+            and ("adults" in old_attendees or "adults" in new_attendees)
+        ):
             categories.append(({"Additional adults"}, "adult admissions", "adults"))
         for labels, name, attendee in categories:
             before = [line for line in old_lines if line["label"] in labels]
             after = [line for line in new_lines if line["label"] in labels]
             old_qty = (
-                old_attendees[attendee] if attendee else sum(line["quantity"] for line in before)
+                old_attendees.get(attendee, sum(line["quantity"] for line in before) + 1)
+                if attendee
+                else sum(line["quantity"] for line in before)
             )
             new_qty = (
-                new_attendees[attendee] if attendee else sum(line["quantity"] for line in after)
+                new_attendees.get(attendee, sum(line["quantity"] for line in after) + 1)
+                if attendee
+                else sum(line["quantity"] for line in after)
             )
             plus, minus = (
                 cost(after, max(0, new_qty - old_qty)),

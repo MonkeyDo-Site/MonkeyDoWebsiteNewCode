@@ -28,6 +28,7 @@ LABELS = {
     "starts_on": "Start date",
     "ends_on": "End date",
     "term_subtotal": "Term estimate",
+    "amount_due": "Booking price estimate",
 }
 
 
@@ -103,6 +104,7 @@ def audit_event(event):
         "booking.test_released": "Booking cancelled",
         "booking.test_created": "Booking created",
         "booking.customer_test_created": "Customer test booking created",
+        "booking.membership_benefit_applied": "Available Unlimited benefit applied",
         "membership.draft_created": "Membership draft created",
         "membership.draft_edited": "Membership draft edited",
         "membership.booking_exception_recorded": "Owner membership decision recorded",

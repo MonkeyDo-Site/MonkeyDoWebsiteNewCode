@@ -13,7 +13,8 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Search, exports and notices | 33–38, 43 |
 | Membership purchase with arrival and recovery | 46–66 |
 | Scheduled installment review | 73–74 |
-| **New: physical gift card and an owner-comped visit** | **75–76** |
+| Physical gift card and an owner-comped visit | 75–76 |
+| **New: customer review and reservation of a released Unlimited benefit** | **77–78** |
 
 Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Combined Zelle/split tenders, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
@@ -681,10 +682,30 @@ The actual disposable-database browser exercise confirms one membership receipt,
 | --- | --- |
 | [![Membership during comped visit, desktop](76-comped-visit-membership-desktop.png)](76-comped-visit-membership-desktop.png) | [![Membership during comped visit, phone](76-comped-visit-membership-phone.png)](76-comped-visit-membership-phone.png) |
 
+## 77 — Review an available benefit on the original booking receipt
+
+One Unlimited place became available after another booking released it. This customer's original private receipt still shows its saved **$16.47** estimate and offers a reviewed **$0.00** booking price. The updated itemization and original-to-adjusted explanation expand on that page. One clear button confirms the new price; no new waiver, attendee or card form is needed. The booking keeps its already reserved capacity.
+
+Viewing this screen writes no quote or benefit reservation. The original twenty-minute private booking verification is not extended. Another booking taking the benefit, changed verification, staff pricing decisions or started arrival/payment prevent the old review from completing. New customers can use a later funded membership even when their ordinary booking was created without membership metadata.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Customer benefit review, desktop](77-public-benefit-review-desktop.png)](77-public-benefit-review-desktop.png) | [![Customer benefit review, phone](77-public-benefit-review-phone.png)](77-public-benefit-review-phone.png) |
+
+## 78 — Confirm the new price without recording a payment or visit
+
+The original **$16.47** quote remains in history. The new quote explains **−$15.00 membership benefit, −$0.45 uncharged card fee and −$1.02 tax estimate = $0.00**. One daily benefit is **reserved**, with attendance and use still pending. The actual browser confirmation preserves the original card binding, waiver record, payment/posting/email counts and deadline. Reloading creates nothing again.
+
+Recorded Zelle is displayed separately from the booking estimate and remains available for staff arrival reconciliation; this action never records another receipt or a completed refund. The unchanged original confirmation stays in history, with no automatic replacement email. Historical ordinary quotes also keep adult allowances distinct from actual cancelled admissions. All data and funds here are fictional; no provider request or email delivery occurred.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Customer benefit reserved, desktop](78-public-benefit-applied-desktop.png)](78-public-benefit-applied-desktop.png) | [![Customer benefit reserved, phone](78-public-benefit-applied-phone.png)](78-public-benefit-applied-phone.png) |
+
 ## Checked so far
 
-The complete **1,290-test PostgreSQL suite passes** (407.198s), including the final server changes. Eighteen new gift-card/complimentary-visit cases cover exact money, actual verification, accepted future cards, prior Zelle, duplicate confirmation, atomic rollback, card-funding continuation, original email preservation and no benefit use for a complimentary visit. Existing migration upgrades, runtime permissions, source budgets and concurrency checks remain green.
+The complete **1,308-test PostgreSQL suite passes** (423.205s), followed by one final native receipt/history check after its wording-only label update. Eighteen new cases cover private ownership, existing/new customers, current verification, exact prices and actual Zelle, immutable original evidence, native/CSRF boundaries, stale/duplicate confirmation, rollback, historical adult allowances and two real PostgreSQL races. Original financial/queue/migration/runtime checks remain green.
 
-All **76 desktop/phone pairs** have passed browser overflow/JavaScript checks. The four final captures for 75–76 were recaptured after the phone-width correction. Their actual browser scenarios confirm one-time fictional receipts, read-only previews, fresh acceptance after changes, full-width billing/card choices and zero provider calls. Each uses its own disposable database so original pricing history remains protected. Ruff/format (499 Python files), model drift, JavaScript syntax, whitespace, all image links and all 48 unchanged reviewed migration hashes pass. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
+All **78 desktop/phone pairs** have passed browser overflow/JavaScript checks. New samples 77–78 are four actual captures of one read-only price review and explicit confirmation: one reserved unused benefit, no new payment/posting/email/provider action, and unchanged original card, waiver and deadline. Ruff/format (502 Python files), model drift, whitespace, all 156 image links and all 48 unchanged reviewed migration hashes pass. Detailed milestone evidence remains in the [implementation record](../../ACTIVE_MEMBERSHIP_IMPLEMENTATION.md).
 
-Implementation and regression testing continue while the owner reviews. The [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) identifies functional checks, unfinished scope and provider limitations. No merge, deployment, live financial action or external email delivery is included; release requires explicit authorization.
+Implementation continues while the owner reviews. The [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) identifies functional checks, unfinished scope and provider limitations. No merge, deployment, live financial action or external email delivery is included; release requires explicit authorization.

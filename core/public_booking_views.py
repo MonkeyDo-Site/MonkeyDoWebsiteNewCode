@@ -1,5 +1,6 @@
 import uuid
 from datetime import timedelta
+from decimal import Decimal
 from functools import wraps
 
 from django import forms
@@ -498,8 +499,14 @@ def wizard(request):
         return render(request, "core/customer_booking.html", {"error": message}, status=400)
 
 
+class AvailableBenefitForm(forms.Form):
+    request_key = forms.UUIDField(widget=forms.HiddenInput)
+    reviewed_hash = forms.CharField(max_length=64, widget=forms.HiddenInput)
+    confirmed = forms.BooleanField(label="Confirm the updated booking price")
+
+
 @enabled
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def receipt(request):
     try:
         flow = current(request)
@@ -516,20 +523,66 @@ def receipt(request):
         raise Http404
     from .communications.content import zelle_instructions
 
+    benefit, benefit_form, benefit_error = None, None, ""
+    if settings.MEMBERSHIP_SALES_ENABLED and booking.workflow == "integrated_v1":
+        from . import membership_public_benefits
+
+        if request.method == "POST":
+            posted = AvailableBenefitForm(request.POST)
+            if posted.is_valid():
+                try:
+                    limit(request, "available-membership-benefit", 15)
+                    membership_public_benefits.confirm(flow=flow, **posted.cleaned_data)
+                    return redirect(reverse("customer_booking_receipt") + "?benefit=updated")
+                except ValidationError as error:
+                    benefit_error = " ".join(error.messages)
+            else:
+                benefit_error = "Review the updated price and confirm it using the button below."
+        try:
+            benefit = membership_public_benefits.review(flow=flow)
+        except ValidationError:
+            pass
+        if benefit:
+            benefit_form = AvailableBenefitForm(
+                initial={"request_key": uuid.uuid4(), "reviewed_hash": benefit["fingerprint"]}
+            )
+    elif request.method == "POST":
+        raise Http404
     quote = booking.quotes.first()
+    from .payments.zelle import facts as zelle_facts
+    from .price_adjustments import booking_price_adjustment
+
+    prepaid = zelle_facts(booking) if booking.workflow == "integrated_v1" else None
+
     return render(
         request,
         "core/customer_booking_receipt.html",
         {
             "booking": booking,
+            "available_benefit": benefit,
+            "benefit_form": benefit_form,
+            "benefit_error": benefit_error,
+            "receipt_prepayment": prepaid if not booking.attendance else None,
+            "receipt_quote_label": "Booking price estimate"
+            if prepaid and prepaid["received"] and not booking.attendance
+            else "",
+            "benefit_updated": bool(
+                request.GET.get("benefit") == "updated"
+                and quote
+                and quote.snapshot.get("public_membership_benefit")
+            ),
             "zelle_instructions": zelle_instructions()
             if booking.workflow == "integrated_v1"
             and booking.expected_method == "zelle"
             and not booking.attendance
             and quote is not None
             and not quote.snapshot.get("owner_comped")
+            and (not prepaid or prepaid["available"] < Decimal(quote.snapshot["total"]))
             else "",
             "quote": quote,
+            "receipt_adjustment": booking_price_adjustment(booking, quote.snapshot)
+            if quote and booking.workflow == "integrated_v1"
+            else None,
             "progress_steps": progress(
                 5 if booking.workflow == "integrated_v1" else 4,
                 done=True,

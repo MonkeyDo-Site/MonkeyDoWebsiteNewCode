@@ -4,4 +4,4 @@
 <div><dt>Subtotal</dt><dd>${{ data.subtotal }}</dd></div>
 {% if data.processing_fee != '0.00' %}<div><dt>Credit-card processing fee</dt><dd>${{ data.processing_fee }}</dd></div>{% endif %}
 <div><dt>Sales tax</dt><dd>${{ data.sales_tax }}</dd></div>
-<div class="quote-total"><dt>{% if data.expected_method == 'card' %}Total that will be charged at arrival{% else %}Total due at arrival{% endif %}</dt><dd>${{ data.total }}</dd></div></dl></aside>
+<div class="quote-total"><dt>{% if receipt_quote_label %}{{ receipt_quote_label }}{% elif data.expected_method == 'card' and data.total != '0.00' %}Total that will be charged at arrival{% else %}Total due at arrival{% endif %}</dt><dd>${{ data.total }}</dd></div></dl>{% if receipt_adjustment %}{% include 'core/partials/price_adjustment.html' with adjustment=receipt_adjustment %}{% endif %}</aside>

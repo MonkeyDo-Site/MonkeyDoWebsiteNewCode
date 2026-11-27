@@ -206,6 +206,33 @@ class AdjustmentWorkflowTests(TestCase):
 
 
 class MemberAdjustmentTests(SimpleTestCase):
+    def test_ordinary_quote_without_metadata_keeps_new_adult_allowance_out_of_cancellations(self):
+        old = quote([("Child admissions", 1, "15"), ("Additional adults", 2, "10")])
+        new = quote(
+            [("Child admissions — Unlimited membership", 1, "0"), ("Additional adults", 1, "5")],
+            membership_attendees={"adults": 3},
+        )
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [("Membership benefit adjustment", Decimal("-20"))],
+        )
+
+    def test_ordinary_historical_quote_still_separates_an_actual_removed_adult(self):
+        old = quote([("Child admissions", 1, "15"), ("Additional adults", 2, "10")])
+        new = quote(
+            [("Child admissions — Unlimited membership", 1, "0")],
+            membership_attendees={"adults": 2},
+        )
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [
+                ("Minus cancelled adult admissions", Decimal("-5")),
+                ("Membership benefit adjustment", Decimal("-20")),
+            ],
+        )
+
     def test_removing_one_paid_child_does_not_average_its_price_with_two_free_children(self):
         free = "Child admissions — Subscription free visits"
         old = quote([(free, 2, "0"), ("Child admissions", 1, "15")])
