@@ -24,6 +24,8 @@ from .permissions import staff_permission
 @staff_permission("core.view_booking")
 @require_safe
 def dashboard(request):
+    from .customer_credit import expiry_notices as credit_expiry_notices
+    from .customer_credit import hold_notices as credit_hold_notices
     from .membership_cancellations import notices as membership_cancellation_notices
     from .membership_notices import payment_notices
     from .payments.zelle import refund_notices
@@ -35,6 +37,12 @@ def dashboard(request):
         request,
         "core/dashboard.html",
         {
+            "customer_credit_expiry": credit_expiry_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
+            "customer_credit_holds": credit_hold_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
             "membership_cancellation_issues": membership_cancellation_notices()
             if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
             else {},

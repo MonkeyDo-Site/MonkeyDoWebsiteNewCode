@@ -198,9 +198,12 @@ def begin_dispatch(operation_id):
             or method.customer_id != operation.sale.customer_id
         )
         if operation.sale.kind == "membership":
+            from core.customer_credit import held_on
+
             invoice = operation.sale.membership_invoice
             stopped = invoice.installment.purchase.billing_state.stopped_on
             invalid |= bool(stopped and invoice.installment.cycle.starts_on >= stopped)
+            invalid |= held_on(operation.sale)
         if booking:
             invalid |= booking.workflow != "integrated_v1" or (
                 operation.sale.kind == "visit"

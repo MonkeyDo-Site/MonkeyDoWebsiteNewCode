@@ -18,7 +18,7 @@ from core.waivers.models import BookingWaiverReview
 
 from .amounts import COMPONENTS, ZERO, amount
 from .checkout_pricing import visit_lines
-from .invoices import received, total
+from .invoices import received, settled, total
 from .jobs import enqueue
 from .ledger import accept_booking_sale, fingerprint, lock_request, record_manual, request_operation
 from .methods import queue_disposal
@@ -594,7 +594,7 @@ def summary(booking):
     operations = sale.operations.all()
     expected = total(sale)
     paid = received(sale)
-    due = max(ZERO, expected - paid)
+    due = max(ZERO, expected - settled(sale))
     pending = operations.filter(state__in=["ready", "sending", "unknown", "action"]).exists()
     external_review = operations.filter(
         events__code="external_correction_review", followup__resolved_at__isnull=True
@@ -616,10 +616,13 @@ def summary(booking):
         status = "Partially paid" if paid else "Unpaid"
     if prepaid["refund_due"]:
         status = "Zelle refund due"
+    from core.customer_credit import transferred
+
     return {
         "zelle": prepaid,
         "status": status,
         "received": paid,
+        "converted_credit": transferred(sale),
         # Applied advance receipts are already included in paid; only add the unused balance.
         "total_received": paid + prepaid["available"],
         "due": None if corrected else due,

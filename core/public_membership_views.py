@@ -468,10 +468,13 @@ def receipt(request, token):
     )
     item = member.installments.select_related("invoice__sale").first()
     op = item.invoice.sale.operations.filter(kind="receipt").order_by("requested_at").last()
-    funds = ZERO
+    from .customer_credit import applied
+
+    funds, credit_funds = ZERO, ZERO
     for installment in member.installments.select_related("invoice__sale"):
         if hasattr(installment, "invoice"):
             funds += received(installment.invoice.sale)
+            credit_funds += applied(installment.invoice.sale)
     return render(
         request,
         "core/public_membership_renewal.html",
@@ -479,6 +482,7 @@ def receipt(request, token):
             receipt=member,
             paid=installment_paid(item),
             money_received=funds,
+            credit_applied=credit_funds,
             payment_state=op.state if op else "ready",
             status=membership_status(member),
             cancellation=cancellation,

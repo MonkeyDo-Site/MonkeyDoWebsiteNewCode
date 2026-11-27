@@ -23,7 +23,7 @@ from .membership_sales import installment_paid, membership_status, offer, purcha
 from .models import Customer, MembershipDraft, PaymentMethod, PricingPolicy
 from .pagination import paginate
 from .payments.amounts import ZERO
-from .payments.invoices import received, total
+from .payments.invoices import received, settled, total
 from .permissions import staff_permission
 
 OFFER_FIELDS = (
@@ -508,6 +508,12 @@ def membership_overview(request, pk):
     cancellation_response, cancellation_context = overview_controls(request, member)
     if cancellation_response is not None:
         return cancellation_response
+    from .customer_credit_views import ACTIONS as credit_actions
+    from .customer_credit_views import controls as credit_controls
+
+    credit_response, credit_context = credit_controls(request, member)
+    if credit_response is not None:
+        return credit_response
     payment_form = InstallmentPaymentForm(
         request.POST
         if request.method == "POST"
@@ -555,6 +561,7 @@ def membership_overview(request, pk):
     if request.method == "POST" and request.POST.get("action") not in {
         "renewal_link",
         *cancellation_actions,
+        *credit_actions,
     }:
         from .membership_payments import change_card, collect_installment, payment_review
 
@@ -640,13 +647,18 @@ def membership_overview(request, pk):
         try:
             item.money_received = received(item.invoice.sale)
             item.operations = item.invoice.sale.operations.order_by("requested_at")
-            item.remaining = max(ZERO, total(item.invoice.sale) - item.money_received)
+            item.remaining = max(ZERO, total(item.invoice.sale) - settled(item.invoice.sale))
             item.effective_total = total(item.invoice.sale)
         except MembershipInvoice.DoesNotExist:
             item.money_received, item.remaining, item.operations = ZERO, item.quote["total"], []
             item.effective_total = item.quote["total"]
         paid += item.money_received
     status = membership_status(member)
+    from .customer_credit import applied, balance, held_balance
+
+    credit_used = sum(
+        (applied(item.invoice.sale) for item in installments if hasattr(item, "invoice")), ZERO
+    )
     from .payments.models import PaymentOperation
 
     funds = PaymentOperation.objects.filter(
@@ -672,6 +684,7 @@ def membership_overview(request, pk):
         "core/active_membership_detail.html",
         {
             **cancellation_context,
+            **credit_context,
             "member": member,
             "public_renewal_url": public_renewal_url,
             "renewal_link_key": uuid.uuid4(),
@@ -684,6 +697,9 @@ def membership_overview(request, pk):
             "status": status,
             "installments": installments,
             "money_received": paid,
+            "credit_applied": credit_used,
+            "credit_balance": balance(member.customer_id),
+            "credit_held": held_balance(member.customer_id),
             "gross_received": funds["gross"] or ZERO,
             "money_returned": funds["returned"] or ZERO,
             "benefit_summary": summary_for(member),

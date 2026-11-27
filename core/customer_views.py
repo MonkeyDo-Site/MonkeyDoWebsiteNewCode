@@ -114,6 +114,10 @@ def customer_list(request):
 @staff_permission("core.view_customer")
 @require_safe
 def customer_detail(request, pk):
+    from .customer_credit import balance as credit_balance
+    from .customer_credit import held_balance
+    from .customer_credit_records import CustomerCreditApplication, CustomerCreditIssue
+
     customer = get_object_or_404(Customer, pk=pk)
     bookings = customer.bookings.select_related("session").order_by("session__starts_at", "pk")
     can_view_bookings = request.user.has_perm("core.view_booking")
@@ -139,6 +143,26 @@ def customer_detail(request, pk):
         "core/customer_detail.html",
         {
             "customer": customer,
+            "credit_held": held_balance(customer.pk)
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else 0,
+            "credit_issues": CustomerCreditIssue.objects.filter(customer=customer)
+            .select_related("conversion__booking")
+            .order_by("-created_at", "-pk")[:5]
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else [],
+            "credit_applications": CustomerCreditApplication.objects.filter(customer=customer)
+            .select_related("sale__membership_invoice__installment__purchase")
+            .order_by("-created_at", "-pk")[:5]
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else [],
+            "credit_balance": credit_balance(customer.pk)
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else 0,
             "customer_waivers": WaiverSignature.objects.filter(
                 Q(customer_links__customer=customer) | Q(booking_links__booking__customer=customer)
             )

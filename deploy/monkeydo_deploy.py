@@ -52,6 +52,7 @@ BATCH_THREE_MIGRATIONS = {
 
 BOOKING_MIGRATIONS = {
     "0063_membership_cancellation_refunds.py": "e1600a0d3079bb8064ad822d1362ceb49ff6aa0c915db630281b6aad03fabba6",
+    "0064_customer_credit_conversion.py": "3e16eecc69373e3b8508e8fe2264ab30cd92c2445ce8fbd33fb91e9cde772d4d",
     "0062_booking_membership_owner_decisions.py": "277ed2336d857160cabf28d1367fff828f6a63cb412926ba0ff9c5719d70df3d",
     "0058_membership_follow_on_cohorts.py": "cc2d855ac67e12fd508b4b4cffb57ecf389be736e31c4a8a220967dfba17e4c0",
     "0059_membership_billing_actions.py": "42216fe77b5b8172a4307e95a2b6b21f8e0d342ef7085bc2a9a894c452a3e8c9",

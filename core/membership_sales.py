@@ -30,7 +30,7 @@ from .models import (
     PricingPolicy,
 )
 from .payments.amounts import ZERO, amount
-from .payments.invoices import received, total
+from .payments.invoices import received, settled, total
 from .payments.ledger import (
     fingerprint,
     full_allocation,
@@ -549,7 +549,9 @@ def installment_paid(installment):
         sale = installment.invoice.sale
     except MembershipInvoice.DoesNotExist:
         return False
-    return received(sale) >= total(sale)
+    from .customer_credit import held_on
+
+    return not held_on(sale) and settled(sale) >= total(sale)
 
 
 def membership_status(member, *, on=None):
@@ -560,6 +562,14 @@ def membership_status(member, *, on=None):
         return "cancelled"
     if root.ends_on < on:
         return "expired"
+    from .customer_credit import held_on
+
+    if any(
+        held_on(item.invoice.sale)
+        for item in member.installments.select_related("invoice__sale")
+        if hasattr(item, "invoice")
+    ):
+        return "review"
     if member.purpose != "complimentary":
         required = member.installments.select_related("invoice__sale", "cycle").order_by("number")
         if billing.stopped_on:
@@ -613,10 +623,13 @@ def queue_confirmation(member):
     root = member.membership
     if MessageDelivery.objects.filter(dedupe_key=f"membership-confirmation:{member.pk}").exists():
         return
-    paid = ZERO
+    from .customer_credit import applied
+
+    paid, credited = ZERO, ZERO
     for item in member.installments.select_related("invoice__sale"):
         try:
             paid += received(item.invoice.sale)
+            credited += applied(item.invoice.sale)
         except MembershipInvoice.DoesNotExist:
             pass
     content = [
@@ -630,7 +643,9 @@ def queue_confirmation(member):
         else "Enjoy one free visit per membership each day, with two free adults, plus 15% off parties. Unlimited Membership benefits exclude supervised play and Chol Hamoed. You may book those visits at full price.",
         "Your membership is complimentary."
         if member.purpose == "complimentary"
-        else f"Your payment of ${paid:.2f} was received.",
+        else f"Your payment of ${paid:.2f} was received."
+        if paid
+        else "Your membership payment is covered by customer credit.",
         "The purchased term ends without automatic renewal.",
     ]
     next_payment = member.installments.filter(number__gt=1).order_by("number").first()
@@ -669,7 +684,9 @@ def queue_confirmation(member):
             ]
         content += [
             "",
-            f"Your first payment of ${paid:.2f} was received."
+            "Your membership payment is covered by customer credit."
+            if not paid and credited
+            else f"Your first payment of ${paid:.2f} was received."
             if root.billing == "monthly"
             else f"Your payment of ${paid:.2f} was received for a {root.months}-month membership.",
         ]
@@ -685,6 +702,8 @@ def queue_confirmation(member):
         ]
     elif member.purpose == "complimentary":
         subject = "A little more Monkey Do fun, on us!"
+    if credited:
+        content += ["", f"A customer credit of ${credited:.2f} was applied to this purchase."]
     if next_payment:
         content.append(
             f"Your next scheduled membership payment is ${next_payment.quote['total']} on {display_date(next_payment.due_on, 'F j, Y')}."

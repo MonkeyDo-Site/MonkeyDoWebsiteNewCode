@@ -84,6 +84,12 @@ def payment_review(*, actor, member_id, installment_id, tender, received_on=None
     operations = []
     taken = {key: ZERO for key in COMPONENTS}
     if sale is not None:
+        from .customer_credit import held_on
+
+        if held_on(sale):
+            raise ValidationError(
+                "A credit source needs owner reconciliation. No replacement charge or receipt was recorded."
+            )
         operations = list(sale.operations.order_by("requested_at", "pk"))
         if any(op.state in {"ready", "sending", "unknown", "action"} for op in operations):
             raise ValidationError(
@@ -100,6 +106,12 @@ def payment_review(*, actor, member_id, installment_id, tender, received_on=None
         used = used_components(
             op for op in operations if op.kind == "receipt" and op.state in RESERVED
         )
+        from .customer_credit import applied_components
+
+        for line, parts in applied_components(sale).items():
+            current = used.setdefault(line, {key: ZERO for key in COMPONENTS})
+            for key in COMPONENTS:
+                current[key] += parts[key]
         taken = next(iter(used.values()), taken)
         net = values["net"]
         rate = sale.fee_rate

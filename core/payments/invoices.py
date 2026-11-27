@@ -41,6 +41,13 @@ def received(sale):
     return value
 
 
+def settled(sale):
+    """Funding assigned to this invoice; converted money is not assigned twice."""
+    from core.customer_credit import applied, transferred
+
+    return received(sale) + applied(sale) - transferred(sale)
+
+
 def noncard_components(sale):
     from .ledger import RESERVED, used_components
 

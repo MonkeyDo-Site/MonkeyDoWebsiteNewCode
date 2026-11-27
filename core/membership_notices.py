@@ -53,6 +53,15 @@ def payment_notices():
         .annotate(value=Sum(F("net") + F("fee") + F("item_tax") + F("fee_tax")))
         .values("value")
     )
+    from .customer_credit_records import CustomerCreditAllocation
+
+    credits = (
+        CustomerCreditAllocation.objects.filter(application__sale_id=OuterRef("invoice__sale_id"))
+        .order_by()
+        .values("application__sale_id")
+        .annotate(value=Sum("amount"))
+        .values("value")
+    )
     dues = (
         MembershipInstallment.objects.filter(due_on__lte=today())
         .exclude(purchase__purpose="complimentary")
@@ -64,6 +73,9 @@ def payment_notices():
             paid_amount=Coalesce(
                 Subquery(posted, output_field=currency), Value(ZERO), output_field=currency
             ),
+            credited_amount=Coalesce(
+                Subquery(credits, output_field=currency), Value(ZERO), output_field=currency
+            ),
             adjusted_total=Coalesce(
                 F("invoice__sale__total"), Cast(KeyTextTransform("total", "quote"), currency)
             )
@@ -71,13 +83,13 @@ def payment_notices():
                 Subquery(adjustments, output_field=currency), Value(ZERO), output_field=currency
             ),
         )
-        .filter(paid_amount__lt=F("adjusted_total"))
+        .filter(paid_amount__lt=F("adjusted_total") - F("credited_amount"))
         .select_related("purchase__customer", "purchase__membership", "invoice__sale")
         .order_by("due_on", "purchase_id", "number")
     )
     result = []
     for item in dues[:20]:
-        item.remaining = item.adjusted_total - item.paid_amount
+        item.remaining = item.adjusted_total - item.paid_amount - item.credited_amount
         item.affected_bookings = affected_bookings(item.purchase).count()
         item.issue_label = "Installment due"
         if getattr(item, "invoice", None) is not None:

@@ -3,7 +3,7 @@
 {% block staff_content %}
 <p class="eyebrow">Customer {{ customer.customer_number }}</p>
 <h1>{{ customer.last_name }}</h1>
-<div class="customer-cards">
+<div class="customer-cards">{% if credit_issues or credit_applications %}<article class="panel"><h2>Customer credit</h2><p><strong>Available: ${{ credit_balance|floatformat:2 }}</strong></p>{% if credit_held %}<p class="notice">${{ credit_held|floatformat:2 }} is awaiting source-payment review.</p>{% endif %}<p class="caption">Existing paid funds, separate from new payments.</p><details><summary>Recent credit history</summary>{% for issue in credit_issues %}<p>Credit issued: ${{ issue.amount|floatformat:2 }} · {{ issue.created_at|date:'M j, Y' }}{% if perms.core.view_booking %}<br><a href="{% url 'booking_detail' issue.conversion.booking_id %}">Converted visit #{{ issue.conversion.booking_id }}</a>{% endif %}</p>{% endfor %}{% for application in credit_applications %}<p>Credit applied: ${{ application.amount|floatformat:2 }} · {{ application.created_at|date:'M j, Y' }}{% if perms.core.view_membershippurchase %}<br><a href="{% url 'membership_overview' application.sale.membership_invoice.installment.purchase_id %}">Membership #{{ application.sale.membership_invoice.installment.purchase.membership_number }}</a>{% endif %}</p>{% endfor %}</details></article>{% endif %}
   <article class="panel">
     <h2>Customer info</h2>
     <dl><dt>Type</dt><dd>{{ customer.get_customer_type_display }}</dd>

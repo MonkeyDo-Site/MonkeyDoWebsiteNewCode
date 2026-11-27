@@ -57,6 +57,9 @@ def send(delivery):
         "booking_cancelled",
         "booking_no_show",
         "membership_cancellation",
+        "membership_confirmation",
+        "membership_renewal",
+        "membership_addition",
     }:
         from .presentation import confirmation_html
 

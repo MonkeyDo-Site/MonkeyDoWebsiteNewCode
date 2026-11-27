@@ -190,6 +190,14 @@ def review(*, actor, member_id, timing="end_cycle", refund_amount=None):
     on = today()
     stop = stop_date(member, timing, on)
     installments = list(member.installments.select_related("cycle", "invoice__sale"))
+    if any(
+        item.invoice.sale.credit_applications.exists()
+        for item in installments
+        if hasattr(item, "invoice")
+    ):
+        raise ValidationError(
+            "This membership includes applied customer credit. Review its credit return before cancelling. No cancellation or refund has been recorded."
+        )
     operations = list(
         PaymentOperation.objects.filter(sale__membership_invoice__installment__purchase=member)
         .select_related("sale", "method")

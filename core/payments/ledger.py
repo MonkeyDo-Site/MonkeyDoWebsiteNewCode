@@ -323,6 +323,12 @@ def request_operation(
             "member_purchase" if invoice.installment.number == 1 else "member_installment"
         ):
             raise ValidationError("Use the accepted membership installment before collecting.")
+        from core.customer_credit import held_on
+
+        if held_on(sale):
+            raise ValidationError(
+                "A customer-credit source needs owner review before new collection."
+            )
         if public:
             from core.membership_public_authority import check_purchase
 
@@ -406,6 +412,12 @@ def request_operation(
         if original_id:
             raise ValidationError("A receipt cannot be a refund of another operation.")
         used = used_components(sale.operations.filter(kind="receipt", state__in=RESERVED))
+        from core.customer_credit import applied_components
+
+        for line, values in applied_components(sale).items():
+            target = used.setdefault(line, {key: ZERO for key in COMPONENTS})
+            for component in COMPONENTS:
+                target[component] += values[component]
         from .invoices import effective_components
 
         limits = effective_components(sale)
@@ -419,6 +431,9 @@ def request_operation(
         limits = {p["line"]: {k: amount(p[k]) for k in COMPONENTS} for p in original.allocation}
         if kind == "void" and cleaned != original.allocation:
             raise ValidationError("A void must reverse the whole original payment.")
+        from core.customer_credit import protect_source
+
+        protect_source(original, cleaned)
         if sale.kind == "membership" or membership_refund_plan_id is not None:
             from core.membership_cancellations import protect_refund
 
