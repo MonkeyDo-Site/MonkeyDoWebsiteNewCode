@@ -62,7 +62,7 @@ def identity(flow, *, allow_expired=False):
         ) from None
     if flow.get("public_authority"):
         if allow_expired:
-            raise ValidationError("Use the verified customer renewal session.")
+            raise ValidationError("Use the verified customer membership session.")
         from .membership_public_authority import verified_scope
 
         scope = verified_scope(flow["public_authority"])
@@ -71,10 +71,10 @@ def identity(flow, *, allow_expired=False):
             or scope["customer"] != customer.pk
             or flow.get("staff_actor") is not None
         ):
-            raise ValidationError("Return to the verified renewal session.")
+            raise ValidationError("Return to the verified membership session.")
         digest = salted_hmac(
             "membership-public-card-flow",
-            f"{key}:{customer.pk}:{customer.revision}:{scope['link']}",
+            f"{key}:{customer.pk}:{customer.revision}:{scope.get('checkout') or scope['link']}",
         ).hexdigest()
     else:
         digest = salted_hmac(
@@ -174,7 +174,7 @@ def make_flow(*, actor, customer, request_key, offer, expires=None, authority=No
             tender=offer["expected_method"],
         )
         if scope["request_key"] != uuid.UUID(str(request_key)):
-            raise ValidationError("Return to the verified renewal session.")
+            raise ValidationError("Return to the verified membership session.")
         expires = min(expires or scope["expires"], scope["expires"])
     return dict(
         purpose="membership",

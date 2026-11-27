@@ -301,16 +301,16 @@ def purchase(
 
     lock_customer(customer.pk)
     if actor is None:
-        from .membership_public_authority import verified_scope
+        from .membership_public_authority import acceptance_filter, verified_scope
         from .membership_records import MembershipPublicAcceptance
 
         scope = verified_scope(authority)
         if (
             not card_authorization_id
-            or MembershipPublicAcceptance.objects.filter(link=scope["link_record"]).exists()
+            or MembershipPublicAcceptance.objects.filter(**acceptance_filter(scope)).exists()
         ):
             raise ValidationError(
-                "This renewal needs its current card authorization, or already has a purchase recorded."
+                "This membership needs its current card authorization, or already has a purchase recorded."
             )
     values["customer"] = customer
     if combined_booking is not None:

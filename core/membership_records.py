@@ -355,8 +355,28 @@ class MembershipRenewalLinkRevocation(FinancialFact):
     recorded_at = models.DateTimeField(auto_now_add=True)
 
 
+class MembershipPublicCheckout(FinancialFact):
+    """Verified identity for one initial public purchase, before card storage."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    customer = models.ForeignKey("core.Customer", on_delete=models.PROTECT)
+    customer_revision = models.PositiveIntegerField()
+    identity_hash = models.CharField(max_length=64)
+    verified_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(expires_at__gt=models.F("verified_at")),
+                name="membership_public_checkout_lifetime",
+            )
+        ]
+
+
 class MembershipPublicAcceptance(FinancialFact):
-    """Durable scope for the explicitly accepted first public renewal payment."""
+    """Durable scope for one explicitly accepted first public payment."""
 
     purchase = models.OneToOneField(
         MembershipPurchase,
@@ -365,7 +385,10 @@ class MembershipPublicAcceptance(FinancialFact):
         related_name="public_acceptance",
     )
     link = models.OneToOneField(
-        MembershipRenewalLink, on_delete=models.PROTECT, related_name="acceptance"
+        MembershipRenewalLink, null=True, on_delete=models.PROTECT, related_name="acceptance"
+    )
+    checkout = models.OneToOneField(
+        MembershipPublicCheckout, null=True, on_delete=models.PROTECT, related_name="acceptance"
     )
     card_authorization = models.ForeignKey(
         "core.MembershipCardAuthorization", on_delete=models.PROTECT
@@ -374,6 +397,15 @@ class MembershipPublicAcceptance(FinancialFact):
     customer_revision = models.PositiveIntegerField()
     verified_at = models.DateTimeField()
     accepted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(link__isnull=False, checkout__isnull=True)
+                | models.Q(link__isnull=True, checkout__isnull=False),
+                name="membership_public_acceptance_source",
+            )
+        ]
 
 
 class MembershipCardAuthorization(FinancialFact):

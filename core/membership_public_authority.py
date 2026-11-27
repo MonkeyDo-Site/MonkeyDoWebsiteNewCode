@@ -1,4 +1,4 @@
-"""Narrow verified-customer authority for one private membership renewal.
+"""Narrow verified-customer authority for one initial purchase or private renewal.
 
 Browser proofs expire after twenty minutes. Once the explicit first payment is
 accepted, immutable evidence authorizes its worker dispatch without an active
@@ -19,6 +19,7 @@ from django.utils import timezone
 from .forms import normalize_phone
 from .membership_records import (
     MembershipPublicAcceptance,
+    MembershipPublicCheckout,
     MembershipRenewalLink,
     MembershipRenewalLinkRevocation,
 )
@@ -146,6 +147,10 @@ def verified_scope(proof):
         now = timezone.now().timestamp()
         if data["expires"] < now or data["verified_at"] > now + 60:
             raise ValueError
+        if "checkout" in data:
+            from .membership_public_checkout import resolve
+
+            return resolve(data)
         link = MembershipRenewalLink.objects.select_related("customer", "prior__membership").get(
             pk=data["link"],
             expires_at__gt=timezone.now(),
@@ -159,20 +164,32 @@ def verified_scope(proof):
     except (
         signing.BadSignature,
         MembershipRenewalLink.DoesNotExist,
+        MembershipPublicCheckout.DoesNotExist,
         ValueError,
         TypeError,
         KeyError,
         AttributeError,
     ):
         raise PermissionDenied from None
-    return data | {"request_key": key, "link_record": link, "customer_record": link.customer}
+    return data | {
+        "request_key": key,
+        "link_record": link,
+        "customer_record": link.customer,
+        "operation": "renewal",
+    }
+
+
+def acceptance_filter(scope):
+    if scope.get("checkout_record"):
+        return {"checkout": scope["checkout_record"]}
+    return {"link": scope["link_record"]}
 
 
 def check_selection(proof, *, customer_id, operation, prior_id, tender):
     scope = verified_scope(proof)
     if (
         scope["customer"] != customer_id
-        or operation != "renewal"
+        or operation != scope["operation"]
         or prior_id != scope["prior"]
         or tender != "card"
     ):
@@ -187,13 +204,21 @@ def check_purchase(proof, purchase, *, require_acceptance=True):
         or purchase.actor_id is not None
         or purchase.customer_id != scope["customer"]
         or purchase.request_key != scope["request_key"]
-        or purchase.purpose != "renewal"
-        or purchase.origin.prior_id != scope["prior"]
+        or purchase.purpose != scope["operation"]
+        or (
+            scope["prior"] is not None
+            and (not hasattr(purchase, "origin") or purchase.origin.prior_id != scope["prior"])
+        )
+        or (scope["prior"] is None and hasattr(purchase, "origin"))
     ):
         raise PermissionDenied
     if require_acceptance:
         try:
-            if purchase.public_acceptance.link_id != scope["link_record"].pk:
+            accepted = purchase.public_acceptance
+            if any(
+                getattr(accepted, key + "_id") != value.pk
+                for key, value in acceptance_filter(scope).items()
+            ):
                 raise PermissionDenied
         except MembershipPublicAcceptance.DoesNotExist:
             raise PermissionDenied from None
@@ -204,7 +229,7 @@ def record_acceptance(*, proof, purchase, card_authorization_id):
     scope = check_purchase(proof, purchase, require_acceptance=False)
     return MembershipPublicAcceptance.objects.create(
         purchase=purchase,
-        link=scope["link_record"],
+        **acceptance_filter(scope),
         card_authorization_id=card_authorization_id,
         proof_hash=hashlib.sha256(proof.encode()).hexdigest(),
         customer_revision=scope["revision"],
@@ -213,7 +238,7 @@ def record_acceptance(*, proof, purchase, card_authorization_id):
 
 
 def authorize_dispatch(operation):
-    """Validate durable accepted scope; link expiry/revocation affects later access."""
+    """Validate durable accepted scope without extending browser access."""
     from .membership_card_setup import source
     from .membership_records import MembershipInvoice
     from .payments.ledger import full_allocation
@@ -234,11 +259,30 @@ def authorize_dispatch(operation):
     auth = acceptance.card_authorization
     if (
         invoice.installment.number != 1
+        or operation.request_key != uuid.uuid5(member.request_key, "first-payment")
         or member.source != "public"
         or member.actor_id is not None
-        or member.purpose != "renewal"
-        or acceptance.link.customer_id != member.customer_id
-        or acceptance.link.prior_id != member.origin.prior_id
+        or (
+            acceptance.link_id is not None
+            and (
+                member.purpose != "renewal"
+                or acceptance.link.customer_id != member.customer_id
+                or not hasattr(member, "origin")
+                or acceptance.link.prior_id != member.origin.prior_id
+            )
+        )
+        or (
+            acceptance.checkout_id is not None
+            and (
+                member.purpose != "purchase"
+                or hasattr(member, "origin")
+                or acceptance.checkout.customer_id != member.customer_id
+                or acceptance.checkout_id != member.request_key
+                or acceptance.customer_revision != acceptance.checkout.customer_revision
+                or acceptance.verified_at != acceptance.checkout.verified_at
+                or acceptance.accepted_at > acceptance.checkout.expires_at
+            )
+        )
         or auth.actor_id is not None
         or auth.customer_id != member.customer_id
         or auth.request_key != member.request_key
@@ -265,11 +309,12 @@ def submit(*, proof, reviewed, accepted, card_authorization_id, method_id, **val
     if set(values) - {"kind", "places", "months", "billing", "starts_on"}:
         raise PermissionDenied
     scope = verified_scope(proof)
-    lock_request(uuid.uuid5(scope["link_record"].pk, "public-renewal-checkout"))
+    source = scope.get("checkout_record") or scope["link_record"]
+    lock_request(uuid.uuid5(source.pk, "public-renewal-checkout"))
     lock_customer(scope["customer"])
     existing = (
         MembershipPublicAcceptance.objects.select_related("purchase")
-        .filter(link=scope["link_record"])
+        .filter(**acceptance_filter(scope))
         .first()
     )
     if existing:
@@ -292,7 +337,7 @@ def submit(*, proof, reviewed, accepted, card_authorization_id, method_id, **val
         method_id=method_id,
         card_authorization_id=card_authorization_id,
         customer=scope["customer_record"],
-        operation="renewal",
+        operation=scope["operation"],
         prior_id=scope["prior"],
         expected_method="card",
         **values,

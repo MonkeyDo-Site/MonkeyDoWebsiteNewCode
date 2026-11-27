@@ -333,7 +333,9 @@ def request_operation(
             from core.membership_public_authority import check_purchase
 
             check_purchase(public_membership_authority, invoice.installment.purchase)
-            if invoice.installment.number != 1:
+            if invoice.installment.number != 1 or request_key != uuid.uuid5(
+                invoice.installment.purchase.request_key, "first-payment"
+            ):
                 raise PermissionDenied
         mandate = invoice.installment.purchase.billing_state.mandate
         stopped = invoice.installment.purchase.billing_state.stopped_on
