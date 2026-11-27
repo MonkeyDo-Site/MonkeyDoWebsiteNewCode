@@ -126,16 +126,98 @@ class MembershipRenewalLink(FinancialFact):
         on_delete=models.PROTECT,
         related_name="renewal_link",
     )
+    prompt = models.OneToOneField(
+        "core.MembershipPromptLink", null=True, on_delete=models.PROTECT, related_name="link"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(actor__isnull=False, notice__isnull=True)
-                | models.Q(actor__isnull=True, notice__isnull=False),
+                condition=models.Q(actor__isnull=False, notice__isnull=True, prompt__isnull=True)
+                | models.Q(actor__isnull=True, notice__isnull=False, prompt__isnull=True)
+                | models.Q(actor__isnull=True, notice__isnull=True, prompt__isnull=False),
                 name="membership_renewal_link_authority",
             )
         ]
+
+
+class MembershipRenewalPrompt(FinancialFact):
+    """A displayed booking opportunity and the customer's explicit response."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    purchase = models.ForeignKey(
+        MembershipPurchase, on_delete=models.PROTECT, related_name="renewal_prompts"
+    )
+    customer = models.ForeignKey("core.Customer", on_delete=models.PROTECT)
+    flow_key = models.UUIDField()
+    source = models.CharField(max_length=6, choices=[("staff", "Staff"), ("public", "Customer")])
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    customer_revision = models.PositiveIntegerField()
+    provenance = models.CharField(max_length=64)
+    window = models.CharField(
+        max_length=8, choices=[("initial", "Initial"), ("followup", "One later booking")]
+    )
+    action = models.CharField(
+        max_length=11,
+        choices=[
+            (value, value.replace("_", " ").title())
+            for value in ("seen", "renew", "not_now", "email_later")
+        ],
+    )
+    ends_on = models.DateField()
+    on = models.DateField()
+    remind_at = models.DateTimeField(null=True, db_index=True)
+    snapshot = models.JSONField()
+    fingerprint = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(source="staff", actor__isnull=False)
+                | models.Q(source="public", actor__isnull=True),
+                name="membership_prompt_source_actor",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(action="email_later", remind_at__isnull=False)
+                | (~models.Q(action="email_later") & models.Q(remind_at__isnull=True)),
+                name="membership_prompt_reminder_scope",
+            ),
+            models.UniqueConstraint(
+                fields=["purchase", "flow_key", "ends_on", "window", "action"],
+                name="membership_prompt_action_once",
+            ),
+            models.UniqueConstraint(
+                fields=["purchase", "flow_key", "ends_on", "window"],
+                condition=~models.Q(action="seen"),
+                name="membership_prompt_choice_once",
+            ),
+            models.UniqueConstraint(
+                fields=["purchase", "ends_on"],
+                condition=models.Q(window="followup", action="seen"),
+                name="membership_prompt_one_followup",
+            ),
+        ]
+
+
+class MembershipPromptLink(FinancialFact):
+    """System authority for a chosen renewal or a due, requested reminder."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    prompt = models.OneToOneField(
+        MembershipRenewalPrompt, on_delete=models.PROTECT, related_name="link_authority"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MembershipPromptEmail(FinancialFact):
+    authority = models.ForeignKey(
+        MembershipPromptLink, on_delete=models.PROTECT, related_name="deliveries"
+    )
+    message = models.OneToOneField(
+        "core.MessageDelivery", on_delete=models.PROTECT, related_name="renewal_prompt_evidence"
+    )
 
 
 class MembershipRenewalNotice(FinancialFact):

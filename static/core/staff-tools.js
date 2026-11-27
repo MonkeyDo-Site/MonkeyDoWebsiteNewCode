@@ -110,6 +110,10 @@ for (const form of document.querySelectorAll('form[data-booking-estimate]')) {
         throw new Error(errors || 'Review the booking fields.');
       }
       content.innerHTML = data.html;
+      if (data.membership_html !== undefined) {
+        const memberships = document.querySelector('[data-booking-memberships]');
+        if (memberships) memberships.innerHTML = data.membership_html;
+      }
       status.textContent = 'Updated estimate: $' + data.total + '. Not saved yet.';
       lastEstimate = data;
       return data;
@@ -317,6 +321,7 @@ for (const form of document.querySelectorAll('[data-public-estimate]')) {
     }
   };
   const queue = () => { clearTimeout(timer); timer = setTimeout(refresh, 180); };
+  form.membershipRefresh = refresh;
   form.addEventListener('input', queue); form.addEventListener('change', queue);
   refresh();
 }

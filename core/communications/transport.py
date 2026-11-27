@@ -62,6 +62,7 @@ def send(delivery):
         "membership_addition",
         "membership_expiry_notice",
         "membership_grace_notice",
+        "membership_requested_renewal",
     }:
         from .presentation import confirmation_html
 

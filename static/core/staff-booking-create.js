@@ -107,6 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     queue = queue.then(() => send('preview', data)).catch(error => { announce(error.message); return null; });
     return queue;
   };
+  main.staffCreateFlush = () => {
+    clearTimeout(timer);
+    if (busy || paused) return Promise.reject(new Error('Finish the current booking action before choosing renewal.'));
+    const pending = queue.then(() => send('preview', new FormData(main)));
+    queue = pending.catch(() => null);
+    return pending;
+  };
   const changed = event => {
     if (event.target.form !== main || event.target.type === 'search') return;
     controls(); clearTimeout(timer);

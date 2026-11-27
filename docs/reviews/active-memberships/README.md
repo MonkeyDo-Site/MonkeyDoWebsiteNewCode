@@ -2,7 +2,7 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37). These are actual application pages with fictional review data, captured at 1440px desktop and 390px phone widths. All names, card references and payment outcomes are synthetic. No card was charged and no customer email was delivered.
 
-These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution, verified private customer renewal, replacement-card entry, owner decisions for overdue reserved bookings, membership cancellation/refund tracking customer credit review/history, owner unused-credit corrections membership filtering/exports and approved expiry/grace notices. Public new-membership purchase, combined multi-cohort renewal checkout, combined first-purchase conversion, credit returns/broader redemption and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
+These samples cover staff purchase with existing/new cards, the membership overview, member-aware staff booking/edit/arrival, individual-cohort renewals/additions, explicit installment payment resolution, verified private customer renewal, replacement-card entry, owner decisions for overdue reserved bookings, membership cancellation/refund tracking customer credit review/history, owner unused-credit corrections membership filtering/exports approved expiry/grace notices, inline booking renewal choices and requested renewal reminders. Public new-membership purchase, combined multi-cohort renewal checkout, combined first-purchase conversion, credit returns/broader redemption and scheduled collection are still being implemented. The gallery will grow as those flows become functional; the current samples do not claim those parts are finished. Actual Banquest hosted fields are not verified here; sample 13 visibly labels its provider-field test double.
 
 ## 01 — Purchase membership on one page
 
@@ -356,8 +356,48 @@ A return reported after a later charge was queued also stops that charge before 
 | --- | --- |
 | [![Membership funding review, desktop](39-membership-funding-review-desktop.png)](39-membership-funding-review-desktop.png) | [![Membership funding review, phone](39-membership-funding-review-phone.png)](39-membership-funding-review-phone.png) |
 
+## 40 — Owner booking with inline renewal choices
+
+**Renew**, **Not now** and **Email me later** appear beside the customer's existing membership summary. The existing attendee estimate, visible capacity counts, 30-minute temporary reservation, closure/override controls, custom price, waivers, card and final booking button stay on the same page.
+
+Renew opens the existing combined renewal form in another tab. Actual browser checks return to the original page with **2 children and 1 pair of socks preserved**, and the same hold expiry. Opening renewal or choosing a reminder confirms no booking and makes no membership purchase. The card-configuration warning belongs to this isolated review environment; it does not describe the deployed provider setup.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Owner booking renewal choices, desktop](40-booking-renewal-owner-desktop.png)](40-booking-renewal-owner-desktop.png) | [![Owner booking renewal choices, phone](40-booking-renewal-owner-phone.png)](40-booking-renewal-owner-phone.png) |
+
+## 41 — Customer booking near membership expiry
+
+The same optional choices appear within five days of the cohort's expiry. **Not now** does not interrupt booking. That response is remembered across bookings; one further prompt may appear on a later booking at least 30 days after expiry. Displaying a prompt and choosing an action are separate immutable facts. Merely loading a page records neither; the visible prompt is acknowledged by a CSRF-protected request.
+
+A customer who chooses Renew still verifies phone and name on the private renewal page before accessing its checkout. The booking profile proof does not authorize a financial action. The customer booking's existing 20-minute limit stays in place.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Customer booking renewal choices, desktop](41-booking-renewal-customer-desktop.png)](41-booking-renewal-customer-desktop.png) | [![Customer booking renewal choices, phone](41-booking-renewal-customer-phone.png)](41-booking-renewal-customer-phone.png) |
+
+## 42 — Expired membership and a requested reminder
+
+This fictional membership ended **November 15**, and the review booking is on **November 25**. The page correctly shows a **new three-month minimum**. Email me later requests the next morning, **November 26 at 9 a.m. New York time**, and explains that the reminder does not preserve the shorter renewal minimum. No past expiry-relative reminder date is offered.
+
+The actual phone interaction requests the reminder while leaving the entered counts and socks intact. No visit is confirmed. If an existing profile has no saved email yet, only the validated pending booking email can enable the choice, with an instruction to finish booking; delivery uses the actual saved contact, never an uncommitted address.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Expired membership renewal choice, desktop](42-booking-expired-renewal-desktop.png)](42-booking-expired-renewal-desktop.png) | [![Expired membership renewal choice, phone](42-booking-expired-renewal-phone.png)](42-booking-expired-renewal-phone.png) |
+
+## 43 — Requested renewal email, prepared the following morning
+
+This is the actual frozen email queued from sample 42's request at the following fictional morning, **November 26, 9 a.m. New York time**. It uses appropriate past/future wording and the current three-month minimum, with the protected **Renew membership** button. It was prepared locally and **not sent**.
+
+The private link lasts 30 days from its creation and does not extend the seven-day renewal deadline. Remaining places, payments, cancellation, current contact and link validity are checked again before delivery. Obsolete messages are withdrawn; changed content has a new immutable snapshot. An unknown or failed delivery is not automatically repeated. An isolated reminder-preparation failure does not stop unrelated accepted jobs.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Requested renewal email, desktop](43-requested-renewal-email-desktop.png)](43-requested-renewal-email-desktop.png) | [![Requested renewal email, phone](43-requested-renewal-email-phone.png)](43-requested-renewal-email-phone.png) |
+
 ## Checked so far
 
-The browser checks confirm no horizontal overflow or JavaScript errors on all thirty-nine desktop/phone pairs. The complete application suite passes 1,018 tests, including membership filtering/exports, staff permissions, owner credit corrections, the customer-credit foundation, split-source allocation, source-return holds and six credit-related PostgreSQL races. All ten final reporting checks pass after stable ordering and readable export-history labels were added. Nine funding checks cover direct and credit sources, queued dispatch, recorded-return recovery, contradictory declines, staff/runtime permissions and truthful overview/messages. Sixteen notice checks include two PostgreSQL races, New York midnight/DST boundaries, contact reversals, verified system links, stale suppression, runtime immutable grants and no repeated unknown delivery. Native no-JavaScript re-review protects changed amounts. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
+The browser checks confirm no horizontal overflow or JavaScript errors on all forty-three desktop/phone pairs. The complete application suite passes 1,051 tests, including membership filtering/exports, staff permissions, owner credit corrections, the customer-credit foundation, split-source allocation, source-return holds and six credit-related PostgreSQL races. All ten final reporting checks pass after stable ordering and readable export-history labels were added. Thirty-three booking-prompt/requested-reminder checks cover real private checkout, source/browser ownership, elapsed hold preservation, CSRF, native recovery, DST, private system authority, current contact/payment/renewal facts, producer isolation and two PostgreSQL races. Nine funding checks cover direct and credit sources, queued dispatch, recorded-return recovery, contradictory declines, staff/runtime permissions and truthful overview/messages. Sixteen notice checks include two PostgreSQL races, New York midnight/DST boundaries, contact reversals, verified system links, stale suppression, runtime immutable grants and no repeated unknown delivery. Native no-JavaScript re-review protects changed amounts. Functional browser scenarios complete a prepaid cash purchase, resolve a declined installment with one cash receipt, perform one new-card purchase and submit one verified customer renewal with simulated provider responses. Changing purchase counts requires accepting the current terms again; unchanged number-field blur no longer discards a completed review. Reloading uncertain card storage repeats no exchange and creates no purchase. Application tests cover immutable purchases/terms, exact-cent non-taxable payments, fixed-term calendar dates, stale quotes, duplicate submissions, uncertain outcomes, owner exceptions, permissions and actual runtime database grants. Two PostgreSQL concurrency tests exercise competing renewal links and repeated submissions from independently verified sessions. The [owner testing guide in progress](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) distinguishes current functional checks from the remaining scope.
 
 The first review is about layout and clarity. Implementation and regression testing continue independently while the owner reviews. The final owner testing guide and release package follow completion and explicit release approval.

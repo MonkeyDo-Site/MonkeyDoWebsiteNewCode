@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.cache import add_never_cache_headers
 from django.views.decorators.debug import sensitive_post_parameters
@@ -326,6 +327,7 @@ def display(request, flow, *, form=None, error=None, notice=None):
     customer = customer_from_flow(flow) if flow.get("proof") else None
     completing = flow.get("workflow") == "integrated_v1"
     from .membership_booking import summaries
+    from .membership_booking_prompts import context as prompt_context
 
     membership_rows = (
         summaries(customer.pk if customer else None, session, flow.get("quote"))
@@ -358,6 +360,17 @@ def display(request, flow, *, form=None, error=None, notice=None):
             ),
             "flow": flow,
             "membership_rows": membership_rows,
+            **(
+                prompt_context(
+                    customer=customer,
+                    flow=flow,
+                    source="public",
+                    pending_email=flow.get("contact_email", ""),
+                )
+                if completing and flow["stage"] == "details"
+                else {}
+            ),
+            "renewal_form_url": reverse("public_membership_choice"),
             "booking_history_page": True,
             "waiver_choices": form if flow["stage"] == "waiver" else None,
             **card,
@@ -947,11 +960,30 @@ def live_estimate(request):
                 status=400,
             )
         quote = review_quote(flow, form.cleaned_data)
+        from .membership_booking import summaries
+        from .membership_booking_prompts import context as prompt_context
+
+        customer = customer_from_flow(flow) if flow.get("proof") else None
+        membership = {
+            **prompt_context(
+                customer=customer,
+                flow=flow,
+                source="public",
+                pending_email=flow.get("contact_email", ""),
+            ),
+            "membership_rows": summaries(
+                customer.pk if customer else None, public_session(flow["session_id"]), quote
+            ),
+            "session": public_session(flow["session_id"]),
+        }
         return JsonResponse(
             {
+                "membership_html": render_to_string(
+                    "core/partials/booking_memberships.html", membership, request=request
+                ),
                 "html": render_to_string(
                     "core/partials/live_quote.html", {"data": quote}, request=request
-                )
+                ),
             },
             headers={"Cache-Control": "private, no-store"},
         )

@@ -74,6 +74,7 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
+    scoped_refresh = None
     if message.kind in confirmation_kinds and message.membership_id:
         from core.membership_funding import member_needs_review
 
@@ -82,6 +83,24 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
             return None
+    if message.kind == "membership_requested_renewal":
+        from core.membership_prompt_emails import refresh
+        from core.membership_records import MembershipPromptEmail
+
+        evidence = (
+            MembershipPromptEmail.objects.select_related("authority")
+            .filter(message=message)
+            .first()
+        )
+        if evidence is None:
+            message.state, message.code = "cancelled", "requested_renewal_invalid"
+            message.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+            return None
+        refreshed = refresh(evidence.authority)
+        if refreshed is None or refreshed.pk != message.pk:
+            return None
+        scoped_refresh = (refresh, evidence.authority)
     if message.kind in notice_kinds:
         from core.membership_records import MembershipRenewalNoticeDelivery
         from core.membership_renewal_notices import refresh_notice
@@ -99,6 +118,7 @@ def claim(message_id):
         refreshed = refresh_notice(evidence.notice)
         if refreshed is None or refreshed.pk != message.pk:
             return None
+        scoped_refresh = (refresh_notice, evidence.notice)
     if message.kind == "membership_cancellation" and message.membership_id:
         from core.membership_cancellations import queue_cancellation
 
@@ -112,6 +132,11 @@ def claim(message_id):
         and message.customer_id
         and message.customer.email.casefold() != message.recipient.casefold()
     ):
+        if scoped_refresh:
+            # A contact can change after the first scope review. Keep the
+            # replacement tied to its original request/notice authority.
+            scoped_refresh[0](scoped_refresh[1])
+            return None
         message.state = "cancelled"
         message.code = "contact_changed"
         message.save(update_fields=["state", "code"])

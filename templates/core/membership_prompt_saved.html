@@ -1,0 +1,1 @@
+{% extends 'core/base.html' %}{% block content %}<section class="panel"><h1>Membership renewal choice</h1>{% if error %}<p class="notice" role="alert">{{ error }}</p>{% else %}<p>{{ message }}</p>{% endif %}<p>Your booking has not been confirmed by this choice. Continue in your original booking tab, or <a href="{{ return_url }}">return to booking</a>.</p></section>{% endblock %}

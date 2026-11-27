@@ -22,4 +22,5 @@
 <p><a href="{% url 'bookings' %}">Return to bookings</a></p>
 <dialog class="staff-create-waiver-dialog" data-create-sign-dialog aria-label="Sign Waiver"><button type="button" class="text-button" data-create-sign-close>Close and return to booking</button><div data-create-sign-content></div><p role="status" data-create-sign-status></p></dialog>
 <script src="{% static 'core/staff-booking-create.js' %}" defer></script>
+{% include 'core/partials/booking_renewal_form.html' %}
 {% endblock %}

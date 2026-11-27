@@ -377,14 +377,20 @@ def context_card(flow):
     return context
 
 
-def membership_context(flow):
+def membership_context(flow, actor):
     from core.membership_booking import active, summaries
-    from core.models import Session
+    from core.membership_booking_prompts import context as prompt_context
+    from core.models import Customer, Session
 
     session = Session.objects.filter(pk=flow.get("session_id")).first() if active() else None
+    customer = Customer.objects.filter(
+        pk=flow.get("customer_id"), revision=flow.get("customer_revision")
+    ).first()
     return {
+        **prompt_context(customer=customer, flow=flow, source="staff", actor=actor),
         "session": session,
         "membership_rows": summaries(flow.get("customer_id"), session, flow.get("quote")),
+        "renewal_form_url": reverse("staff_membership_choice", args=[flow["key"]]),
     }
 
 
@@ -406,7 +412,9 @@ def response_context(request, flow, forms_tuple):
         if quote
         else "",
         "membership_html": render_to_string(
-            "core/partials/booking_memberships.html", membership_context(flow), request=request
+            "core/partials/booking_memberships.html",
+            membership_context(flow, request.user),
+            request=request,
         ),
         "waivers_html": render_to_string(
             "core/partials/staff_create_waivers.html", {"waiver_form": waivers}, request=request
@@ -706,7 +714,7 @@ def page_content(request):
         request,
         "core/staff_booking_create.html",
         context_card(flow)
-        | membership_context(flow)
+        | membership_context(flow, request.user)
         | {
             "flow": flow,
             "form": booking_form,

@@ -12,6 +12,7 @@ from core import (
     dashboard,
     membership_card_views,
     membership_exports,
+    membership_prompt_views,
     membership_views,
     public_booking_views,
     public_membership_views,
@@ -36,6 +37,16 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path(
+        "booking/membership-choice/",
+        membership_prompt_views.public_choice,
+        name="public_membership_choice",
+    ),
+    path(
+        "staff/bookings/draft/<uuid:token>/membership-choice/",
+        membership_prompt_views.staff_choice,
+        name="staff_membership_choice",
+    ),
     path(
         "staff/memberships/<int:pk>/card/",
         membership_card_views.setup_replacement,
