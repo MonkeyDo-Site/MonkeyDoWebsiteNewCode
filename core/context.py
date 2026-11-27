@@ -12,7 +12,11 @@ def site_context(request):
     elif name.startswith("customer_") or name in {"previous_phone", "comment_add", "comment_edit"}:
         parent = ("Customers", "/staff/customers/")
     elif name.startswith("membership_") and name != "membership_drafts":
-        parent = ("Membership drafts", "/staff/memberships/")
+        parent = (
+            ("Memberships", "/staff/memberships/purchased/")
+            if settings.MEMBERSHIP_SALES_ENABLED
+            else ("Membership drafts", "/staff/memberships/")
+        )
     return {
         "staff_parent": parent,
         "public_pricing": PricingPolicy.objects.first() or PricingPolicy(),
@@ -20,6 +24,7 @@ def site_context(request):
         "waiver_enabled": settings.WAIVER_ENABLED,
         "booking_email_enabled": settings.BOOKING_EMAIL_ENABLED,
         "booking_completion_enabled": settings.BOOKING_COMPLETION_ENABLED,
+        "membership_sales_enabled": settings.MEMBERSHIP_SALES_ENABLED,
         "backups_enabled": settings.BACKUP_ENABLED,
         "owner_scheduling_section": bool(
             request.resolver_match

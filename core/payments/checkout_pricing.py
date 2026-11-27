@@ -30,7 +30,7 @@ def visit_lines(
     if special_admissions is not None:
         lines = [Line("Owner-priced admissions", 1, amount(special_admissions), True)]
         if socks:
-            lines.append(Line("Grip socks — pick up upon arrival", socks, policy.sock_price, True))
+            lines.append(Line("Grip socks — pick up upon arrival", socks, policy.sock_price, False))
         fee_units = 0
     if type(fee_units) is not int or fee_units < 0:
         raise ValidationError("Cancellation units must be nonnegative integers.")

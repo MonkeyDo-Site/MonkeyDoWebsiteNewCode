@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods, require_safe
 
 from .customers import correct_previous_phone, create_customer, save_comment, update_customer
 from .forms import CommentForm, CustomerForm, PreviousPhoneForm, phone_search_digits
+from .membership_sales import membership_status
 from .memberships import current_draft
 from .models import AuditEvent, Customer, CustomerComment, PaymentOperation, WaiverSignature
 from .name_matching import match_rank, name_candidates
@@ -125,6 +126,14 @@ def customer_detail(request, pk):
         if request.user.has_perm("core.view_customercomment")
         else []
     )
+    purchased_memberships = []
+    if settings.MEMBERSHIP_SALES_ENABLED and request.user.has_perm("core.view_membershippurchase"):
+        for member in (
+            customer.membership_purchases.filter(membership__ends_on__gte=today)
+            .select_related("membership", "billing_state")
+            .order_by("membership__ends_on", "pk")[:3]
+        ):
+            purchased_memberships.append((member, membership_status(member)))
     return render(
         request,
         "core/customer_detail.html",
@@ -156,12 +165,13 @@ def customer_detail(request, pk):
             "comments": comments,
             "membership_drafts": [
                 current_draft(root)
-                for root in customer.membership_drafts.select_related(
-                    "pricing", "fee_policy"
-                ).prefetch_related("revisions")
+                for root in customer.membership_drafts.filter(purchase__isnull=True)
+                .select_related("pricing", "fee_policy")
+                .prefetch_related("revisions")
             ]
             if request.user.has_perm("core.view_membershipdraft")
             else [],
+            "purchased_memberships": purchased_memberships,
             "can_view_bookings": can_view_bookings,
             "first_today": todays[0] if todays else None,
             "more_today": todays[1:],

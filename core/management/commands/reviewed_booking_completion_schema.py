@@ -41,9 +41,16 @@ REVIEWED_NAMES = (
     "0051_paper_waiver_version",
     "0052_booking_comment_scope",
     "0053_staff_capacity_hold",
+    "0054_active_membership_purchases",
+    "0055_membership_payment_purposes",
+    "0056_membership_message_link",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "membershippurchase",
+    "membershipinstallment",
+    "membershipinvoice",
+    "membershipcardmandate",
     "paperwaiver",
     "zellereceipt",
     "zelleapplication",
@@ -67,6 +74,7 @@ IMMUTABLE = (
     "backuprestorecheck",
 )
 MUTABLE = (
+    "membershipbilling",
     "paymentmethod",
     "paymentoperation",
     "durablejob",
@@ -102,7 +110,7 @@ def reviewed_plan():
     ]
     if plan not in allowed:
         raise CommandError(
-            "Unexpected migration plan. Only the reviewed ordinary-booking stage 0027–0053 is allowed."
+            "Unexpected migration plan. Only the reviewed booking/membership stage 0027–0056 is allowed."
         )
     return plan
 

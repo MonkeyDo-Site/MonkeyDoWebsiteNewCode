@@ -272,12 +272,41 @@ def request_operation(
         or kind not in PaymentOperation.Kind.values
     ):
         raise ValidationError("Choose a supported payment operation.")
-    if purpose not in {"arrival", "cancellation", "no_show", "follow_up", "correction"}:
+    if purpose not in {
+        "arrival",
+        "cancellation",
+        "no_show",
+        "follow_up",
+        "correction",
+        "member_purchase",
+        "member_installment",
+    }:
         raise ValidationError("Choose a supported payment purpose.")
     if kind == "receipt":
         writes_allowed()
     if kind != "receipt":
         purpose = "correction"
+    member_source = False
+    if kind == "receipt" and (sale.kind == "membership" or purpose.startswith("member_")):
+        from core.membership_records import MembershipInvoice
+        from core.membership_sales import authorize
+
+        authorize(actor, collect=True)
+        invoice = (
+            MembershipInvoice.objects.select_related(
+                "installment__purchase__billing_state__mandate"
+            )
+            .filter(sale=sale)
+            .first()
+        )
+        if not invoice or purpose != (
+            "member_purchase" if invoice.installment.number == 1 else "member_installment"
+        ):
+            raise ValidationError("Use the accepted membership installment before collecting.")
+        mandate = invoice.installment.purchase.billing_state.mandate
+        if tender == "card" and (not mandate or str(mandate.method_id) != str(method_id)):
+            raise ValidationError("Use the currently accepted membership payment method.")
+        member_source = True
     if purpose == "correction":
         require_actor(actor, "core.collect_payment", owner=True)
     if tender != "card":
@@ -332,6 +361,7 @@ def request_operation(
                 raise ValidationError("Use the currently reviewed card agreement for this booking.")
         if (
             not method.reusable
+            and not member_source
             and method.booking_id != sale.booking_id
             and not method.agreements.filter(
                 booking_id=sale.booking_id, resolved_at__isnull=True
@@ -449,6 +479,10 @@ def record_result(
         from .checkout import resolve_if_settled
 
         resolve_if_settled(operation.sale.booking_id)
+    if state == "succeeded" and operation.sale.kind == "membership":
+        from core.membership_sales import payment_updated
+
+        payment_updated(operation)
     if state in {"unknown", "action", "declined"} and settings.BOOKING_EMAIL_ENABLED:
         from core.communications.content import owner_payment_issue
         from core.communications.models import MessageDelivery

@@ -1,0 +1,490 @@
+"""Explicit accepted purchases. Quotes never activate benefits or collect funds."""
+
+import uuid
+from datetime import date, datetime, time
+from decimal import Decimal
+
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
+
+from .availability import NEW_YORK
+from .membership_calendar import schedule
+from .membership_records import (
+    MembershipBilling,
+    MembershipCardMandate,
+    MembershipInstallment,
+    MembershipInvoice,
+    MembershipPurchase,
+)
+from .membership_terms import VERSION, rules_snapshot, terms
+from .models import (
+    AuditEvent,
+    Customer,
+    MembershipDraft,
+    MembershipDraftCycle,
+    MembershipPricing,
+    PricingPolicy,
+)
+from .payments.amounts import ZERO, amount
+from .payments.invoices import received, total
+from .payments.ledger import (
+    fingerprint,
+    full_allocation,
+    lock_request,
+    record_manual,
+    request_operation,
+    writes_allowed,
+)
+from .payments.models import FinancialLine, FinancialSale, PaymentMethod
+from .permissions import require_actor
+from .pricing import Line, quote_lines
+
+
+def enabled():
+    from .booking_completion import enabled as booking_enabled
+
+    booking_enabled()
+    if not settings.MEMBERSHIP_SALES_ENABLED:
+        raise ValidationError("Active membership sales are not enabled.")
+
+
+def authorize(actor, *, collect=False):
+    enabled()
+    for permission in (
+        "core.view_customer",
+        "core.view_membershippurchase",
+        "core.add_membershippurchase",
+    ):
+        require_actor(actor, permission)
+    if collect:
+        require_actor(actor, "core.collect_payment")
+
+
+def today():
+    return timezone.localdate(timezone=NEW_YORK)
+
+
+def offer(
+    *,
+    actor,
+    customer,
+    kind,
+    places,
+    months,
+    billing,
+    starts_on,
+    expected_method,
+    minimum_override=False,
+    comped=False,
+):
+    authorize(actor)
+    if any(type(value) is not bool for value in (minimum_override, comped)):
+        raise ValidationError("Review the owner exception choices.")
+    if minimum_override or comped:
+        require_actor(actor, "core.add_membershippurchase", owner=True)
+    if kind not in {"subscription", "unlimited"} or billing not in {"monthly", "prepaid"}:
+        raise ValidationError("Choose a supported membership and billing option.")
+    if type(places) is not int or not 1 <= places <= 2147483647:
+        raise ValidationError("Enter a positive whole number of membership places.")
+    if type(months) is not int or months < (1 if minimum_override or comped else 3):
+        raise ValidationError(
+            "New memberships require at least three months unless the owner approves an exception."
+        )
+    if type(starts_on) is not date or starts_on < today():
+        raise ValidationError("Choose today or a future membership start date.")
+    if expected_method not in {"card", "cash", "check", "zelle", "gift_card"}:
+        raise ValidationError("Choose a supported membership payment method.")
+    pricing, policy = MembershipPricing.objects.first(), PricingPolicy.objects.first()
+    if not pricing or not policy:
+        raise ValidationError("Membership pricing is unavailable.")
+    rows = schedule(starts_on, months)
+    unit = Decimal("0.00") if comped else getattr(pricing, kind)
+    installments = []
+    for row in rows:
+        due = billing == "monthly" or row["number"] == 1
+        if not due or comped:
+            continue
+        tender = expected_method if row["number"] == 1 else "card"
+        quote = quote_lines(
+            [
+                Line(
+                    f"{kind.title()} Membership",
+                    places,
+                    unit * (months if billing == "prepaid" else 1),
+                    False,
+                )
+            ],
+            policy,
+            card_base=None if tender == "card" else ZERO,
+        )
+        if amount(quote["total"]) > Decimal("20000000.00"):
+            raise ValidationError(
+                "The installment exceeds the supported payment amount. Review places and billing."
+            )
+        installments.append(
+            {
+                "number": row["number"],
+                "due_on": (today() if row["number"] == 1 else row["charge_on"]).isoformat(),
+                "quote": quote,
+            }
+        )
+    data = {
+        "customer_id": customer.pk,
+        "customer_revision": customer.revision,
+        "kind": kind,
+        "places": places,
+        "months": months,
+        "billing": billing,
+        "starts_on": starts_on.isoformat(),
+        "ends_on": rows[-1]["ends_on"].isoformat(),
+        "unit_price": str(unit),
+        "pricing_id": pricing.pk,
+        "policy_id": policy.pk,
+        "comped": comped,
+        "minimum_override": minimum_override,
+        "expected_method": expected_method,
+        "installments": installments,
+        "rules": rules_snapshot(),
+        "terms_version": VERSION,
+        "terms": terms(
+            kind=kind,
+            starts_on=starts_on,
+            months=months,
+            billing=billing,
+            minimum_override=minimum_override,
+            comped=comped,
+        ),
+    }
+    if installments:
+        first = installments[0]
+        data["terms"] += (
+            f" The accepted price is ${unit:.2f} per place per month for {places} place(s)."
+            f" The first payment due today is ${first['quote']['total']}, including a card processing fee of ${first['quote']['processing_fee']}. Membership and membership processing fees are not subject to sales tax."
+        )
+        if billing == "monthly":
+            data["terms"] += (
+                f" The remaining {months - 1} monthly installments use the accepted saved card."
+                f" Each is ${installments[1]['quote']['total'] if len(installments) > 1 else first['quote']['total']}, including the accepted card processing fee."
+                " Charge dates follow the original membership start day; if that day is absent, the charge falls on the month's last day and the benefits reset the following day."
+                if months > 1
+                else " There are no further installments in this owner-approved term."
+            )
+    return data | {"fingerprint": fingerprint(data), "cycles": rows}
+
+
+@transaction.atomic
+def purchase(
+    *,
+    actor,
+    request_key,
+    reviewed,
+    accepted,
+    method_id=None,
+    send_confirmation=None,
+    verified_received=False,
+    received_on=None,
+    **values,
+):
+    authorize(actor, collect=True)
+    writes_allowed()
+    key = lock_request(request_key)
+    prior = MembershipPurchase.objects.select_related("membership").filter(request_key=key).first()
+    if prior:
+        if prior.actor_id != actor.pk or prior.fingerprint != reviewed:
+            raise ValidationError(
+                "This membership request has already been used. Open the saved membership."
+            )
+        return prior
+    if accepted is not True:
+        raise ValidationError("Review and accept the membership terms before confirming.")
+    customer = Customer.objects.select_for_update().get(pk=values["customer"].pk)
+    values["customer"] = customer
+    data = offer(actor=actor, **values)
+    if data["fingerprint"] != reviewed:
+        raise ValidationError(
+            "The membership or price changed. Review the current total and confirm again."
+        )
+    if data["comped"] and type(send_confirmation) is not bool:
+        raise ValidationError(
+            "Choose Yes or No for sending the complimentary membership confirmation."
+        )
+    method = None
+    needs_card = not data["comped"] and (
+        data["billing"] == "monthly" or data["expected_method"] == "card"
+    )
+    if needs_card:
+        method = (
+            PaymentMethod.objects.select_for_update()
+            .filter(
+                pk=method_id,
+                customer=customer,
+                state="active",
+                reusable=True,
+                environment="sandbox",
+            )
+            .exclude(provider_method__isnull=True)
+            .first()
+        )
+        if not method:
+            raise ValidationError(
+                "Choose a current saved card for the membership payment and scheduled installments."
+            )
+    elif method_id:
+        raise ValidationError("No card is needed for this selected membership payment.")
+    if not data["comped"] and data["expected_method"] != "card" and verified_received is not True:
+        raise ValidationError("Confirm that the membership payment was actually received.")
+    root = MembershipDraft.objects.create(
+        customer=customer,
+        kind=data["kind"],
+        places=data["places"],
+        months=data["months"],
+        billing=data["billing"],
+        starts_on=values["starts_on"],
+        ends_on=date.fromisoformat(data["ends_on"]),
+        unit_price=data["unit_price"],
+        pricing_id=data["pricing_id"],
+        fee_policy_id=data["policy_id"],
+        expected_method=data["expected_method"],
+        creation_key=key,
+        actor=actor,
+        snapshot={
+            "status": "purchase",
+            "test_mode": True,
+            "original_anchor_day": values["starts_on"].day,
+            "terms_accepted": True,
+            "monthly_subtotal": str(amount(data["unit_price"]) * data["places"]),
+            "term_subtotal": str(amount(data["unit_price"]) * data["places"] * data["months"]),
+        },
+    )
+    row_by_number = {row["number"]: row for row in data["installments"]}
+    cycles = []
+    for row in data["cycles"]:
+        installment = row_by_number.get(row["number"])
+        cycles.append(
+            MembershipDraftCycle(
+                draft=root,
+                **(
+                    row
+                    | {
+                        "charge_on": date.fromisoformat(installment["due_on"])
+                        if installment
+                        else None
+                    }
+                ),
+                quote=installment["quote"] if installment else None,
+            )
+        )
+    MembershipDraftCycle.objects.bulk_create(cycles)
+    member = MembershipPurchase.objects.create(
+        membership=root,
+        customer=customer,
+        request_key=key,
+        fingerprint=reviewed,
+        terms_version=VERSION,
+        terms_text=data["terms"],
+        benefit_rules=data["rules"],
+        purpose="complimentary" if data["comped"] else "purchase",
+        send_confirmation=send_confirmation if data["comped"] else True,
+        actor=actor,
+    )
+    mandate = (
+        MembershipCardMandate.objects.create(
+            purchase=member, method=method, text=data["terms"], actor=actor
+        )
+        if method
+        else None
+    )
+    MembershipBilling.objects.create(purchase=member, mandate=mandate)
+    for cycle in cycles:
+        item = row_by_number.get(cycle.number)
+        if item:
+            MembershipInstallment.objects.create(
+                purchase=member,
+                number=cycle.number,
+                cycle=cycle,
+                due_on=item["due_on"],
+                quote=item["quote"],
+            )
+    AuditEvent.objects.create(
+        actor=actor,
+        action="membership.purchased",
+        record_type="membership",
+        record_id=str(root.pk),
+        changes={
+            "kind": root.kind,
+            "places": root.places,
+            "starts_on": data["starts_on"],
+            "ends_on": data["ends_on"],
+            "billing": root.billing,
+            "comped": data["comped"],
+            "terms_version": VERSION,
+            "received": False,
+        },
+    )
+    if data["comped"]:
+        queue_confirmation(member)
+    else:
+        first = member.installments.first()
+        invoice = invoice_for(first, actor=actor, tender=root.expected_method)
+        operation = request_operation(
+            actor=actor,
+            sale_id=invoice.sale_id,
+            request_key=uuid.uuid5(key, "first-payment"),
+            tender=root.expected_method,
+            allocation=full_allocation(invoice.sale),
+            method_id=method.pk if root.expected_method == "card" else None,
+            purpose="member_purchase",
+            received_on=received_on,
+        )
+        if operation.tender == "card":
+            from .payments.jobs import enqueue
+
+            enqueue(kind="payment_dispatch", reference=operation.pk, key=f"dispatch:{operation.pk}")
+        else:
+            record_manual(actor=actor, operation_id=operation.pk, received=True)
+    return member
+
+
+@transaction.atomic
+def invoice_for(installment, *, actor, tender):
+    authorize(actor, collect=True)
+    installment = MembershipInstallment.objects.select_related("purchase__membership").get(
+        pk=installment.pk
+    )
+    purchase = installment.purchase
+    root = purchase.membership
+    quote = installment.quote
+    # Later alternate-tender/credit changes require an explicit revised allocation.
+    expected = root.expected_method if installment.number == 1 else "card"
+    if tender != expected:
+        raise ValidationError("Review the membership installment payment method before collecting.")
+    key = lock_request(uuid.uuid5(purchase.request_key, f"installment:{installment.number}"))
+    existing = MembershipInvoice.objects.filter(installment=installment).first()
+    if existing:
+        return existing
+    sale = FinancialSale.objects.create(
+        creation_key=key,
+        fingerprint=fingerprint(
+            {"membership": root.pk, "installment": installment.number, "quote": quote}
+        ),
+        customer=purchase.customer,
+        kind="membership",
+        customer_label=purchase.customer.last_name,
+        subtotal=quote["subtotal"],
+        processing_fee=quote["processing_fee"],
+        sales_tax=quote["sales_tax"],
+        total=quote["total"],
+        tax_rate=quote["rates"]["tax_rate"],
+        fee_rate=quote["rates"]["card_fee_rate"],
+        policy_id_at_sale=root.fee_policy_id,
+        service_at=timezone.make_aware(
+            datetime.combine(installment.cycle.starts_on, time.min), NEW_YORK
+        ),
+        actor=actor,
+    )
+    line = quote["lines"][0]
+    FinancialLine.objects.create(
+        sale=sale,
+        position=1,
+        category="membership_" + root.kind,
+        description=line["label"],
+        quantity=line["quantity"],
+        unit_price=line["unit_price"],
+        net=quote["subtotal"],
+        fee=quote["processing_fee"],
+        item_tax=ZERO,
+        fee_tax=ZERO,
+        taxable=False,
+    )
+    return MembershipInvoice.objects.create(installment=installment, sale=sale)
+
+
+def installment_paid(installment):
+    try:
+        sale = installment.invoice.sale
+    except MembershipInvoice.DoesNotExist:
+        return False
+    return received(sale) >= total(sale)
+
+
+def membership_status(member, *, on=None):
+    on = on or today()
+    root = member.membership
+    billing = member.billing_state
+    if billing.stopped_on and billing.stopped_on <= on:
+        return "cancelled"
+    if root.ends_on < on:
+        return "expired"
+    if member.purpose != "complimentary":
+        installments = list(member.installments.select_related("invoice__sale").order_by("number"))
+        if not installments or not installment_paid(installments[0]):
+            return "pending"
+        if any(item.due_on <= on and not installment_paid(item) for item in installments):
+            return "overdue"
+    return "scheduled" if root.starts_on > on else "active"
+
+
+def payment_updated(operation):
+    try:
+        invoice = operation.sale.membership_invoice
+    except MembershipInvoice.DoesNotExist:
+        return
+    if (
+        operation.kind == "receipt"
+        and invoice.installment.number == 1
+        and installment_paid(invoice.installment)
+    ):
+        queue_confirmation(invoice.installment.purchase)
+
+
+def queue_confirmation(member):
+    if (
+        not member.send_confirmation
+        or member.confirmation_mode == "combined"
+        or not member.customer.email
+    ):
+        return
+    from .communications.models import MessageDelivery
+    from .communications.services import enqueue
+    from .date_display import display_date
+
+    root = member.membership
+    if MessageDelivery.objects.filter(dedupe_key=f"membership-confirmation:{member.pk}").exists():
+        return
+    paid = ZERO
+    for item in member.installments.select_related("invoice__sale"):
+        try:
+            paid += received(item.invoice.sale)
+        except MembershipInvoice.DoesNotExist:
+            pass
+    content = [
+        f"Dear Family {member.customer.last_name},",
+        "",
+        f"Your {root.get_kind_display()} Membership begins on {display_date(root.starts_on, 'l, F j, Y')} and continues through {display_date(root.ends_on, 'l, F j, Y')}.",
+        f"{root.places} {root.get_kind_display()} Membership" + ("s" if root.places != 1 else ""),
+        "",
+        "Enjoy two free play sessions per membership each month, then just $5.99 for each additional play session that month. Your membership also includes two free adults for every visit, 25% off supervised play, and 15% off parties."
+        if root.kind == "subscription"
+        else "Enjoy one free visit per membership each day, with two free adults, plus 15% off parties. Unlimited Membership benefits exclude supervised play and Chol Hamoed. You may book those visits at full price.",
+        "Your membership is complimentary."
+        if member.purpose == "complimentary"
+        else f"Your payment of ${paid:.2f} was received.",
+        "The purchased term ends without automatic renewal.",
+    ]
+    next_payment = member.installments.filter(number__gt=1).order_by("number").first()
+    if next_payment:
+        content.append(
+            f"Your next scheduled membership payment is ${next_payment.quote['total']} on {display_date(next_payment.due_on, 'F j, Y')}."
+        )
+    enqueue(
+        key=f"membership-confirmation:{member.pk}",
+        kind="membership_confirmation",
+        recipient=member.customer.email,
+        subject=f"Your Monkey Do {root.get_kind_display()} Membership is ready!",
+        text="\n".join(content),
+        customer=member.customer,
+        membership=member,
+        actor=member.actor,
+    )

@@ -648,6 +648,13 @@ class SessionReservationBlock(models.Model):
 # Registered with the existing core app; strings in FKs avoid import cycles.
 from .backups.models import BackupDownload, BackupRestoreCheck, BackupRun  # noqa: E402,F401
 from .communications.models import MailProviderEvent, MessageDelivery, MessageEvent  # noqa: E402,F401
+from .membership_records import (  # noqa: E402,F401
+    MembershipBilling,
+    MembershipCardMandate,
+    MembershipInstallment,
+    MembershipInvoice,
+    MembershipPurchase,
+)
 from .payments.models import (  # noqa: E402,F401
     BookingCardAgreement,
     BookingChargeState,

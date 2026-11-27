@@ -5,6 +5,7 @@ from django.views.generic import RedirectView
 
 from core import (
     account_views,
+    active_membership_views,
     booking_comments,
     booking_views,
     customer_views,
@@ -170,6 +171,26 @@ urlpatterns = [
     ),
     path("staff/scheduling/horizon/", recurring_views.horizon_settings, name="horizon_settings"),
     path("staff/memberships/", membership_views.drafts, name="membership_drafts"),
+    path(
+        "staff/memberships/purchased/",
+        active_membership_views.memberships,
+        name="active_memberships",
+    ),
+    path(
+        "staff/memberships/purchase/",
+        active_membership_views.membership_purchase,
+        name="membership_purchase",
+    ),
+    path(
+        "staff/memberships/offer/",
+        active_membership_views.membership_offer,
+        name="membership_offer",
+    ),
+    path(
+        "staff/memberships/purchased/<int:pk>/",
+        active_membership_views.membership_overview,
+        name="membership_overview",
+    ),
     path("staff/memberships/new/", membership_views.draft_create, name="membership_create"),
     path(
         "staff/memberships/pricing/", membership_views.membership_pricing, name="membership_pricing"

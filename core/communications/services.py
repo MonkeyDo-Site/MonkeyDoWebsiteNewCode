@@ -22,6 +22,7 @@ def enqueue(
     text,
     customer=None,
     booking=None,
+    membership=None,
     unsigned_waiver=False,
     actor=None,
 ):
@@ -38,6 +39,10 @@ def enqueue(
         "booking_id": booking.pk if booking else None,
         "template_version": "MD-EMAIL-2026-03",
     }
+    if membership is not None:
+        if customer is None or membership.customer_id != customer.pk:
+            raise ValidationError("The membership message belongs to another customer.")
+        data["membership_id"] = membership.pk
     message, created = MessageDelivery.objects.get_or_create(
         dedupe_key=key, defaults=data | {"fingerprint": fingerprint(data), "actor": actor}
     )
@@ -94,6 +99,7 @@ def claim(message_id):
                 text=message.text_body,
                 customer=message.customer,
                 booking=message.booking,
+                membership=message.membership,
                 unsigned_waiver=message.unsigned_waiver,
                 actor=message.actor,
             )

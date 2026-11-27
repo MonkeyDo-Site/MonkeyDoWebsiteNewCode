@@ -13,12 +13,37 @@ from .models import PaymentMethod, PaymentOperation
 
 
 def outstanding(method):
-    return (
+    from core.membership_records import MembershipBilling
+    from core.membership_sales import installment_paid, today
+
+    if (
         method.agreements.filter(resolved_at__isnull=True).exists()
         or PaymentOperation.objects.filter(
             method=method, state__in=["ready", "sending", "unknown", "action"]
         ).exists()
-    )
+    ):
+        return True
+    on = today()
+    for billing in MembershipBilling.objects.filter(mandate__method=method).select_related(
+        "purchase__membership"
+    ):
+        root = billing.purchase.membership
+        if (
+            root.billing == "monthly"
+            and root.ends_on >= on
+            and (billing.stopped_on is None or billing.stopped_on > on)
+        ):
+            return True
+        # Expiry never settles an unpaid installment. Conversely, a prepaid,
+        # fully paid term does not create a continuing scheduled-card obligation.
+        if any(
+            not installment_paid(item)
+            for item in billing.purchase.installments.filter(due_on__lte=on).select_related(
+                "invoice__sale"
+            )
+        ):
+            return True
+    return False
 
 
 def queue_disposal(method):

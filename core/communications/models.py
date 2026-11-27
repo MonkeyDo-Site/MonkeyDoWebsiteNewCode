@@ -16,6 +16,13 @@ class MessageDelivery(models.Model):
     booking = models.ForeignKey(
         "core.Booking", null=True, on_delete=models.PROTECT, related_name="messages"
     )
+    membership = models.ForeignKey(
+        "core.MembershipPurchase",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="messages",
+    )
     kind = models.CharField(
         max_length=40,
         choices=[
@@ -24,6 +31,7 @@ class MessageDelivery(models.Model):
             ("waiver_completed", "Waiver Completed Notification"),
             ("booking_cancelled", "Booking Cancellation"),
             ("booking_no_show", "Booking No-show"),
+            ("membership_confirmation", "Membership Confirmation"),
             ("payment_issue", "Owner Payment Alert"),
             ("backup_alert", "Owner Backup Alert"),
             ("email_issue", "Owner Email Alert"),

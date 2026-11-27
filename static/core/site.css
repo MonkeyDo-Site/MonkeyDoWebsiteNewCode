@@ -1176,3 +1176,20 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .staff-create-waiver-dialog .waiver-legal{max-height:32vh;overflow:auto;padding:16px;background:#fff;border:1px solid #c8d4c9;margin-bottom:18px}
 @media(max-width:1000px){.staff-create-top{grid-template-columns:1fr}.staff-create-session{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.staff-create-session,.staff-create-paper fieldset{grid-template-columns:1fr}.staff-create-paper fieldset [data-field=minors]{grid-column:auto}.staff-create-form .arrival-counts{grid-template-columns:1fr 1fr}.staff-create-waiver-dialog{padding:16px}}
+
+/* Membership purchase and overview keep decisions and money together. */
+.membership-purchase{max-width:none}
+.membership-purchase-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1rem;align-items:start}
+.membership-purchase-grid>*{min-width:0}
+.membership-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1rem}
+.membership-price-card{background:var(--cream,#faf7ef);border:1px solid #bcc9bc;border-radius:1.15rem;padding:1.25rem;margin-bottom:1rem}
+.membership-totals{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.7rem 1rem;margin:1rem 0}
+.membership-totals dt,.membership-totals dd{margin:0;font-size:.93rem}
+.membership-totals dd{text-align:right;max-width:22rem}
+.membership-totals .total{border-top:1px solid #cbd3c7;padding-top:.8rem;font-weight:700}
+.membership-schedule-row{display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid #cbd3c7;padding:.7rem 0;font-size:.93rem}
+.membership-terms{margin-top:1rem}
+.membership-terms details p{font-size:.9rem;line-height:1.6}
+.membership-purchase button[data-membership-confirm]{width:100%;margin-top:.5rem}
+.membership-purchase [hidden]{display:none!important}
+@media(max-width:760px){.membership-purchase-grid{grid-template-columns:minmax(0,1fr)}.membership-totals dd{max-width:12rem}.membership-price-card{padding:1rem}.membership-choice-grid{gap:0 .7rem}}

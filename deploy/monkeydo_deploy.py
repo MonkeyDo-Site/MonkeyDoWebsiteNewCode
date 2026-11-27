@@ -78,6 +78,9 @@ BOOKING_MIGRATIONS = {
     "0051_paper_waiver_version.py": "5dc195ee1151ada3c6f2f412f38917b077399ee467ee5823270bfc4230f2cb11",
     "0052_booking_comment_scope.py": "66880bf106cd5430b2f0dbe160fdd5838958c2aeef20e53e40cbe267d40a99e8",
     "0053_staff_capacity_hold.py": "888b8bf991c8f465428c6565996481d34c9d3cef31608b768e473522ee1011e5",
+    "0056_membership_message_link.py": "7c95ec3672675c942cd1cb59427c05cf193617de5c9ae5f99beda0c1fb5b9d83",
+    "0055_membership_payment_purposes.py": "3236e553b0eec76ba041a8c40da921f69c41ee8dbe7ed0c16ae2d310fae4ece8",
+    "0054_active_membership_purchases.py": "73bc2c7336a5c3d39e071411b130252972559377f29f25b2322bdb016ce96c2d",
 }
 BOOKING_UNITS = {
     "monkeydo-functional-backup.service.example": "1975613e1c7bc71881ffba37a41e56f66474f7044f2c72fba2103c08b9b6e1af",

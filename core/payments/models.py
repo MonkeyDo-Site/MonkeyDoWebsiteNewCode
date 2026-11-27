@@ -75,7 +75,7 @@ class FinancialSale(FinancialFact):
         default="visit",
         choices=[
             (x, x.replace("_", " ").title())
-            for x in ("visit", "cancellation", "partial_fee", "adjustment")
+            for x in ("visit", "cancellation", "partial_fee", "adjustment", "membership")
         ],
     )
     booking_version = models.PositiveIntegerField(default=1)
@@ -177,7 +177,15 @@ class PaymentOperation(models.Model):
         default="arrival",
         choices=[
             (x, x.replace("_", " ").title())
-            for x in ("arrival", "cancellation", "no_show", "follow_up", "correction")
+            for x in (
+                "arrival",
+                "cancellation",
+                "no_show",
+                "follow_up",
+                "correction",
+                "member_purchase",
+                "member_installment",
+            )
         ],
     )
     amount = models.DecimalField(max_digits=14, decimal_places=2)

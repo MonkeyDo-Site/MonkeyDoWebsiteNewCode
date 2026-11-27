@@ -191,6 +191,11 @@ BOOKING_STAGING_ORIGIN = "https://staging.monkeydoplay.com"
 BOOKING_REPLY_TO = "monkeydoplay@gmail.com"
 
 BOOKING_COMPLETION_ENABLED = os.environ.get("MONKEYDO_BOOKING_COMPLETION") == "1"
+MEMBERSHIP_SALES_ENABLED = os.environ.get("MONKEYDO_ACTIVE_MEMBERSHIPS") == "1"
+if MEMBERSHIP_SALES_ENABLED and (not BOOKING_COMPLETION_ENABLED or DESIGN_REVIEW_ONLY):
+    raise ImproperlyConfigured(
+        "Active memberships require the completed sandbox booking foundation."
+    )
 if BOOKING_COMPLETION_ENABLED and not all(
     (CUSTOMER_TEST_BOOKING, PAYMENT_SANDBOX_ENABLED, WAIVER_ENABLED, BOOKING_EMAIL_ENABLED)
 ):
