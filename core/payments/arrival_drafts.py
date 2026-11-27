@@ -41,6 +41,8 @@ FIELDS = (
     "member_billing",
     "member_starts_on",
     "member_card",
+    "member_card_authorization",
+    "member_retain",
     "member_credit",
     "member_accepted",
     "member_received",

@@ -1,13 +1,22 @@
 """Membership controls live on arrival, with the same reviewed final action."""
 
+import copy
+import uuid
+
 from django import forms
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.utils import timezone
 
 from .availability import NEW_YORK
 from .models import PaymentMethod
 
 
 class SavedCard(forms.ModelChoiceField):
+    def to_python(self, value):
+        return None if value == "new" else super().to_python(value)
+
     def label_from_instance(self, obj):
         return f"{obj.brand or 'Card'} ending in {obj.last_four}"
 
@@ -21,7 +30,29 @@ def configure(form, booking, actor):
         )
     ):
         return
+    available = Q(reusable=True)
+    values = form.data if form.is_bound else form.initial
+    form.arrival_card_authority = None
+    if values.get("member_card_authorization"):
+        from .membership_card_setup import source
+        from .membership_records import MembershipCardAuthorization
+
+        try:
+            authority = MembershipCardAuthorization.objects.get(
+                pk=values["member_card_authorization"],
+                actor=actor,
+                customer=booking.customer,
+                request_key=purchase_key(values.get("request_key")),
+                expires_at__gte=timezone.now(),
+            )
+            selected = source(authority)
+            if selected.customer_id == booking.customer_id:
+                available |= Q(pk=selected.pk)
+                form.arrival_card_authority = authority
+        except (MembershipCardAuthorization.DoesNotExist, ValidationError, ValueError, TypeError):
+            pass
     fields = {
+        "member_card_authorization": forms.UUIDField(required=False, widget=forms.HiddenInput),
         "member_add": forms.BooleanField(required=False, label="Buy a membership with this visit"),
         "member_kind": forms.ChoiceField(
             required=False,
@@ -54,8 +85,8 @@ def configure(form, booking, actor):
         "member_card": SavedCard(
             required=False,
             queryset=PaymentMethod.objects.filter(
+                available,
                 customer=booking.customer,
-                reusable=True,
                 state="active",
                 environment="sandbox",
                 provider_method__isnull=False,
@@ -94,12 +125,18 @@ def configure(form, booking, actor):
             ),
         )
     form.fields.update(fields)
+    if values.get("member_card") == "new":
+        form.fields["member_card"].widget.choices = [
+            *form.fields["member_card"].choices,
+            ("new", "Enter a new card"),
+        ]
 
 
 def clean(form):
     data = form.cleaned_data
     if not data.get("member_add"):
         return
+    data["member_card_new"] = form.data.get("member_card") == "new"
     for name in ("kind", "places", "months", "billing", "starts_on"):
         if not data.get("member_" + name):
             form.add_error("member_" + name, "Complete this membership choice.")
@@ -146,6 +183,7 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True, pending_int
         data=data,
         selection=selection(data),
         method_id=member.pk if member else None,
+        card_authorization_id=data.get("member_card_authorization"),
         validate_waivers=validate_waivers,
     )
     return (
@@ -178,6 +216,7 @@ def ready(data, combined):
                 )
             )
             or data.get("member_card")
+            or data.get("member_card_new")
         )
         and (
             not combined["offer"]["comped"] or data.get("member_send_confirmation") in {"yes", "no"}
@@ -219,6 +258,7 @@ def confirm(
         data=data,
         selection=selection(data),
         method_id=member.pk if member else None,
+        card_authorization_id=data.get("member_card_authorization"),
         request_key=request_key,
         reviewed_hash=reviewed_hash,
         confirmed=confirmed,
@@ -229,3 +269,37 @@ def confirm(
     from .membership_records import MembershipArrivalIntent
 
     return record if isinstance(record, MembershipArrivalIntent) else record.checkout
+
+
+def purchase_key(arrival_key):
+    return uuid.uuid5(uuid.UUID(str(arrival_key)), "membership")
+
+
+def card_purchase(booking, data, combined):
+    if not combined or combined["offer"]["comped"]:
+        return None
+    offer = combined["offer"]
+    return dict(
+        operation="purchase",
+        prior_id="",
+        customer=booking.customer_id,
+        **{name: data["member_" + name] for name in ("kind", "places", "months", "billing")},
+        starts_on=data["member_starts_on"].isoformat(),
+        expected_method=data["method"],
+        credit_amount=str(data.get("member_credit") or 0),
+        minimum_override=data.get("member_minimum_override", False),
+        comped=False,
+        request_key=str(purchase_key(data["request_key"])),
+        reviewed=offer["fingerprint"],
+    )
+
+
+def card_review(combined):
+    from .payments.ledger import fingerprint
+
+    if not combined:
+        return ""
+    facts = copy.deepcopy(combined["facts"])
+    for name in ("method_id", "card_authorization_id", "membership_card_last_four"):
+        facts.pop(name, None)
+    return fingerprint(facts)

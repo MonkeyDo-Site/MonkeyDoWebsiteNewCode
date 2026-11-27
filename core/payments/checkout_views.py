@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from core.membership_arrival_forms import card_purchase, card_review
 from core.membership_arrival_forms import confirm as arrival_confirm
 from core.membership_arrival_forms import preview as arrival_preview
 from core.membership_arrival_forms import ready as membership_ready
@@ -714,13 +715,23 @@ def checkout(request, pk, kind="arrival"):
                 ),
                 "waiver": waiver,
                 "membership_terms": combined["offer"]["terms"] if combined else "",
+                "membership_card_purchase": card_purchase(booking, form.cleaned_data, combined),
+                "membership_card_review": card_review(combined),
+                "membership_card_authorization_offer": getattr(
+                    form, "arrival_card_authority", None
+                ).offer_fingerprint
+                if getattr(form, "arrival_card_authority", None)
+                else "",
                 "membership_ready": membership_ready(form.cleaned_data, combined),
                 "membership_needs_card": bool(
                     combined
                     and not combined["offer"]["comped"]
                     and (
                         combined["offer"]["billing"] == "monthly"
-                        or combined["facts"]["membership_due"] != "0.00"
+                        or (
+                            combined["offer"]["expected_method"] == "card"
+                            and combined["facts"]["membership_due"] != "0.00"
+                        )
                     )
                 ),
                 "noncard_total": noncard["total"],
@@ -741,6 +752,22 @@ def checkout(request, pk, kind="arrival"):
         "cancellation": "Cancel booking",
         "no_show": "Mark as no show",
     }[kind]
+    membership_card_configured = bool(
+        form.fields.get("member_add")
+        and settings.PAYMENT_SANDBOX_ENABLED
+        and settings.BANQUEST_API_SOURCE_KEY
+        and settings.BANQUEST_TOKENIZATION_PUBLIC_KEY.startswith("pk_")
+    )
+    setup_flow = {}
+    if membership_card_configured:
+        from core.membership_arrival_forms import purchase_key
+
+        try:
+            setup_flow = request.session.get("membership_card_flows", {}).get(
+                str(purchase_key(form["request_key"].value())), {}
+            )
+        except (ValueError, TypeError):
+            pass
     return render(
         request,
         "core/booking_checkout.html",
@@ -750,6 +777,16 @@ def checkout(request, pk, kind="arrival"):
             "reviewed": reviewed,
             "confirm_label": label,
             "heading": heading,
+            "membership_card_configured": membership_card_configured,
+            "membership_card_public_key": settings.BANQUEST_TOKENIZATION_PUBLIC_KEY,
+            "membership_card_status_url": reverse(
+                "membership_card_status", args=[setup_flow["setup_key"]]
+            )
+            if setup_flow.get("setup_key")
+            else "",
+            "membership_card_retain": (request.POST if request.method == "POST" else initial).get(
+                "member_retain", ""
+            ),
             "pending_membership": pending if recovering else None,
             "pending_receipt": status_data(pending) if recovering else None,
             "kind": kind,

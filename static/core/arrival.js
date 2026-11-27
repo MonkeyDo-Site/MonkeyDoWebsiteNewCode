@@ -7,6 +7,8 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const kinds={cash:'Cash',check:'Check',zelle:'Zelle',gift_card:'Gift card'};
   const paperForm=document.querySelector('[data-arrival-paper-form]');
   let timer,generation=0,finalizing=false,departing=false,pending=Promise.resolve(),lastQuote={},previousMethod=form.elements.method.value,statusUrl,lastRequestedInput='';
+  const memberCard=window.MonkeyDoArrivalCard?.(form,()=>update());
+  if(memberCard){const address=new URL(location.href);address.searchParams.set('draft',form.elements.arrival_draft.value);history.replaceState(null,'',address);}
   const cents=value=>Math.round(Number(value||0)*100);
   const rows=()=>[...rowHost.querySelectorAll('[data-payment-row]')];
   const totals=()=>Object.fromEntries(Object.keys(kinds).map(kind=>[kind,rows().filter(row=>row.querySelector('select').value===kind).reduce((sum,row)=>sum+cents(row.querySelector('input').value),0)]));
@@ -58,6 +60,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       const card=memberFields.querySelector('[data-membership-monthly-card]');
       const needsCard=active&&!form.elements.member_comped?.checked&&(form.elements.member_billing.value==='monthly'||(method==='card'&&lastQuote.membership_needs_card!==false));
       card.hidden=!needsCard;form.elements.member_card.disabled=!needsCard;
+      const entry=memberFields.querySelector('[data-arrival-membership-card]');if(entry)entry.hidden=!needsCard;
       const email=memberFields.querySelector('[data-membership-comped-email]');
       if(email){email.hidden=!form.elements.member_comped.checked;form.elements.member_send_confirmation.disabled=!active||email.hidden;}
       const receipt=form.querySelector('[data-arrival-field="member_received"]');
@@ -72,6 +75,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       field.hidden=!visible;for(const input of field.querySelectorAll('input,select'))input.disabled=!visible;
     }
     for(const kind of Object.keys(kinds))form.elements[kind+'_amount'].disabled=method!=='split';
+    memberCard?.sync(lastQuote);
   };
   const payload=()=>{
     const data=new FormData(form);
@@ -91,7 +95,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     warning.hidden=!(data.waiver?.mismatch&&form.elements.waiver_confirmed.value==='yes');
     for(const input of warning.querySelectorAll('input'))input.disabled=warning.hidden;
     const unsavedPaper=Boolean(form.querySelector('[name="paper-paper_signed"]')?.checked);
-    button.disabled=!ok||!data.can_confirm||unsavedPaper;
+    button.disabled=!ok||!data.can_confirm||unsavedPaper||Boolean(form.elements.member_add?.checked&&memberCard?.blocked);
     if(!ok)status.textContent=Object.values(data.errors||{}).flat().map(e=>e.message).join(' ')||'Review the details above.';
     else if(unsavedPaper)status.textContent='Save the paper-waiver details before completing arrival.';
     else if(form.elements.waiver_confirmed.value==='no')status.textContent='Complete waiver coverage before confirming arrival.';
@@ -129,6 +133,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   });
   form.addEventListener('change',event=>{
     if(event.target.form!==form)return;
+    if(event.target.name==='member_card'&&form.elements.member_card_authorization)form.elements.member_card_authorization.value='';
     if(form.elements.member_add?.checked&&(event.target.name==='method'||(event.target.name.startsWith('member_')&&!['member_accepted','member_received'].includes(event.target.name)))){
       form.elements.member_accepted.checked=false;form.elements.member_received.checked=false;
     }
@@ -174,7 +179,20 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
     }
     event.preventDefault();if(finalizing||button.disabled||!form.reportValidity())return;
     if(!form.elements.reviewed_hash.value){await update();return;}
-    clearTimeout(timer);await pending;const data=payload();data.set('confirm_review','1');
+    clearTimeout(timer);await pending;
+    if(memberCard?.needsPreparation()){
+      const acceptedReview=lastQuote.membership_card_review,acceptedOffer=lastQuote.membership_card_purchase?.reviewed;
+      form.inert=true;button.disabled=true;status.textContent='Saving the reviewed membership card…';
+      const saved=await memberCard.prepare();form.inert=false;
+      if(!saved){button.disabled=memberCard.blocked;status.textContent='Review the membership card status above before confirming.';return;}
+      await update();
+      if(lastQuote.membership_card_review!==acceptedReview){
+        if(lastQuote.membership_card_purchase?.reviewed!==acceptedOffer){form.elements.member_accepted.checked=false;await update();}
+        status.textContent='The visit or membership changed. Review the updated total before confirming again.';return;
+      }
+      if(button.disabled)return;
+    }
+    const data=payload();data.set('confirm_review','1');
     finalizing=true;form.inert=true;button.disabled=true;dots.hidden=false;label.textContent='Processing payment';status.textContent='Confirming arrival and the reviewed payment…';
     try{
       const response=await fetch(location.href,{method:'POST',body:data,headers:{Accept:'application/json'},cache:'no-store'});

@@ -68,7 +68,16 @@ def normalized(facts, member_id=PROPOSED_ID):
     return result
 
 
-def review(*, actor, booking_id, data, selection, method_id=None, validate_waivers=True):
+def review(
+    *,
+    actor,
+    booking_id,
+    data,
+    selection,
+    method_id=None,
+    validate_waivers=True,
+    card_authorization_id=None,
+):
     from .membership_arrival_pending import session_facts, waivers
 
     authorize(actor, collect=True)
@@ -123,6 +132,8 @@ def review(*, actor, booking_id, data, selection, method_id=None, validate_waive
     }
     if tender == "card":
         facts.update(payment_due_today=str(membership_due + visit_due), received_today="0.00")
+    if card_authorization_id:
+        facts["card_authorization_id"] = str(card_authorization_id)
     return {
         "offer": proposed,
         "quote": result[2],
@@ -146,6 +157,7 @@ def confirm(
     accepted,
     verified_received,
     send_confirmation=None,
+    card_authorization_id=None,
 ):
     authorize(actor, collect=True)
     checkout.authorize(actor)
@@ -188,6 +200,7 @@ def confirm(
         data=data,
         selection=selection,
         method_id=method_id,
+        card_authorization_id=card_authorization_id,
     )
     if reviewed["fingerprint"] != reviewed_hash:
         raise ValidationError(
@@ -207,6 +220,7 @@ def confirm(
         reviewed=reviewed["offer"]["fingerprint"],
         accepted=True,
         method_id=method_id,
+        card_authorization_id=card_authorization_id,
         verified_received=verified_received,
         send_confirmation=send_confirmation,
         combined_booking=booking,

@@ -1,4 +1,4 @@
-{% extends 'core/staff_base.html' %}{% block staff_content %}
+{% extends 'core/staff_base.html' %}{% load static %}{% block staff_content %}
 <h1>{{ heading }}</h1><p class="booking-subtitle">Booking #{{ booking.pk }} · <a href="{% url 'customer_detail' booking.customer_id %}">{{ booking.customer.last_name }}</a> · {{ booking.session.starts_at|date:'l, F j, Y g:i A' }}</p>
 {% if kind == 'arrival' %}
 {% if pending_membership %}<div class="notice"><strong>Membership purchased · ${{ pending_receipt.membership_received }} received.</strong>{% if pending_receipt.credit_applied %} Existing credit applied: ${{ pending_receipt.credit_applied|floatformat:2 }}.{% endif %} <a href="{% url 'membership_overview' pending_membership.purchase_id %}">{{ pending_membership.purchase.membership.places }} {{ pending_membership.purchase.membership.get_kind_display }} places</a> · {{ pending_membership.purchase.membership.starts_on|date:'M j' }}–{{ pending_membership.purchase.membership.ends_on|date:'M j, Y' }}. Review the current visit details and remaining payment.</div>{% endif %}
@@ -24,4 +24,5 @@
 
 {% else %}
 <form method="post" class="panel record-form" data-reviewed-checkout>{% csrf_token %}{% include 'core/partials/form_fields.html' %}<button class="button secondary" type="submit" name="preview" value="1">Review fee and payment</button>{% if reviewed %}<section class="estimate-panel">{% include 'core/partials/arrival_price.html' %}<button class="button" type="submit" name="confirm_review" value="1" data-confirm-checkout>{{ confirm_label }}</button><p class="caption" data-review-changed hidden>Details changed. Review the updated price before confirming.</p></section>{% endif %}</form>
-{% endif %}<p><a href="{% url 'booking_detail' booking.pk %}">Return to booking</a></p>{% endblock %}
+{% endif %}<p><a href="{% url 'booking_detail' booking.pk %}">Return to booking</a></p>
+{% if membership_card_configured %}<script src="https://tokenization.sandbox.banquestgateway.com/tokenization/v0.3" defer></script><script src="{% static 'core/arrival-membership-card.js' %}" defer></script>{% endif %}{% endblock %}
