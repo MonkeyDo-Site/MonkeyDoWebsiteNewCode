@@ -192,6 +192,9 @@ BOOKING_REPLY_TO = "monkeydoplay@gmail.com"
 
 BOOKING_COMPLETION_ENABLED = os.environ.get("MONKEYDO_BOOKING_COMPLETION") == "1"
 MEMBERSHIP_SALES_ENABLED = os.environ.get("MONKEYDO_ACTIVE_MEMBERSHIPS") == "1"
+MEMBERSHIP_COLLECTIONS_ENABLED = os.environ.get("MONKEYDO_MEMBERSHIP_COLLECTIONS") == "1"
+if MEMBERSHIP_COLLECTIONS_ENABLED and not MEMBERSHIP_SALES_ENABLED:
+    raise ImproperlyConfigured("Scheduled collections require active membership sales.")
 if MEMBERSHIP_SALES_ENABLED and (not BOOKING_COMPLETION_ENABLED or DESIGN_REVIEW_ONLY):
     raise ImproperlyConfigured(
         "Active memberships require the completed sandbox booking foundation."

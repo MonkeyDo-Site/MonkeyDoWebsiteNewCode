@@ -177,6 +177,31 @@ class MembershipInvoice(FinancialFact):
     )
 
 
+class MembershipCollectionClaim(FinancialFact):
+    """System scope for one accepted later installment, including planned credit."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    installment = models.OneToOneField(
+        MembershipInstallment, on_delete=models.PROTECT, related_name="collection_claim"
+    )
+    mandate = models.ForeignKey("core.MembershipCardMandate", on_delete=models.PROTECT)
+    payment_key = models.UUIDField(unique=True)
+    credit_key = models.UUIDField(unique=True)
+    planned_on = models.DateField()
+    expires_at = models.DateTimeField()
+    fingerprint = models.CharField(max_length=64)
+    details = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(expires_at__gt=models.F("created_at")),
+                name="membership_collection_claim_lifetime",
+            )
+        ]
+
+
 class MembershipCardMandate(FinancialFact):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     purchase = models.ForeignKey(

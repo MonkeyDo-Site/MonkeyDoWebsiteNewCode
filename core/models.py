@@ -672,6 +672,7 @@ from .membership_records import (  # noqa: E402,F401
     MembershipCancellation,
     MembershipCardAuthorization,
     MembershipCardMandate,
+    MembershipCollectionClaim,
     MembershipInstallment,
     MembershipInvoice,
     MembershipOrigin,
