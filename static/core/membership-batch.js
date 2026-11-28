@@ -11,6 +11,7 @@
   function cards() {
     form.querySelectorAll('.renewal-batch-row').forEach(row => {
       const monthly = row.querySelector('[name$="-billing"]').value === 'monthly';
+      row.querySelector('[data-renewal-options]').hidden = !row.querySelector('[name$="-renew"]').checked;
       row.querySelector('[data-batch-card]').hidden = !monthly;
     });
   }

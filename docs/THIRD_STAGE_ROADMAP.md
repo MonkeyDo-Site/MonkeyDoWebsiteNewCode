@@ -12,6 +12,10 @@ Continue on draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCo
 
 Development remains active. Mixed manual/card remainder, general payment date/source exceptions, remaining combined renewal funding methods, remaining owner corrections/consolidation/grants and broader credit/reporting work are still in progress. Three previously identified business policies remain guarded pending answers; do not infer defaults or repeat the questions. Provider verification and an explicit release decision remain separate from local developer checks. Features and scheduled collection stay off by default.
 
+## Latest increment — preserve selections while finding renewals
+
+The combined renewal page now searches membership number/type and loads further available records on the same screen. Selected type/count/term, future card, payment method and request identity survive browsing; current review resets acceptance and actual-receipt confirmation. Fully renewed records are filtered before the page limit. Sample 146 joins the refreshed 143–145 in the 146-pair gallery. The final expanded 109 checks and two actual browser scenarios pass; no schema or financial authority changed, and all 65 published migrations remain frozen. Broader group funding, owner corrections/cohort work, credit returns/redemption and final provider/operational validation remain active under the existing authorization.
+
 ## Earlier owner's review gate — historical
 
 The owner reports the seventh booking batch deployed and is reviewing it. Wait for explicit go-ahead before starting membership requirements reconciliation, representative screen design or implementation. Recording this roadmap does not start those activities. The owner will say when the review is complete.

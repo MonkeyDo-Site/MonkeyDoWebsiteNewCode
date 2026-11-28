@@ -13,6 +13,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from . import membership_renewal_choices as choices
 from .membership_batch_records import MembershipRenewalBatch
 from .membership_batch_renewals import available, confirm, review
 from .membership_records import MembershipPurchase
@@ -53,6 +54,10 @@ class CheckoutForm(forms.Form):
     tender = forms.ChoiceField(
         choices=[("cash", "Cash received"), ("check", "Check received")], label="Payment method"
     )
+    query = forms.CharField(required=False, max_length=64, label="Search membership number or type")
+    query_used = forms.CharField(required=False, max_length=64, widget=forms.HiddenInput)
+    cursor = forms.IntegerField(required=False, min_value=1, widget=forms.HiddenInput)
+    browse_active = forms.BooleanField(required=False, widget=forms.HiddenInput)
     accepted = forms.BooleanField(
         required=False, label="The customer accepted the reviewed membership terms."
     )
@@ -106,32 +111,12 @@ def renew_memberships(request, customer_pk):
     if not settings.MEMBERSHIP_SALES_ENABLED:
         raise Http404
     authorize(request.user, collect=True)
-    candidates, initial, unavailable = [], [], []
-    for member in (
-        MembershipPurchase.objects.filter(customer=customer)
-        .select_related("membership", "billing_state__mandate")
-        .order_by("membership__ends_on", "pk")[:100]
-    ):
-        try:
-            details = renewal_details(member)
-            if not details["available_places"]:
-                continue
-        except ValidationError as error:
-            unavailable.append((member, " ".join(error.messages)))
-            continue
-        candidates.append((member, details))
-        initial.append(
-            dict(
-                prior_id=member.pk,
-                kind=member.membership.kind,
-                places=details["available_places"],
-                months=details["minimum_months"],
-                billing=member.membership.billing,
-                method_id=str(member.billing_state.mandate.method_id)
-                if member.billing_state.mandate
-                else "",
-            )
-        )
+    initial, unavailable = [], []
+    checkout_initial = {"request_key": uuid.uuid4(), "tender": "cash"}
+    if request.method == "GET":
+        candidates, unavailable, cursor = choices.page(customer.pk)
+        initial = [choices.initial(member, details) for member, details in candidates]
+        checkout_initial.update(cursor=cursor, browse_active=bool(cursor))
     cards = [
         (str(card.pk), f"{card.brand} · ending in {card.last_four}")
         for card in PaymentMethod.objects.filter(
@@ -149,12 +134,12 @@ def renew_memberships(request, customer_pk):
     )
     checkout = CheckoutForm(
         request.POST if request.method == "POST" else None,
-        initial={"request_key": uuid.uuid4(), "tender": "cash"},
+        initial=checkout_initial,
     )
     checkout.fields["tender"].widget.attrs["data-batch-input"] = ""
     data = None
     action = request.POST.get("action", "review")
-    if request.method == "POST" and formset.is_valid() and checkout.is_valid():
+    if request.method == "POST" and checkout.is_valid() and formset.is_valid():
         selected = [
             {key: value for key, value in item.cleaned_data.items() if key != "renew"}
             for item in formset
@@ -170,7 +155,43 @@ def renew_memberships(request, customer_pk):
                 rows=selected,
                 tender=checkout.cleaned_data["tender"],
             )
-            if action == "confirm":
+            if action in {"search", "more"}:
+                if len(selected) >= choices.MAX_ENTRIES:
+                    raise ValidationError("Confirm these 100 entries before adding more renewals.")
+                query = checkout.cleaned_data["query"].strip()
+                cursor = (
+                    checkout.cleaned_data["cursor"]
+                    if action == "more"
+                    and query.casefold() == checkout.cleaned_data["query_used"].strip().casefold()
+                    else None
+                )
+                page, unavailable, cursor = choices.page(
+                    customer.pk,
+                    query=query,
+                    cursor=cursor,
+                    exclude={row["prior_id"] for row in selected},
+                    limit=min(choices.PAGE_SIZE, choices.MAX_ENTRIES - len(selected)),
+                )
+                initial = [dict(renew=True, **row) for row in selected] + [
+                    choices.initial(member, details) for member, details in page
+                ]
+                formset = Rows(initial=initial, prefix="renewals", form_kwargs={"cards": cards})
+                checkout = CheckoutForm(
+                    dict(
+                        request_key=checkout.cleaned_data["request_key"],
+                        tender=checkout.cleaned_data["tender"],
+                        query=query,
+                        query_used=query,
+                        cursor=cursor,
+                        browse_active=True,
+                    )
+                )
+                checkout.fields["tender"].widget.attrs["data-batch-input"] = ""
+                checkout.is_valid()
+                if selected:
+                    data = review(**values)
+                    checkout.data["reviewed"] = data["fingerprint"]
+            elif action == "confirm":
                 saved = confirm(
                     **values,
                     request_key=checkout.cleaned_data["request_key"],
@@ -183,12 +204,13 @@ def renew_memberships(request, customer_pk):
                     + "?checkout="
                     + str(saved.pk)
                 )
-            data = review(**values)
-            mutable = checkout.data.copy()
-            mutable["reviewed"] = data["fingerprint"]
-            mutable["accepted"] = ""
-            mutable["verified_received"] = ""
-            checkout.data = mutable
+            else:
+                data = review(**values)
+                mutable = checkout.data.copy()
+                mutable["reviewed"] = data["fingerprint"]
+                mutable["accepted"] = ""
+                mutable["verified_received"] = ""
+                checkout.data = mutable
         except ValidationError as error:
             checkout.add_error(None, error)
     if request.method == "POST" and request.POST.get("format") == "json":
@@ -215,7 +237,21 @@ def renew_memberships(request, customer_pk):
             },
             status=400,
         )
-    metadata = {member.pk: (member, details) for member, details in candidates}
+    identifiers = []
+    for item in formset:
+        try:
+            identifiers.append(int(item["prior_id"].value()))
+        except (TypeError, ValueError):
+            pass
+    metadata = {}
+    for member in MembershipPurchase.objects.filter(
+        customer=customer, pk__in=identifiers
+    ).select_related("membership", "billing_state__mandate"):
+        try:
+            details = renewal_details(member)
+        except ValidationError:
+            details = None
+        metadata[member.pk] = (member, details)
     display = []
     for item in formset:
         try:
@@ -238,5 +274,14 @@ def renew_memberships(request, customer_pk):
             checkout=checkout,
             quote=displayed_quote(data),
             unavailable=unavailable,
+            show_browse=bool(
+                checkout.initial.get("browse_active")
+                or getattr(checkout, "cleaned_data", {}).get("browse_active")
+                or checkout["query"].value()
+            ),
+            has_more=bool(
+                checkout.initial.get("cursor")
+                or getattr(checkout, "cleaned_data", {}).get("cursor")
+            ),
         ),
     )

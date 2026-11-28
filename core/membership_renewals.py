@@ -21,13 +21,14 @@ def effective_expiry(member):
         raise ValidationError("Review the original membership effective end date.") from None
 
 
-def remaining_places(member):
-    committed = (
-        MembershipOrigin.objects.filter(prior=member, operation="renewal")
-        .exclude(purchase__billing_state__stopped_on__lte=F("purchase__membership__starts_on"))
-        .aggregate(n=Sum("places"))["n"]
-        or 0
+def committed_renewals():
+    return MembershipOrigin.objects.filter(operation="renewal").exclude(
+        purchase__billing_state__stopped_on__lte=F("purchase__membership__starts_on")
     )
+
+
+def remaining_places(member):
+    committed = committed_renewals().filter(prior=member).aggregate(n=Sum("places"))["n"] or 0
     return max(0, member.membership.places - committed)
 
 
