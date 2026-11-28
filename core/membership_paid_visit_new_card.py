@@ -233,7 +233,7 @@ def context(request, *, pending_paid_visit):
     try:
         authorize(actor, collect=True)
         require_actor(actor, "core.change_booking")
-    except PermissionDenied:
+    except (PermissionDenied, ValidationError):
         return None
     intent = pending_paid_visit["intent"]
     flows = request.session.get(SESSION_KEY, {})

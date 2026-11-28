@@ -2,6 +2,21 @@
 
 Draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37) remains under development. The [gallery](reviews/active-memberships/README.md) uses fictional records and simulated card outcomes; no live payment or email delivery was performed. Review images now. The steps below are for a later authorized staging release, with test customers and Banquest test cards. This is not a deployment or live-payment instruction.
 
+## Start with these representative pages
+
+For a first visual review, the [gallery](reviews/active-memberships/README.md) has direct desktop/phone pairs:
+
+| What to review | Samples |
+| --- | --- |
+| Staff purchase and the paid overview | [01](reviews/active-memberships/README.md#01--purchase-membership-on-one-page), [02](reviews/active-memberships/README.md#02--active-membership-after-confirmed-payment) |
+| Existing combined booking, edit and arrival screens | [04](reviews/active-memberships/README.md#04--member-aware-booking-on-the-existing-combined-page), [05](reviews/active-memberships/README.md#05--edit-member-booking), [06](reviews/active-memberships/README.md#06--member-arrival) |
+| Customer membership checkout | [67](reviews/active-memberships/README.md#67--customer-membership-purchase-on-one-page) |
+| Renewal and addition | [08](reviews/active-memberships/README.md#08--renew-existing-places), [09](reviews/active-memberships/README.md#09--add-places-with-their-own-term) |
+| Apply an already paid visit | [113](reviews/active-memberships/README.md#113--apply-a-paid-visit-toward-a-first-membership) |
+| Preserve received money if the remaining card request is interrupted | [153–156](reviews/active-memberships/README.md#153--split-a-known-failed-remainder-on-the-same-page) |
+
+The later samples cover particular accounting and recovery cases. They do not require reviewing the entire gallery before commenting on the main screens. The implementation remains under development; use the detailed scenarios below for later authorized staging tests.
+
 ## Public initial membership purchase — samples 67–72
 
 For a later authorized staging test, open **Membership → Choose a membership**. The feature remains disabled by default. Use fictional contact details and provider test cards only after the separate provider verification/release steps.
@@ -841,3 +856,27 @@ This is the initial bounded correction path. Monthly schedules, already used/sta
 
 
 Developer verification: the complete PostgreSQL suite passed **1,858 tests in 1,106.692 seconds** with the final application code. The related screen/accounting run passed **119 checks in 46.681 seconds**; the final boundary/browser run passed **36 checks in 15.891 seconds**, including actual desktop/phone review, save, reload, safe non-JSON failure/recovery and paused-history navigation; committed correction/reservation races; runtime grants; and used/unused reversal and release compatibility. Tests cover a booking after the original expiry but inside the corrected term, the current customer summary, unchanged original cycle IDs/receipts and credit alerts at corrected expiry without expiring the credit. All six new 1440px/390px images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All 602 Python files pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all 304 PNGs/gallery links and all 67 migration pins pass. All 66 previously published migration files/hashes and the earlier actual-download CSV remain unchanged. All four GitHub checks passed for the preceding published commit; this update starts its own checks after publication. Provider/storage requests were mocked or blocked and no customer email was delivered. Actual Banquest behavior remains unverified. Features and collection stay off by default, PR37 stays draft and broader stage work continues. No merge, deployment or live financial action occurred.
+
+
+## Received portion with a remaining card payment — samples 153–156
+
+For later authorized staging tests, use an eligible same-day paid-visit membership purchase whose first card request has a known failed outcome. Open **Split the remaining payment** on the same membership page.
+
+| Check | Expected result |
+| --- | --- |
+| Review $0.97 cash against $1.97 new principal | Show $1.00 remaining card principal, $0.03 card fee, $1.03 card request and revised $18.02 total. Remove only the unused $0.03 original fee. Preview records nothing. |
+| Change amount, tender, card or bank fields | Refresh the current review and reset both received-payment and card authorization confirmations. An interrupted/non-JSON review disables the financial action until a fresh review succeeds. |
+| Choose Zelle received | Require the actual bank receipt date and sender, retained in the receipt and exports. Cash/check use today without an extra date entry. A physically presented gift card requires actual staff verification. |
+| Confirm once | Commit the actual received portion first, then create the exact remaining card request separately. Preserve the original paid visit and reserved funds until full funding is known. Reload/repeated submissions cannot duplicate either portion. |
+| Card preparation fails locally | Keep the actual cash/Zelle receipt. Show no new card request when none was created; allow only an explicit request for the remaining amount. Do not collect or record the known received portion again. |
+| Card declines or is unknown | A known decline permits an explicit remainder-only retry. An unknown result blocks another request until the existing transaction is reconciled. No automatic retry or fabricated success. |
+| Complete after known exact funding | Show $2.00 new money separately from $16.02 applied credit. Preserve the original visit's gross receipt and retained $0.45 fee. Apply source funds/benefit once, prepare one confirmation, and retain all failed attempts as history. |
+| Cancel before card funding | Reconcile the owner-selected actual refund or retained received amount. Remove the uncollected card principal and unused fee along with releasing original visit funds. Never label never-collected money as refunded. |
+| Cancel after card funding | Preserve the actually charged card fee and reconcile actual refunds through the existing controls. Original visit funds remain independently protected. |
+| Pause sales | Keep saved history readable; refuse new financial actions. Previously published full-card/full-received recovery controls cannot duplicate a saved split. |
+
+Future scheduled-installment authority remains separate. This first split path uses an already eligible saved card; entering a new card inside a saved split, later-day conversions and additional source exceptions remain unfinished. The screenshots use fictional data and simulated outcomes, not actual Banquest verification.
+
+Developer verification: the complete PostgreSQL suite passed **1,887 tests in 1190.246 seconds** with the final application code. The related cancellation/recovery/deployment run passed **98 checks in 66.442 seconds**; six actual-commit concurrency/reversal cases passed in **11.097 seconds**. The final **18-check run in 36.627 seconds** includes the 16 split service cases and two actual Chromium desktop/phone scenarios. It verifies read-only preview, changed-consent reset, non-JSON failure/recovery, exact separate receipts, original funds/benefits untouched before full funding, preserved known receipts after interrupted card preparation, explicit remainder-only retries and unknown-outcome blocking. Cancellation tests cover partial/full funding, actual partial refunds and exact unused-fee removal. Raw SQL rejects forged amounts, fee reductions and rewritten evidence. Used schema reversal is refused; unused reversal restores all six prior function definitions and reapplies.
+
+All eight new 1440px/390px images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All **609 Python files** pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all **312 PNGs/gallery links** and **68 migration pins** pass. All **67 previously published migration files/hashes** and the earlier actual-download CSV remain unchanged. All four GitHub checks passed for the preceding published commit; this update starts new checks after publication. Provider/storage requests were mocked or blocked, no bank or gift-provider API was called and no customer email was delivered. Actual Banquest behavior remains unverified: a fresh public hosted-field SDK GET returned a workspace-proxy 403; its tokenization host is absent from the current allowed-host list. No network settings were changed. Features and scheduled collection remain off by default, PR37 stays draft and broader Stage3 work continues. No merge, deployment or live financial action occurred.

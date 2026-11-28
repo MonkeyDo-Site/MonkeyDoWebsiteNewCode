@@ -181,6 +181,7 @@ def complete_purchase(*, actor, member, offer, invoice, paid_intent=None):
     )
     if paid_intent:
         from .membership_paid_visit_manual import plan as manual_plan
+        from .membership_paid_visit_split import plan as split_plan
 
         manual = manual_plan(paid_intent)
         if manual:
@@ -189,6 +190,15 @@ def complete_purchase(*, actor, member, offer, invoice, paid_intent=None):
                 new_payment=manual.facts["net"],
                 unused_card_fee_removed=manual.facts["fee_removed"],
                 payment_change=str(manual.pk),
+            )
+        split = split_plan(paid_intent)
+        if split:
+            details[MARKER].update(
+                original_new_payment=plan["new_payment"],
+                new_payment=split.facts["new_payment"],
+                unused_card_fee_removed=split.facts["fee_removed"],
+                payment_change=str(split.pk),
+                payment_change_kind="split",
             )
     key = uuid.uuid5(member.request_key, "paid-visit-conversion")
     converted = record_funds(

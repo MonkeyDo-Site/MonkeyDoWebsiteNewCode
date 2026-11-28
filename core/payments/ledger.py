@@ -299,8 +299,19 @@ def request_operation(
     membership_refund_plan_id=None,
     paid_visit_recovery=None,
     paid_visit_manual=None,
+    paid_visit_split=None,
 ):
     enabled()
+    if paid_visit_split is not None and (
+        paid_visit_recovery is not None
+        or paid_visit_manual is not None
+        or public_membership_authority is not None
+        or scheduled_membership_claim is not None
+        or kind != "receipt"
+        or purpose != "member_purchase"
+        or actor is None
+    ):
+        raise PermissionDenied
     if paid_visit_recovery is not None and (
         kind != "receipt" or tender != "card" or purpose != "member_purchase" or actor is None
     ):
@@ -409,6 +420,7 @@ def request_operation(
         if (
             tender == "card"
             and paid_visit_recovery is None
+            and paid_visit_split is None
             and (not mandate or str(mandate.method_id) != str(method_id))
         ):
             raise ValidationError("Use the currently accepted membership payment method.")
@@ -441,9 +453,14 @@ def request_operation(
             allocation=cleaned,
             recovery=paid_visit_recovery,
             manual=paid_visit_manual,
+            split=paid_visit_split,
             method_id=method_id,
         )
-    elif paid_visit_recovery is not None or paid_visit_manual is not None:
+    elif (
+        paid_visit_recovery is not None
+        or paid_visit_manual is not None
+        or paid_visit_split is not None
+    ):
         raise PermissionDenied
     if scheduled:
         from core.membership_collection_authority import authorize_operation

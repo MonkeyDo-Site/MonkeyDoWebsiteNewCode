@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from django.apps import apps
 from django.db import connection
+from django.db.models import CharField, Value
 
 
 def receipt_evidence(operations):
@@ -83,15 +84,26 @@ def receipt_evidence(operations):
                     shared_bank_actor_id=source.batch.actor_id,
                     shared_bank_recorded_at=source.created_at,
                 )
-    query = records("MembershipPaidVisitManualPayment")
-    if query is not None:
-        by_key = {operation.request_key: operation.pk for operation in manual.values()}
-        for record in query.filter(operation_id__in=by_key).select_related("operation"):
-            result[by_key[record.operation_id]] = dict(
-                origin="Received replacement payment",
+    by_key = {operation.request_key: operation.pk for operation in manual.values()}
+    replacements = []
+    for name, origin in (
+        ("MembershipPaidVisitManualPayment", "Received replacement payment"),
+        ("MembershipPaidVisitSplit", "Received partial payment"),
+    ):
+        query = records(name)
+        if query is not None:
+            replacements.append(
+                query.filter(operation_id__in=by_key)
+                .values("operation_id", "operation__manual_received_on", "facts")
+                .annotate(origin=Value(origin, output_field=CharField()))
+            )
+    if replacements:
+        for record in replacements[0].union(*replacements[1:]):
+            result[by_key[record["operation_id"]]] = dict(
+                origin=record["origin"],
                 earlier=False,
-                received_on=record.operation.manual_received_on,
-                sender=record.facts.get("sender", ""),
+                received_on=record["operation__manual_received_on"],
+                sender=record["facts"].get("sender", ""),
                 receipt_id="",
             )
     combined = {}

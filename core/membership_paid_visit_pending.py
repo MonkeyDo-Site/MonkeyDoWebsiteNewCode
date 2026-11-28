@@ -53,11 +53,34 @@ def protect_source(original):
 
 
 def authorize_receipt(
-    *, invoice, actor, request_key, tender, allocation, recovery=None, method_id=None, manual=None
+    *,
+    invoice,
+    actor,
+    request_key,
+    tender,
+    allocation,
+    recovery=None,
+    method_id=None,
+    manual=None,
+    split=None,
 ):
     """All generic collection paths must respect the accepted conditional source."""
     member = invoice.installment.purchase
     marker = member.membership.snapshot.get(CARD_MARKER)
+    if split is not None:
+        if not marker or recovery is not None or manual is not None:
+            raise PermissionDenied
+        from .membership_paid_visit_split import authorize_receipt as authorize_split
+
+        return authorize_split(
+            split,
+            invoice=invoice,
+            actor=actor,
+            request_key=request_key,
+            tender=tender,
+            method_id=method_id,
+            allocation=allocation,
+        )
     if manual is not None:
         if not marker or recovery is not None:
             raise PermissionDenied
@@ -223,7 +246,10 @@ def allow_dispatch(intent, operation=None):
         return True
     try:
         from .membership_paid_visit_recovery import authorize_dispatch
+        from .membership_paid_visit_split import authorize_dispatch as split_dispatch
 
+        if operation is not None and split_dispatch(intent, operation) is not None:
+            return True
         if operation is None or authorize_dispatch(intent, operation) is None:
             fresh(intent, dispatch=True)
     except (ValidationError, PermissionDenied):
@@ -516,12 +542,18 @@ def context(member):
         except (ValidationError, PermissionDenied):
             pass
     facts = stop_facts(intent)
+    from .membership_paid_visit_split import plan as split_plan
+
+    split = split_plan(intent)
     return dict(
         intent=intent,
         stopped=bool(release),
         operation=operation,
         source_amount=intent.offer["paid_visit"]["applied"],
-        card_amount=intent.offer["paid_visit"]["new_payment"],
+        card_amount=split.facts["card_total"]
+        if split
+        else intent.offer["paid_visit"]["new_payment"],
+        split=split,
         can_complete=can_complete,
         can_stop=not release and facts["allowed"],
         stop_reviewed=facts["fingerprint"],

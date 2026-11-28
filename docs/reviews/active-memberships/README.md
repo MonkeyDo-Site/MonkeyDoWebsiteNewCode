@@ -43,8 +43,9 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: find another renewal while keeping selected details** | **[146](#146--find-another-renewal-without-losing-selected-details)** |
 | **New: one verified Zelle transfer across separate renewals** | **[147–149](#147--review-one-zelle-transfer-for-several-renewals)** |
 | **New: correct unused membership dates on the same page** | **[150–152](#150--review-corrected-dates-without-another-page)** |
+| **New: received portion plus an exact card remainder after failure** | **[153–156](#153--split-a-known-failed-remainder-on-the-same-page)** |
 
-Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–149** show combined cash/check/Zelle renewals, separate recorded allocations, split type/term choices and finding additional records while retaining selected details. Samples 147–149 show one shared bank transfer and its original receipt details. Samples 150–152 show date review, saved history under the same membership number and readable history while updates are paused. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
+Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–149** show combined cash/check/Zelle renewals, separate recorded allocations, split type/term choices and finding additional records while retaining selected details. Samples 147–149 show one shared bank transfer and its original receipt details. Samples 150–152 show date review, saved history under the same membership number and readable history while updates are paused. Samples 153–156 show a received portion with a smaller card remainder, preserved receipts during interruptions and the completed paid-visit application. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
 
 ## 01 — Purchase membership on one page
 
@@ -1554,3 +1555,45 @@ This first correction path supports standalone prepaid or complimentary membersh
 
 
 Developer verification: the complete PostgreSQL suite passed **1,858 tests in 1,106.692 seconds** with the final application code. The related screen/accounting run passed **119 checks in 46.681 seconds**; the final boundary/browser run passed **36 checks in 15.891 seconds**, including actual desktop/phone review, save, reload, safe non-JSON failure/recovery and paused-history navigation; committed correction/reservation races; runtime grants; and used/unused reversal and release compatibility. Tests cover a booking after the original expiry but inside the corrected term, the current customer summary, unchanged original cycle IDs/receipts and credit alerts at corrected expiry without expiring the credit. All six new 1440px/390px images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All 602 Python files pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all 304 PNGs/gallery links and all 67 migration pins pass. All 66 previously published migration files/hashes and the earlier actual-download CSV remain unchanged. All four GitHub checks passed for the preceding published commit; this update starts its own checks after publication. Provider/storage requests were mocked or blocked and no customer email was delivered. Actual Banquest behavior remains unverified. Features and collection stay off by default, PR37 stays draft and broader stage work continues. No merge, deployment or live financial action occurred.
+
+
+## 153 — Split a known failed remainder on the same page
+
+After a known failed first-card request, expand **Split the remaining payment** on the membership page. This fictional example applies **$0.97 cash** and requests **$1.00 card principal + $0.03 processing fee**. Only the unused $0.03 of the original fee is removed. The revised first total is **$18.02**. Preview creates no receipt or card request. Changed amounts, cards or bank details require the current review and both confirmations again.
+
+| Desktop | Phone |
+| --- | --- |
+| [![153 — Split a known failed remainder on the same page, desktop](153-split-remainder-review-desktop.png)](153-split-remainder-review-desktop.png) | [![153 — Split a known failed remainder on the same page, phone](153-split-remainder-review-phone.png)](153-split-remainder-review-phone.png) |
+
+
+## 154 — Received money stays recorded while the card is pending
+
+The actual **$0.97 cash receipt** is committed before preparing the separate **$1.03 card request**. Both have direct history links. The original **$16.02** visit funds stay reserved; the original visit is unchanged and no membership benefit has yet been used. Reload records nothing again. The future installment card authority remains independent.
+
+| Desktop | Phone |
+| --- | --- |
+| [![154 — Received money stays recorded while the card is pending, desktop](154-received-portion-card-pending-desktop.png)](154-received-portion-card-pending-desktop.png) | [![154 — Received money stays recorded while the card is pending, phone](154-received-portion-card-pending-phone.png)](154-received-portion-card-pending-phone.png) |
+
+
+## 155 — Apply the paid visit after exact funding is confirmed
+
+After the simulated card success and completed application, the same record shows **$2.00 total new money received** separately from **$16.02 customer credit applied**. The original $0.45 card fee is retained, original gross receipts remain history, and the visit uses its normal membership benefit once. The declined attempt remains visible without counting as received money. One combined confirmation is prepared, with no customer delivery in this test.
+
+| Desktop | Phone |
+| --- | --- |
+| [![155 — Apply the paid visit after exact funding is confirmed, desktop](155-split-funded-visit-applied-desktop.png)](155-split-funded-visit-applied-desktop.png) | [![155 — Apply the paid visit after exact funding is confirmed, phone](155-split-funded-visit-applied-phone.png)](155-split-funded-visit-applied-phone.png) |
+
+
+## 156 — Continue after card preparation was interrupted
+
+An interrupted card preparation leaves the **$0.97 received portion recorded** and states clearly that no remaining card request was created. The next explicit action requests only **$1.03**, never the cash portion again. A known decline permits another explicit remaining-card request; an unknown result requires review of the existing transaction and blocks another request.
+
+| Desktop | Phone |
+| --- | --- |
+| [![156 — Continue after card preparation was interrupted, desktop](156-received-portion-card-not-requested-desktop.png)](156-received-portion-card-not-requested-desktop.png) | [![156 — Continue after card preparation was interrupted, phone](156-received-portion-card-not-requested-phone.png)](156-received-portion-card-not-requested-phone.png) |
+
+This bounded path accepts one verified cash/check/Zelle/physical-gift portion and a positive eligible saved-card remainder, within the existing same-day paid-visit rules. Zelle retains the actual bank receipt date and sender. Gift cards require staff verification; no gift provider or bank call is made. It does not automatically retry a card or grant future installment consent. Cancellation reconciles only actually received money and removes any never-collected card principal and unused fee without inventing a refund. Broader source/date exceptions and new-card entry within an already-saved split remain unfinished.
+
+Developer verification: the complete PostgreSQL suite passed **1,887 tests in 1190.246 seconds** with the final application code. The related cancellation/recovery/deployment run passed **98 checks in 66.442 seconds**; six actual-commit concurrency/reversal cases passed in **11.097 seconds**. The final **18-check run in 36.627 seconds** includes the 16 split service cases and two actual Chromium desktop/phone scenarios. It verifies read-only preview, changed-consent reset, non-JSON failure/recovery, exact separate receipts, original funds/benefits untouched before full funding, preserved known receipts after interrupted card preparation, explicit remainder-only retries and unknown-outcome blocking. Cancellation tests cover partial/full funding, actual partial refunds and exact unused-fee removal. Raw SQL rejects forged amounts, fee reductions and rewritten evidence. Used schema reversal is refused; unused reversal restores all six prior function definitions and reapplies.
+
+All eight new 1440px/390px images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All **609 Python files** pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all **312 PNGs/gallery links** and **68 migration pins** pass. All **67 previously published migration files/hashes** and the earlier actual-download CSV remain unchanged. All four GitHub checks passed for the preceding published commit; this update starts new checks after publication. Provider/storage requests were mocked or blocked, no bank or gift-provider API was called and no customer email was delivered. Actual Banquest behavior remains unverified: a fresh public hosted-field SDK GET returned a workspace-proxy 403; its tokenization host is absent from the current allowed-host list. No network settings were changed. Features and scheduled collection remain off by default, PR37 stays draft and broader Stage3 work continues. No merge, deployment or live financial action occurred.

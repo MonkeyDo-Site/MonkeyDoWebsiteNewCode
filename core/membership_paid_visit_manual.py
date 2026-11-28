@@ -32,6 +32,11 @@ def current_operation(intent):
 
 
 def expected_new_payment(intent):
+    from .membership_paid_visit_split import plan as split_plan
+
+    split = split_plan(intent)
+    if split:
+        return amount(split.facts["new_payment"])
     record = plan(intent)
     return (
         amount(record.facts["net"]) if record else amount(intent.offer["paid_visit"]["new_payment"])
@@ -39,6 +44,11 @@ def expected_new_payment(intent):
 
 
 def require_funded(intent):
+    from .membership_paid_visit_split import plan as split_plan
+    from .membership_paid_visit_split import require_funded as split_funded
+
+    if split_plan(intent):
+        return split_funded(intent)
     record = plan(intent)
     if not record:
         return False
@@ -81,8 +91,10 @@ def require_funded(intent):
 
 
 def is_funded(intent):
+    from .membership_paid_visit_split import plan as split_plan
+
     record = plan(intent)
-    if record:
+    if record or split_plan(intent):
         try:
             return require_funded(intent)
         except ValidationError:
@@ -306,6 +318,14 @@ def controls(*, actor, pending):
 
 
 def is_manual_receipt(operation):
+    from .membership_paid_visit_split import available as split_available
+    from .membership_paid_visit_split_records import MembershipPaidVisitSplit
+
+    if (
+        split_available()
+        and MembershipPaidVisitSplit.objects.filter(operation_id=operation.request_key).exists()
+    ):
+        return True
     return bool(
         available()
         and MembershipPaidVisitManualPayment.objects.filter(
@@ -317,6 +337,9 @@ def is_manual_receipt(operation):
 def cancellation_adjustments_valid(intent, sale):
     other = sale.lines.get().adjustments.exclude(reason="membership_refund")
     manual = plan(intent)
+    from .membership_paid_visit_split import plan as split_plan
+
+    manual = manual or split_plan(intent)
     if manual:
         other = other.exclude(
             request_key=manual.facts["fee_key"],

@@ -31,6 +31,13 @@ def latest(intent):
 
 
 def current_operation(intent):
+    from .membership_paid_visit_split import latest as split_latest
+    from .membership_paid_visit_split import plan as split_plan
+
+    split = split_plan(intent)
+    if split:
+        attempt = split_latest(split)
+        return attempt.operation if attempt else None
     from .membership_paid_visit_manual import current_operation as manual_operation
 
     manual = manual_operation(intent)
@@ -72,6 +79,12 @@ def source_review(*, actor, intent_id, ignore_storage=False):
     intent = MembershipPaidVisitIntent.objects.select_related(
         "purchase__membership", "operation"
     ).get(pk=intent_id)
+    from .membership_paid_visit_split import plan as split_plan
+
+    if split_plan(intent):
+        raise ValidationError(
+            "A partial payment is recorded. Use the exact remaining-card controls instead."
+        )
     fresh(intent)
     current = current_operation(intent)
     if not current or current.state not in {"declined", "cancelled"}:

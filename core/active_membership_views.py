@@ -762,6 +762,12 @@ def membership_overview(request, pk):
     from .membership_renewal_review import parents_needing_review
 
     pending_paid_visit = paid_visit_context(member)
+    from .membership_paid_visit_split_views import ACTIONS as split_actions
+    from .membership_paid_visit_split_views import controls as split_controls
+
+    split_response, split_context = split_controls(request, member, pending_paid_visit)
+    if split_response is not None:
+        return split_response
     if request.method == "POST" and request.POST.get("action") in {
         "paid_visit_complete",
         "paid_visit_stop",
@@ -959,6 +965,7 @@ def membership_overview(request, pk):
         *cancellation_actions,
         *credit_actions,
         *calendar_actions,
+        *split_actions,
     }:
         from .membership_payments import change_card, collect_installment, payment_review
 
@@ -1088,6 +1095,7 @@ def membership_overview(request, pk):
             **cancellation_context,
             **credit_context,
             **calendar_context,
+            **split_context,
             "member": member,
             "membership_changes_enabled": settings.MEMBERSHIP_SALES_ENABLED,
             "membership_history_available": True,

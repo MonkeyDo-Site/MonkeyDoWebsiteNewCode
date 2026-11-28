@@ -676,6 +676,10 @@ from .membership_paid_visit_records import (  # noqa: E402,F401
     MembershipPaidVisitRecovery,
     MembershipPaidVisitRelease,
 )
+from .membership_paid_visit_split_records import (  # noqa: E402,F401
+    MembershipPaidVisitSplit,
+    MembershipPaidVisitSplitCard,
+)
 from .membership_records import (  # noqa: E402,F401
     MembershipArrivalCheckout,
     MembershipArrivalClosure,

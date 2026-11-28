@@ -112,8 +112,15 @@ def review(*, actor, intent):
         )
     receipts = [op for op in operations if op.kind == "receipt" and op.state == "succeeded"]
     from .membership_paid_visit_manual import cancellation_adjustments_valid, expected_new_payment
+    from .membership_paid_visit_split import cancellation_funding
 
-    if not receipts or sum((op.amount for op in receipts), ZERO) != expected_new_payment(intent):
+    split_funding = cancellation_funding(intent)
+    expected_received = (
+        amount(split_funding["expected_received"])
+        if split_funding
+        else expected_new_payment(intent)
+    )
+    if not receipts or sum((op.amount for op in receipts), ZERO) != expected_received:
         raise ValidationError(
             "Review the actual new membership payment before releasing this source."
         )
@@ -147,12 +154,22 @@ def review(*, actor, intent):
     if (
         held != paid - returned
         or returned != record.refund_amount
-        or fee != components["fee"]
+        or fee + (amount(split_funding["uncollected_card_fee"]) if split_funding else ZERO)
+        != components["fee"]
         or held < fee
     ):
         raise ValidationError("The actual refund and retained fee need reconciliation.")
     uncollected = total(sale) - held
-    if uncollected <= ZERO or uncollected != amount(intent.offer["paid_visit"]["applied"]):
+    original_source = amount(intent.offer["paid_visit"]["applied"])
+    uncollected_card = (
+        (
+            amount(split_funding["uncollected_card_net"])
+            + amount(split_funding["uncollected_card_fee"])
+        )
+        if split_funding
+        else ZERO
+    )
+    if uncollected <= ZERO or uncollected != original_source + uncollected_card:
         raise ValidationError(
             "The uncollected membership amount no longer matches the reserved original visit funds."
         )
@@ -204,6 +221,12 @@ def review(*, actor, intent):
         booking=intent.booking_id,
         booking_version=intent.booking.edit_version,
     )
+    if split_funding:
+        data.update(split_funding)
+        data["original_source_amount"] = str(original_source)
+        data["uncollected_principal"] = str(
+            uncollected - amount(split_funding["uncollected_card_fee"])
+        )
     return data | dict(fingerprint=fingerprint(data))
 
 
@@ -266,7 +289,8 @@ def release(*, actor, intent_id, request_key, reviewed, reason, confirmed=False)
         request_key=facts["adjustment_key"],
         line_id=facts["line"],
         reason="membership_uncollected",
-        net=-amount(facts["uncollected"]),
+        net=-amount(facts.get("uncollected_principal", facts["uncollected"])),
+        fee=-amount(facts.get("uncollected_card_fee", ZERO)),
         actor=actor,
     )
     resolve_notices(intent, actor)
