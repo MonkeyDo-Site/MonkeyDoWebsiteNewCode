@@ -742,6 +742,7 @@ def membership_overview(request, pk):
         ),
         pk=pk,
     )
+    from .membership_batch_renewals import group_for
     from .membership_paid_visit_pending import context as paid_visit_context
     from .membership_renewal_review import parents_needing_review
 
@@ -1067,6 +1068,7 @@ def membership_overview(request, pk):
             **credit_context,
             "member": member,
             "renewal_parent_reviews": parents_needing_review(member),
+            "renewal_batch": group_for(member),
             "pending_paid_visit": pending_paid_visit,
             "paid_visit_recovery": paid_visit_recovery,
             "paid_visit_new_card": paid_visit_new_card,

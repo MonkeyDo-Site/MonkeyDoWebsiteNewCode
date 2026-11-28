@@ -39,8 +39,9 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: record a received replacement payment on the same page** | **[136–138](#136--record-a-received-replacement-after-a-known-card-failure)** |
 | **New: recorded bank details and paid-visit history download** | **[139–140](#139--recorded-bank-details-on-the-existing-payment-page)** |
 | **New: paid early-renewal review and owner reminder** | **[141–142](#141--paid-early-renewal-with-an-earlier-payment-needing-review)** |
+| **New: combined cash/check renewals and partial/type selection** | **[143–145](#143--renew-several-memberships-on-one-page)** |
 
-Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **141–142** show an independently paid early renewal held for owner review of earlier required payments, plus its Dashboard reminder. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
+Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–145** show one-page combined cash/check renewals, the recorded allocations and split type/term choices. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
 
 ## 01 — Purchase membership on one page
 
@@ -1449,3 +1450,32 @@ The Dashboard links directly to each live paid renewal needing this review. Reco
 | [![Paid renewal owner reminder, desktop](142-paid-renewal-owner-reminder-desktop.png)](142-paid-renewal-owner-reminder-desktop.png) | [![Paid renewal owner reminder, phone](142-paid-renewal-owner-reminder-phone.png)](142-paid-renewal-owner-reminder-phone.png) |
 
 Developer verification: the complete PostgreSQL suite passed **1,756 tests** before the final own-payment eligibility distinction. The final expanded run then passed **103 checks**, including all eleven new paid-renewal review cases, renewals, reporting, benefit reservations with real PostgreSQL concurrency, per-booking owner decisions and collection preparation. An unpaid or known-failed renewal keeps its ordinary pending-payment state and is never labelled paid. The final native inventory is 1,757; a complete local 1,757-test run is not claimed. A separate actual Chromium scenario verified the paid receipt, parent link, Dashboard reminder and its disappearance after known earlier payments were recorded, without a second renewal receipt. All four final 1440px/390px images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. All 582 Python files pass lint/format checks; system checks, model drift, whitespace, all 284 PNGs/gallery links and all 64 migration pins pass. All 64 published migration files/hashes and the earlier CSV sample are unchanged. All four GitHub checks passed for the prior published commit; this increment starts its own checks on publication. External requests were blocked/mocked and no customer email was delivered. Provider behavior remains unverified. Features and collection remain off by default; PR37 stays draft, with the broader stage still in progress. No merge, deployment or live financial action occurred.
+
+
+## 143 — Renew several memberships on one page
+
+From the customer’s **Memberships** card, choose **Renew memberships together**. The same page shows the original records, places available, renewal type/count/term, start dates, accepted terms and combined amount. This fictional example renews one Subscription place for **$17.99** beginning **January 31, 2028**, and one Unlimited place for **$39.99** beginning **March 1, 2028**. Their dates follow their separate original expirations. The live **$57.98** is an amount to record; preview has not recorded received money.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Combined renewal review, desktop](143-combined-renewal-review-desktop.png)](143-combined-renewal-review-desktop.png) | [![Combined renewal review, phone](143-combined-renewal-review-phone.png)](143-combined-renewal-review-phone.png) |
+
+## 144 — One final received-payment action, separate renewal history
+
+After staff accepts the reviewed terms, verifies the full actual cash/check payment and confirms, the page shows **$57.98 received**, its date, the two allocations and links to each renewed record. Each membership keeps its own accepted terms, dates, prices and history. One confirmation is prepared for the group; it is not marked delivered. Reload and return links create no further receipt. Each record shows the shared confirmation’s actual status.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Combined renewals recorded, desktop](144-combined-renewals-recorded-desktop.png)](144-combined-renewals-recorded-desktop.png) | [![Combined renewals recorded, phone](144-combined-renewals-recorded-phone.png)](144-combined-renewals-recorded-phone.png) |
+
+## 145 — Split one original record between types or terms
+
+**Split this renewal** creates another entry for the same original record. Here its two available places are selected as one Subscription and one Unlimited place. The combined count cannot exceed the original places still available. The other original record is unselected. Different types/terms are explicit choices, while the original history remains unchanged. This captured preview creates no renewal or payment.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Split renewal places preview, desktop](145-split-renewal-places-preview-desktop.png)](145-split-renewal-places-preview-desktop.png) | [![Split renewal places preview, phone](145-split-renewal-places-preview-phone.png)](145-split-renewal-places-preview-phone.png) |
+
+This first combined checkout accepts **positive, verified cash or check**. Monthly rows can select an existing permitted card for their own future installments; no card is charged by the grouped received-payment action. Card/Zelle/gift-card/customer-credit funding, new-card storage and a renewal with no payment due use the existing individual workflows for now. Group funding by those methods remains unfinished. Ordinary minimums, owner-only minimum exceptions and the existing earlier-payment review safeguards still apply. No membership records are silently consolidated, and no booking, capacity reservation or waiver is created by this membership-only checkout.
+
+Developer verification: the complete PostgreSQL suite passed **1,795 tests** with the final application code, including all 38 new combined-renewal cases. The preceding focused run passed **84 checks**, covering existing renewals/parent review, actual concurrent submissions, used/unused schema reversal, runtime grants, read-only history and deployment compatibility. A separate final Chromium scenario exercised split preview, distinct start dates, actual form confirmation, reload and return links at 1440px/390px. It recorded fictional $17.99 + $39.99 once, prepared one shared confirmation and left original quotes intact; preview created no payment, booking or benefit usage. All six final images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All 589 Python files pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all 290 PNGs/gallery links and all 65 migration pins pass. All 64 previously published migration files/hashes and the earlier CSV sample remain unchanged. All four GitHub checks passed for the preceding published commit; new checks run after publication. External requests were blocked/mocked and no customer email was delivered. Provider behavior remains unverified. Features and scheduled collection remain off by default; PR37 stays draft and the broader stage continues. No merge, deployment or live financial action occurred.

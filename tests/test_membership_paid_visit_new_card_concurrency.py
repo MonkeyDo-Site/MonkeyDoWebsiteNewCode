@@ -100,6 +100,6 @@ class PaidVisitNewCardRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Transac
         self.assertNotIn(
             "core_membershippaidvisitcardstorage", connection.introspection.table_names()
         )
-        MigrationExecutor(connection).migrate([("core", "0090_paid_visit_manual_payment")])
+        MigrationExecutor(connection).migrate([("core", "0091_combined_membership_renewals")])
         self.known_card()
         self.assertEqual(MembershipPaidVisitCardStorage.objects.count(), 1)

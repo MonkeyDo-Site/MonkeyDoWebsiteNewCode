@@ -80,6 +80,15 @@ def claim(message_id):
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
     scoped_refresh = None
+    if message.kind == "membership_renewal":
+        from core.membership_batch_renewals import group_for_message, queue_confirmation
+
+        batch = group_for_message(message)
+        if batch:
+            refreshed = queue_confirmation(batch)
+            if refreshed is None or refreshed.pk != message.pk or refreshed.state != "queued":
+                return None
+            scoped_refresh = (queue_confirmation, batch)
     if message.kind in confirmation_kinds and message.membership_id:
         from core.membership_funding import member_needs_review
 

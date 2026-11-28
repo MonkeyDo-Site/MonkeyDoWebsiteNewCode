@@ -105,7 +105,7 @@ class PaidVisitCardRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Transactio
         try:
             MigrationExecutor(connection).migrate([("core", "0085_paid_visit_received_split")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0090_paid_visit_manual_payment")])
+            MigrationExecutor(connection).migrate([("core", "0091_combined_membership_renewals")])
         with self.runtime_role():
             self.buy_card()
         self.assertEqual(MembershipPaidVisitIntent.objects.count(), 1)

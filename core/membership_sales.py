@@ -849,6 +849,12 @@ def payment_updated(operation):
 
 
 def queue_confirmation(member):
+    from .membership_batch_renewals import group_for
+    from .membership_batch_renewals import queue_confirmation as queue_batch
+
+    batch = group_for(member)
+    if batch:
+        return queue_batch(batch)
     if member.membership.snapshot.get("paid_visit_purchase") or member.membership.snapshot.get(
         "paid_visit_card"
     ):

@@ -23,6 +23,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClosedBookingPlanTests(SimpleTestCase):
+    def test_used_combined_renewals_refuse_an_incompatible_code_switch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            host = deploy.Host({}, Path("/tmp/unused-combined-renewals-compatibility.log"))
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_combined_renewals_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_combined_renewals_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_combined_renewals_compatible(target))
+
+    def test_reviewed_combined_renewal_capability_skips_legacy_probe(self):
+        host = deploy.Host({}, Path("/tmp/unused-combined-renewals-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_combined_renewals_compatible(ROOT))
+            command.assert_not_called()
+
     def test_used_recovery_card_storage_refuses_older_code_switch(self):
         with tempfile.TemporaryDirectory() as folder:
             target = Path(folder)
@@ -131,7 +149,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_cannot_manage_accepted_first_membership_splits(self):
@@ -152,7 +172,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_membership_allocations_of_recorded_bank_money(self):
@@ -177,7 +199,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_accepted_split_first_card_arrivals(self):
@@ -200,7 +224,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_accepted_pending_visit_receipts(self):
@@ -224,7 +250,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_recorded_pending_visit_returns(self):
@@ -249,7 +277,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f"], ["t", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_recorded_stopped_arrivals(self):
@@ -275,7 +305,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f"], ["t", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_cancellation_linked_stopped_arrivals(self):
@@ -302,7 +334,9 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f"], ["t", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host, "command", side_effect=[*replies, "f", "f", "f", "f", "f", "f"]
+                ):
                     host.ensure_compatible_release(target)
 
     def test_older_release_cannot_manage_paid_visit_membership_purchases(self):

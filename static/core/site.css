@@ -1231,3 +1231,6 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 [data-recovery-card-form] [hidden] { display:none!important }
 
 [data-paid-visit-receipt] [hidden] { display:none!important }
+
+/* Combined renewal choices stay beside their single reviewed total. */
+.renewal-batch-row h2{margin-bottom:.35rem}.renewal-batch-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem 1rem}.renewal-batch-fields .form-field{min-width:0}.renewal-batch-fields select,.renewal-batch-fields input{max-width:100%;width:100%}.renewal-batch-total{padding:.6rem 0;border-bottom:1px solid var(--line,#d1d9cb)}.renewal-batch-total h3{margin:.4rem 0}.renewal-batch-total details{margin-bottom:.6rem}[data-renewal-batch] aside>.checkbox-field{margin:1rem 0}[data-renewal-batch] [hidden]{display:none!important}
