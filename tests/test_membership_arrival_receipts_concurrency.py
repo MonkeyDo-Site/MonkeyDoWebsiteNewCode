@@ -44,7 +44,7 @@ class PendingVisitReceiptRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Tran
         try:
             MigrationExecutor(connection).migrate([("core", "0078_split_membership_arrival")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0085_paid_visit_received_split")])
+            MigrationExecutor(connection).migrate([("core", "0086_paid_visit_card_reservations")])
         self.start()
         self.accept()
         self.assertEqual(MembershipArrivalReceipt.objects.count(), 2)

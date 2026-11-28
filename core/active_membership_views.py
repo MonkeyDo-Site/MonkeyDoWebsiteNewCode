@@ -219,7 +219,7 @@ class PurchaseForm(forms.Form):
             self.fields["expected_method"].choices = [
                 (key, "Split" if key == "split" else label)
                 for key, label in self.fields["expected_method"].choices
-                if key in {"cash", "check", "split"}
+                if key in {"cash", "check", "split", "card"}
             ]
             self.fields["expected_method"].label = "Remaining payment"
             self.fields["customer"].widget = forms.HiddenInput()
@@ -742,6 +742,50 @@ def membership_overview(request, pk):
         ),
         pk=pk,
     )
+    from .membership_paid_visit_pending import context as paid_visit_context
+
+    pending_paid_visit = paid_visit_context(member)
+    if request.method == "POST" and request.POST.get("action") in {
+        "paid_visit_complete",
+        "paid_visit_stop",
+    }:
+        from .membership_paid_visit_pending import complete, stop
+        from .membership_paid_visit_records import MembershipPaidVisitIntent
+        from .membership_sales import authorize
+        from .permissions import require_actor
+
+        authorize(request.user, collect=True)
+        require_actor(request.user, "core.change_booking")
+        action_intent = MembershipPaidVisitIntent.objects.filter(purchase=member).first()
+        if action_intent is None:
+            raise Http404
+        try:
+            if request.POST["action"] == "paid_visit_complete":
+                recorded = complete(action_intent.pk)
+                if recorded.kind == "completed":
+                    messages.success(
+                        request, "The paid visit was applied. No new card payment was requested."
+                    )
+                else:
+                    messages.info(
+                        request,
+                        "This visit application was stopped. The original visit was not transferred.",
+                    )
+            else:
+                stop(
+                    actor=request.user,
+                    intent_id=action_intent.pk,
+                    request_key=forms.UUIDField().clean(request.POST.get("request_key")),
+                    reviewed=request.POST.get("reviewed"),
+                    reason=request.POST.get("reason", ""),
+                )
+                messages.success(
+                    request,
+                    "Visit funds released. The original visit and membership history are retained.",
+                )
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
+        return redirect("membership_overview", pk=member.pk)
     from .membership_cancellation_views import ACTIONS as cancellation_actions
     from .membership_cancellation_views import overview_controls
 
@@ -931,6 +975,7 @@ def membership_overview(request, pk):
             **cancellation_context,
             **credit_context,
             "member": member,
+            "pending_paid_visit": pending_paid_visit,
             "paid_visit_conversion": member.visit_conversions.filter(
                 details__has_key="paid_visit_purchase"
             ).first()

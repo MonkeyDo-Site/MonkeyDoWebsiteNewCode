@@ -149,7 +149,6 @@ class PaidVisitPurchaseTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
         with self.assertRaises(PermissionDenied):
             offer(**(self.options | dict(actor=None)))
         for values in (
-            dict(expected_method="card"),
             dict(comped=True, actor=self.owner),
             dict(starts_on=self.values()["starts_on"].replace(day=10)),
         ):
@@ -264,7 +263,7 @@ class PaidVisitPurchaseTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
         self.assertEqual(page.context["form"]["paid_visit_id"].value(), self.visit.pk)
         self.assertEqual(
             {k for k, _ in page.context["form"].fields["expected_method"].choices},
-            {"cash", "check", "split"},
+            {"cash", "check", "split", "card"},
         )
         values = self.web_values()
         preview = self.client.post(reverse("membership_offer"), values)

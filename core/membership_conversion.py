@@ -49,7 +49,7 @@ def group(category):
     )
 
 
-def review(*, actor, booking_id, member_id=None, proposed_membership=None):
+def review(*, actor, booking_id, member_id=None, proposed_membership=None, paid_intent=None):
     authorize(actor, collect=True)
     from .permissions import require_actor
 
@@ -67,6 +67,9 @@ def review(*, actor, booking_id, member_id=None, proposed_membership=None):
         customer_id = member.customer_id
         target_id = member.pk
     booking = Booking.objects.select_related("session", "customer").get(pk=booking_id)
+    from .membership_paid_visit_pending import protect_conversion
+
+    protect_conversion(booking_id, paid_intent)
     on = booking.session.starts_at.astimezone(NEW_YORK).date()
     if (
         booking.customer_id != customer_id
@@ -292,7 +295,7 @@ def convert(*, actor, booking_id, member_id, reviewed, request_key, confirmed=Fa
     return conversion
 
 
-def record_funds(*, actor, booking, member_id, data, key, identity):
+def record_funds(*, actor, booking, member_id, data, key, identity, before_funds=None):
     """Caller holds booking/customer/source locks and the outer atomic confirmation."""
     original = booking.quotes.get(pk=data["original_quote"])
     updated = BookingQuote.objects.create(
@@ -312,6 +315,8 @@ def record_funds(*, actor, booking, member_id, data, key, identity):
         details=data,
         actor=actor,
     )
+    if before_funds:
+        before_funds(conversion)
     for row in data["reversals"]:
         FinancialLineAdjustment.objects.create(
             request_key=key,

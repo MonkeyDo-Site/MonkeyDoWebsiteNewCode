@@ -83,6 +83,18 @@ def booking_detail(request, pk):
             )
             if converted and converted.details.get("paid_visit_purchase"):
                 payment_context["paid_visit_conversion"] = converted
+            from .membership_paid_visit_pending import active as paid_visit_active
+            from .membership_paid_visit_pending import available as paid_visit_available
+
+            held_visit = (
+                paid_visit_active()
+                .filter(booking=booking)
+                .select_related("purchase__membership")
+                .first()
+                if paid_visit_available()
+                else None
+            )
+            payment_context["pending_paid_visit"] = held_visit
             from .availability import NEW_YORK
             from .membership_sales import today
 
@@ -90,6 +102,7 @@ def booking_detail(request, pk):
             payment_context["can_purchase_from_paid_visit"] = bool(
                 settings.MEMBERSHIP_SALES_ENABLED
                 and converted is None
+                and held_visit is None
                 and booking.attendance == "arrived"
                 and booking.children
                 and booking.session.starts_at.astimezone(NEW_YORK).date() == today()

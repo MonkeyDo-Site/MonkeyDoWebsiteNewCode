@@ -11,6 +11,7 @@ from .payments.amounts import COMPONENTS, ZERO, amount
 from .payments.ledger import fingerprint, lock_sale
 
 MARKER = "paid_visit_purchase"
+CARD_MARKER = "paid_visit_card"
 
 
 def prepare_offer(
@@ -38,10 +39,10 @@ def prepare_offer(
         data["operation"] != "purchase"
         or data["comped"]
         or amount(credit_amount)
-        or data["expected_method"] not in {"cash", "check", "split"}
+        or data["expected_method"] not in {"cash", "check", "split", "card"}
     ):
         raise ValidationError(
-            "Use cash/check or received split payments for this paid-visit conversion. Card remainders are still in development."
+            "Choose a card, cash/check or received split payment for this paid-visit conversion."
         )
     proposed = ProposedMembership(data)
     converted = review(actor=actor, booking_id=booking_id, proposed_membership=proposed)
@@ -52,6 +53,24 @@ def prepare_offer(
     principal = amount(data["installments"][0]["quote"]["subtotal"])
     applied = min(principal, amount(converted["credit"]))
     remaining = principal - applied
+    if data["expected_method"] == "card":
+        from .pricing import Line, quote_lines
+
+        quote = quote_lines(
+            [
+                Line(
+                    f"{data['kind'].title()} Membership",
+                    data["places"],
+                    amount(data["unit_price"])
+                    * (data["months"] if data["billing"] == "prepaid" else 1),
+                    False,
+                )
+            ],
+            policy,
+            card_base=remaining,
+        )
+        data["installments"][0]["quote"] = quote
+        remaining = amount(quote["total"]) - applied
     if data["expected_method"] == "split":
         from .membership_first_split import review as split_review
         from .pricing import Line, quote_lines
@@ -91,12 +110,20 @@ def prepare_offer(
         data["first_payment_plan"] = plan
         remaining = amount(quote["total"]) - applied
     terms = data["terms"]
+    pending_card = data["expected_method"] == "card" and bool(remaining)
+    use_words = "will be applied after card confirmation" if pending_card else "is applied"
+    credit_words = "will remain after transfer" if pending_card else "remains"
     terms += (
         f" Today's paid admissions and associated reversed tax supply ${converted['credit']} in existing funds."
-        f" ${applied:.2f} is applied to this membership; ${amount(converted['credit']) - applied:.2f} remains as customer credit."
+        f" ${applied:.2f} {use_words} to this membership; ${amount(converted['credit']) - applied:.2f} {credit_words} as customer credit."
         f" The original processing fee of ${converted['retained_fee']} remains on the visit."
         " These are existing funds, not another receipt or a separate cash/card refund."
     )
+    if data["expected_method"] == "card" and remaining:
+        terms += (
+            " The paid visit funds are reserved, not yet transferred. They are applied only after this separate card remainder is confirmed."
+            " Until then the original paid visit stays unchanged and no membership benefit is used for it."
+        )
     return data | dict(
         terms=terms,
         first_payment_total=str(remaining),
@@ -120,10 +147,11 @@ def require_known_split(data):
         )
 
 
-def complete_purchase(*, actor, member, offer, invoice):
+def complete_purchase(*, actor, member, offer, invoice, paid_intent=None):
     """Purchase holds the booking/customer locks; all writes share its transaction."""
     from .customer_credit_records import CustomerCreditAllocation, CustomerCreditApplication
     from .membership_conversion import record_funds, review, use_benefits
+    from .membership_paid_visit_pending import release_completed
     from .membership_sales import installment_paid
     from .models import AuditEvent, Booking
     from .payments.ledger import record_manual, request_operation
@@ -135,6 +163,7 @@ def complete_purchase(*, actor, member, offer, invoice):
         actor=actor,
         booking_id=booking.pk,
         proposed_membership=ProposedMembership(offer, recorded_purchase_id=member.pk),
+        paid_intent=paid_intent,
     )
     if current["fingerprint"] != plan["conversion"]["fingerprint"]:
         raise ValidationError("The paid visit or its funds changed. Review the membership again.")
@@ -160,6 +189,9 @@ def complete_purchase(*, actor, member, offer, invoice):
         identity=fingerprint(
             dict(purchase=member.pk, offer=member.fingerprint, visit=current["fingerprint"])
         ),
+        before_funds=(lambda converted: release_completed(paid_intent, converted))
+        if paid_intent
+        else None,
     )
     applied = amount(plan["applied"])
     line = invoice.sale.lines.get()
@@ -206,7 +238,10 @@ def complete_purchase(*, actor, member, offer, invoice):
             ),
         )
     remaining = amount(plan["new_payment"])
-    if offer.get("first_payment_plan"):
+    if paid_intent:
+        # This receipt is already known. Completion never makes another charge.
+        pass
+    elif offer.get("first_payment_plan"):
         from .membership_first_split import record
 
         require_known_split(offer)
@@ -266,7 +301,7 @@ def ready_for_confirmation(record):
 
     member = record.purchase
     return (
-        member.membership.snapshot.get(MARKER)
+        (member.membership.snapshot.get(MARKER) or member.membership.snapshot.get(CARD_MARKER))
         and member.send_confirmation
         and member.customer.email
         and not member.cancellations.exists()

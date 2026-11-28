@@ -32,8 +32,9 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Actual arrival funds and audited downloads | [111–112](#111--export-actual-arrival-funds-without-counting-applications-twice) |
 | **New: buy a first membership using a paid visit** | **[113–116](#113--apply-a-paid-visit-toward-a-first-membership)** |
 | **New: paid-visit purchase with received split payments** | **[117–118](#117--paid-visit-purchase-with-received-split-payments)** |
+| **New: card remainder, uncertain result and safe owner stop** | **[119–124](#119--paid-visit-membership-with-a-card-remainder)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Samples 111–112 add filtered source balances and receipt/return/application history to the existing export dropdown. Samples 113–116 add an initial membership purchase using paid visit funds with a known cash/check remainder or no new payment. Samples 117–118 extend that page to received cash/check/Zelle/physical-gift-card combinations. Card remainders, multi-cohort checkout, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Samples 111–112 add filtered source balances and receipt/return/application history to the existing export dropdown. Samples 113–116 add an initial membership purchase using paid visit funds with a known cash/check remainder or no new payment. Samples 117–118 extend that page to received cash/check/Zelle/physical-gift-card combinations. Samples 119–124 add a separately authorized card remainder with protected source funds, truthful uncertain outcomes and a safe owner stop. Mixed manual/card remainders and further recovery controls, multi-cohort checkout, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -1129,7 +1130,7 @@ Developer verification for this read-only reporting increment: The final combine
 
 From today's paid arrived booking, **Apply today's visit toward a membership purchase** opens one combined page. The known customer is reused. Membership places/term, the original paid visit, amount applied, new payment, future installment dates, saved-card selection and accepted agreement stay together.
 
-The fictional card-paid visit received **$16.47**. Its **$0.45 original processing fee stays on the visit**; the replaced admission and both original taxes supply **$16.02** toward the **$17.99 first membership month**. Only **$1.97 new cash/check** is recorded. A saved card is authorized for the two remaining **$18.53** installments, without another immediate card charge. This sample uses a cash/check remainder; samples 117–118 add received Zelle, verified physical gift cards and manual combinations. Card remainders remain in progress.
+The fictional card-paid visit received **$16.47**. Its **$0.45 original processing fee stays on the visit**; the replaced admission and both original taxes supply **$16.02** toward the **$17.99 first membership month**. Only **$1.97 new cash/check** is recorded. A saved card is authorized for the two remaining **$18.53** installments, without another immediate card charge. This sample uses a cash/check remainder; samples 117–118 add received Zelle, verified physical gift cards and manual combinations. For a separately authorized card remainder, see samples 119–124; mixed manual/card remainders remain in progress.
 
 | Desktop | Phone |
 | --- | --- |
@@ -1192,4 +1193,69 @@ The overview shows applied credit separately from total new money received and l
 
 The final affected-path run passed **102 checks in 88.755s**, including 98 native PostgreSQL cases and four actual Chromium scenarios. It covers all 11 new received-split cases, four new real concurrency/reversal cases, existing paid-visit and first-split behavior, public/card checkout and the reviewed additive upgrade/capability guard. After shortening the selected dropdown label for phones, the final 12-case check passed in 11.845s and the final browser capture passed again in 6.213s. All 12 final 113–118 desktop/phone images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. Lint/format (556 Python files), model drift, affected JavaScript syntax, whitespace, all 236 PNGs/links and all 59 migration pins pass; all 58 published migration files/hashes remain unchanged. The prior complete local PostgreSQL suite was 1,588 tests before this increment; the final native inventory is 1,605, and a complete local run of that later inventory is not claimed. The prior published commit passed all four GitHub checks; new CI awaits publication. No external provider/storage call, delivered email, merge or deployment occurred.
 
-These are fictional local application screenshots. Provider/storage gateways were mocked and all non-local browser requests blocked. Actual Banquest fields/outcomes, external email delivery and gift-card API verification are not demonstrated. Card remainders for this combined paid-visit path still require their durable conditional source-funding workflow; they cannot currently be confirmed. Default-off features and the same draft PR remain; no merge or deployment is included.
+These are fictional local application screenshots. Provider/storage gateways were mocked and all non-local browser requests blocked. Actual Banquest fields/outcomes, external email delivery and gift-card API verification are not demonstrated. Samples 119–124 add the durable conditional workflow for a card-only remainder. Mixed manual/card remainder and further recovery paths remain guarded. Default-off features and the same draft PR remain; no merge or deployment is included.
+
+
+## 119 — Paid-visit membership with a card remainder
+
+The same purchase page can now request only the card remainder after reserving the paid visit funds. The fictional **$16.47** original card receipt supplies **$16.02** toward the **$17.99** first membership month. Its original **$0.45 fee stays on the visit**. The new card base is only **$1.97**, with **$0.06 new membership card fee**, so the final button explicitly requests **$2.03**. The next two accepted installments remain **$18.53** each. Membership and its fee are not taxable.
+
+The price card and accepted terms identify these as **reserved original funds**, applied after the separate card result is confirmed. Opening the review creates no purchase or financial operation. Source counts, waivers and capacity stay on the original already-arrived booking.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit card review, desktop](119-paid-visit-card-review-desktop.png)](119-paid-visit-card-review-desktop.png) | [![Paid visit card review, phone](119-paid-visit-card-review-phone.png)](119-paid-visit-card-review-phone.png) |
+
+## 120 — Card requested; original visit remains paid and unchanged
+
+One confirmation records the accepted membership, a durable source reservation and **one $2.03 card request**. New money received is **$0.00** until the result is known. No source credit is issued or applied, and no membership visit benefit is used. The original invoice and receipt remain **$16.47**. The page links the original booking and the existing card record without offering a second generic collection of the full membership invoice.
+
+While pending, a refund, price adjustment or other conversion of that original visit is paused. The source reservation does not expire merely because a card result is uncertain. An unattempted dispatch has a 30-minute acceptance window; expiry cancels that unattempted request for review and retains the source reservation until a safe explicit resolution.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit card pending, desktop](120-paid-visit-card-pending-desktop.png)](120-paid-visit-card-pending-desktop.png) | [![Paid visit card pending, phone](120-paid-visit-card-pending-phone.png)](120-paid-visit-card-pending-phone.png) |
+
+## 121 — Uncertain card outcome does not trigger another charge
+
+An unknown/action result keeps the original visit intact and its funds reserved. The page says to check the **existing payment**. The stop action is unavailable while that outcome is uncertain; generic collection cannot charge the original reserved amount again. A dashboard notice remains until this application is completed or safely stopped.
+
+The browser check changes a fictional result from unknown to independently recorded success. The actual **$2.03 receipt is saved first**, while the original visit is still unchanged and source credit remains zero. Applying the original funds is a separate operation; a failure there cannot erase the already recorded card result or resubmit its financial POST.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit card unknown, desktop](121-paid-visit-card-unknown-desktop.png)](121-paid-visit-card-unknown-desktop.png) | [![Paid visit card unknown, phone](121-paid-visit-card-unknown-phone.png)](121-paid-visit-card-unknown-phone.png) |
+
+## 122 — Known card result; source application completed once
+
+After known success, the ordinary worker can complete the accepted source application. The same page also offers **Continue applying this visit** when completion is eligible and needs resuming. This action requests **no new card payment**.
+
+Completion atomically records the exact source reversals, **$16.02 backed credit application**, fully funded **$18.05 first membership invoice** and one actual visit benefit used. The original receipt remains **$16.47**, its adjusted invoice is **$0.45**, and the membership shows **$2.03 new money received** separately from applied credit. One free benefit remains. The application notice clears, one combined update is queued without delivery, and replay cannot create another receipt or conversion.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit card completed, desktop](122-paid-visit-card-completed-desktop.png)](122-paid-visit-card-completed-desktop.png) | [![Paid visit card completed, phone](122-paid-visit-card-completed-phone.png)](122-paid-visit-card-completed-phone.png) |
+
+## 123 — Declined card; an explicit owner stop
+
+A declined card creates no new received money or visit credit. The rare stop action stays collapsed. When the existing result is known and no new money remains held, the owner can enter a reason and choose **Stop applying this visit**. An unattempted ready request is cancelled locally before its source funds are released. A sending/unknown/action request or unresolved money prevents this action.
+
+This stop releases the source application; it does not claim a refund, cancel the original booking, or silently cancel membership terms. Same-purchase card retry/replacement, alternative-tender recovery and fresh approval for later-date/source changes are still being completed and remain guarded.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit card declined owner stop, desktop](123-paid-visit-card-declined-stop-desktop.png)](123-paid-visit-card-declined-stop-desktop.png) | [![Paid visit card declined owner stop, phone](123-paid-visit-card-declined-stop-phone.png)](123-paid-visit-card-declined-stop-phone.png) |
+
+## 124 — Stop recorded; original paid visit retained
+
+The stopped page states that the original visit and its payment are unchanged and no longer reserved for this application. In this declined example, the original invoice and receipt remain **$16.47**, membership new money and applied credit remain **$0.00**, and no benefit or conversion was recorded. The source-application dashboard notice clears. The accepted membership/purchase and declined operation remain in history; any separate membership-term or retained-fee/refund resolution needs its own reviewed action.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit card stopped, desktop](124-paid-visit-card-stopped-desktop.png)](124-paid-visit-card-stopped-desktop.png) | [![Paid visit card stopped, phone](124-paid-visit-card-stopped-phone.png)](124-paid-visit-card-stopped-phone.png) |
+
+Developer verification: the complete PostgreSQL suite passed **1,629 tests in 707.227 seconds**. After the final future-card binding and replay-handling fixes, **69 focused checks passed in 39.458 seconds**, including 22 paid-visit card cases, five real PostgreSQL concurrency/reversal cases, existing billing/card/collection cases and two actual Chromium scenarios. Changing a future billing card preserves the original accepted first request; a stale continuation after completion or owner stop cannot repeat funds or falsely report a transfer. The final native inventory is 1,633; a complete local 1,633-test run is not claimed. All 12 final desktop/phone images for samples 119–124 were visually inspected. Browser checks report no overflow, JavaScript errors, duplicate IDs or nested forms, with zero external provider/storage calls and zero delivered emails. All 561 Python files pass lint/format checks; migration drift, affected JavaScript syntax, diff whitespace, all 248 PNGs/gallery links and all 60 migration pins pass. All 59 previously published migration files/hashes remain unchanged. The previous published commit passed all four GitHub checks; checks for this increment will run after publication. Features remain off by default and PR #37 remains draft; no merge, deployment or live financial action occurred.
+
+All financial data and card outcomes above are fictional local application checks. Provider/storage gateways were mocked and non-local browser requests blocked; the hosted SDK stub initialized no fields and only an existing synthetic saved card was selected. Actual Banquest card fields, processor outcomes, external email delivery and live financial actions are not verified here. The same draft PR remains default-off with no release included. Mixed manual/card remainders, further payment/date recovery, multi-cohort checkout and the remaining owner/credit/reporting scope continue independently.
+
+The pending panel identifies the original session date/time directly. Changing a future billing card preserves the already accepted original request and its recorded card outcome; it does not retarget or retry that payment.

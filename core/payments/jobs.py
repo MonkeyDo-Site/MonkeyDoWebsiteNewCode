@@ -23,6 +23,7 @@ def enqueue(*, kind, reference, key):
         "email_event",
         "membership_arrival",
         "membership_collection",
+        "membership_paid_visit",
     }:
         raise ValidationError("Unsupported worker operation.")
     job, created = DurableJob.objects.get_or_create(
@@ -92,6 +93,10 @@ def run_one():
             from core.membership_collection_queue import process
 
             process(job)
+        elif job.kind == "membership_paid_visit":
+            from core.membership_paid_visit_pending import complete
+
+            complete(job.reference)
         elif job.kind == "membership_arrival":
             from core.membership_arrival_pending import complete
 

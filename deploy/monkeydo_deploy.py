@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0086_paid_visit_card_reservations.py": "c00647376f0f46d0cfd0486e4b46ae2de0fcd3c2f0c65e84d7fcab61024293c6",
     "0085_paid_visit_received_split.py": "8d17c2620092d022a75ebc335b1cadacc151e7fd197f40538613e03d20314417",
     "0084_paid_visit_purchase.py": "1ea54e866e5dc9aba3cd762446b20b5602b2cb105a650aa786bf08a65ce8844c",
     "0083_cancelled_membership_arrival_stop.py": "fa056c603af49668f583f8f5ea58a3107074e0cedbbcb0af367edea93c101266",
@@ -1350,6 +1351,47 @@ class Host:
             )
         return True
 
+    def ensure_paid_visit_card_compatible(self, target):
+        marker = target / "deploy/paid-visit-card-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "b2c1d5b915a81f1e89dd83d4619a2599a147b31347991e4e0846bb2e01645e54"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippaidvisitintent')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit card compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershippaidvisitintent)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit card reservations. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
@@ -1364,7 +1406,9 @@ class Host:
             self.ensure_pending_return_compatible(target)
             self.ensure_pending_stop_compatible(target)
             self.ensure_cancelled_member_stop_compatible(target)
-            return self.ensure_paid_visit_purchase_compatible(target)
+            compatible = self.ensure_paid_visit_purchase_compatible(target)
+            self.ensure_paid_visit_card_compatible(target)
+            return compatible
         psql = [
             "/usr/sbin/runuser",
             "-u",

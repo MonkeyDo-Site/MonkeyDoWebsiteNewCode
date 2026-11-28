@@ -60,6 +60,9 @@ def available_cards(member):
 def payment_review(*, actor, member_id, installment_id, tender, received_on=None):
     authorize(actor, collect=True)
     member = member_record(member_id)
+    from .membership_paid_visit_pending import protect_generic_payment
+
+    protect_generic_payment(member)
     installment = MembershipInstallment.objects.select_related("cycle", "invoice__sale").get(
         pk=installment_id, purchase=member
     )

@@ -517,7 +517,11 @@ def purchase(
             "term_subtotal": str(amount(data["unit_price"]) * data["places"] * data["months"]),
             **(
                 {
-                    "paid_visit_purchase": {
+                    (
+                        "paid_visit_card"
+                        if data["expected_method"] == "card"
+                        else "paid_visit_purchase"
+                    ): {
                         "booking": data["paid_visit"]["booking"],
                         "applied": data["paid_visit"]["applied"],
                         "new_payment": data["paid_visit"]["new_payment"],
@@ -636,6 +640,11 @@ def purchase(
         first = member.installments.first()
         invoice = invoice_for(first, actor=actor, tender=root.expected_method, authority=authority)
         if data.get("paid_visit"):
+            if data["expected_method"] == "card":
+                from .membership_paid_visit_pending import create
+
+                create(actor=actor, member=member, offer=data, invoice=invoice, method=method)
+                return member
             from .membership_paid_visit import complete_purchase
 
             complete_purchase(actor=actor, member=member, offer=data, invoice=invoice)
@@ -698,7 +707,9 @@ def card_required(data):
         return False
     if data.get("paid_visit"):
         # The initial paid-visit path only accepts known manual remainders.
-        return data["billing"] == "monthly"
+        return data["billing"] == "monthly" or (
+            data["expected_method"] == "card" and amount(data["first_payment_total"]) > ZERO
+        )
     card = (
         amount(data["first_payment_plan"]["card_total"])
         if data.get("first_payment_plan")
@@ -818,6 +829,9 @@ def payment_updated(operation):
         invoice = operation.sale.membership_invoice
     except MembershipInvoice.DoesNotExist:
         return
+    from .membership_paid_visit_pending import queue_ready
+
+    queue_ready(invoice.installment.purchase)
     if installment_paid(invoice.installment):
         from .payments.models import PaymentFollowup
 
@@ -835,7 +849,9 @@ def payment_updated(operation):
 
 
 def queue_confirmation(member):
-    if member.membership.snapshot.get("paid_visit_purchase"):
+    if member.membership.snapshot.get("paid_visit_purchase") or member.membership.snapshot.get(
+        "paid_visit_card"
+    ):
         from .membership_paid_visit import queue_confirmation as queue_paid_visit
 
         return queue_paid_visit(member)

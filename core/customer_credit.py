@@ -173,6 +173,9 @@ def review(*, actor, member_id, installment_id, value=None, remaining_tender="ca
     if remaining_tender not in {"card", "cash", "check", "zelle", "gift_card"}:
         raise ValidationError("Choose a supported remaining payment method.")
     member = member_record(member_id)
+    from .membership_paid_visit_pending import protect_generic_payment
+
+    protect_generic_payment(member)
     item = (
         member.installments.select_related("cycle", "invoice__sale")
         .filter(pk=installment_id)

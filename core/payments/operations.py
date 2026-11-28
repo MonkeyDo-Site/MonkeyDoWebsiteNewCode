@@ -152,6 +152,14 @@ def refresh_completed(operation):
 @transaction.atomic
 def begin_dispatch(operation_id):
     candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    from core.membership_paid_visit_pending import (
+        allow_dispatch as allow_paid_visit,
+    )
+    from core.membership_paid_visit_pending import (
+        lock_operation as lock_paid_visit,
+    )
+
+    paid_visit = lock_paid_visit(candidate)
     from core.membership_arrival_pending import allow_dispatch, lock_operation
 
     pending_arrival = lock_operation(candidate)
@@ -175,7 +183,7 @@ def begin_dispatch(operation_id):
         raise ValidationError("Non-card receipt must be explicitly recorded by staff.")
     if operation.state != "ready":
         return None
-    if not allow_dispatch(pending_arrival):
+    if not allow_dispatch(pending_arrival) or not allow_paid_visit(paid_visit):
         operation.state, operation.result_code = "cancelled", "changed_before_dispatch"
         operation.completed_at = timezone.now()
         operation.save(update_fields=["state", "result_code", "completed_at"])

@@ -411,6 +411,12 @@ def request_operation(
         ):
             raise ValidationError("Review the current integrated booking before collection.")
     cleaned = checked_allocation(sale, allocation)
+    if member_source:
+        from core.membership_paid_visit_pending import authorize_receipt
+
+        authorize_receipt(
+            invoice=invoice, actor=actor, request_key=request_key, tender=tender, allocation=cleaned
+        )
     if scheduled:
         from core.membership_collection_authority import authorize_operation
 
@@ -489,6 +495,9 @@ def request_operation(
         original = PaymentOperation.objects.select_for_update().get(
             pk=original_id, sale=sale, kind="receipt", state="succeeded", tender=tender
         )
+        from core.membership_paid_visit_pending import protect_source as protect_paid_visit
+
+        protect_paid_visit(original)
         if tender == "card" and original.method_id != method_id:
             raise ValidationError("A refund must use the original payment source.")
         used = used_components(original.adjustments.filter(state__in=RESERVED))
@@ -539,6 +548,9 @@ def record_result(
 ):
     enabled()
     candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    from core.membership_paid_visit_pending import lock_operation as lock_paid_visit
+
+    lock_paid_visit(candidate)
     from core.membership_arrival import lock_payment
 
     lock_payment(candidate)
@@ -599,6 +611,9 @@ def record_result(
         operation=operation, state=state, source=source, code=code, actor=actor
     )
     audit(actor, "payment.result_recorded", operation)
+    from core.membership_paid_visit_pending import outcome_updated as paid_visit_updated
+
+    paid_visit_updated(operation)
     if state in {"unknown", "action", "declined"}:
         PaymentFollowup.objects.get_or_create(
             operation=operation, defaults={"plan": "owner_review"}
