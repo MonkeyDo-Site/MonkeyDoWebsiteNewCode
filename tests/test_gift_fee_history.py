@@ -45,7 +45,9 @@ class GiftFeeHistoryTests(InitialCreditFixtures, RuntimeRoleMixin, TransactionTe
                 if paid:
                     record_manual(actor=self.staff, operation_id=original.pk, received=True)
         finally:
-            MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0093_membership_calendar_corrections")]
+            )
         return saved, original
 
     def test_paid_legacy_gift_fee_evidence_is_preserved_and_duplicate_result_adds_nothing(self):
@@ -117,7 +119,9 @@ class GiftFeeHistoryTests(InitialCreditFixtures, RuntimeRoleMixin, TransactionTe
         try:
             MigrationExecutor(connection).migrate([("core", "0080_pending_visit_returns")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0093_membership_calendar_corrections")]
+            )
         self.prepare()
         with self.runtime_role():
             saved = self.accepted()

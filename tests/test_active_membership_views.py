@@ -98,7 +98,12 @@ class ActiveMembershipViewTests(TestCase):
             csrf_client.post("/staff/memberships/purchase/", self.post_data()).status_code, 403
         )
         with override_settings(MEMBERSHIP_SALES_ENABLED=False):
-            self.assertEqual(self.client.get("/staff/memberships/purchased/").status_code, 404)
+            history = self.client.get("/staff/memberships/purchased/")
+            self.assertEqual(history.status_code, 200)
+            self.assertNotContains(history, "Purchase membership")
+            self.assertEqual(
+                self.client.post("/staff/memberships/purchase/", self.post_data()).status_code, 404
+            )
         self.staff.groups.clear()
         self.client.force_login(self.staff)
         self.assertEqual(self.client.get("/staff/memberships/purchase/").status_code, 403)

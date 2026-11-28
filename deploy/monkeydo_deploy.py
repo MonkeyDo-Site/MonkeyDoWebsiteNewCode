@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0093_membership_calendar_corrections.py": "6a8faa1d72fc5139e1438d9ac040a817317ed9d6b03f105db553223cfbf3e2a7",
     "0092_combined_renewal_bank_receipt.py": "81bdd06ae27374bd12a010f43e143034ebeb703d295800fa0777c21e1edc7792",
     "0091_combined_membership_renewals.py": "4d7c3fd74e8e827ef4ed62e71671a937f9785d6bbfb8ebdeee9f13052c726697",
     "0090_paid_visit_manual_payment.py": "b421124c9ffb2bd3d2d498ade7e71bf579cb09c9f2a75aba564bf7f9fb6da498",
@@ -1654,6 +1655,49 @@ class Host:
             )
         return True
 
+    def ensure_membership_calendar_compatible(self, target):
+        marker = target / "deploy/membership-calendar-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "cca488a5adc22035532565aeaddee2a5890f63f3f02528ce9cb70990bf0de304"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershipcalendarcorrection')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify membership calendar correction compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershipcalendarcorrection)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage membership calendar corrections. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
@@ -1676,6 +1720,7 @@ class Host:
             self.ensure_paid_visit_manual_compatible(target)
             self.ensure_combined_renewals_compatible(target)
             self.ensure_renewal_bank_compatible(target)
+            self.ensure_membership_calendar_compatible(target)
             return compatible
         psql = [
             "/usr/sbin/runuser",

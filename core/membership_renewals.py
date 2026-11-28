@@ -6,17 +6,15 @@ from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 
 from .membership_calendar import renewal_start
+from .membership_calendar_changes import root_for
 from .membership_records import MembershipOrigin
 
 
 def effective_expiry(member):
     stop = member.billing_state.stopped_on
+    root = root_for(member)
     try:
-        return (
-            min(member.membership.ends_on, stop - timedelta(days=1))
-            if stop
-            else member.membership.ends_on
-        )
+        return min(root.ends_on, stop - timedelta(days=1)) if stop else root.ends_on
     except OverflowError:
         raise ValidationError("Review the original membership effective end date.") from None
 
@@ -37,7 +35,7 @@ def renewal_details(member, *, on=None):
     from .membership_sales import today
 
     on = on or today()
-    root = member.membership
+    root = root_for(member)
     expiry = effective_expiry(member)
     if expiry < root.starts_on:
         raise ValidationError(

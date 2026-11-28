@@ -107,7 +107,9 @@ class CombinedRenewalBankRaceTests(TransactionTestCase):
                 )
                 self.assertEqual(cursor.fetchone()[0], restored)
         finally:
-            MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0093_membership_calendar_corrections")]
+            )
         self.receive()
         self.assertEqual(MembershipRenewalBatchBank.objects.count(), 1)
 
@@ -120,5 +122,7 @@ class CombinedRenewalBankRaceTests(TransactionTestCase):
             self.assertEqual(batch.parts.count(), 2)
             self.assertEqual(PaymentOperation.objects.count(), 4)
         finally:
-            MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0093_membership_calendar_corrections")]
+            )
         self.assertEqual(batch.messages.count(), 1)

@@ -43,7 +43,7 @@ def notice_dates(ends_on):
 def eligible(member, kind):
     if kind not in KINDS:
         raise ValidationError("Choose an approved membership notice.")
-    dates = notice_dates(member.membership.ends_on)
+    dates = notice_dates(member.current_membership.ends_on)
     if dates[kind] != today():
         return None
     if (
@@ -115,7 +115,7 @@ def refresh_notice(notice):
     lock_customer(member.customer_id)
     data = eligible(member, notice.kind)
     attempted = notice.deliveries.exclude(message__state__in=["queued", "cancelled"]).exists()
-    if data is None or attempted or member.membership.ends_on != notice.ends_on:
+    if data is None or attempted or member.current_membership.ends_on != notice.ends_on:
         cancel_queued(notice, "membership_notice_obsolete")
         return None
     link = MembershipRenewalLink.objects.filter(notice=notice).first()
@@ -172,14 +172,14 @@ def prepare_notice(*, member_id, kind):
     dates, places = data
     key = uuid.uuid5(
         uuid.NAMESPACE_URL,
-        f"monkeydo:renewal-notice:{member.pk}:{kind}:{member.membership.ends_on.isoformat()}",
+        f"monkeydo:renewal-notice:{member.pk}:{kind}:{member.current_membership.ends_on.isoformat()}",
     )
     notice, created = MembershipRenewalNotice.objects.get_or_create(
         pk=key,
         defaults=dict(
             purchase=member,
             kind=kind,
-            ends_on=member.membership.ends_on,
+            ends_on=member.current_membership.ends_on,
             due_on=dates[kind],
             places=places,
         ),
@@ -228,14 +228,14 @@ def candidates(*, limit):
         .values("total")
     )
     existing = MembershipRenewalNotice.objects.filter(
-        purchase_id=OuterRef("pk"), due_on=on, ends_on=OuterRef("membership__ends_on")
+        purchase_id=OuterRef("pk"), due_on=on, ends_on=OuterRef("calendar_ends_on")
     )
     records = (
         reporting_members()
         .filter(
             Q(purpose="complimentary")
             | Q(_has_installments=True, _unpaid_first=False, _unpaid_due=False),
-            membership__ends_on__in=days,
+            calendar_ends_on__in=days,
             billing_state__stopped_on__isnull=True,
         )
         .exclude(customer__email="")
@@ -249,9 +249,9 @@ def candidates(*, limit):
             ),
         )
         .filter(_notice_exists=False, _renewed__lt=F("membership__places"))
-        .order_by("membership__ends_on", "pk")
+        .order_by("calendar_ends_on", "pk")
     )
-    return [(member, days[member.membership.ends_on]) for member in records[:limit]]
+    return [(member, days[member.current_membership.ends_on]) for member in records[:limit]]
 
 
 def prepare_due(*, limit=20, dry_run=False):
@@ -271,7 +271,7 @@ def prepare_due(*, limit=20, dry_run=False):
 
 def overview_context(member):
     try:
-        dates = notice_dates(member.membership.ends_on)
+        dates = notice_dates(member.current_membership.ends_on)
     except ValidationError:
         dates = None
     return dict(

@@ -80,9 +80,12 @@ REVIEWED_NAMES = (
     "0090_paid_visit_manual_payment",
     "0091_combined_membership_renewals",
     "0092_combined_renewal_bank_receipt",
+    "0093_membership_calendar_corrections",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "membershipcalendarcorrection",
+    "membershipcalendarmessage",
     "membershiprenewalbatchbank",
     "membershiprenewalbatch",
     "membershiprenewalbatchpart",
@@ -155,6 +158,7 @@ IMMUTABLE = (
     "backuprestorecheck",
 )
 MUTABLE = (
+    "membershipcalendarstate",
     "membershiparrivalstate",
     "membershipbenefitstate",
     "membershipbilling",

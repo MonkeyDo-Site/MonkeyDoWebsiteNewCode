@@ -79,7 +79,13 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
-    scoped_refresh = None
+    from core.membership_calendar_emails import queue as refresh_calendar
+    from core.membership_calendar_emails import refresh_for_claim
+
+    calendar_current, calendar_source = refresh_for_claim(message)
+    if not calendar_current:
+        return None
+    scoped_refresh = (refresh_calendar, calendar_source) if calendar_source else None
     if message.kind == "membership_renewal":
         from core.membership_batch_renewals import group_for_message, queue_confirmation
 

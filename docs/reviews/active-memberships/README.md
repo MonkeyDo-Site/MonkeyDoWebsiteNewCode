@@ -42,8 +42,9 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: combined cash/check renewals and partial/type selection** | **[143–145](#143--renew-several-memberships-on-one-page)** |
 | **New: find another renewal while keeping selected details** | **[146](#146--find-another-renewal-without-losing-selected-details)** |
 | **New: one verified Zelle transfer across separate renewals** | **[147–149](#147--review-one-zelle-transfer-for-several-renewals)** |
+| **New: correct unused membership dates on the same page** | **[150–152](#150--review-corrected-dates-without-another-page)** |
 
-Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–149** show combined cash/check/Zelle renewals, separate recorded allocations, split type/term choices and finding additional records while retaining selected details. Samples 147–149 show one shared bank transfer and its original receipt details. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
+Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–149** show combined cash/check/Zelle renewals, separate recorded allocations, split type/term choices and finding additional records while retaining selected details. Samples 147–149 show one shared bank transfer and its original receipt details. Samples 150–152 show date review, saved history under the same membership number and readable history while updates are paused. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
 
 ## 01 — Purchase membership on one page
 
@@ -1523,3 +1524,33 @@ The existing payment page identifies **$17.99 allocated from one verified $57.98
 This records a manually verified transfer; it does not connect to the bank or send a transfer/refund. A payment already recorded elsewhere stays in its existing application workflow. Card/gift-card/customer-credit/split funding and a group with no payment due remain unfinished, with individual renewal workflows retained. Monthly renewals keep their separately accepted future card schedules.
 
 Developer verification: The complete PostgreSQL suite passed **1,826 tests in 1,028.921 seconds** with the final application code. The final focused run passed **46 checks in 61.324 seconds**, including all 16 new bank-funding cases, five real transaction/concurrency/reversal cases and reviewed deployment compatibility. Three final actual Chromium scenarios passed in 19.880 seconds, covering cash confirmation, same-source split preview, search/show-more with preserved monthly selections, and the new Zelle flow: one fictional $57.98 verified transfer, $17.99/$39.99 allocations, actual October 29 bank date and sender preserved during browsing, one unsent shared confirmation, reload without duplication, shared-source payment links and $57.98 total in transaction exports. All fourteen refreshed/new 1440px/390px images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All 594 Python files pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all 298 PNGs/gallery links and all 66 migration pins pass. All 65 previously published migration files/hashes and the earlier actual-download CSV sample remain unchanged. All four GitHub checks passed for the prior published commit; new checks run after publication. External provider/storage requests were mocked or blocked, no bank API was called and no customer email was delivered. Actual Banquest behavior remains unverified. Features/collection remain off by default, PR37 stays draft and broader stage work continues. No merge, deployment or live financial action occurred.
+
+
+## 150 — Review corrected dates without another page
+
+An unused, paid prepaid term is corrected from October 31–January 30 to November 5–February 4. Start date, reason, Yes/No updated-email choice, current/new dates and final save remain on the existing overview. Changing the review clears the customer-agreement checkbox. Preview creates no purchase, payment or correction.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Membership date review, desktop](150-membership-date-review-desktop.png)](150-membership-date-review-desktop.png) | [![Membership date review, phone](150-membership-date-review-phone.png)](150-membership-date-review-phone.png) |
+
+## 151 — Corrected dates and original evidence together
+
+The same membership number now shows its corrected benefit dates. Expandable date history retains the original term, reason, actor, time and actual update-email state. The $107.94 receipt, original contract, original cycle identities and payment schedule are retained. No additional money is recorded. Future bookings, renewal timing, notices and unused-term refund suggestions use the corrected calendar.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Corrected membership history, desktop](151-membership-corrected-date-history-desktop.png)](151-membership-corrected-date-history-desktop.png) | [![Corrected membership history, phone](151-membership-corrected-date-history-phone.png)](151-membership-corrected-date-history-phone.png) |
+
+## 152 — Saved history stays available when updates are paused
+
+With membership sales paused, the existing history and recorded funds remain readable. Editing and payment actions remain gated. This sample is an operational history view, not a purchase or charge.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Membership history while paused, desktop](152-membership-history-during-pause-desktop.png)](152-membership-history-during-pause-desktop.png) | [![Membership history while paused, phone](152-membership-history-during-pause-phone.png)](152-membership-history-during-pause-phone.png) |
+
+This first correction path supports standalone prepaid or complimentary memberships before their effective start and before any booking benefits were assigned. Used, expired, monthly-payment, linked renewal/addition and unresolved-funding cases still require further development; these screenshots do not imply those paths are finished. Updated confirmations are prepared only when explicitly selected, never delivered by these checks. Earlier unattempted date notices are cancelled as retained evidence; attempted or uncertain delivery is not automatically retried.
+
+
+Developer verification: the complete PostgreSQL suite passed **1,858 tests in 1,106.692 seconds** with the final application code. The related screen/accounting run passed **119 checks in 46.681 seconds**; the final boundary/browser run passed **36 checks in 15.891 seconds**, including actual desktop/phone review, save, reload, safe non-JSON failure/recovery and paused-history navigation; committed correction/reservation races; runtime grants; and used/unused reversal and release compatibility. Tests cover a booking after the original expiry but inside the corrected term, the current customer summary, unchanged original cycle IDs/receipts and credit alerts at corrected expiry without expiring the credit. All six new 1440px/390px images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All 602 Python files pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all 304 PNGs/gallery links and all 67 migration pins pass. All 66 previously published migration files/hashes and the earlier actual-download CSV remain unchanged. All four GitHub checks passed for the preceding published commit; this update starts its own checks after publication. Provider/storage requests were mocked or blocked and no customer email was delivered. Actual Banquest behavior remains unverified. Features and collection stay off by default, PR37 stays draft and broader stage work continues. No merge, deployment or live financial action occurred.

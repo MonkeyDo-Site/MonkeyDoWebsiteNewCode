@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from .availability import NEW_YORK
 from .membership_calendar import boundary
+from .membership_calendar_changes import cycle_on, cycles_for, root_for
 from .membership_payments import member_record
 from .membership_records import (
     MembershipCancellation,
@@ -32,7 +33,7 @@ def owner(actor):
 
 
 def stop_date(member, timing, on):
-    root = member.membership
+    root = root_for(member)
     if on > root.ends_on:
         raise ValidationError(
             "This membership term already ended. Use an owner payment correction instead."
@@ -43,12 +44,14 @@ def stop_date(member, timing, on):
         raise ValidationError("Choose immediate or end-of-current-cycle cancellation.")
     if on < root.starts_on:
         return root.starts_on
-    cycle = root.cycles.get(starts_on__lte=on, ends_on__gte=on)
+    cycle = cycle_on(member, on)
+    if cycle is None:
+        raise ValidationError("Review the current membership calendar before cancellation.")
     return cycle.ends_on + timedelta(days=1)
 
 
 def commitment_end(member):
-    root = member.membership
+    root = root_for(member)
     origin = getattr(member, "origin", None)
     if origin and origin.operation == "renewal" and origin.minimum_months == 1:
         return root.starts_on
@@ -221,7 +224,7 @@ def review(*, actor, member_id, timing="end_cycle", refund_amount=None):
         )
     sources, paid, refunded, fees, suggestion = [], ZERO, ZERO, ZERO, ZERO
     by_sale = {item.invoice.sale_id: item for item in installments if hasattr(item, "invoice")}
-    root = member.membership
+    root = root_for(member)
     for op in reversed(operations):
         if op.state != "succeeded":
             continue
@@ -254,7 +257,7 @@ def review(*, actor, member_id, timing="end_cycle", refund_amount=None):
         if not available:
             continue
         item = by_sale[op.sale_id]
-        cycles = list(root.cycles.all()) if root.billing == "prepaid" else [item.cycle]
+        cycles = cycles_for(member) if root.billing == "prepaid" else [item.cycle]
         unused = sum(
             (
                 Decimal(max(0, (cycle.ends_on - max(stop, cycle.starts_on)).days + 1))
@@ -645,7 +648,7 @@ def queue_cancellation(record, *, initial=True):
         return
     if not member.customer.email:
         return queued[0] if queued else None
-    root = member.membership
+    root = root_for(member)
     end = (
         record.stopped_on if record.timing == "immediate" else record.stopped_on - timedelta(days=1)
     )

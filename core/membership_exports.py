@@ -63,20 +63,24 @@ def membership_rows(records):
         "billing",
         "status",
         "recorded_at_new_york",
+        "original_starts_on",
+        "corrected_ends_on",
     ]
     for member in records.iterator(chunk_size=500):
-        root = member.membership
+        root = member.current_membership
         yield [
             member.membership_number,
             *contact(member.customer),
             root.get_kind_display(),
             root.places,
             root.starts_on,
-            root.ends_on,
+            member.membership.ends_on,
             member.effective_ends_on,
             "Complimentary" if member.purpose == "complimentary" else root.get_billing_display(),
             member.report_status,
             stamp(member.accepted_at),
+            member.membership.starts_on,
+            root.ends_on,
         ]
 
 

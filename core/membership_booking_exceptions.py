@@ -2,6 +2,7 @@
 
 from django.core.exceptions import ValidationError
 
+from .membership_calendar_changes import root_for
 from .membership_records import MembershipBookingDecision
 from .models import AuditEvent
 from .permissions import require_actor
@@ -19,7 +20,7 @@ def unavailable_memberships(booking):
     ).select_related("purchase__billing_state"):
         if assignment.purchase_id not in seen:
             seen.add(assignment.purchase_id)
-            root = assignment.purchase.membership
+            root = root_for(assignment.purchase)
             stopped = assignment.purchase.billing_state.stopped_on
             if (
                 not payment_current(assignment.purchase)
@@ -64,8 +65,11 @@ def resolve(booking, *, actor=None, choice="", reason="", session=None):
             for member in MembershipPurchase.objects.filter(pk__in=members).select_related(
                 "membership", "billing_state"
             ):
-                if not member.membership.starts_on <= on <= member.membership.ends_on or (
-                    member.billing_state.stopped_on and member.billing_state.stopped_on <= on
+                if (
+                    not member.current_membership.starts_on
+                    <= on
+                    <= member.current_membership.ends_on
+                    or (member.billing_state.stopped_on and member.billing_state.stopped_on <= on)
                 ):
                     raise ValidationError(
                         "Those reserved membership benefits do not cover this session. Use ordinary admission prices or review the membership first."
@@ -83,8 +87,9 @@ def resolve(booking, *, actor=None, choice="", reason="", session=None):
         for member in MembershipPurchase.objects.filter(pk__in=decision.memberships).select_related(
             "membership", "billing_state"
         ):
-            if not member.membership.starts_on <= on <= member.membership.ends_on or (
-                member.billing_state.stopped_on and member.billing_state.stopped_on <= on
+            if (
+                not member.current_membership.starts_on <= on <= member.current_membership.ends_on
+                or (member.billing_state.stopped_on and member.billing_state.stopped_on <= on)
             ):
                 return None
     return dict(

@@ -55,26 +55,37 @@ def held_members(member_id=None, *, on=None):
 
 
 def _held_source_members(member_id=None):
-    from .customer_credit import source_on_hold
-    from .customer_credit_records import CustomerCreditAllocation
+    from django.db.models import F
 
-    sources = flagged_receipts().filter(
-        credit_issues__applications__application__sale__membership_invoice__isnull=False
+    from .customer_credit_records import CustomerCreditAllocation
+    from .membership_cancellations import unrecorded_provider_return
+
+    direct = "sale__membership_invoice__installment__purchase_id"
+    converted = "credit_issues__applications__application__sale__membership_invoice__installment__purchase_id"
+    scope = (
+        Q(**{direct: member_id}) | Q(**{converted: member_id})
+        if member_id is not None
+        else Q(**{direct + "__isnull": False}) | Q(**{converted + "__isnull": False})
     )
-    if member_id is not None:
-        sources = sources.filter(
-            credit_issues__applications__application__sale__membership_invoice__installment__purchase_id=member_id
-        )
-    held = [source.pk for source in sources if source_on_hold(source)]
+    sources = flagged_receipts().filter(scope).annotate(review_member_id=F(direct))
+    held = [source for source in sources if unrecorded_provider_return(source)]
+    members = {
+        source.review_member_id
+        for source in held
+        if source.review_member_id is not None
+        and (member_id is None or source.review_member_id == member_id)
+    }
+    if not held:
+        return members
     allocations = CustomerCreditAllocation.objects.filter(
-        issue__original_id__in=held,
+        issue__original_id__in=[source.pk for source in held],
         application__sale__membership_invoice__isnull=False,
     )
     if member_id is not None:
         allocations = allocations.filter(
             application__sale__membership_invoice__installment__purchase_id=member_id
         )
-    return direct_review_members(member_id) | set(
+    return members | set(
         allocations.values_list(
             "application__sale__membership_invoice__installment__purchase_id", flat=True
         )

@@ -111,10 +111,14 @@ def balance(customer_id):
 def expiry_notices():
     from django.db.models import Q
 
+    from .membership_calendar_changes import with_calendar
+    from .membership_records import MembershipPurchase
+
+    expired = with_calendar(MembershipPurchase.objects.all()).filter(calendar_ends_on__lt=today())
     candidates = (
         issue_balances()
         .filter(
-            Q(conversion__purchase__membership__ends_on__lt=today())
+            Q(conversion__purchase_id__in=expired.values("pk"))
             | Q(conversion__purchase__billing_state__stopped_on__lte=today()),
             remaining__gt=0,
         )

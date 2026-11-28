@@ -15,6 +15,7 @@ from django.db import connection, transaction
 
 from .availability import NEW_YORK
 from .membership_benefits import BenefitRules, Place, plan_visit
+from .membership_calendar_changes import cycle_on, root_for, with_calendar
 from .membership_records import (
     MembershipBenefitAssignment,
     MembershipBenefitBatch,
@@ -105,21 +106,19 @@ def places_for(
         return []
     result = []
     members = (
-        MembershipPurchase.objects.filter(
-            customer_id=customer_id,
-            membership__starts_on__lte=appointment_on,
-            membership__ends_on__gte=appointment_on,
+        with_calendar(MembershipPurchase.objects.filter(customer_id=customer_id))
+        .filter(
+            calendar_starts_on__lte=appointment_on,
+            calendar_ends_on__gte=appointment_on,
         )
         .select_related("membership", "billing_state")
-        .order_by("membership__ends_on", "pk")
+        .order_by("calendar_ends_on", "pk")
     )
     for member in members:
-        root = member.membership
+        root = root_for(member)
         if member.billing_state.stopped_on and member.billing_state.stopped_on <= appointment_on:
             continue
-        cycle = root.cycles.filter(
-            starts_on__lte=appointment_on, ends_on__gte=appointment_on
-        ).first()
+        cycle = cycle_on(member, appointment_on)
         if cycle is None or (member.pk not in payment_exceptions and not payment_current(member)):
             continue
         rules = accepted_rules(member.benefit_rules)
@@ -394,9 +393,12 @@ def reserve(*, actor, booking_id, quote_id, request_key, for_arrival=False):
         member = MembershipPurchase.objects.get(
             pk=use.membership_id, customer_id=booking.customer_id
         )
-        cycle = member.membership.cycles.get(
-            starts_on=use.cycle_starts_on, ends_on=use.cycle_ends_on
-        )
+        cycle = cycle_on(member, use.appointment_on)
+        if cycle is None or (cycle.starts_on, cycle.ends_on) != (
+            use.cycle_starts_on,
+            use.cycle_ends_on,
+        ):
+            raise ValidationError("The membership calendar changed. Review the booking again.")
         item = MembershipBenefitAssignment.objects.create(
             booking=booking,
             quote=quote,
@@ -443,8 +445,8 @@ def finish(*, actor, booking_id, request_key, action, reason):
 def summary_for(member, *, on=None):
     """At-a-glance free quota, keeping reserved visits distinct from used visits."""
     on = on or today()
-    root = member.membership
-    cycle = root.cycles.filter(starts_on__lte=on, ends_on__gte=on).first()
+    root = root_for(member)
+    cycle = cycle_on(member, on)
     rules = accepted_rules(member.benefit_rules)
     current = bool(cycle) and payment_current(member)
     stop = member.billing_state.stopped_on

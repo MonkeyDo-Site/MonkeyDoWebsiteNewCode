@@ -143,10 +143,13 @@ def customer_detail(request, pk):
     )
     purchased_memberships = []
     if settings.MEMBERSHIP_SALES_ENABLED and request.user.has_perm("core.view_membershippurchase"):
+        from .membership_calendar_changes import with_calendar
+
         for member in (
-            customer.membership_purchases.filter(membership__ends_on__gte=today)
+            with_calendar(customer.membership_purchases.all())
+            .filter(calendar_ends_on__gte=today)
             .select_related("membership", "billing_state")
-            .order_by("membership__ends_on", "pk")[:3]
+            .order_by("calendar_ends_on", "pk")[:3]
         ):
             purchased_memberships.append((member, membership_status(member)))
     return render(

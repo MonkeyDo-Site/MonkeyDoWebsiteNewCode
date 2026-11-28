@@ -798,8 +798,10 @@ def installment_paid(installment):
 
 
 def membership_status(member, *, on=None):
+    from .membership_calendar_changes import root_for
+
     on = on or today()
-    root = member.membership
+    root = root_for(member)
     billing = member.billing_state
     if billing.stopped_on and (billing.stopped_on <= on or billing.stopped_on <= root.starts_on):
         return "cancelled"
@@ -849,6 +851,12 @@ def payment_updated(operation):
 
 
 def queue_confirmation(member):
+    from .membership_calendar_emails import queue as queue_dates
+    from .membership_calendar_emails import source_for
+
+    corrected = source_for(member)
+    if corrected:
+        return queue_dates(corrected)
     from .membership_batch_renewals import group_for
     from .membership_batch_renewals import queue_confirmation as queue_batch
 

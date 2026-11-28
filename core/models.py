@@ -663,6 +663,11 @@ from .membership_batch_records import (  # noqa: E402,F401
     MembershipRenewalBatchMessage,
     MembershipRenewalBatchPart,
 )
+from .membership_calendar_records import (  # noqa: E402,F401
+    MembershipCalendarCorrection,
+    MembershipCalendarMessage,
+    MembershipCalendarState,
+)
 from .membership_paid_visit_records import (  # noqa: E402,F401
     MembershipPaidVisitCancellation,
     MembershipPaidVisitCardStorage,

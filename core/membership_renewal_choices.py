@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import F, IntegerField, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 
+from .membership_calendar_changes import root_for, with_calendar
 from .membership_records import MembershipPurchase
 from .membership_renewals import committed_renewals, renewal_details
 
@@ -23,10 +24,10 @@ def candidates(customer_id, *, query="", cursor=None, exclude=()):
         .values("total")
     )
     rows = (
-        MembershipPurchase.objects.filter(customer_id=customer_id)
+        with_calendar(MembershipPurchase.objects.filter(customer_id=customer_id))
         .annotate(_renewed=Coalesce(Subquery(committed), Value(0), output_field=IntegerField()))
         .filter(membership__places__gt=F("_renewed"))
-        .exclude(billing_state__stopped_on__lte=F("membership__starts_on"))
+        .exclude(billing_state__stopped_on__lte=F("calendar_starts_on"))
     )
     if query:
         number = re.fullmatch(r"#?[mM]?(\d+)", query.strip())
@@ -45,12 +46,12 @@ def candidates(customer_id, *, query="", cursor=None, exclude=()):
         )
         if previous is None:
             raise ValidationError("Search again to refresh the membership list.")
-        end = previous.membership.ends_on
+        end = root_for(previous).ends_on
         rows = rows.filter(
-            Q(membership__ends_on__gt=end) | Q(membership__ends_on=end, pk__gt=previous.pk)
+            Q(calendar_ends_on__gt=end) | Q(calendar_ends_on=end, pk__gt=previous.pk)
         )
     return rows.select_related("membership", "billing_state__mandate").order_by(
-        "membership__ends_on", "pk"
+        "calendar_ends_on", "pk"
     )
 
 

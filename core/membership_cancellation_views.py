@@ -155,7 +155,7 @@ def displayed(data, member):
     return data | dict(
         stopped_date=stop,
         effective_end=stop if data["timing"] == "immediate" else stop - timedelta(days=1),
-        before_start=date.fromisoformat(data["on"]) < member.membership.starts_on,
+        before_start=date.fromisoformat(data["on"]) < member.current_membership.starts_on,
         has_manual=any(plan["tender"] != "card" for plan in data["plans"]),
     )
 

@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 
 from .availability import NEW_YORK
+from .membership_calendar_changes import cycle_on, root_for, with_calendar
 from .membership_reservations import lock_customer, payment_current, reserve, visit_plan
 from .pricing import Line, quote_lines
 
@@ -44,7 +45,7 @@ def require_paid_existing(
         if assignment.purchase_id in purchases:
             continue
         purchases.add(assignment.purchase_id)
-        root = assignment.purchase.membership
+        root = root_for(assignment.purchase)
         stopped = assignment.purchase.billing_state.stopped_on
         if not root.starts_on <= assignment.appointment_on <= root.ends_on or (
             stopped and stopped <= assignment.appointment_on
@@ -268,19 +269,19 @@ def summaries(customer_id, session, quote=None):
         use["membership_id"] for use in (quote or {}).get("membership_plan", {}).get("uses", [])
     )
     members = (
-        MembershipPurchase.objects.filter(customer_id=customer_id)
+        with_calendar(MembershipPurchase.objects.filter(customer_id=customer_id))
         .filter(
-            Q(membership__ends_on__gte=today())
-            | Q(membership__starts_on__lte=on, membership__ends_on__gte=on)
+            Q(calendar_ends_on__gte=today())
+            | Q(calendar_starts_on__lte=on, calendar_ends_on__gte=on)
         )
         .select_related("membership", "billing_state")
-        .order_by("membership__ends_on", "pk")[:12]
+        .order_by("calendar_ends_on", "pk")[:12]
     )
     result = []
     for member in members:
-        root = member.membership
+        root = root_for(member)
         quota = summary_for(member, on=on)
-        cycle = root.cycles.filter(starts_on__lte=on, ends_on__gte=on).first()
+        cycle = cycle_on(member, on)
         result.append(
             dict(
                 kind=root.get_kind_display(),

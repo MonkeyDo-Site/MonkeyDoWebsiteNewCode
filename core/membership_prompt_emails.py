@@ -29,7 +29,7 @@ def eligible(event):
         event.action != "email_later"
         or not event.remind_at
         or not event.remind_at <= timezone.now() <= event.remind_at + timedelta(days=30)
-        or event.ends_on != member.membership.ends_on
+        or event.ends_on != member.current_membership.ends_on
         or member.billing_state.stopped_on
         or member.cancellations.exists()
         or not event.customer.email

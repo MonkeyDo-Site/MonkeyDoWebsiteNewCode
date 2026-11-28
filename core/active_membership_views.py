@@ -375,6 +375,7 @@ class MembershipCardForm(forms.Form):
             self.initial["method"] = member.billing_state.mandate.method_id
         if (
             actor
+            and settings.MEMBERSHIP_SALES_ENABLED
             and actor.has_perm("core.collect_payment")
             and actor.has_perm("core.add_membershippurchase")
             and member.purpose != "complimentary"
@@ -400,9 +401,15 @@ class MembershipCardForm(forms.Form):
                 pass
 
 
-def check_enabled():
-    if not settings.MEMBERSHIP_SALES_ENABLED:
-        raise Http404
+def check_enabled(*, read=False):
+    if settings.MEMBERSHIP_SALES_ENABLED:
+        return
+    if read:
+        from .membership_schema import available
+
+        if available("core_membershippurchase"):
+            return
+    raise Http404
 
 
 def display_offer(data):
@@ -428,7 +435,7 @@ def display_offer(data):
 @staff_permission("core.view_customer")
 @require_http_methods(["GET", "HEAD", "POST"])
 def memberships(request):
-    check_enabled()
+    check_enabled(read=request.method != "POST")
     from .membership_exports import export_response
     from .membership_reporting import filtered_members
 
@@ -459,6 +466,8 @@ def memberships(request):
             "rows": rows,
             "filter_form": form,
             "clear_expiry_query": params.urlencode(),
+            "membership_changes_enabled": settings.MEMBERSHIP_SALES_ENABLED,
+            "membership_history_available": True,
         },
     )
 
@@ -735,10 +744,16 @@ def membership_offer(request):
 @staff_permission("core.view_customer")
 @require_http_methods(["GET", "POST"])
 def membership_overview(request, pk):
-    check_enabled()
+    from .membership_calendar_views import ACTIONS as calendar_actions
+
+    check_enabled(read=request.method != "POST" or request.POST.get("action") in calendar_actions)
+    from .membership_calendar_changes import cycle_on, with_calendar
+
     member = get_object_or_404(
-        MembershipPurchase.objects.select_related(
-            "membership", "customer", "billing_state__mandate__method"
+        with_calendar(
+            MembershipPurchase.objects.select_related(
+                "membership", "customer", "billing_state__mandate__method"
+            )
         ),
         pk=pk,
     )
@@ -890,6 +905,11 @@ def membership_overview(request, pk):
     credit_response, credit_context = credit_controls(request, member)
     if credit_response is not None:
         return credit_response
+    from .membership_calendar_views import controls as calendar_controls
+
+    calendar_response, calendar_context = calendar_controls(request, member)
+    if calendar_response is not None:
+        return calendar_response
     payment_form = InstallmentPaymentForm(
         request.POST
         if request.method == "POST"
@@ -938,6 +958,7 @@ def membership_overview(request, pk):
         "renewal_link",
         *cancellation_actions,
         *credit_actions,
+        *calendar_actions,
     }:
         from .membership_payments import change_card, collect_installment, payment_review
 
@@ -1066,7 +1087,11 @@ def membership_overview(request, pk):
             **requested_renewal_context(member),
             **cancellation_context,
             **credit_context,
+            **calendar_context,
             "member": member,
+            "membership_changes_enabled": settings.MEMBERSHIP_SALES_ENABLED,
+            "membership_history_available": True,
+            "staff_parent": ("Memberships", reverse("active_memberships")),
             "renewal_parent_reviews": parents_needing_review(member),
             "renewal_batch": group_for(member),
             "pending_paid_visit": pending_paid_visit,
@@ -1086,7 +1111,7 @@ def membership_overview(request, pk):
             "follow_on": member.follow_on.select_related("purchase__membership").order_by(
                 "-purchased_on", "-purchase_id"
             )[:20],
-            "root": member.membership,
+            "root": member.current_membership,
             "status": status,
             "funding_review": any(item.needs_review for item in installments),
             "installments": installments,
@@ -1121,8 +1146,6 @@ def membership_overview(request, pk):
             ).order_by("-recorded_at")[:20],
             "payment_quote": payment_quote,
             "has_due_payment": payment_form.fields["installment"].queryset.exists(),
-            "current_cycle": member.membership.cycles.filter(
-                starts_on__lte=today(), ends_on__gte=today()
-            ).first(),
+            "current_cycle": cycle_on(member, today()),
         },
     )

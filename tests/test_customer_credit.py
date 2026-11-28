@@ -340,6 +340,64 @@ class CustomerCreditTests(RuntimeRoleMixin, TestCase):
             )
         self.assertEqual(balance(member.customer_id), Decimal("15.99"))
 
+    def test_credit_expiry_notice_uses_corrected_membership_dates(self):
+        from core.availability import NEW_YORK
+        from core.customer_credit import expiry_notices
+        from core.membership_calendar_changes import confirm as correct_dates
+        from core.membership_calendar_changes import review as date_review
+        from core.membership_calendar_changes import root_for
+        from core.membership_sales import offer, purchase
+
+        booking, _ = self.paid_visit()
+        on = timezone.localdate(timezone=NEW_YORK)
+        values = dict(
+            actor=self.staff,
+            customer=self.customer,
+            kind="subscription",
+            places=1,
+            months=3,
+            billing="prepaid",
+            starts_on=on + timedelta(days=10),
+            expected_method="cash",
+        )
+        member = purchase(
+            **values,
+            request_key=uuid.uuid4(),
+            reviewed=offer(**values)["fingerprint"],
+            accepted=True,
+            verified_received=True,
+        )
+        dates = dict(
+            actor=self.staff,
+            member_id=member.pk,
+            starts_on=on,
+            reason="The customer confirmed the membership should begin today.",
+            send_confirmation=False,
+        )
+        correct_dates(
+            **dates,
+            request_key=uuid.uuid4(),
+            reviewed=date_review(**dates)["fingerprint"],
+            customer_confirmed=True,
+        )
+        quoted = conversion_review(actor=self.staff, booking_id=booking.pk, member_id=member.pk)
+        convert(
+            actor=self.staff,
+            booking_id=booking.pk,
+            member_id=member.pk,
+            reviewed=quoted["fingerprint"],
+            request_key=uuid.uuid4(),
+            confirmed=True,
+        )
+        corrected_end = root_for(member).ends_on
+        self.assertLess(corrected_end, member.membership.ends_on)
+        with patch("core.customer_credit.today", return_value=corrected_end + timedelta(days=1)):
+            notices = expiry_notices()
+        self.assertEqual([notice.customer_id for notice in notices], [self.customer.pk])
+        self.assertEqual(notices[0].remaining, Decimal("15.99"))
+        self.assertEqual(balance(self.customer.pk), Decimal("15.99"))
+        connection.check_constraints()
+
     def test_expiry_notice_does_not_expire_credit_and_clears_when_spent(self):
         from core.customer_credit import expiry_notices
 

@@ -120,10 +120,10 @@ class PaidVisitManualRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Transact
         self.assertNotIn(
             "core_membershippaidvisitmanualpayment", connection.introspection.table_names()
         )
-        MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
+        MigrationExecutor(connection).migrate([("core", "0093_membership_calendar_corrections")])
         MigrationExecutor(connection).migrate([("core", "0089_paid_visit_recovery_card_storage")])
         self.assertEqual(definitions(), before)
-        MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
+        MigrationExecutor(connection).migrate([("core", "0093_membership_calendar_corrections")])
         self.prepare_manual()
         with self.runtime_role():
             self.receive()

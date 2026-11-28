@@ -7,6 +7,7 @@ from django.db.models import Case, CharField, DateField, Exists, F, OuterRef, Q,
 from django.db.models.functions import Cast, Least
 
 from .forms import phone_search_digits
+from .membership_calendar_changes import with_calendar
 from .membership_funding import held_members
 from .membership_notices import installment_balances
 from .membership_records import MembershipInstallment, MembershipPurchase
@@ -63,12 +64,14 @@ def reporting_members(*, on=None):
         & Q(cycle__starts_on__gte=F("purchase__billing_state__stopped_on"))
     )
     return (
-        MembershipPurchase.objects.select_related("membership", "customer", "billing_state")
+        with_calendar(
+            MembershipPurchase.objects.select_related("membership", "customer", "billing_state")
+        )
         .annotate(
             effective_ends_on=Case(
-                When(billing_state__stopped_on__isnull=True, then=F("membership__ends_on")),
+                When(billing_state__stopped_on__isnull=True, then=F("calendar_ends_on")),
                 default=Least(
-                    F("membership__ends_on"),
+                    F("calendar_ends_on"),
                     Cast(F("billing_state__stopped_on") - timedelta(days=1), DateField()),
                 ),
                 output_field=DateField(),
@@ -81,10 +84,10 @@ def reporting_members(*, on=None):
             report_status=Case(
                 When(
                     Q(billing_state__stopped_on__lte=on)
-                    | Q(billing_state__stopped_on__lte=F("membership__starts_on")),
+                    | Q(billing_state__stopped_on__lte=F("calendar_starts_on")),
                     then=Value("cancelled"),
                 ),
-                When(membership__ends_on__lt=on, then=Value("expired")),
+                When(calendar_ends_on__lt=on, then=Value("expired")),
                 When(pk__in=held_members(on=on), then=Value("review")),
                 When(
                     ~Q(purpose="complimentary")
@@ -92,7 +95,7 @@ def reporting_members(*, on=None):
                     then=Value("pending"),
                 ),
                 When(~Q(purpose="complimentary") & Q(_unpaid_due=True), then=Value("overdue")),
-                When(membership__starts_on__gt=on, then=Value("scheduled")),
+                When(calendar_starts_on__gt=on, then=Value("scheduled")),
                 default=Value("active"),
                 output_field=CharField(),
             )

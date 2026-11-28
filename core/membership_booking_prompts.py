@@ -65,7 +65,7 @@ def candidate_members(customer=None):
             Q(purpose="complimentary")
             | Q(_has_installments=True, _unpaid_first=False, _unpaid_due=False),
             billing_state__stopped_on__isnull=True,
-            membership__ends_on__lte=today() + timedelta(days=5),
+            calendar_ends_on__lte=today() + timedelta(days=5),
         )
         .exclude(pk__in=held_members())
         .annotate(
@@ -76,7 +76,7 @@ def candidate_members(customer=None):
             )
         )
         .filter(_renewed__lt=F("membership__places"))
-        .order_by("-membership__ends_on", "-pk")
+        .order_by("-calendar_ends_on", "-pk")
     )
     return records.filter(customer=customer) if customer is not None else records
 
@@ -86,7 +86,7 @@ def candidates(customer):
 
 
 def opportunity(member, *, customer, flow, source, actor, pending_email=""):
-    on, end = today(), member.membership.ends_on
+    on, end = today(), member.current_membership.ends_on
     events = list(member.renewal_prompts.filter(ends_on=end))
     flow_key = uuid.UUID(str(flow["key"]))
     if any(event.flow_key == flow_key and event.action != "seen" for event in events):

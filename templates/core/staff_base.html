@@ -4,7 +4,7 @@
 <div class="staff-layout">
   <aside aria-label="Staff navigation"><details class="staff-nav" open><summary>Staff menu</summary><div class="staff-nav-links">
     {% if perms.core.view_booking %}<a href="{% url 'today' %}">Today</a><a href="{% url 'bookings' %}">Bookings</a><a href="{% url 'dashboard' %}">Dashboard</a>{% endif %}
-    {% if membership_sales_enabled and perms.core.view_membershippurchase and perms.core.view_customer %}<a href="{% url 'active_memberships' %}">Memberships</a>{% elif perms.core.view_membershipdraft and perms.core.view_customer %}<a href="{% url 'membership_drafts' %}">Membership drafts</a>{% endif %}
+    {% if membership_history_available and perms.core.view_membershippurchase and perms.core.view_customer %}<a href="{% url 'active_memberships' %}">Memberships</a>{% elif membership_sales_enabled and perms.core.view_membershippurchase and perms.core.view_customer %}<a href="{% url 'active_memberships' %}">Memberships</a>{% elif perms.core.view_membershipdraft and perms.core.view_customer %}<a href="{% url 'membership_drafts' %}">Membership drafts</a>{% endif %}
     {% if payment_sandbox_enabled and perms.core.view_paymentoperation and perms.core.view_customer %}<a href="{% url 'payments' %}">Payments</a>{% endif %}
     {% if waiver_enabled and perms.core.view_waiversignature and perms.core.view_customer and perms.core.view_booking %}<a href="{% url 'waivers' %}">Waivers</a>{% endif %}
     {% if booking_email_enabled and perms.core.view_messagedelivery and perms.core.view_customer and perms.core.view_booking %}<a href="{% url 'messages' %}">Messages</a>{% endif %}

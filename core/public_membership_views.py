@@ -537,6 +537,9 @@ def receipt(request, token=None):
     if not acceptance:
         return redirect(public_url(token))
     member = acceptance.purchase
+    from .membership_calendar_emails import source_for
+
+    calendar_correction = source_for(member)
     from .membership_cancellations import plan_paid
 
     cancellation = member.cancellations.order_by("-created_at").first()
@@ -559,6 +562,7 @@ def receipt(request, token=None):
         "core/public_membership_renewal.html",
         dict(
             receipt=member,
+            calendar_correction=calendar_correction,
             initial_purchase=token is None,
             receipt_reverified=receipt_reverified,
             paid=installment_paid(item),

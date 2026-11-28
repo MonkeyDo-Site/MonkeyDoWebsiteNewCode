@@ -31,6 +31,12 @@ class MembershipBankAllocation(FinancialFact):
 
 
 class MembershipPurchase(FinancialFact):
+    @property
+    def current_membership(self):
+        from .membership_calendar_changes import root_for
+
+        return root_for(self)
+
     membership = models.OneToOneField(
         "core.MembershipDraft",
         primary_key=True,
