@@ -129,3 +129,23 @@ class MembershipPaidVisitCardStorage(FinancialFact):
     facts = models.JSONField()
     fingerprint = models.CharField(max_length=64)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MembershipPaidVisitManualPayment(FinancialFact):
+    """A received replacement payment; unused card fees are not collected."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    intent = models.OneToOneField(
+        MembershipPaidVisitIntent, on_delete=models.PROTECT, related_name="manual_payment"
+    )
+    previous = models.ForeignKey("core.PaymentOperation", on_delete=models.PROTECT)
+    operation = models.OneToOneField(
+        "core.PaymentOperation",
+        to_field="request_key",
+        on_delete=models.PROTECT,
+        related_name="paid_visit_manual_payment",
+    )
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    facts = models.JSONField()
+    fingerprint = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)

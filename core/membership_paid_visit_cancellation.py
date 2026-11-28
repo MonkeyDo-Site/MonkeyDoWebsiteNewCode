@@ -47,6 +47,8 @@ def cancellation_updated(record):
 
 
 def check_return_source(operation, plan_ids, sale_id):
+    from .membership_paid_visit_manual import is_manual_receipt
+
     attempt = getattr(operation, "membership_refund_attempt", None)
     original = operation.original
     if (
@@ -58,7 +60,8 @@ def check_return_source(operation, plan_ids, sale_id):
         or original.sale_id != sale_id
         or original.kind != "receipt"
         or original.state != "succeeded"
-        or operation.tender != "card"
+        or operation.tender != original.tender
+        or (operation.tender != "card" and not is_manual_receipt(original))
         or operation.method_id != original.method_id
     ):
         raise ValidationError(
@@ -108,9 +111,9 @@ def review(*, actor, intent):
             "Applied credit needs its separate return review before releasing this visit."
         )
     receipts = [op for op in operations if op.kind == "receipt" and op.state == "succeeded"]
-    if not receipts or sum((op.amount for op in receipts), ZERO) != amount(
-        intent.offer["paid_visit"]["new_payment"]
-    ):
+    from .membership_paid_visit_manual import cancellation_adjustments_valid, expected_new_payment
+
+    if not receipts or sum((op.amount for op in receipts), ZERO) != expected_new_payment(intent):
         raise ValidationError(
             "Review the actual new membership payment before releasing this source."
         )
@@ -133,7 +136,7 @@ def review(*, actor, intent):
     if len(values) != 1 or any(part["item_tax"] or part["fee_tax"] for part in values.values()):
         raise ValidationError("Historical membership tax needs separate owner review.")
     line_id, components = next(iter(values.items()))
-    if sale.lines.get().adjustments.exclude(reason="membership_refund").exists():
+    if not cancellation_adjustments_valid(intent, sale):
         raise ValidationError(
             "Review other membership invoice corrections before releasing this source."
         )

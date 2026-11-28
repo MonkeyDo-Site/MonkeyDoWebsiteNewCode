@@ -1,0 +1,12 @@
+{% if paid_visit_manual and not paid_visit_manual.saved and not paid_visit_cancellation %}
+<details data-paid-visit-manual><summary>Record received payment instead</summary>
+<form method="post" class="record-form" data-paid-visit-receipt>{% csrf_token %}
+<input type="hidden" name="request_key" value="{{ paid_visit_manual.key }}"><input type="hidden" name="reviewed" value="{{ paid_visit_manual.reviewed }}">
+<dl class="membership-totals"><dt>Remaining membership amount</dt><dd>${{ paid_visit_manual.facts.net }}</dd><dt>Unused card fee removed</dt><dd>−${{ paid_visit_manual.facts.fee_removed }}</dd><dt>Paid visit funds to apply</dt><dd>${{ pending_paid_visit.source_amount }}</dd><dt class="total">Adjusted first membership total</dt><dd class="total">${{ paid_visit_manual.facts.member_total_after }}</dd></dl>
+<label>Payment actually received<select name="tender" required>{% for value,label in paid_visit_manual.tenders %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+<div data-paid-visit-bank><label>Bank receipt date<input type="date" name="received_on" max="{{ today|date:'Y-m-d' }}"></label><label>Sender shown by the bank<input type="text" name="sender_name" maxlength="160"></label><p class="caption">For Zelle only. Verify the bank receipt before recording.</p></div>
+<label class="checkbox-label"><input type="checkbox" name="verified_received" required> <span data-paid-visit-receipt-label>I verified that this exact payment was actually received.</span></label>
+<p class="caption">No new card payment is requested. The original visit processing fee remains in its payment history. The card for future membership installments stays unchanged.</p>
+<button class="button" name="action" value="paid_visit_manual_receive">Record ${{ paid_visit_manual.facts.net }} and apply paid visit</button>
+</form></details>
+{% endif %}

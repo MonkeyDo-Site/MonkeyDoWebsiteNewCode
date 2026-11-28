@@ -65,9 +65,7 @@ class MembershipBankRaceTests(InitialCreditFixtures, TransactionTestCase):
         try:
             MigrationExecutor(connection).migrate([("core", "0076_membership_first_split")])
         finally:
-            MigrationExecutor(connection).migrate(
-                [("core", "0089_paid_visit_recovery_card_storage")]
-            )
+            MigrationExecutor(connection).migrate([("core", "0090_paid_visit_manual_payment")])
         self.start()
         self.commit()
         self.assertEqual(MembershipBankAllocation.objects.get().amount, Decimal("20"))

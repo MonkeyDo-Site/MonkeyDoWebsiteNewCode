@@ -31,6 +31,11 @@ def latest(intent):
 
 
 def current_operation(intent):
+    from .membership_paid_visit_manual import current_operation as manual_operation
+
+    manual = manual_operation(intent)
+    if manual is not None:
+        return manual
     recovery = latest(intent)
     return recovery.operation if recovery else intent.operation
 

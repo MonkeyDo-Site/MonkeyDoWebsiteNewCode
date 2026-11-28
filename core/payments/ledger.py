@@ -298,10 +298,20 @@ def request_operation(
     scheduled_membership_claim=None,
     membership_refund_plan_id=None,
     paid_visit_recovery=None,
+    paid_visit_manual=None,
 ):
     enabled()
     if paid_visit_recovery is not None and (
         kind != "receipt" or tender != "card" or purpose != "member_purchase" or actor is None
+    ):
+        raise PermissionDenied
+    if paid_visit_manual is not None and (
+        paid_visit_recovery is not None
+        or kind != "receipt"
+        or tender not in {"cash", "check", "zelle", "gift_card"}
+        or purpose != "member_purchase"
+        or actor is None
+        or method_id is not None
     ):
         raise PermissionDenied
     if membership_refund_plan_id is not None and kind != "refund":
@@ -430,9 +440,10 @@ def request_operation(
             tender=tender,
             allocation=cleaned,
             recovery=paid_visit_recovery,
+            manual=paid_visit_manual,
             method_id=method_id,
         )
-    elif paid_visit_recovery is not None:
+    elif paid_visit_recovery is not None or paid_visit_manual is not None:
         raise PermissionDenied
     if scheduled:
         from core.membership_collection_authority import authorize_operation

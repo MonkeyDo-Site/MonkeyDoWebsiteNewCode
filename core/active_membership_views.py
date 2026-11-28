@@ -750,6 +750,7 @@ def membership_overview(request, pk):
         "paid_visit_stop",
         "paid_visit_card_recover",
         "paid_visit_cancelled_release",
+        "paid_visit_manual_receive",
     }:
         from .membership_paid_visit_pending import complete, stop
         from .membership_paid_visit_records import MembershipPaidVisitIntent
@@ -777,6 +778,40 @@ def membership_overview(request, pk):
                     request,
                     "The original visit funds were released. The booking, its payment and the membership cancellation/refunds are retained.",
                 )
+            elif request.POST["action"] == "paid_visit_manual_receive":
+                from .membership_paid_visit_manual import record as receive_remainder
+
+                receive_remainder(
+                    actor=request.user,
+                    intent_id=action_intent.pk,
+                    request_key=forms.UUIDField().clean(request.POST.get("request_key")),
+                    reviewed=request.POST.get("reviewed"),
+                    tender=request.POST.get("tender"),
+                    received_on=forms.DateField(required=False).clean(
+                        request.POST.get("received_on")
+                    ),
+                    sender_name=request.POST.get("sender_name", ""),
+                    confirmed=True,
+                    verified_received=request.POST.get("verified_received") == "on",
+                )
+                try:
+                    release = complete(action_intent.pk)
+                except ValidationError:
+                    messages.warning(
+                        request,
+                        "Payment received and recorded. The original visit still needs review before its funds can be applied. Do not collect the payment again.",
+                    )
+                else:
+                    if release.kind == "completed":
+                        messages.success(
+                            request,
+                            "Payment recorded and the paid visit applied. No card payment was requested.",
+                        )
+                    else:
+                        messages.info(
+                            request,
+                            "This visit application was stopped. Open the recorded payment and cancellation history for its outcome.",
+                        )
             elif request.POST["action"] == "paid_visit_card_recover":
                 from .membership_paid_visit_recovery import request as recover_card
 
@@ -838,6 +873,9 @@ def membership_overview(request, pk):
     paid_visit_cancellation = paid_visit_cancellation_controls(
         actor=request.user, pending=pending_paid_visit
     )
+    from .membership_paid_visit_manual import controls as paid_visit_manual_controls
+
+    paid_visit_manual = paid_visit_manual_controls(actor=request.user, pending=pending_paid_visit)
     from .membership_cancellation_views import ACTIONS as cancellation_actions
     from .membership_cancellation_views import overview_controls
 
@@ -1031,6 +1069,7 @@ def membership_overview(request, pk):
             "paid_visit_recovery": paid_visit_recovery,
             "paid_visit_new_card": paid_visit_new_card,
             "paid_visit_cancellation": paid_visit_cancellation,
+            "paid_visit_manual": paid_visit_manual,
             "paid_visit_conversion": member.visit_conversions.filter(
                 details__has_key="paid_visit_purchase"
             ).first()

@@ -53,11 +53,25 @@ def protect_source(original):
 
 
 def authorize_receipt(
-    *, invoice, actor, request_key, tender, allocation, recovery=None, method_id=None
+    *, invoice, actor, request_key, tender, allocation, recovery=None, method_id=None, manual=None
 ):
     """All generic collection paths must respect the accepted conditional source."""
     member = invoice.installment.purchase
     marker = member.membership.snapshot.get(CARD_MARKER)
+    if manual is not None:
+        if not marker or recovery is not None:
+            raise PermissionDenied
+        from .membership_paid_visit_manual import authorize_receipt as authorize_manual
+
+        return authorize_manual(
+            manual,
+            invoice=invoice,
+            actor=actor,
+            request_key=request_key,
+            tender=tender,
+            method_id=method_id,
+            allocation=allocation,
+        )
     if recovery is not None:
         if not marker:
             raise PermissionDenied
@@ -270,9 +284,10 @@ def queue_ready(member):
     if not settings.MEMBERSHIP_SALES_ENABLED or not available():
         return
     intent = active().filter(purchase=member).first()
-    from .membership_paid_visit_recovery import current_operation
 
-    if intent and current_operation(intent) and current_operation(intent).state == "succeeded":
+    from .membership_paid_visit_manual import is_funded
+
+    if intent and is_funded(intent):
         from .payments.jobs import enqueue
 
         enqueue(
@@ -304,7 +319,10 @@ def _complete(intent_id):
     from .membership_paid_visit_recovery import current_operation
 
     current = current_operation(intent)
-    if current and current.state != "succeeded":
+    from .membership_paid_visit_manual import require_funded
+
+    manual_funded = require_funded(intent)
+    if not manual_funded and current and current.state != "succeeded":
         raise ValidationError(
             "Check the existing membership card outcome before applying the visit."
         )
@@ -383,10 +401,17 @@ def stop_facts(intent):
     returned = sum(
         (op.amount for op in operations if op.kind != "receipt" and op.state == "succeeded"), ZERO
     )
+    from .membership_paid_visit_manual import plan as manual_plan
     from .membership_paid_visit_new_card import pending as storage_pending
+    from .membership_records import MembershipCancellation
 
+    cancelled_manual = bool(
+        manual_plan(intent)
+        and MembershipCancellation.objects.filter(purchase_id=intent.purchase_id).exists()
+    )
     allowed = (
-        not storage_pending(intent)
+        not cancelled_manual
+        and not storage_pending(intent)
         and not any(op.state in {"sending", "unknown", "action"} for op in operations)
         and not any(op.kind != "receipt" and op.state == "ready" for op in operations)
         and receipts == returned
@@ -484,6 +509,9 @@ def context(member):
     if not release and (not operation or operation.state == "succeeded"):
         try:
             fresh(intent)
+            from .membership_paid_visit_manual import require_funded
+
+            require_funded(intent)
             can_complete = True
         except (ValidationError, PermissionDenied):
             pass

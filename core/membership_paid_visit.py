@@ -179,6 +179,17 @@ def complete_purchase(*, actor, member, offer, invoice, paid_intent=None):
         applied=plan["applied"],
         new_payment=plan["new_payment"],
     )
+    if paid_intent:
+        from .membership_paid_visit_manual import plan as manual_plan
+
+        manual = manual_plan(paid_intent)
+        if manual:
+            details[MARKER].update(
+                original_new_payment=plan["new_payment"],
+                new_payment=manual.facts["net"],
+                unused_card_fee_removed=manual.facts["fee_removed"],
+                payment_change=str(manual.pk),
+            )
     key = uuid.uuid5(member.request_key, "paid-visit-conversion")
     converted = record_funds(
         actor=actor,
