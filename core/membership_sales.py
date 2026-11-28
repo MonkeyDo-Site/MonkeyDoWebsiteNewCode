@@ -94,6 +94,7 @@ def offer(
     split_received_on=None,
     bank_booking_id=None,
     bank_amount=ZERO,
+    paid_visit_id=None,
 ):
     authorize(actor, authority=authority)
     if actor is None:
@@ -318,6 +319,20 @@ def offer(
                 if months > 1
                 else " There are no further installments in this term."
             )
+    if paid_visit_id is not None:
+        from .membership_paid_visit import prepare_offer
+
+        if bank:
+            raise ValidationError(
+                "Keep unapplied booking Zelle separate from an already-paid visit conversion."
+            )
+        data = prepare_offer(
+            actor=actor,
+            booking_id=paid_visit_id,
+            data=data | {"cycles": rows},
+            credit_amount=credit_amount,
+        )
+        data.pop("cycles")
     return data | {"fingerprint": fingerprint(data), "cycles": rows}
 
 
@@ -360,6 +375,25 @@ def purchase(
         return prior
     if accepted is not True:
         raise ValidationError("Review and accept the membership terms before confirming.")
+    if values.get("paid_visit_id") is not None:
+        from .calendar import lock_calendar
+        from .models import Booking, Session
+
+        if combined_booking is not None:
+            raise ValidationError(
+                "Keep this already-paid visit conversion separate from a new arrival."
+            )
+        if type(values["paid_visit_id"]) is not int or values["paid_visit_id"] <= 0:
+            raise ValidationError("Choose a valid paid visit for this purchase.")
+        lock_calendar()
+        visit = (
+            Booking.objects.select_for_update()
+            .filter(pk=values["paid_visit_id"], customer_id=values["customer"].pk)
+            .first()
+        )
+        if visit is None:
+            raise ValidationError("Choose this customer's paid visit for this purchase.")
+        Session.objects.select_for_update().get(pk=visit.session_id)
     # Protect identity/contact updates while allowing customer FK checks from
     # an already-locked credit correction to finish before our advisory lock.
     customer = Customer.objects.select_for_update(no_key=True).get(pk=values["customer"].pk)
@@ -472,6 +506,17 @@ def purchase(
             "terms_accepted": True,
             "monthly_subtotal": str(amount(data["unit_price"]) * data["places"]),
             "term_subtotal": str(amount(data["unit_price"]) * data["places"] * data["months"]),
+            **(
+                {
+                    "paid_visit_purchase": {
+                        "booking": data["paid_visit"]["booking"],
+                        "applied": data["paid_visit"]["applied"],
+                        "new_payment": data["paid_visit"]["new_payment"],
+                    }
+                }
+                if data.get("paid_visit")
+                else {}
+            ),
         },
     )
     row_by_number = {row["number"]: row for row in data["installments"]}
@@ -569,6 +614,11 @@ def purchase(
             )
         first = member.installments.first()
         invoice = invoice_for(first, actor=actor, tender=root.expected_method, authority=authority)
+        if data.get("paid_visit"):
+            from .membership_paid_visit import complete_purchase
+
+            complete_purchase(actor=actor, member=member, offer=data, invoice=invoice)
+            return member
         if data.get("first_payment_plan"):
             from .membership_first_split import apply_credit, record
 
@@ -761,6 +811,10 @@ def payment_updated(operation):
 
 
 def queue_confirmation(member):
+    if member.membership.snapshot.get("paid_visit_purchase"):
+        from .membership_paid_visit import queue_confirmation as queue_paid_visit
+
+        return queue_paid_visit(member)
     stopped = False
     if member.confirmation_mode == "combined":
         from .membership_records import MembershipArrivalClosure

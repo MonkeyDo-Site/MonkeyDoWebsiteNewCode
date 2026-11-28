@@ -49,22 +49,38 @@ def group(category):
     )
 
 
-def review(*, actor, booking_id, member_id):
+def review(*, actor, booking_id, member_id=None, proposed_membership=None):
     authorize(actor, collect=True)
     from .permissions import require_actor
 
     require_actor(actor, "core.change_booking")
-    member = member_record(member_id)
+    from .membership_arrival import PROPOSED_ID, ProposedMembership
+
+    if proposed_membership is not None:
+        if member_id is not None or not isinstance(proposed_membership, ProposedMembership):
+            raise ValidationError("Review one proposed membership for this paid visit.")
+        member = None
+        customer_id = proposed_membership.offer["customer_id"]
+        target_id = PROPOSED_ID
+    else:
+        member = member_record(member_id)
+        customer_id = member.customer_id
+        target_id = member.pk
     booking = Booking.objects.select_related("session", "customer").get(pk=booking_id)
     on = booking.session.starts_at.astimezone(NEW_YORK).date()
     if (
-        booking.customer_id != member.customer_id
+        booking.customer_id != customer_id
         or booking.workflow != "integrated_v1"
         or booking.attendance != "arrived"
         or on != today()
-        or member.accepted_at.astimezone(NEW_YORK).date() != on
-        or member.purpose == "complimentary"
-        or not payment_current(member)
+        or (
+            member is not None
+            and (
+                member.accepted_at.astimezone(NEW_YORK).date() != on
+                or member.purpose == "complimentary"
+                or not payment_current(member)
+            )
+        )
     ):
         raise ValidationError(
             "Use today's arrived visit and a paid membership purchased today for the same customer."
@@ -117,8 +133,9 @@ def review(*, actor, booking_id, member_id):
         values=values,
         booking=booking,
         apply_available=True,
+        proposed_membership=proposed_membership,
     )
-    if not any(use["membership_id"] == member.pk for use in meta["membership_plan"]["uses"]):
+    if not any(use["membership_id"] == target_id for use in meta["membership_plan"]["uses"]):
         raise ValidationError("This membership does not replace any admission in today's visit.")
     financial_lines = list(sale.lines.all())
     current = effective_components(sale)
@@ -227,8 +244,8 @@ def review(*, actor, booking_id, member_id):
         booking=booking.pk,
         version=booking.edit_version,
         original_quote=original.pk,
-        member=member.pk,
-        billing_revision=member.billing_state.revision,
+        member=target_id,
+        billing_revision=member.billing_state.revision if member else 0,
         sale=str(sale.pk),
         on=on.isoformat(),
         credit=str(credit_amount),
@@ -268,6 +285,15 @@ def convert(*, actor, booking_id, member_id, reviewed, request_key, confirmed=Fa
     lock_sale(data["sale"])
     if data["fingerprint"] != reviewed:
         raise ValidationError("The visit, membership or funds changed. Review conversion again.")
+    conversion = record_funds(
+        actor=actor, booking=booking, member_id=member_id, data=data, key=key, identity=identity
+    )
+    use_benefits(actor=actor, conversion=conversion, key=key)
+    return conversion
+
+
+def record_funds(*, actor, booking, member_id, data, key, identity):
+    """Caller holds booking/customer/source locks and the outer atomic confirmation."""
     original = booking.quotes.get(pk=data["original_quote"])
     updated = BookingQuote.objects.create(
         booking=booking,
@@ -303,6 +329,25 @@ def convert(*, actor, booking_id, member_id, reviewed, request_key, confirmed=Fa
             amount=source["amount"],
             allocation=source["allocation"],
         )
+    AuditEvent.objects.create(
+        actor=actor,
+        action="membership.visit_converted",
+        record_type="booking",
+        record_id=str(booking.pk),
+        changes=dict(
+            conversion=str(key),
+            membership=member_id,
+            credit=data["credit"],
+            fee_retained=data["retained_fee"],
+        ),
+    )
+    return conversion
+
+
+def use_benefits(*, actor, conversion, key):
+    """Only after the target membership's required funding is known."""
+    booking = conversion.booking
+    updated = conversion.updated_quote
     reserve(
         actor=actor,
         booking_id=booking.pk,
@@ -317,16 +362,3 @@ def convert(*, actor, booking_id, member_id, reviewed, request_key, confirmed=Fa
         action="used",
         reason="arrival",
     )
-    AuditEvent.objects.create(
-        actor=actor,
-        action="membership.visit_converted",
-        record_type="booking",
-        record_id=str(booking.pk),
-        changes=dict(
-            conversion=str(key),
-            membership=member_id,
-            credit=data["credit"],
-            fee_retained=data["retained_fee"],
-        ),
-    )
-    return conversion

@@ -46,10 +46,14 @@ OFFER_FIELDS = (
     "minimum_override",
     "comped",
     "credit_amount",
+    "paid_visit_id",
 )
 
 
 class PurchaseForm(forms.Form):
+    paid_visit_id = forms.IntegerField(
+        required=False, min_value=1, max_value=9223372036854775807, widget=forms.HiddenInput
+    )
     first_bank_booking = forms.IntegerField(required=False, min_value=1, widget=forms.HiddenInput)
     first_bank_amount = forms.DecimalField(
         required=False, min_value=ZERO, max_digits=14, decimal_places=2, widget=forms.HiddenInput
@@ -211,6 +215,14 @@ class PurchaseForm(forms.Form):
         self.fields["expected_method"].choices = [
             (key, labels.get(key, label)) for key, label in self.fields["expected_method"].choices
         ] + [("split", "Split payment")]
+        if (self.data if self.is_bound else self.initial).get("paid_visit_id"):
+            self.fields["expected_method"].choices = [
+                (key, label)
+                for key, label in self.fields["expected_method"].choices
+                if key in {"cash", "check"}
+            ]
+            self.fields["expected_method"].label = "Remaining payment"
+            self.fields["customer"].widget = forms.HiddenInput()
         if owner:
             self.fields["months"] = forms.IntegerField(min_value=1, initial=3)
         else:
@@ -266,6 +278,7 @@ class PurchaseForm(forms.Form):
     def offer_values(self):
         values = {name: self.cleaned_data.get(name, False) for name in OFFER_FIELDS} | {
             "credit_amount": self.cleaned_data.get("credit_amount") or ZERO,
+            "paid_visit_id": self.cleaned_data.get("paid_visit_id"),
             "operation": self.cleaned_data.get("operation") or "purchase",
             "prior_id": self.cleaned_data.get("prior_id"),
         }
@@ -467,15 +480,58 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
         else None
     )
     posted = request.POST.copy() if request.method == "POST" else None
+    if posted is not None and posted.get("action") == "confirm":
+        try:
+            saved_key = forms.UUIDField().clean(posted.get("request_key"))
+            saved = MembershipPurchase.objects.filter(
+                request_key=saved_key, actor=request.user, fingerprint=posted.get("reviewed", "")
+            ).first()
+            if saved:
+                return redirect("membership_overview", pk=saved.pk)
+        except ValidationError:
+            pass
     if prior and posted is not None:
         posted.update(customer=str(prior.customer_id), prior_id=str(prior.pk), operation=operation)
     initial = {"customer": request.GET.get("customer", "")}
+    paid_visit = None
     if request.method == "GET":
         saved_key = request.GET.get("purchase_key")
+        if saved_key:
+            try:
+                recorded = MembershipPurchase.objects.filter(
+                    request_key=forms.UUIDField().clean(saved_key), actor=request.user
+                ).first()
+                if recorded:
+                    return redirect("membership_overview", pk=recorded.pk)
+            except ValidationError:
+                pass
         owned_flow = request.session.get("membership_card_flows", {}).get(saved_key)
         if owned_flow and owned_flow.get("staff_actor") == request.user.pk:
             initial["request_key"] = saved_key
             initial["customer"] = owned_flow["customer_id"]
+        paid_id = request.GET.get("paid_visit") or (owned_flow or {}).get("paid_visit_id")
+        if paid_id:
+            from .availability import NEW_YORK
+            from .models import Booking
+            from .permissions import require_actor
+
+            require_actor(request.user, "core.change_booking")
+            try:
+                paid_id = forms.IntegerField(min_value=1, max_value=9223372036854775807).clean(
+                    paid_id
+                )
+            except ValidationError:
+                raise Http404 from None
+            paid_visit = get_object_or_404(
+                Booking.objects.select_related("customer", "session"), pk=paid_id
+            )
+            initial.update(
+                paid_visit_id=paid_visit.pk,
+                customer=paid_visit.customer_id,
+                starts_on=paid_visit.session.starts_at.astimezone(NEW_YORK).date(),
+                expected_method="cash",
+                places=max(1, paid_visit.children),
+            )
     form = PurchaseForm(
         posted,
         owner=request.user.is_superuser,
@@ -484,6 +540,25 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
         operation=operation,
         actor=request.user,
     )
+    if request.method == "POST" and request.POST.get("paid_visit_id"):
+        from .models import Booking
+        from .permissions import require_actor
+
+        require_actor(request.user, "core.change_booking")
+        try:
+            paid_id = forms.IntegerField(min_value=1, max_value=9223372036854775807).clean(
+                request.POST.get("paid_visit_id")
+            )
+            paid_customer = forms.IntegerField(min_value=1, max_value=9223372036854775807).clean(
+                request.POST.get("customer")
+            )
+            paid_visit = (
+                Booking.objects.select_related("customer", "session")
+                .filter(pk=paid_id, customer_id=paid_customer)
+                .first()
+            )
+        except ValidationError:
+            pass
     reviewed_offer = None
     if request.method == "POST" and form.is_valid():
         try:
@@ -509,6 +584,26 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
                 return redirect("membership_overview", pk=member.pk)
         except ValidationError as exc:
             form.add_error(None, " ".join(exc.messages))
+            try:
+                reviewed_offer = offer(actor=request.user, **form.offer_values())
+            except ValidationError:
+                reviewed_offer = None
+            if (
+                reviewed_offer
+                and form.cleaned_data.get("reviewed") != reviewed_offer["fingerprint"]
+            ):
+                # Keep the new amount visible, but don't carry consent or receipt
+                # proof from an older quote into the no-JavaScript fallback.
+                refreshed = form.data.copy()
+                for name in (
+                    "accepted",
+                    "verified_received",
+                    "first_gift_verified",
+                    "first_zelle_verified",
+                ):
+                    refreshed.pop(name, None)
+                refreshed["reviewed"] = reviewed_offer["fingerprint"]
+                form.data = refreshed
     setup_flow = request.session.get("membership_card_flows", {}).get(
         str(form["request_key"].value()), {}
     )
@@ -531,11 +626,14 @@ def membership_purchase(request, operation="purchase", prior_pk=None):
             "credit_available": credit_available,
             "prior": prior,
             "operation": operation,
+            "paid_visit": paid_visit,
             "heading": {
                 "purchase": "Purchase membership",
                 "renewal": "Renew membership",
                 "addition": "Add membership places",
-            }[operation],
+            }[operation]
+            if not paid_visit
+            else "Apply visit to membership",
             "membership_card_configured": bool(
                 settings.PAYMENT_SANDBOX_ENABLED
                 and settings.BANQUEST_API_SOURCE_KEY
@@ -830,6 +928,11 @@ def membership_overview(request, pk):
             **cancellation_context,
             **credit_context,
             "member": member,
+            "paid_visit_conversion": member.visit_conversions.filter(
+                details__has_key="paid_visit_purchase"
+            ).first()
+            if request.user.has_perm("core.view_booking")
+            else None,
             "public_renewal_url": public_renewal_url,
             "renewal_link_key": uuid.uuid4(),
             "renewal_places": remaining_places(member),

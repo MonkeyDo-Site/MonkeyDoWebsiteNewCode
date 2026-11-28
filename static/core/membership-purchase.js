@@ -9,9 +9,10 @@
   let selection, creditAvailable = 0, initialNet = 0;
   let creditCustomer = field('customer').value;
   const checked = name => !!field(name)?.checked;
-  const selectionHash = () => JSON.stringify(['operation', 'prior_id', 'customer', 'kind', 'places', 'months', 'billing', 'starts_on', 'expected_method', 'minimum_override', 'comped', 'credit_amount', 'first_cash', 'first_check', 'first_zelle', 'first_gift_card', 'first_zelle_sender', 'first_zelle_received_on'].map(name => field(name)?.type === 'checkbox' ? checked(name) : field(name)?.value));
+  const selectionHash = () => JSON.stringify(['operation', 'prior_id', 'customer', 'kind', 'places', 'months', 'billing', 'starts_on', 'expected_method', 'minimum_override', 'comped', 'credit_amount', 'paid_visit_id', 'first_cash', 'first_check', 'first_zelle', 'first_gift_card', 'first_zelle_sender', 'first_zelle_received_on'].map(name => field(name)?.type === 'checkbox' ? checked(name) : field(name)?.value));
   function visibility() {
     const comped = checked('comped');
+    const paidVisit = !!field('paid_visit_id')?.value;
     const due = form.dataset.paymentDue === undefined ? null : Number(form.dataset.paymentDue);
     const paymentRequired = due === null || due > 0;
     const split = !comped && field('expected_method').value === 'split';
@@ -28,9 +29,9 @@
     }
     const needsCard = !comped && (form.dataset.needsCard === undefined ? (field('billing').value === 'monthly' || (['card','split'].includes(field('expected_method').value) && paymentRequired)) : form.dataset.needsCard === '1');
     const creditPanel = form.querySelector('[data-initial-credit]');
-    if (creditPanel) creditPanel.hidden = comped || (creditAvailable <= 0 && !(Number(field('credit_amount')?.value) > 0));
+    if (creditPanel) creditPanel.hidden = paidVisit || comped || (creditAvailable <= 0 && !(Number(field('credit_amount')?.value) > 0));
     const useCredit = form.querySelector('[data-use-initial-credit]');
-    if (useCredit) useCredit.disabled = !field('reviewed').value || creditAvailable <= 0;
+    if (useCredit) useCredit.disabled = paidVisit || !field('reviewed').value || creditAvailable <= 0;
     form.querySelector('[data-membership-card]').hidden = !needsCard;
     const cardControls = form.querySelector('[data-membership-card-controls]');
     if (cardControls) cardControls.hidden = !needsCard;
@@ -45,6 +46,7 @@
     button.disabled = (needsCard && (form.dataset.membershipCardUnavailable === '1' || form.querySelector('[data-membership-card-entry]')?.dataset.blocked === '1')) || !field('reviewed').value || !checked('accepted') || (needsCard && !field('method').value) || (!comped && paymentRequired && (split ? ((cashReceipt&&!checked('verified_received'))||(giftReceipt&&!checked('first_gift_verified'))||(bankReceipt&&!checked('first_zelle_verified'))) : field('expected_method').value !== 'card'&&!checked('verified_received'))) || (comped && !field('send_confirmation')?.value);
     const noun = field('operation')?.value === 'renewal' ? 'renewal' : field('operation')?.value === 'addition' ? 'additional places' : 'membership';
     button.textContent = comped ? `Confirm complimentary ${noun}` : !paymentRequired ? `Confirm ${noun} and apply credit` : split ? `Confirm ${noun} — ${Number(form.dataset.splitManualTotal)>0?`record $${Number(form.dataset.splitManualTotal).toFixed(2)}`:''}${Number(form.dataset.splitManualTotal)>0&&Number(form.dataset.splitCardTotal)>0?' and ':''}${Number(form.dataset.splitCardTotal)>0?`charge card $${Number(form.dataset.splitCardTotal).toFixed(2)}`:''}` : field('expected_method').value === 'card' ? `Confirm ${noun} and charge card` : `Confirm ${noun} and record payment`;
+    if (paidVisit) button.textContent = paymentRequired ? 'Apply visit and confirm membership — record $' + Number(due || 0).toFixed(2) : 'Apply visit and confirm membership';
   }
   async function preview() {
     const current = ++sequence;
@@ -56,7 +58,10 @@
       const result = await response.json();
       if (current !== sequence) return;
       if (!response.ok) throw new Error(result.error || 'Please review the membership details.');
-      if (field('reviewed').value && field('reviewed').value !== result.fingerprint) field('accepted').checked = false;
+      if (field('reviewed').value && field('reviewed').value !== result.fingerprint) {
+        field('accepted').checked = false;
+        for (const name of ['verified_received', 'first_gift_verified', 'first_zelle_verified']) if (field(name)) field(name).checked = false;
+      }
       offer.innerHTML = result.html;
       if (result.payment_due_today !== undefined) form.dataset.paymentDue = result.payment_due_today;
       if (result.needs_card !== undefined) form.dataset.needsCard = result.needs_card ? '1' : '0';

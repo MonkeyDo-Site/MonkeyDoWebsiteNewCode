@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0084_paid_visit_purchase.py": "1ea54e866e5dc9aba3cd762446b20b5602b2cb105a650aa786bf08a65ce8844c",
     "0083_cancelled_membership_arrival_stop.py": "fa056c603af49668f583f8f5ea58a3107074e0cedbbcb0af367edea93c101266",
     "0082_stop_pending_arrival.py": "036b29e1bd4ebaa478f38ffda87364337b60bed0d61435f5495162c748980738",
     "0081_gift_cancellation_scope.py": "d517d62366d2248c3b430437d7db5635982435170d0426e61bd11b705ceb6b06",
@@ -1256,6 +1257,52 @@ class Host:
             )
         return True
 
+    def ensure_paid_visit_purchase_compatible(self, target):
+        marker = target / "deploy/paid-visit-purchase-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "0e523ae9dc9c0cf0edba4a1b67b77d1ae2a171176f20c51d3908a00fea6cfa9f"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippurchase')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit purchase compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershippurchase p JOIN core_membershipdraft d ON d.id=p.membership_id WHERE d.snapshot ? 'paid_visit_purchase')"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit membership purchases. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
@@ -1269,7 +1316,8 @@ class Host:
             self.ensure_pending_visit_compatible(target)
             self.ensure_pending_return_compatible(target)
             self.ensure_pending_stop_compatible(target)
-            return self.ensure_cancelled_member_stop_compatible(target)
+            self.ensure_cancelled_member_stop_compatible(target)
+            return self.ensure_paid_visit_purchase_compatible(target)
         psql = [
             "/usr/sbin/runuser",
             "-u",

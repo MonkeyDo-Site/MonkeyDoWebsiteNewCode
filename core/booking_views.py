@@ -71,6 +71,39 @@ def booking_detail(request, pk):
         from .payments.checkout import summary
 
         payment_context["payment_summary"] = summary(booking)
+        if request.user.has_perm("core.view_membershippurchase") and available(
+            "core_visitmembershipconversion"
+        ):
+            from .customer_credit_records import VisitMembershipConversion
+
+            converted = (
+                VisitMembershipConversion.objects.filter(booking=booking)
+                .select_related("purchase__membership")
+                .first()
+            )
+            if converted and converted.details.get("paid_visit_purchase"):
+                payment_context["paid_visit_conversion"] = converted
+            from .availability import NEW_YORK
+            from .membership_sales import today
+
+            facts = payment_context["payment_summary"]
+            payment_context["can_purchase_from_paid_visit"] = bool(
+                settings.MEMBERSHIP_SALES_ENABLED
+                and converted is None
+                and booking.attendance == "arrived"
+                and booking.children
+                and booking.session.starts_at.astimezone(NEW_YORK).date() == today()
+                and facts.get("status") == "Paid"
+                and facts.get("received", 0) > 0
+                and request.user.has_perms(
+                    [
+                        "core.add_membershippurchase",
+                        "core.collect_payment",
+                        "core.change_booking",
+                        "core.view_customer",
+                    ]
+                )
+            )
         if settings.MEMBERSHIP_SALES_ENABLED and request.user.has_perm(
             "core.view_membershippurchase"
         ):

@@ -112,9 +112,7 @@ class PendingArrivalStopRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Trans
         try:
             MigrationExecutor(connection).migrate([("core", "0081_gift_cancellation_scope")])
         finally:
-            MigrationExecutor(connection).migrate(
-                [("core", "0083_cancelled_membership_arrival_stop")]
-            )
+            MigrationExecutor(connection).migrate([("core", "0084_paid_visit_purchase")])
         self.reconciled()
         with self.runtime_role():
             self.stop()

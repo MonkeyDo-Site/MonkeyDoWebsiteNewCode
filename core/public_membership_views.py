@@ -164,6 +164,7 @@ class PublicPurchaseForm(PurchaseForm):
                 self.initial["method"] = candidates[0].pk
         self.fields["method"].label = "Your membership card"
         self.fields.pop("credit_amount", None)
+        self.fields.pop("paid_visit_id", None)
         for name in tuple(self.fields):
             if name.startswith("first_"):
                 self.fields.pop(name)
@@ -182,6 +183,8 @@ class PublicPurchaseForm(PurchaseForm):
 
     def clean(self):
         data = super().clean()
+        if self.data.get("paid_visit_id") not in (None, ""):
+            raise ValidationError("Paid-visit conversion requires staff assistance at MonkeyDo.")
         if self.data.get("credit_amount") not in (None, "", "0", "0.00"):
             raise ValidationError("Ask staff to review customer credit for this purchase.")
         if any(

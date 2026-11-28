@@ -188,6 +188,7 @@ def make_flow(*, actor, customer, request_key, offer, expires=None, authority=No
         prior_id=(offer.get("origin") or {}).get("prior_id"),
         operation=offer["operation"],
         expected_method=offer["expected_method"],
+        **({"paid_visit_id": offer["paid_visit"]["booking"]} if offer.get("paid_visit") else {}),
         expires=expires or timezone.now().timestamp() + LIFETIME,
     )
 

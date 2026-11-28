@@ -40,6 +40,7 @@ PROPOSED_ID = 9223372036854775807
 class ProposedMembership:
     offer: dict
     bank_applied: bool = False
+    recorded_purchase_id: int | None = None
 
 
 def proposed_places(proposed, appointment_on, children):

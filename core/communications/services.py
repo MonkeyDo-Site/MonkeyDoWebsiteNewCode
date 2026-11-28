@@ -102,10 +102,20 @@ def claim(message_id):
             .first()
         )
         if combined is None:
-            message.state, message.code = "cancelled", "combined_payment_changed"
-            message.save(update_fields=["state", "code"])
-            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
-            return None
+            from core.membership_paid_visit import (
+                conversion_for,
+            )
+            from core.membership_paid_visit import (
+                queue_confirmation as refresh_paid_visit,
+            )
+
+            converted = conversion_for(message.membership)
+            if converted is None or converted.booking_id != message.booking_id:
+                message.state, message.code = "cancelled", "combined_payment_changed"
+                message.save(update_fields=["state", "code"])
+                MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+                return None
+            refresh_combined, combined = refresh_paid_visit, converted.purchase
         refreshed = refresh_combined(combined)
         if refreshed is None or refreshed.pk != message.pk or refreshed.state != "queued":
             return None

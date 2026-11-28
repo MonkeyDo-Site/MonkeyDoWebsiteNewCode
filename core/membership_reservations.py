@@ -211,7 +211,14 @@ def visit_plan(
         # Reservation/consumption always rebuilds eligibility from paid records.
         from .membership_arrival import proposed_places
 
-        places.extend(proposed_places(proposed_membership, appointment_on, children))
+        prospective = proposed_places(proposed_membership, appointment_on, children)
+        if proposed_membership.recorded_purchase_id is not None:
+            places = [
+                place
+                for place in places
+                if place.membership_id != proposed_membership.recorded_purchase_id
+            ]
+        places.extend(prospective)
     return plan_visit(
         policy,
         places,

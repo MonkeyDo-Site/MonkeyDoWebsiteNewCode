@@ -29,9 +29,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Stop a funded arrival while keeping the booking and membership | [105–106](#105--stop-an-arrival-and-keep-the-booking-and-membership) |
 | Return unused visit funds while membership payment is unresolved | [107–108](#107--unused-visit-funds-with-an-unconfirmed-membership-payment) |
 | Stop arrival after a recorded membership cancellation | [109–110](#109--stop-only-the-arrival-after-membership-cancellation) |
-| **New: actual arrival funds and audited downloads** | **[111–112](#111--export-actual-arrival-funds-without-counting-applications-twice)** |
+| Actual arrival funds and audited downloads | [111–112](#111--export-actual-arrival-funds-without-counting-applications-twice) |
+| **New: buy a first membership using a paid visit** | **[113–116](#113--apply-a-paid-visit-toward-a-first-membership)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Samples 111–112 add filtered source balances and receipt/return/application history to the existing export dropdown. Multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Samples 111–112 add filtered source balances and receipt/return/application history to the existing export dropdown. Samples 113–116 add an initial membership purchase using paid visit funds with a known cash/check remainder or no new payment. Card and other remainder tenders, multi-cohort checkout, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -1121,3 +1122,46 @@ The actual browser download prepares exactly four balance rows and eight event r
 | [![Arrival fund export history, desktop](112-arrival-fund-export-history-desktop.png)](112-arrival-fund-export-history-desktop.png) | [![Arrival fund export history, phone](112-arrival-fund-export-history-phone.png)](112-arrival-fund-export-history-phone.png) |
 
 Developer verification for this read-only reporting increment: The final combined run passed **20 tests in 12.908 seconds**, covering the nine new source-report cases, all ten existing reporting cases and the actual desktop/phone browser/download scenario, including four/eight-row CSV checks, unchanged three payment operations, exact audit rows and no overflow, JavaScript errors, duplicate IDs, nested forms, provider calls or external delivery. All four final 111–112 images were visually inspected. Source balances use one query for receipt/return/application facts; event history prefetches returns in bounded chunks. Existing filtered selection, spooled generation, formula protection and required audit-before-download remain. There is no migration or financial mutation in this increment. The last full local suite is the 1,555-test cancellation-stop checkpoint above, followed by its 15 focused checks; no complete local 1,565-test run is claimed. The PR remains draft and the remaining Stage 3 work continues.
+
+
+## 113 — Apply a paid visit toward a first membership
+
+From today's paid arrived booking, **Apply today's visit toward a membership purchase** opens one combined page. The known customer is reused. Membership places/term, the original paid visit, amount applied, new payment, future installment dates, saved-card selection and accepted agreement stay together.
+
+The fictional card-paid visit received **$16.47**. Its **$0.45 original processing fee stays on the visit**; the replaced admission and both original taxes supply **$16.02** toward the **$17.99 first membership month**. Only **$1.97 new cash/check** is recorded. A saved card is authorized for the two remaining **$18.53** installments, without another immediate card charge. This first combined paid-visit path supports cash/check remainders; card, Zelle, gift and split remainders remain in progress.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit and first membership review, desktop](113-paid-visit-membership-review-desktop.png)](113-paid-visit-membership-review-desktop.png) | [![Paid visit and first membership review, phone](113-paid-visit-membership-review-phone.png)](113-paid-visit-membership-review-phone.png) |
+
+## 114 — First membership funded without a duplicate visit receipt
+
+The actual final confirmation creates one membership and one conversion, applies the existing $16.02 and records only $1.97 new cash. The original transaction remains unchanged. The membership overview shows **$16.02 credit applied**, **$1.97 money received**, the next installment and **one free visit used / one available** this month. Return to converted visit leads directly back.
+
+Purchase, actual-fund transfer, new receipt and benefit usage share one transaction. A late error rolls them back together. Repeated POSTs and recovery reloads return to the existing purchase; a different confirmation cannot convert the visit twice. No original receipt is also refunded.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit membership active, desktop](114-paid-visit-membership-active-desktop.png)](114-paid-visit-membership-active-desktop.png) | [![Paid visit membership active, phone](114-paid-visit-membership-active-phone.png)](114-paid-visit-membership-active-phone.png) |
+
+## 115 — Original booking and its financial evidence stay visible
+
+The visit remains arrived with its original attendees and waiver records. The saved price shows the membership admission adjustment and **$1.02 original tax reversal**, leaving the **$0.45 retained fee**. Payment history still shows the original **$16.47 card receipt**, the **$16.02 transfer** and the linked membership's separate **$1.97 new payment**. Conversion does not create another booking, capacity change or visit receipt.
+
+One combined customer update accurately separates the original payment, retained fee, applied funds, new money, unused credit and next installment. It is queued locally and **not sent**. A changed contact refreshes an unattempted snapshot; an attempted/unknown message never automatically queues another copy. The original booking confirmation remains historical.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Converted paid visit booking, desktop](115-paid-visit-converted-booking-desktop.png)](115-paid-visit-converted-booking-desktop.png) | [![Converted paid visit booking, phone](115-paid-visit-converted-booking-phone.png)](115-paid-visit-converted-booking-phone.png) |
+
+## 116 — Excess becomes customer credit, with no zero-dollar receipt
+
+The second actual browser scenario starts from **$37.31 cash already paid** for two children/two adults. **$35.98** funds two Subscription places for their first month and **$1.33** remains customer credit. No new cash/check receipt or immediate card charge is created. Both child benefits are consumed; future installment dates and their accepted amounts remain unchanged.
+
+These browser scenarios select only an existing synthetic saved card. SDK initialization is stubbed without any card-entry fields, all external browser requests are blocked, and gateway/storage methods are mocked. They do not verify actual Banquest hosted fields or processor behavior.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid visit excess credit review, desktop](116-paid-visit-excess-credit-review-desktop.png)](116-paid-visit-excess-credit-review-desktop.png) | [![Paid visit excess credit review, phone](116-paid-visit-excess-credit-review-phone.png)](116-paid-visit-excess-credit-review-phone.png) |
+
+The complete **1,588-test PostgreSQL suite passed in 673.174s**. After the final receipt-proof reset, **70 focused checks passed in 73.378s**, covering the new conversion, real PostgreSQL overlap/reversal races, affected public/card/deployment paths and three actual Chromium scenarios. A changed server price clears both accepted terms and every old receipt-verification checkbox, including without JavaScript; it cannot convert the visit using proof of an older, smaller amount. The browser checks cover the $1.97 remainder, $1.33 excess credit and stale-price refusal with original funds untouched. All eight final 113–116 desktop/phone images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. All 553 Python files pass lint/format checks; model drift, both affected JavaScript syntax checks, diff whitespace, all 232 PNGs and all 58 migration pins pass. The final native inventory is 1,589; a complete local run of that later inventory is not claimed. No external provider/storage request, delivered email, merge or deployment occurred. The same PR37 remains draft with default-off features.
