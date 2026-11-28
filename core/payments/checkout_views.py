@@ -397,10 +397,33 @@ def checkout(request, pk, kind="arrival"):
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "session"), pk=pk, workflow="integrated_v1"
     )
+    from core.membership_arrival_closure_views import controls as stop_controls
     from core.membership_arrival_pending import active_for_booking, status_data
     from core.membership_records import MembershipArrivalIntent
 
     pending = active_for_booking(pk)
+    if (
+        not pending
+        and kind == "arrival"
+        and (request.GET.get("review_pending") == "1" or request.POST.get("pending_review"))
+    ):
+        if request.headers.get("Accept") == "application/json":
+            return JsonResponse(
+                {
+                    "arrival_ended": True,
+                    "booking_url": reverse("booking_detail", args=[pk]),
+                    "errors": {
+                        "__all__": [
+                            {"message": "This arrival review has ended. Open the saved booking."}
+                        ]
+                    },
+                },
+                status=409,
+            )
+        messages.info(
+            request, "This arrival review has ended. Open a fresh arrival from the booking."
+        )
+        return redirect("booking_detail", pk=pk)
     recovering = False
     return_form = None
     returning = request.method == "POST" and request.POST.get("record_visit_return") == "1"
@@ -542,6 +565,7 @@ def checkout(request, pk, kind="arrival"):
                     "may_continue": progress["can_continue"] and may_recheck,
                     "may_start_review": may_start_review,
                     "return_form": return_form,
+                    **stop_controls(request, pending),
                     "counts": pending.facts["review"]["arrival"]["counts"],
                     "quote": pending.facts["review"]["arrival"]["quote"],
                     "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),
@@ -627,6 +651,24 @@ def checkout(request, pk, kind="arrival"):
                     )
                 messages.warning(request, " ".join(error.messages))
                 return redirect("booking_arrival", pk=pk)
+            if not pending and draft["fields"].get("pending_review"):
+                arrival_drafts.discard(request, draft_token)
+                if is_live:
+                    return JsonResponse(
+                        {
+                            "arrival_ended": True,
+                            "booking_url": reverse("booking_detail", args=[pk]),
+                            "errors": {
+                                "__all__": [
+                                    {
+                                        "message": "This arrival review has ended. Open the saved booking."
+                                    }
+                                ]
+                            },
+                        },
+                        status=409,
+                    )
+                return redirect("booking_detail", pk=pk)
             if request.method == "GET":
                 initial.update(draft["fields"])
         else:
@@ -1003,6 +1045,7 @@ def checkout(request, pk, kind="arrival"):
                 "member_retain", ""
             ),
             "pending_membership": pending if recovering else None,
+            **(stop_controls(request, pending) if recovering else {}),
             "pending_receipt": status_data(pending) if recovering else None,
             "return_form": return_form,
             "held_receipts_json": json.dumps(held_payments),

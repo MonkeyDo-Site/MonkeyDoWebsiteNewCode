@@ -8,6 +8,7 @@
 <form method="post" data-pending-continue{% if not may_continue %} hidden{% endif %}>{% csrf_token %}<button class="button small" name="continue_approved" value="1">Complete reviewed arrival</button></form>
 {% if may_start_review %}<form method="post">{% csrf_token %}<button class="button small" name="start_owner_review" value="1">Review current arrival or unused funds</button></form>{% endif %}
 {% include 'core/partials/pending_visit_return_controls.html' %}
+{% include 'core/partials/pending_arrival_stop.html' %}
 </section><section class="panel"><h2>Your reviewed visit</h2>
 <p>{{ counts.children }} children · {{ counts.adults }} adults · {{ counts.babies }} babies · {{ counts.socks }} pairs of grip socks</p>
 <p>{{ intent.purchase.membership.places }} {{ intent.purchase.membership.get_kind_display }} place{{ intent.purchase.membership.places|pluralize }} · {{ intent.purchase.membership.starts_on|date:'M j, Y' }}–{{ intent.purchase.membership.ends_on|date:'M j, Y' }}</p>

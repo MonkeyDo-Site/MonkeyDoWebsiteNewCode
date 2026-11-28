@@ -182,6 +182,20 @@ class MembershipArrivalReceiptReturn(FinancialFact):
         ]
 
 
+class MembershipArrivalClosure(FinancialFact):
+    """Owner stops only the conditional arrival; purchase and booking survive."""
+
+    intent = models.OneToOneField(
+        MembershipArrivalIntent, primary_key=True, on_delete=models.PROTECT, related_name="closure"
+    )
+    request_key = models.UUIDField(unique=True)
+    fingerprint = models.CharField(max_length=64)
+    reason = models.CharField(max_length=500)
+    facts = models.JSONField(encoder=DjangoJSONEncoder)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class MembershipArrivalState(models.Model):
     intent = models.OneToOneField(
         MembershipArrivalIntent, primary_key=True, on_delete=models.PROTECT, related_name="progress"
@@ -190,7 +204,7 @@ class MembershipArrivalState(models.Model):
     status = models.CharField(
         max_length=10,
         default="waiting",
-        choices=[(x, x.title()) for x in ("waiting", "review", "completed")],
+        choices=[(x, x.title()) for x in ("waiting", "review", "completed", "stopped")],
     )
     code = models.CharField(max_length=40, blank=True)
     revision = models.PositiveIntegerField(default=1)
@@ -200,7 +214,7 @@ class MembershipArrivalState(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["booking"],
-                condition=~models.Q(status="completed"),
+                condition=~models.Q(status__in=("completed", "stopped")),
                 name="one_pending_membership_arrival",
             )
         ]

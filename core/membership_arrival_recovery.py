@@ -31,8 +31,8 @@ def authorize(actor, intent, *, reviewing=False):
     from .membership_sales import installment_paid
 
     require_owner(actor)
-    if intent.progress.status == "completed":
-        raise ValidationError("Arrival is already completed. Open the saved booking.")
+    if intent.progress.status in {"completed", "stopped"}:
+        raise ValidationError("This arrival has already ended. Open the saved booking.")
     first = intent.purchase.installments.first()
     if not first or not installment_paid(first) or member_needs_review(intent.purchase):
         raise ValidationError(
@@ -64,7 +64,7 @@ def begin_review(*, actor, intent_id):
 
     require_owner(actor)
     intent = locked(intent_id)
-    if intent.progress.status == "completed":
+    if intent.progress.status in {"completed", "stopped"}:
         return intent.progress
     authorize(actor, intent)
     state = mark_review(intent, "owner_review_requested")

@@ -659,6 +659,7 @@ from .customer_credit_records import (  # noqa: E402,F401
 )
 from .membership_records import (  # noqa: E402,F401
     MembershipArrivalCheckout,
+    MembershipArrivalClosure,
     MembershipArrivalEvent,
     MembershipArrivalIntent,
     MembershipArrivalReceipt,

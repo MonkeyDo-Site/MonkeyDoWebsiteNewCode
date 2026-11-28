@@ -10,6 +10,7 @@ from core import (
     booking_views,
     customer_views,
     dashboard,
+    membership_arrival_closure_views,
     membership_card_views,
     membership_exports,
     membership_prompt_views,
@@ -171,6 +172,11 @@ urlpatterns = [
         name="booking_comment_edit",
     ),
     path("staff/bookings/<int:pk>/arrival/", booking_checkout, name="booking_arrival"),
+    path(
+        "staff/bookings/<int:pk>/arrival/<uuid:intent_id>/stop/",
+        membership_arrival_closure_views.stop_arrival,
+        name="booking_arrival_stop",
+    ),
     path(
         "staff/bookings/<int:pk>/arrival/status/<uuid:checkout_id>/",
         payment_checkout_views.arrival_status,

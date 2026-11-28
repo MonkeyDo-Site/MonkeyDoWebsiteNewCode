@@ -172,6 +172,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       const dataToReview=payload();lastRequestedInput=inputIdentity(dataToReview);
       const response=await fetch(location.href,{method:'POST',body:dataToReview,headers:{Accept:'application/json'},cache:'no-store'});
       const data=await response.json();if(serial!==generation||finalizing)return;
+      if(data.arrival_ended&&data.booking_url){location.assign(data.booking_url);return;}
       for(const error of form.querySelectorAll('.errorlist'))error.remove();
       applyFeedback(data,response.ok);
     }catch(error){lastRequestedInput='';if(serial===generation)status.textContent='The updated price could not be loaded. Please check your connection and try again.';}
@@ -324,7 +325,7 @@ for(const workspace of document.querySelectorAll('[data-membership-arrival-pendi
       if(data.membership_received!==undefined)workspace.querySelector('[data-pending-received]').textContent='$'+Number(data.membership_received).toFixed(2);
       if(data.membership_new_received!==undefined&&workspace.querySelector('[data-pending-new-received]'))workspace.querySelector('[data-pending-new-received]').textContent='$'+Number(data.membership_new_received).toFixed(2);
       if(data.membership_balance!==undefined)workspace.querySelector('[data-pending-balance]').textContent='$'+Number(data.membership_balance).toFixed(2);
-      if(data.state==='succeeded'){location.assign(data.booking_url);return;}
+      if(['succeeded','stopped'].includes(data.state)){location.assign(data.booking_url);return;}
       if(data.state==='processing'&&Date.now()<deadline)timer=setTimeout(refresh,1500);
     }catch{message.textContent='We could not check the current payment result. Open the saved payment before collecting again.';}
     finally{polling=false;check.disabled=false;}
@@ -367,4 +368,13 @@ for(const form of document.querySelectorAll('[data-pending-return]')){
   for(const field of form.querySelectorAll('[name="receipt"],[name="amount"],[name="completed_on"]')){
     for(const event of ['input','change'])field.addEventListener(event,()=>{form.elements.verified_returned.checked=false;});
   }
+}
+
+for(const form of document.querySelectorAll('[data-pending-stop]')){
+  form.addEventListener('submit',async event=>{
+    const arrival=document.querySelector('[data-arrival-live]');
+    if(!arrival||form.dataset.stopReady)return;
+    event.preventDefault();await arrival.prepareReturnDeparture();
+    form.dataset.stopReady='1';const submitter=event.submitter;window.setTimeout(()=>form.requestSubmit(submitter),0);
+  });
 }

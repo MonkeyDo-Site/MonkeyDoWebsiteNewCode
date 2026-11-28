@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0082_stop_pending_arrival.py": "036b29e1bd4ebaa478f38ffda87364337b60bed0d61435f5495162c748980738",
     "0081_gift_cancellation_scope.py": "d517d62366d2248c3b430437d7db5635982435170d0426e61bd11b705ceb6b06",
     "0080_pending_visit_returns.py": "2c1370e113019299e2d330f5442bba2b7ceec89e24c30ca61c71109954064958",
     "0079_pending_visit_receipts.py": "47332a8cea223239700cd882c6827e97304c1f6a1014044415d80535f878348c",
@@ -1170,6 +1171,44 @@ class Host:
             )
         return True
 
+    def ensure_pending_stop_compatible(self, target):
+        marker = target / "deploy/pending-arrival-stop-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "5cffd9bbf098fce1e189b343bfbf834e253fc23f2a490661fddfd2bc2ae8c7e8"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershiparrivalclosure') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify pending-arrival stop compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershiparrivalclosure)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage recorded stopped arrivals. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
@@ -1181,7 +1220,8 @@ class Host:
             self.ensure_membership_bank_compatible(target)
             self.ensure_split_arrival_compatible(target)
             self.ensure_pending_visit_compatible(target)
-            return self.ensure_pending_return_compatible(target)
+            self.ensure_pending_return_compatible(target)
+            return self.ensure_pending_stop_compatible(target)
         psql = [
             "/usr/sbin/runuser",
             "-u",

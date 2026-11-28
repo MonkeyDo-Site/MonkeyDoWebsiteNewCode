@@ -29,6 +29,8 @@ from .payments.amounts import ZERO, amount
 from .payments.jobs import enqueue
 from .payments.ledger import lock_request
 
+TERMINAL = ("completed", "stopped")
+
 FIELDS = (
     "children",
     "adults",
@@ -56,7 +58,7 @@ def active_for_booking(booking_id):
         return None
     return (
         MembershipArrivalIntent.objects.filter(booking_id=booking_id)
-        .exclude(progress__status="completed")
+        .exclude(progress__status__in=TERMINAL)
         .select_related("progress", "purchase__membership", "operation", "actor")
         .first()
     )
@@ -228,7 +230,7 @@ def fresh_preview(intent, *, proposed):
 
 def mark_review(intent, code):
     state = MembershipArrivalState.objects.select_for_update().get(intent=intent)
-    if state.status == "completed" or (state.status == "review" and state.code == code):
+    if state.status in TERMINAL or (state.status == "review" and state.code == code):
         return state
     state.status, state.code = "review", code
     state.revision += 1
@@ -284,7 +286,7 @@ def queue_ready(member):
 
     intent = MembershipArrivalIntent.objects.filter(purchase=member).first()
     first = member.installments.first()
-    if intent and first and installment_paid(first) and intent.progress.status != "completed":
+    if intent and first and installment_paid(first) and intent.progress.status not in TERMINAL:
         enqueue(
             kind="membership_arrival",
             reference=intent.pk,
@@ -313,6 +315,15 @@ def status_data(intent):
         ),
         ZERO,
     )
+    if intent.progress.status == "stopped":
+        return dict(
+            state="stopped",
+            message="Arrival stopped. Open the saved booking for its current status.",
+            pending_membership=False,
+            can_check=False,
+            can_continue=False,
+            code=intent.progress.code,
+        )
     status = membership_status(intent.purchase)
     states = set(sale.operations.values_list("state", flat=True))
     if not settings.MEMBERSHIP_SALES_ENABLED:
@@ -450,7 +461,7 @@ def complete(intent_id):
     lock_customer(intent.purchase.customer_id)
     intent = MembershipArrivalIntent.objects.select_related("purchase", "actor").get(pk=intent_id)
     state = MembershipArrivalState.objects.select_for_update().get(intent=intent)
-    if state.status == "completed" or state.code == "owner_review_requested":
+    if state.status in TERMINAL or state.code == "owner_review_requested":
         return state
     try:
         with transaction.atomic():

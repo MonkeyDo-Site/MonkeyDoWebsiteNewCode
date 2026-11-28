@@ -42,7 +42,21 @@ def booking_detail(request, pk):
     waiver_context = {}
     payment_context = {}
     from .membership_arrival_pending import active_for_booking
+    from .membership_schema import available
 
+    if (
+        settings.MEMBERSHIP_SALES_ENABLED
+        and request.user.has_perm("core.view_membershippurchase")
+        and request.user.has_perm("core.view_paymentoperation")
+        and available("core_membershiparrivalclosure")
+    ):
+        from .membership_records import MembershipArrivalClosure
+
+        payment_context["stopped_arrivals"] = (
+            MembershipArrivalClosure.objects.filter(intent__booking=booking)
+            .select_related("intent__purchase__membership", "actor")
+            .order_by("-created_at")[:10]
+        )
     pending_arrival = active_for_booking(pk)
     if pending_arrival and request.user.has_perm("core.view_membershippurchase"):
         payment_context["pending_membership_arrival"] = pending_arrival

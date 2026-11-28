@@ -25,9 +25,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Membership card remainder during arrival | [94–96](#94--split-membership-receipts-and-card-with-arrival) |
 | Received visit funds while membership card is pending | [97–99](#97--received-visit-funds-with-a-pending-membership-card) |
 | Record an unused visit-fund return and review the remaining payment | [100–102](#100--record-an-actual-unused-visit-fund-return) |
-| **New: gift-card goods payment with a separate cancellation fee** | **[103–104](#103--gift-card-covers-goods-and-the-card-covers-the-cancellation-fee)** |
+| Gift-card goods payment with a separate cancellation fee | [103–104](#103--gift-card-covers-goods-and-the-card-covers-the-cancellation-fee) |
+| **New: stop a funded arrival while keeping the booking and membership** | **[105–106](#105--stop-an-arrival-and-keep-the-booking-and-membership)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Returns before that funding is confirmed, terminal unfinished-visit closure, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Returns before confirmed funding, other terminal reconciliation, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -1001,3 +1002,34 @@ Ruff/format (**536 Python files**), model drift, JavaScript syntax, whitespace, 
 
 
 SQLite development-backend limit: full application tests stop during an older renewal-link table alteration because the existing core_membershippublicacceptance_scope trigger references core_membershiprenewallink while that table is being remade. Migration 0081 is not reached in that setup. The new SQLite gift constraint itself passes 18 isolated SQL checks, covering all four fee components, valid goods, legacy pending/final states, original-tender correction and reverse/reinstall. This does not establish complete SQLite application support; PostgreSQL is the fully verified backend for this increment.
+
+
+## 105 — Stop an arrival and keep the booking and membership
+
+After the first membership installment has a confirmed successful outcome, the owner can pause the unfinished arrival and record any actual returns of its unused visit funds. **Stop this arrival; keep booking** then opens a compact control on that same arrival screen. It names the original booking counts and explains that the membership and its agreed installment schedule continue. A reason and explicit confirmation are required.
+
+Stopping does not cancel the booking, undo the membership, charge a fee, send a refund or record attendance. Only the additional temporary places held for this attempt are released; the original booking capacity and any separate session blocks remain. Unsaved attendee edits are not saved by the stop action. A later arrival starts with a fresh review from booking details. Cancellation and no-show remain explicit separate booking actions.
+
+This fictional example has **$36.61 received for membership**, and all **$7 of unused new visit funds already returned and recorded**. It creates no visit card request or visit invoice. Unknown/unpaid membership funding, a cancelled membership, unresolved funding or unreturned new visit funds continue to block this action. Original unused booking Zelle stays attached to the booking and is not returned or recorded twice.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Stop pending arrival while keeping the booking and membership, desktop](105-stop-arrival-review-desktop.png)](105-stop-arrival-review-desktop.png) | [![Stop pending arrival while keeping the booking and membership, phone](105-stop-arrival-review-phone.png)](105-stop-arrival-review-phone.png) |
+
+## 106 — Upcoming booking with stopped-arrival history
+
+The saved booking still shows its original **3 children, 1 adult and 0 babies**, even though an unsaved baby count was entered before stopping. The payment card has a collapsed **Stopped arrivals — membership kept** history with the stopping owner, time, reason, membership link and first membership payment received when stopped. Those first-payment funds are separate from visit payments. The same history lists the unused visit funds actually returned before stopping: $3 cash, $2 check, $1 gift card and $1 Zelle. Membership terms, dates, receipts and future installment amounts are unchanged.
+
+The original send-confirmation choice is retained. Where it calls for an email, one membership-purchase confirmation is queued, with no claim that this visit was completed. No email is delivered by this review. Repeated clicks reuse the original stop record; older review tabs, private drafts and queued continuation jobs cannot complete the stopped attempt. A stale status poll returns to the current booking.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Upcoming booking and stopped-arrival membership history, desktop](106-stopped-arrival-booking-desktop.png)](106-stopped-arrival-booking-desktop.png) | [![Upcoming booking and stopped-arrival membership history, phone](106-stopped-arrival-booking-phone.png)](106-stopped-arrival-booking-phone.png) |
+
+## Current stopped-arrival verification checkpoint
+
+The complete **1,522-test PostgreSQL suite passed in 589.464s**, with all financial, service, schema and recovery-hold changes present. After clarifying the first-payment label and showing returned visit sources in the retained history, the final **37 focused checks passed in 63.790s**, including the actual desktop/phone browser scenario and PostgreSQL overlap/reversal checks. The earlier related 111-case run also passed in 113.766s.
+
+The browser records exactly one stop, leaves the original booking Upcoming at 3 children/1 adult/0 babies, keeps $36.61 in first membership funds and its three existing operations, and creates no visit invoice or new card request. All $7 of unused new visit funds are already returned and remain visible by tender. Only the extra hold is released; one membership-purchase email is queued and no visit-completion email is created. The four final 1440px/390px images were visually inspected. No overflow, duplicate IDs, nested forms, JavaScript errors or external financial/storage/nonce/gift/bank/mail actions occur.
+
+Ruff/format (**541 Python files**), model drift, JavaScript syntax, whitespace, all **212 image links / 106 desktop–phone pairs** and **56 reviewed migration hashes** pass; all 55 earlier hashes are unchanged. All four GitHub checks passed for the preceding 979df52 revision; checks for this new commit run after publication. Membership/collection flags remain off, the PR stays draft and the remaining scope is still in progress. No merge or deployment is included.

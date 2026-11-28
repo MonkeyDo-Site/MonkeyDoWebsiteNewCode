@@ -761,17 +761,23 @@ def payment_updated(operation):
 
 
 def queue_confirmation(member):
+    stopped = False
     if member.confirmation_mode == "combined":
-        from .membership_arrival_pending import queue_ready
+        from .membership_records import MembershipArrivalClosure
+        from .membership_schema import available
 
-        queue_ready(member)
-        return
-    if (
-        not member.send_confirmation
-        or member.confirmation_mode == "combined"
-        or not member.customer.email
-        or member.cancellations.exists()
-    ):
+        stopped = (
+            available("core_membershiparrivalclosure")
+            and MembershipArrivalClosure.objects.filter(
+                intent__purchase=member, intent__progress__status="stopped"
+            ).exists()
+        )
+        if not stopped:
+            from .membership_arrival_pending import queue_ready
+
+            queue_ready(member)
+            return
+    if not member.send_confirmation or not member.customer.email or member.cancellations.exists():
         return
     from django.urls import reverse
 
@@ -861,6 +867,8 @@ def queue_confirmation(member):
         ]
     elif member.purpose == "complimentary":
         subject = "A little more Monkey Do fun, on us!"
+    if stopped and message_kind == "membership_confirmation":
+        subject = "Your Monkey Do membership purchase"
     if credited:
         content += ["", f"A customer credit of ${credited:.2f} was applied to this purchase."]
     if next_payment:

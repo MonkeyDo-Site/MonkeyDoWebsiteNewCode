@@ -107,7 +107,10 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 self.assertRaisesRegex(deploy.DeployError, "visit credit"),
             ):
                 host.ensure_compatible_release(target)
-            for replies in (["f", "f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f", "f"]):
+            for replies in (
+                ["f", "f", "f", "f", "f", "f", "f"],
+                ["t", "f", "f", "f", "f", "f", "f", "f"],
+            ):
                 with patch.object(host, "command", side_effect=replies):
                     host.ensure_compatible_release(target)
 
@@ -125,7 +128,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 self.assertRaisesRegex(deploy.DeployError, "split membership"),
             ):
                 host.ensure_compatible_release(target)
-            for replies in (["f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f"]):
+            for replies in (["f", "f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f", "f"]):
                 with patch.object(host, "command", side_effect=replies):
                     host.ensure_compatible_release(target)
 
@@ -147,7 +150,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 self.assertRaisesRegex(deploy.DeployError, "membership bank allocations"),
             ):
                 host.ensure_compatible_release(target)
-            for replies in (["f", "f", "f", "f"], ["t", "f", "f", "f", "f"]):
+            for replies in (["f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f"]):
                 with patch.object(host, "command", side_effect=replies):
                     host.ensure_compatible_release(target)
 
@@ -170,7 +173,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 self.assertRaisesRegex(deploy.DeployError, "split membership arrivals"),
             ):
                 host.ensure_compatible_release(target)
-            for replies in (["f", "f", "f"], ["t", "f", "f", "f"]):
+            for replies in (["f", "f", "f", "f"], ["t", "f", "f", "f", "f"]):
                 with patch.object(host, "command", side_effect=replies):
                     host.ensure_compatible_release(target)
 
@@ -194,7 +197,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 self.assertRaisesRegex(deploy.DeployError, "pending visit receipts"),
             ):
                 host.ensure_compatible_release(target)
-            for replies in (["f", "f"], ["t", "f", "f"]):
+            for replies in (["f", "f", "f"], ["t", "f", "f", "f"]):
                 with patch.object(host, "command", side_effect=replies):
                     host.ensure_compatible_release(target)
 
@@ -217,6 +220,32 @@ class ClosedBookingPlanTests(SimpleTestCase):
             with (
                 patch.object(host, "command", side_effect=["t", "t"]),
                 self.assertRaisesRegex(deploy.DeployError, "pending visit returns"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (["f", "f"], ["t", "f", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_refuses_recorded_stopped_arrivals(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-first-card-arrival-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in (
+                "booking-completion-v1.capability",
+                "visit-credit-v2.capability",
+                "membership-first-split-v1.capability",
+                "membership-booking-zelle-v1.capability",
+                "split-membership-arrival-v1.capability",
+                "pending-visit-receipts-v1.capability",
+                "pending-visit-returns-v1.capability",
+            ):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "stopped arrivals"),
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f"], ["t", "f"]):
