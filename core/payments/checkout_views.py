@@ -845,7 +845,7 @@ def checkout(request, pk, kind="arrival"):
                     valid = dict(
                         form.cleaned_data, method="cash", split={}, visit_credit=Decimal("0")
                     )
-                    _, _, safe_quote, _, _, _ = preview(
+                    _, _, safe_quote, safe_plan, _, _ = preview(
                         actor=request.user,
                         booking_id=pk,
                         kind=kind,
@@ -874,10 +874,17 @@ def checkout(request, pk, kind="arrival"):
                             request=request,
                         ),
                     )
-                    from .credit_pricing import credit_limit
+                    from .credit_pricing import credit_limit, gift_limit
 
                     payload["credit_limit"] = str(
                         credit_limit(booking.quotes.first().policy, lines, prepaid["available"])
+                    )
+                    payload["gift_limit"] = str(
+                        max(
+                            Decimal("0.00"),
+                            gift_limit(safe_quote, safe_plan)
+                            - (form.cleaned_data.get("visit_credit") or Decimal("0.00")),
+                        )
                     )
                 except ValidationError:
                     pass
@@ -889,7 +896,7 @@ def checkout(request, pk, kind="arrival"):
             for row in quote["lines"]
         ]
         noncard = quote_lines(lines, booking.quotes.first().policy, card_base=Decimal("0"))
-        from .credit_pricing import credit_limit
+        from .credit_pricing import credit_limit, gift_limit
 
         eligible_credit = credit_limit(booking.quotes.first().policy, lines, prepaid["available"])
         return JsonResponse(
@@ -935,6 +942,7 @@ def checkout(request, pk, kind="arrival"):
                 "prepaid_available": str(prepaid["available"]),
                 "credit_available": str(getattr(form, "visit_credit_available", Decimal("0.00"))),
                 "credit_limit": str(eligible_credit),
+                "gift_limit": str(gift_limit(quote, plan)),
                 "plan": [
                     {
                         "tender": p["tender"],

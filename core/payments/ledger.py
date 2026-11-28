@@ -253,6 +253,24 @@ def checked_allocation(sale, allocation):
     return cleaned
 
 
+def check_receipt_tender(sale, allocation, tender):
+    if tender != "gift_card":
+        return
+    fee_lines = {
+        str(pk)
+        for pk in sale.lines.filter(
+            category__in=("partial_cancellation", "cancellation_fee")
+        ).values_list("pk", flat=True)
+    }
+    if any(
+        part["line"] in fee_lines and any(amount(part[key]) for key in COMPONENTS)
+        for part in allocation
+    ):
+        raise ValidationError(
+            "Gift-card payments cannot cover cancellation or no-show fees. Choose another payment method for the fee."
+        )
+
+
 def used_components(operations):
     totals = {}
     for operation in operations:
@@ -429,6 +447,8 @@ def request_operation(
         if prior.fingerprint != identity:
             raise ValidationError("This payment request key has already been used.")
         return prior
+    if kind == "receipt":
+        check_receipt_tender(sale, cleaned, tender)
     method = None
     if tender == "card":
         method = PaymentMethod.objects.select_for_update().get(
@@ -551,6 +571,8 @@ def record_result(
     if operation.tender == "card" and state == "succeeded" and not provider_reference:
         raise ValidationError("A successful card operation needs its provider reference.")
     if state == "succeeded":
+        if operation.kind == "receipt":
+            check_receipt_tender(operation.sale, operation.allocation, operation.tender)
         when = occurred_at
         for part in operation.allocation:
             FinancialPosting.objects.create(

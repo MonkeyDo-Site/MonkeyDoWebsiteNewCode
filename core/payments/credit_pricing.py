@@ -1,10 +1,11 @@
-"""Credit covers eligible goods; a cancellation fee keeps its actual tender."""
+"""Credit and gift cards cover goods; cancellation keeps an eligible tender."""
 
 from decimal import Decimal
+from types import SimpleNamespace
 
 from django.core.exceptions import ValidationError
 
-from core.pricing import money, quote_lines
+from core.pricing import Line, money, quote_lines
 
 from .amounts import COMPONENTS, ZERO, allocate, amount
 
@@ -16,7 +17,7 @@ def mixed(lines):
     return any(line.label in EXCLUDED and line.quantity and line.unit_price for line in lines)
 
 
-def take(value, remaining, eligible=None):
+def take(value, remaining, eligible=None, *, gift=False):
     weights = [
         row[key] if key in {"net", "item_tax"} and (eligible is None or eligible[i]) else ZERO
         for i, row in enumerate(remaining)
@@ -24,7 +25,9 @@ def take(value, remaining, eligible=None):
     ]
     if value > sum(weights, ZERO):
         raise ValidationError(
-            "Credit exceeds the eligible admission/socks balance after recorded Zelle."
+            "Gift-card amount exceeds the remaining admissions/socks balance. Use another payment method for the cancellation fee."
+            if gift
+            else "Credit exceeds the eligible admission/socks balance after recorded Zelle."
             if eligible is not None
             else "The entered payments exceed the remaining visit amount. Adjust the amounts applied to this booking."
         )
@@ -58,6 +61,62 @@ def credit_limit(policy, lines, prepaid=ZERO):
         ),
         ZERO,
     )
+
+
+def gift_limit(quote, plan):
+    """Use the same bank/credit ordering as the next restricted-tender review."""
+    policy = SimpleNamespace(
+        pk=quote["policy_id"], **{key: Decimal(value) for key, value in quote["rates"].items()}
+    )
+    lines = [
+        Line(row["label"], row["quantity"], amount(row["unit_price"]), row["taxable"])
+        for row in quote["lines"]
+    ]
+    bank = sum((amount(p["amount"]) for p in plan if p.get("advance")), ZERO)
+    credit = sum((amount(p["amount"]) for p in plan if p["tender"] == "credit"), ZERO)
+    return max(ZERO, credit_limit(policy, lines, bank) - credit)
+
+
+def needs_scope(lines, method, split, credit):
+    return mixed(lines) and (
+        credit
+        or method == "gift_card"
+        or (method == "split" and isinstance(split, dict) and amount(split.get("gift_card", ZERO)))
+    )
+
+
+def for_method(policy, lines, *, method, split, credit=ZERO, prepaid=ZERO):
+    """Automatic whole-method amounts respect each tender's eligible balance."""
+    from .checkout_pricing import NONCARD
+
+    if method not in {"card", "split", *NONCARD}:
+        raise ValidationError("Choose the actual visit payment method.")
+    credit, prepaid = amount(credit), amount(prepaid)
+    if method == "split":
+        if not isinstance(split, dict):
+            raise ValidationError("Choose supported received tender amounts.")
+        additional = dict(split)
+    elif method in {"card", "zelle"}:
+        additional = {}
+    elif method == "gift_card":
+        eligible = credit_limit(policy, lines, prepaid)
+        if credit > eligible:
+            raise ValidationError(
+                "Credit exceeds the eligible admission/socks balance after recorded Zelle."
+            )
+        value = eligible - credit
+        if value <= ZERO:
+            raise ValidationError(
+                "No admissions or socks remain for a gift card. Choose another payment method for the cancellation fee."
+            )
+        additional = {method: str(value)}
+    else:
+        base = quote_lines(lines, policy, card_base=ZERO)
+        value = amount(base["total"]) - prepaid - credit
+        if value < ZERO:
+            raise ValidationError("Credit exceeds the visit balance after recorded Zelle.")
+        additional = {method: str(value)}
+    return plan(policy, lines, split=additional, credit=credit, prepaid=prepaid)
 
 
 def components(quote):
@@ -125,10 +184,22 @@ def plan(policy, lines, *, split, credit, prepaid=ZERO):
             )
         result.append(dict(tender="zelle", amount=str(bank), parts=advance, advance=True))
     eligible = [line.label not in EXCLUDED for line in lines]
-    result.append(
-        dict(tender="credit", amount=str(credit), parts=take(credit, remaining, eligible))
-    )
+    if credit:
+        result.append(
+            dict(tender="credit", amount=str(credit), parts=take(credit, remaining, eligible))
+        )
+    gift = amount(split.get("gift_card", ZERO))
+    if gift:
+        result.append(
+            dict(
+                tender="gift_card",
+                amount=str(gift),
+                parts=take(gift, remaining, eligible, gift=True),
+            )
+        )
     for kind in NONCARD:
+        if kind == "gift_card":
+            continue
         value = amount(split.get(kind, ZERO))
         if value:
             result.append(dict(tender=kind, amount=str(value), parts=take(value, remaining)))

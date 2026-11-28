@@ -15,6 +15,7 @@ from .invoices import effective_components, noncard_components, remove_unpaid_ca
 from .jobs import enqueue
 from .ledger import (
     RESERVED,
+    check_receipt_tender,
     fingerprint,
     lock_request,
     record_manual,
@@ -111,6 +112,7 @@ def preview(
     )
     if value <= ZERO:
         raise ValidationError("This reviewed balance is already settled.")
+    check_receipt_tender(sale, allocation, method)
     method_id = None
     last_four = ""
     if method == "card":

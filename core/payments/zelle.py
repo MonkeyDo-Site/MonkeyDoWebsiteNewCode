@@ -91,8 +91,19 @@ def plan_with_prepayment(policy, lines, method, split, available, *, credit=ZERO
 
     base = quote_lines(lines, policy, card_base=ZERO)
     applied = min(available, amount(base["total"]))
+    credit = amount(credit)
+    from .credit_pricing import for_method, needs_scope
+
+    if needs_scope(lines, method, split, credit):
+        if method == "zelle" and applied + credit < amount(base["total"]):
+            raise ValidationError(
+                "Record the remaining Zelle receipt or choose another payment method."
+            )
+        quote, plan = for_method(
+            policy, lines, method=method, split=split, credit=credit, prepaid=applied
+        )
+        return quote, plan, applied
     if credit:
-        credit = amount(credit)
         if applied + credit > amount(base["total"]):
             raise ValidationError("Credit exceeds the visit balance after recorded Zelle.")
         if method == "zelle" and applied + credit < amount(base["total"]):
@@ -101,21 +112,6 @@ def plan_with_prepayment(policy, lines, method, split, available, *, credit=ZERO
             )
         if method not in {"card", "split", "cash", "check", "zelle", "gift_card"}:
             raise ValidationError("Choose the actual visit payment method.")
-        from .credit_pricing import mixed
-        from .credit_pricing import plan as credit_plan
-
-        if mixed(lines):
-            additional = (
-                dict(split or {})
-                if method == "split"
-                else {}
-                if method in {"card", "zelle"}
-                else {method: str(amount(base["total"]) - applied - credit)}
-            )
-            quote, plan = credit_plan(
-                policy, lines, split=additional, credit=credit, prepaid=applied
-            )
-            return quote, plan, applied
         additional = (
             dict(split or {})
             if method == "split"

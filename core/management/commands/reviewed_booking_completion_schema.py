@@ -68,6 +68,7 @@ REVIEWED_NAMES = (
     "0078_split_membership_arrival",
     "0079_pending_visit_receipts",
     "0080_pending_visit_returns",
+    "0081_gift_cancellation_scope",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (

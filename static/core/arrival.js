@@ -15,7 +15,6 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   const cents=value=>Math.round(Number(value||0)*100);
   const invalidateReceipts=()=>{
     const member=form.elements.member_add?.checked;
-    if(!member&&!form.elements.visit_credit)return;
     if(member){form.elements.member_received.checked=false;form.elements.member_zelle_verified.checked=false;}
     if(['gift_card','split'].includes(form.elements.method.value))form.elements.gift_card_verified.checked=false;
     if(form.elements.method.value==='split')form.elements.zelle_verified.checked=false;
@@ -48,7 +47,9 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
       if(!row.isConnected||inputIdentity(payload())!==requested)return;
       if(!lastQuote.noncard_total)return;
       const other=rows().filter(item=>item!==row).reduce((sum,item)=>sum+cents(item.querySelector('input').value),0);
-      input.value=(Math.max(0,cents(lastQuote.noncard_total)-cents(lastQuote.prepaid_available)-cents(form.elements.visit_credit?.value)-other)/100).toFixed(2);
+      let available=Math.max(0,cents(lastQuote.noncard_total)-cents(lastQuote.prepaid_available)-cents(form.elements.visit_credit?.value)-other);
+      if(select.value==='gift_card'&&lastQuote.gift_limit!==undefined)available=Math.min(available,cents(lastQuote.gift_limit));
+      input.value=(available/100).toFixed(2);
       serialize();await update();
     });
     serialize();return row;
@@ -189,7 +190,7 @@ for (const form of document.querySelectorAll('[data-arrival-live]')) {
   });
   form.addEventListener('input',event=>{
     if(event.target.form!==form)return;
-    if((form.elements.member_add?.checked||form.elements.visit_credit)&&!['member_accepted','member_received','member_zelle_verified','zelle_verified','gift_card_verified','waiver_confirmed','waiver_mismatch_accepted'].includes(event.target.name)){
+    if(!['member_accepted','member_received','member_zelle_verified','zelle_verified','gift_card_verified','waiver_confirmed','waiver_mismatch_accepted'].includes(event.target.name)){
       invalidateReceipts();
     }
     if(['children','babies'].includes(event.target.name))for(const input of form.querySelectorAll('[name=waiver_mismatch_accepted]'))input.checked=false;

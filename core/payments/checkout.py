@@ -421,15 +421,15 @@ def confirm(
         raise ValidationError(
             "The booking or reviewed price changed. Review it again before confirming."
         )
-    if membership_intent:
-        from core.membership_arrival_receipts import proofs_ready
-
-        if not proofs_ready(data, plan, membership_intent):
-            raise ValidationError("Verify any newly received Zelle or physical gift-card amount.")
     if facts.get("credit"):
         from core.visit_credit import verify_receipts
 
         verify_receipts(data, plan)
+    elif kind == "arrival":
+        from core.membership_arrival_receipts import proofs_ready
+
+        if not proofs_ready(data, plan, membership_intent):
+            raise ValidationError("Verify any newly received Zelle amount or physical gift card.")
     if PaymentOperation.objects.filter(
         sale__booking=booking, state__in=["ready", "sending", "unknown", "action", "succeeded"]
     ).exists():

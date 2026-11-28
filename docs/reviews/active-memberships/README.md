@@ -24,7 +24,8 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Apply recorded booking Zelle to membership | [92–93](#92--assign-recorded-zelle-between-membership-and-visit) |
 | Membership card remainder during arrival | [94–96](#94--split-membership-receipts-and-card-with-arrival) |
 | Received visit funds while membership card is pending | [97–99](#97--received-visit-funds-with-a-pending-membership-card) |
-| **New: record an unused visit-fund return and review the remaining payment** | **[100–102](#100--record-an-actual-unused-visit-fund-return)** |
+| Record an unused visit-fund return and review the remaining payment | [100–102](#100--record-an-actual-unused-visit-fund-return) |
+| **New: gift-card goods payment with a separate cancellation fee** | **[103–104](#103--gift-card-covers-goods-and-the-card-covers-the-cancellation-fee)** |
 
 Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Returns before that funding is confirmed, terminal unfinished-visit closure, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
@@ -966,3 +967,37 @@ Repeating the same return or arrival confirmation creates no second return/appli
 The final complete **1,476-test PostgreSQL suite passes in 553.752s**, with all final application, schema, template, JavaScript and test changes present before it started. Thirteen new source/native cases, six actual PostgreSQL concurrency/reversal cases and one release-compatibility case cover exact budgets, actual dates, explicit owner pause, partial/full returns, genuinely new same-tender receipts, stale reviews, immutable history, duplicate submissions and private-draft preservation. The final real desktop/phone browser scenario passes in **8.118s**, preserving entered counts, applying four source remainders once and showing $52.93 after a simulated $11.32 visit-card approval and a recorded fictional $2 cash return. All six final samples 100–102 were visually inspected; no overflow, duplicate field IDs, JavaScript errors or external bank/gift/provider/storage/nonce/mail calls occur.
 
 Ruff/format (**532 Python files**), model drift, JavaScript syntax, whitespace, all **204 image links / 102 desktop–phone pairs** and **54 reviewed migration hashes** pass. All 53 prior hashes remain unchanged. The same PR remains draft and membership/collection switches remain off. Returns before confirmed membership funding, terminal unfinished-visit closure and the other listed Stage 3 scope remain in progress. No merge, deployment or live financial action is included.
+
+
+## 103 — Gift card covers goods and the card covers the cancellation fee
+
+Two children were booked and one arrives. The current visit contains **$15 admission + $0.99 sales tax + $3 partial cancellation fee**. The gift card can cover only the **$15.99 admission/tax**. The cancellation fee remains on the booking card: **$3 + $0.09 processing fee = $3.09**, with no tax on that nontaxable fee or its processing fee. The adjusted visit total is **$19.08**.
+
+**Use remaining balance** fills **$15.99** for the gift row. It also recovers from an excessive $16 entry without including the cancellation fee. Changing a financial amount clears the physical-gift verification; this works even without a membership purchase or available customer-credit field. Counts, waivers, the original-to-adjusted price and one final confirmation remain on the same page. No item allocation is requested from staff.
+
+Cash/check/new Zelle can instead cover the $3 fee without a card charge. Existing credit and gift cards share the eligible admissions/socks balance; neither can cover a cancellation fee. Original recorded Zelle is applied first, separately from new money. A gift-card amount above the remaining eligible balance is refused before any receipt or card request.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Gift goods and separate cancellation fee review, desktop](103-gift-admission-and-fee-review-desktop.png)](103-gift-admission-and-fee-review-desktop.png) | [![Gift goods and separate cancellation fee review, phone](103-gift-admission-and-fee-review-phone.png)](103-gift-admission-and-fee-review-phone.png) |
+
+## 104 — Completed visit separates actual gift funds and the fee card
+
+One explicit arrival confirmation records **$15.99 verified gift-card funds** and requests one **$3.09 card payment**. While that card is pending, only the gift money is received. A simulated approval of that exact card operation makes **$19.08 total received**. The payment card lists both sources under the total, and the saved breakdown retains the original estimate, removed admission, tax/fee adjustments and $3 cancellation fee. No processor request, gift-card balance API or external email occurs in this fictional scenario.
+
+The receipt, remaining-payment service and database constraint all refuse a new gift receipt on any cancellation-fee component. The existing single-method remaining-payment page requires another eligible method while a fee is outstanding; gift payment still works when only eligible goods remain. Historical paid gift records stay unchanged, including their original actor/date/allocation. A pending legacy invalid gift request cannot become a successful receipt; existing owner correction of an actual historic receipt through its original tender remains available. No automatic historical correction or ordinary refund program is introduced.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid gift goods and separate cancellation fee, desktop](104-gift-admission-and-fee-paid-desktop.png)](104-gift-admission-and-fee-paid-desktop.png) | [![Paid gift goods and separate cancellation fee, phone](104-gift-admission-and-fee-paid-phone.png)](104-gift-admission-and-fee-paid-phone.png) |
+
+## Current gift-card fee-scope verification checkpoint
+
+The final complete **1,498-test PostgreSQL suite passes in 546.725s**, with all final application, schema, JavaScript, template and test changes present before it started. Twenty-two new pricing/native/legacy cases cover all fee components, eligible gift/credit budgets, actual source dates and money, partial-cancellation card fee/tax, 1,599 exact gift-cent values, verified receipt refusal, pending source return, remaining payments and historical replay/correction. The final related **101 cases pass in 65.893s**.
+
+The final real desktop/phone browser scenario passes in **5.388s**, recovering an excessive gift entry with the $15.99 shortcut, resetting proof after an amount change and recording one gift receipt plus only the $3.09 card request. The simulated successful card outcome yields $19.08 received. All four final 103–104 images were visually inspected, with no overflow, duplicate field IDs, JavaScript errors or external provider/storage/nonce/gift/bank/mail calls.
+
+Ruff/format (**536 Python files**), model drift, JavaScript syntax, whitespace, **208 image links / 104 desktop–phone pairs** and **55 reviewed migration hashes** pass; all 54 prior hashes remain unchanged. Membership/collection features remain off by default and the same PR stays draft while the separately listed Stage 3 work continues. Actual Banquest hosted fields and processor outcomes remain unverified; no merge, deployment or live financial action is included.
+
+
+SQLite development-backend limit: full application tests stop during an older renewal-link table alteration because the existing core_membershippublicacceptance_scope trigger references core_membershiprenewallink while that table is being remade. Migration 0081 is not reached in that setup. The new SQLite gift constraint itself passes 18 isolated SQL checks, covering all four fee components, valid goods, legacy pending/final states, original-tender correction and reverse/reinstall. This does not establish complete SQLite application support; PostgreSQL is the fully verified backend for this increment.

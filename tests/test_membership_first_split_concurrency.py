@@ -130,7 +130,7 @@ class MembershipFirstSplitRaceTests(InitialCreditFixtures, TransactionTestCase):
         try:
             MigrationExecutor(connection).migrate([("core", "0075_visit_customer_credit")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0080_pending_visit_returns")])
+            MigrationExecutor(connection).migrate([("core", "0081_gift_cancellation_scope")])
         values = self.manual_values()
         member = purchase(
             **values,

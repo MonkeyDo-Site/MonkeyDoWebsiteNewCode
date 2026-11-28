@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0081_gift_cancellation_scope.py": "d517d62366d2248c3b430437d7db5635982435170d0426e61bd11b705ceb6b06",
     "0080_pending_visit_returns.py": "2c1370e113019299e2d330f5442bba2b7ceec89e24c30ca61c71109954064958",
     "0079_pending_visit_receipts.py": "47332a8cea223239700cd882c6827e97304c1f6a1014044415d80535f878348c",
     "0078_split_membership_arrival.py": "f7858df2caff7f1f6ed196b312688a9a681901171c8e82876d4ce33e5fc7854f",

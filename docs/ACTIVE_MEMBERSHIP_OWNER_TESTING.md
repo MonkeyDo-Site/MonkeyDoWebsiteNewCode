@@ -452,11 +452,34 @@ Migration 0080 preserves the frozen original receipt scope, adds immutable origi
 
 Developer evidence: **1,476 PostgreSQL tests pass (553.752s)**; the final actual browser scenario passes in 8.118s, with original $7 / actual returned $2 / remaining $5, one membership/eight operations/four source applications and one queued unsent combined confirmation. All six 100–102 desktop/phone samples were visually inspected. These fictional outcomes do not verify actual Banquest fields or authorize financial actions.
 
+## Gift-card goods payment and a separate cancellation fee — samples 103–104
+
+For a later separately authorized staging test, use fictional records and test payment methods. Physical gift-card verification remains manual; the site does not call a gift-card balance API.
+
+| Scenario | Expected result |
+| --- | --- |
+| Two children booked, one arrives | Show $15 admission, $0.99 tax and $3 partial cancellation fee. Keep the original $32.94 estimate and the adjustment explanation. |
+| Choose gift card for eligible goods | Use $15.99 gift funds for admission/tax. Show a separate $3.09 booking-card action for the cancellation fee and its $0.09 processing fee. No taxable card-funded goods remain, so no processing-fee tax is added. |
+| Use the split-row shortcut | Choose Gift card → **Use remaining balance**. Fill $15.99, including when recovering from a $16 excessive entry. Refuse gift amounts above eligible goods before any financial write. |
+| Change a financial amount | Clear the physical-gift verification, then require confirming the current actual receipt again. This also works without membership purchase or customer-credit controls. |
+| Confirm once | Record one $15.99 gift receipt and request only one $3.09 card operation. Pending/unknown card money is not reported received. After its confirmed result, show $19.08 received with both sources underneath. |
+| Cash/check/new Zelle covers the fee | Gift $15.99 plus an eligible $3 actual receipt yields $18.99 and no card fee. New Zelle needs its own verification/date. Already recorded Zelle is applied once before gift eligibility is calculated. |
+| Existing customer credit plus gift | $10 credit + $5.99 gift + $3 cash covers this visit. Credit and gift share the same eligible goods limit; neither funds the cancellation fee. Credit applied remains separate from $8.99 newly received money. |
+| Pending original gift source but revised visit has only a fee | Stop for owner review. Preserve the original source. Any unused gift money must actually be returned through its original method and recorded before it is removed from the visit budget; it cannot silently fund the fee or become credit. |
+| Collect a remaining balance | The current page takes one method per action. Gift is refused while the chosen allocation includes an unpaid fee; select another eligible method. If the fee has already been paid and only goods remain, gift collection still works. |
+| Review old records | Existing paid gift facts stay intact and replay adds nothing. New invalid receipts and promotion of an old invalid pending gift request are refused by service/database guards. Existing owner original-tender corrections remain available without rewriting the original receipt. |
+
+Migration 0081 adds an insertion/state-transition constraint without changing historical financial facts or the existing accepted component format. Previous reviewed migration hashes remain unchanged. This guide does not authorize migration, deployment, actual card charges or external refunds.
+
+Developer evidence: **1,498 PostgreSQL tests pass (546.725s)**, including 22 new pricing/native/legacy cases. The final related 101 pass in 65.893s and real desktop/phone scenario passes in 5.388s. All four 103–104 samples were visually inspected; the gift funds are $15.99, the card is $3.09 and only its simulated confirmed result produces $19.08 received. There are no external financial/provider/mail actions.
+
 ## Known unfinished areas
 
 Returns before confirmed membership funding and terminal unfinished-visit closure; combined multi-cohort renewal checkout; owner cancellation-date corrections, expired-term/general corrections, consolidation and nonpurchase grants; combined already-paid first-purchase/visit conversion and uncertain-card cases; credit returns and remaining broader redemption; remaining cross-workflow filters/exports and final provider validation remain in progress. Private customer renewal, explicit private-receipt benefit reservation, inline booking renewal choices/requested reminders, staff replacement-card entry, owner decisions for affected bookings, current-term membership cancellation/refunds without credit applications, paid same-day reconciliation, explicit initial/due-installment and ordinary/supervised arrival credit application, and owner unused-credit corrections are functional. Cancellation of credit-funded terms is blocked pending the credit-return flow. Actual Banquest source-return reconciliation of converted funds and whole provider voids including retained fees still need their separate owner correction workflow. The release feature switch stays off by default.
 
-The remaining financial review also includes gift-card allocation when an arrival contains a partial cancellation fee. Cancellation/no-show fees must never be gift-funded; samples 100–102 contain no such fee.
+Gift-card allocation with a partial cancellation fee is now covered by samples 103–104 and the checks below. Cancellation/no-show fees never accept gift-card funds. The single-method remaining-payment page asks for another eligible method while a fee remains outstanding.
+
+Developer application testing uses PostgreSQL. An older SQLite migration currently prevents full application startup on that development backend; the new gift-card constraint passed 18 isolated SQLite SQL checks.
 
 Actual Banquest hosted fields and installment processor flags are not verified by the fictional gallery. Three policy answers about later installments after failure, parent arrears after prepaid early renewal, and credit-funded cancellation refund destinations remain pending in the [implementation record](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). The disputed automatic branches are not enabled, and no credit-refund destination is assumed.
 

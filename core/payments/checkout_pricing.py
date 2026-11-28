@@ -74,18 +74,10 @@ def tender_plan(policy, lines, *, method, split=None, credit=ZERO):
         raise ValidationError("Choose the actual payment method.")
     cash_quote = quote_lines(lines, policy, card_base=ZERO)
     credit = amount(credit)
-    from .credit_pricing import mixed
-    from .credit_pricing import plan as credit_plan
+    from .credit_pricing import for_method, needs_scope
 
-    if credit and mixed(lines):
-        received = (
-            dict(split or {})
-            if method == "split"
-            else {}
-            if method == "card"
-            else {method: str(amount(cash_quote["total"]) - credit)}
-        )
-        return credit_plan(policy, lines, split=received, credit=credit)
+    if needs_scope(lines, method, split, credit):
+        return for_method(policy, lines, method=method, split=split, credit=credit)
     if credit > amount(cash_quote["total"]):
         raise ValidationError("Customer credit exceeds the non-card visit total.")
     if credit and method != "split":
