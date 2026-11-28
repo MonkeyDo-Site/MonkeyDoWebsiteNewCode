@@ -29,6 +29,7 @@ def dashboard(request):
     from .customer_credit import hold_notices as credit_hold_notices
     from .membership_cancellations import notices as membership_cancellation_notices
     from .membership_notices import payment_notices
+    from .membership_renewal_review import reviews as renewal_reviews
     from .payments.zelle import refund_notices
 
     alerts = (
@@ -47,6 +48,9 @@ def dashboard(request):
             "membership_cancellation_issues": membership_cancellation_notices()
             if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
             else {},
+            "membership_renewal_reviews": renewal_reviews(live_only=True)
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
             "membership_payment_issues": payment_notices()
             if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
             else [],

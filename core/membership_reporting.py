@@ -85,7 +85,7 @@ def reporting_members(*, on=None):
                     then=Value("cancelled"),
                 ),
                 When(membership__ends_on__lt=on, then=Value("expired")),
-                When(pk__in=held_members(), then=Value("review")),
+                When(pk__in=held_members(on=on), then=Value("review")),
                 When(
                     ~Q(purpose="complimentary")
                     & (Q(_unpaid_first=True) | Q(_has_installments=False)),

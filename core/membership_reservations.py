@@ -48,7 +48,7 @@ def payment_current(member, *, on=None):
     from .membership_funding import member_needs_review
 
     on = on or today()
-    if member_needs_review(member):
+    if member_needs_review(member, on=on):
         return False
     if member.purpose == "complimentary":
         return True

@@ -807,7 +807,7 @@ def membership_status(member, *, on=None):
         return "expired"
     from .membership_funding import member_needs_review
 
-    if member_needs_review(member):
+    if member_needs_review(member, on=on):
         return "review"
     if member.purpose != "complimentary":
         required = member.installments.select_related("invoice__sale", "cycle").order_by("number")

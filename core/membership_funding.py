@@ -40,11 +40,21 @@ def sale_needs_review(sale):
     )
 
 
-def member_needs_review(member):
-    return bool(held_members(member.pk))
+def member_needs_review(member, *, on=None):
+    from .membership_renewal_review import parents_needing_review
+
+    return bool(_held_source_members(member.pk) or parents_needing_review(member, on=on))
 
 
-def held_members(member_id=None):
+def held_members(member_id=None, *, on=None):
+    from .membership_renewal_review import reviews
+
+    return _held_source_members(member_id) | {
+        review["member"].pk for review in reviews(member_id=member_id, on=on)
+    }
+
+
+def _held_source_members(member_id=None):
     from .customer_credit import source_on_hold
     from .customer_credit_records import CustomerCreditAllocation
 

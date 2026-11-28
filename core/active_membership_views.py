@@ -743,6 +743,7 @@ def membership_overview(request, pk):
         pk=pk,
     )
     from .membership_paid_visit_pending import context as paid_visit_context
+    from .membership_renewal_review import parents_needing_review
 
     pending_paid_visit = paid_visit_context(member)
     if request.method == "POST" and request.POST.get("action") in {
@@ -1065,6 +1066,7 @@ def membership_overview(request, pk):
             **cancellation_context,
             **credit_context,
             "member": member,
+            "renewal_parent_reviews": parents_needing_review(member),
             "pending_paid_visit": pending_paid_visit,
             "paid_visit_recovery": paid_visit_recovery,
             "paid_visit_new_card": paid_visit_new_card,

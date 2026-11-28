@@ -38,8 +38,9 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: enter a card for the remaining first payment** | **[133–135](#133--enter-a-new-card-for-the-original-remainder)** |
 | **New: record a received replacement payment on the same page** | **[136–138](#136--record-a-received-replacement-after-a-known-card-failure)** |
 | **New: recorded bank details and paid-visit history download** | **[139–140](#139--recorded-bank-details-on-the-existing-payment-page)** |
+| **New: paid early-renewal review and owner reminder** | **[141–142](#141--paid-early-renewal-with-an-earlier-payment-needing-review)** |
 
-Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **136–138** show the full received-payment alternative after a known card failure, including recovery without duplicate collection. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
+Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **141–142** show an independently paid early renewal held for owner review of earlier required payments, plus its Dashboard reminder. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
 
 ## 01 — Purchase membership on one page
 
@@ -1429,3 +1430,22 @@ Choose **Paid visit application history** from the existing **Export filtered me
 | [![Paid-visit history download, desktop](140-paid-visit-history-download-desktop.png)](140-paid-visit-history-download-desktop.png) | [![Paid-visit history download, phone](140-paid-visit-history-download-phone.png)](140-paid-visit-history-download-phone.png) |
 
 Developer verification: **91 focused PostgreSQL/application/browser checks passed in 62.138 seconds** with the final code and compact layout, including all 15 new history/evidence cases, existing payment views/runtime grants, Zelle/source reports and the actual Chromium download scenario. The browser downloaded both CSV reports and verified original invoice funds $16.47, new money $1.97, converted credit created/applied $16.02, unused fee removed $0.06 and retained original fee $0.45. Receipt/posting counts stayed unchanged; two export audits were recorded. All four final 1440px/390px images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. All 580 Python files pass lint/format checks; system checks, model drift, diff whitespace, all 280 PNGs/gallery links, the nine-row actual-download review CSV and all 64 migration pins pass. All 64 previously published migration files/hashes are unchanged. All four GitHub checks passed for the prior published commit; the full suite for this new increment runs after publication. External provider requests were blocked/mocked and no customer email was delivered. Actual Banquest hosted fields/processor behavior remain unverified. Features and collection stay off by default; PR37 remains draft with the broader stage still in progress. No merge, deployment or live financial action occurred.
+
+
+## 141 — Paid early renewal with an earlier payment needing review
+
+The fictional prepaid renewal has its own **$17.99 cash receipt**, preserved accepted dates and installment marked paid. If required payments on the earlier term later become unresolved, the membership shows **Review**, links to that earlier term and holds new benefit use. This protects the unanswered early-renewal policy rather than treating the recorded renewal payment as missing, cancelling it, refunding it or transferring it to the earlier debt. Existing booking prices and reservations stay intact; the established owner-only exception applies to one booking at a time.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid early renewal needing review, desktop](141-paid-early-renewal-review-desktop.png)](141-paid-early-renewal-review-desktop.png) | [![Paid early renewal needing review, phone](141-paid-early-renewal-review-phone.png)](141-paid-early-renewal-review-phone.png) |
+
+## 142 — Owner reminder for the same paid renewal
+
+The Dashboard links directly to each live paid renewal needing this review. Recording the known earlier required payments clears the reminder and restores normal eligibility; the paid renewal still has exactly its original one $17.99 receipt. Future installments that are not due do not create this hold. Owner complimentary renewals and unrelated ordinary purchases keep their existing rules. No automatic charge, retry, refund, booking repricing or new customer notice is introduced.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid renewal owner reminder, desktop](142-paid-renewal-owner-reminder-desktop.png)](142-paid-renewal-owner-reminder-desktop.png) | [![Paid renewal owner reminder, phone](142-paid-renewal-owner-reminder-phone.png)](142-paid-renewal-owner-reminder-phone.png) |
+
+Developer verification: the complete PostgreSQL suite passed **1,756 tests** before the final own-payment eligibility distinction. The final expanded run then passed **103 checks**, including all eleven new paid-renewal review cases, renewals, reporting, benefit reservations with real PostgreSQL concurrency, per-booking owner decisions and collection preparation. An unpaid or known-failed renewal keeps its ordinary pending-payment state and is never labelled paid. The final native inventory is 1,757; a complete local 1,757-test run is not claimed. A separate actual Chromium scenario verified the paid receipt, parent link, Dashboard reminder and its disappearance after known earlier payments were recorded, without a second renewal receipt. All four final 1440px/390px images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. All 582 Python files pass lint/format checks; system checks, model drift, whitespace, all 284 PNGs/gallery links and all 64 migration pins pass. All 64 published migration files/hashes and the earlier CSV sample are unchanged. All four GitHub checks passed for the prior published commit; this increment starts its own checks on publication. External requests were blocked/mocked and no customer email was delivered. Provider behavior remains unverified. Features and collection remain off by default; PR37 stays draft, with the broader stage still in progress. No merge, deployment or live financial action occurred.
