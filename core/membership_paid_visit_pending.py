@@ -52,10 +52,26 @@ def protect_source(original):
         )
 
 
-def authorize_receipt(*, invoice, actor, request_key, tender, allocation):
+def authorize_receipt(
+    *, invoice, actor, request_key, tender, allocation, recovery=None, method_id=None
+):
     """All generic collection paths must respect the accepted conditional source."""
     member = invoice.installment.purchase
     marker = member.membership.snapshot.get(CARD_MARKER)
+    if recovery is not None:
+        if not marker:
+            raise PermissionDenied
+        from .membership_paid_visit_recovery import authorize_receipt as authorize_recovery
+
+        return authorize_recovery(
+            recovery,
+            invoice=invoice,
+            actor=actor,
+            request_key=request_key,
+            method_id=method_id,
+            tender=tender,
+            allocation=allocation,
+        )
     if not marker:
         return
     if invoice.installment.number != 1:
@@ -132,7 +148,10 @@ def locked(intent_id):
 def lock_operation(operation):
     if operation.kind != "receipt" or operation.sale.kind != "membership" or not available():
         return None
-    intent = MembershipPaidVisitIntent.objects.filter(operation_id=operation.pk).first()
+    intent = MembershipPaidVisitIntent.objects.filter(
+        purchase__installments__invoice__sale_id=operation.sale_id,
+        purchase__installments__number=1,
+    ).first()
     return locked(intent.pk) if intent else None
 
 
@@ -185,11 +204,14 @@ def fresh(intent, *, dispatch=False):
     return data
 
 
-def allow_dispatch(intent):
+def allow_dispatch(intent, operation=None):
     if intent is None:
         return True
     try:
-        fresh(intent, dispatch=True)
+        from .membership_paid_visit_recovery import authorize_dispatch
+
+        if operation is None or authorize_dispatch(intent, operation) is None:
+            fresh(intent, dispatch=True)
     except (ValidationError, PermissionDenied):
         mark_review(intent.pk)
         return False
@@ -247,8 +269,10 @@ def create(*, actor, member, offer, invoice, method):
 def queue_ready(member):
     if not settings.MEMBERSHIP_SALES_ENABLED or not available():
         return
-    intent = active().filter(purchase=member, operation__state="succeeded").first()
-    if intent:
+    intent = active().filter(purchase=member).first()
+    from .membership_paid_visit_recovery import current_operation
+
+    if intent and current_operation(intent) and current_operation(intent).state == "succeeded":
         from .payments.jobs import enqueue
 
         enqueue(
@@ -277,12 +301,17 @@ def _complete(intent_id):
     if released:
         return released
     data = fresh(intent)
-    if intent.operation_id and intent.operation.state != "succeeded":
+    from .membership_paid_visit_recovery import current_operation
+
+    current = current_operation(intent)
+    if current and current.state != "succeeded":
         raise ValidationError(
             "Check the existing membership card outcome before applying the visit."
         )
     first = intent.purchase.installments.first()
-    if first.invoice.sale.operations.exclude(kind="receipt", state="succeeded").exists():
+    if first.invoice.sale.operations.exclude(
+        kind="receipt", state__in=["succeeded", "declined", "cancelled"]
+    ).exists():
         raise ValidationError(
             "A membership payment correction needs review before applying the visit."
         )
@@ -296,7 +325,7 @@ def _complete(intent_id):
     from .payments.models import PaymentFollowup
 
     PaymentFollowup.objects.filter(
-        operation_id=intent.operation_id, resolved_at__isnull=True
+        operation__sale=first.invoice.sale, resolved_at__isnull=True
     ).update(resolved_at=timezone.now())
     return MembershipPaidVisitRelease.objects.get(intent=intent)
 
@@ -320,6 +349,7 @@ def mark_review(intent_id):
     if MembershipPaidVisitRelease.objects.filter(intent=intent).exists():
         return
     OwnerNotice.objects.get_or_create(
+        reviewed_at__isnull=True,
         customer_id=intent.purchase.customer_id,
         subject="Paid visit membership application needs review",
         details=dict(
@@ -340,7 +370,7 @@ def resolve_notices(intent, actor):
 
 def outcome_updated(operation):
     if operation.sale.kind == "membership" and available():
-        intent = active().filter(operation=operation).first()
+        intent = active().filter(purchase__installments__invoice__sale_id=operation.sale_id).first()
         if intent and operation.state in {"declined", "unknown", "action"}:
             mark_review(intent.pk)
 
@@ -400,8 +430,11 @@ def stop(*, actor, intent_id, request_key, reviewed, reason):
         raise ValidationError(
             "Reconcile the existing card outcome and any money still held before releasing visit funds."
         )
-    if intent.operation_id:
-        op = PaymentOperation.objects.select_for_update().get(pk=intent.operation_id)
+    from .membership_paid_visit_recovery import current_operation
+
+    current = current_operation(intent)
+    if current:
+        op = PaymentOperation.objects.select_for_update().get(pk=current.pk)
         if op.state == "ready":
             op.state = "cancelled"
             op.result_code = "paid_visit_stopped"
@@ -442,7 +475,10 @@ def context(member):
     if release and release.kind == "completed":
         return None
     can_complete = False
-    if not release and (not intent.operation_id or intent.operation.state == "succeeded"):
+    from .membership_paid_visit_recovery import current_operation
+
+    operation = current_operation(intent)
+    if not release and (not operation or operation.state == "succeeded"):
         try:
             fresh(intent)
             can_complete = True
@@ -452,7 +488,7 @@ def context(member):
     return dict(
         intent=intent,
         stopped=bool(release),
-        operation=intent.operation,
+        operation=operation,
         source_amount=intent.offer["paid_visit"]["applied"],
         card_amount=intent.offer["paid_visit"]["new_payment"],
         can_complete=can_complete,

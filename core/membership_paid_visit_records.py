@@ -60,3 +60,36 @@ class MembershipPaidVisitRelease(FinancialFact):
                 name="paid_visit_release_evidence",
             )
         ]
+
+
+class MembershipPaidVisitRecovery(FinancialFact):
+    """A fresh, explicit card authority; never a mutation of an earlier attempt."""
+
+    id = models.UUIDField(primary_key=True, editable=False)
+    intent = models.ForeignKey(
+        MembershipPaidVisitIntent, on_delete=models.PROTECT, related_name="recoveries"
+    )
+    sequence = models.PositiveIntegerField()
+    previous = models.OneToOneField(
+        "core.PaymentOperation", on_delete=models.PROTECT, related_name="paid_visit_successor"
+    )
+    # Its deferred FK permits authority insertion before the exact ledger request.
+    operation = models.OneToOneField(
+        "core.PaymentOperation",
+        to_field="request_key",
+        on_delete=models.PROTECT,
+        related_name="paid_visit_recovery",
+    )
+    method = models.ForeignKey("core.PaymentMethod", on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    fingerprint = models.CharField(max_length=64)
+    review = models.JSONField()
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["intent", "sequence"], name="paid_visit_recovery_order"
+            ),
+        ]

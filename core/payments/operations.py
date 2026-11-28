@@ -183,7 +183,7 @@ def begin_dispatch(operation_id):
         raise ValidationError("Non-card receipt must be explicitly recorded by staff.")
     if operation.state != "ready":
         return None
-    if not allow_dispatch(pending_arrival) or not allow_paid_visit(paid_visit):
+    if not allow_dispatch(pending_arrival) or not allow_paid_visit(paid_visit, operation):
         operation.state, operation.result_code = "cancelled", "changed_before_dispatch"
         operation.completed_at = timezone.now()
         operation.save(update_fields=["state", "result_code", "completed_at"])

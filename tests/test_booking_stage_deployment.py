@@ -111,7 +111,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_cannot_manage_accepted_first_membership_splits(self):
@@ -132,7 +132,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_membership_allocations_of_recorded_bank_money(self):
@@ -157,7 +157,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_accepted_split_first_card_arrivals(self):
@@ -180,7 +180,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_accepted_pending_visit_receipts(self):
@@ -204,7 +204,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_recorded_pending_visit_returns(self):
@@ -229,7 +229,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f"], ["t", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_recorded_stopped_arrivals(self):
@@ -255,7 +255,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f"], ["t", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_cancellation_linked_stopped_arrivals(self):
@@ -282,7 +282,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f"], ["t", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_cannot_manage_paid_visit_membership_purchases(self):
@@ -297,7 +297,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_paid_visit_purchase_compatible(target)
             for replies in (["f"], ["t", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     self.assertTrue(host.ensure_paid_visit_purchase_compatible(target))
 
     def test_older_release_refuses_received_split_paid_visit_purchases(self):
@@ -315,7 +315,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_paid_visit_purchase_compatible(target)
             for replies in (["f"], ["t", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f"]):
                     self.assertTrue(host.ensure_paid_visit_received_split_compatible(target))
             marker = "paid-visit-received-split-v1.capability"
             (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
@@ -342,6 +342,27 @@ class ClosedBookingPlanTests(SimpleTestCase):
             (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
             with patch.object(host, "command") as command:
                 self.assertTrue(host.ensure_paid_visit_card_compatible(target))
+            command.assert_not_called()
+
+    def test_older_release_cannot_manage_explicit_paid_visit_card_recoveries(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-recovery-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "paid-visit card recoveries"),
+            ):
+                host.ensure_paid_visit_card_recovery_compatible(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    self.assertTrue(host.ensure_paid_visit_card_recovery_compatible(target))
+            (target / "deploy").mkdir()
+            marker = "paid-visit-card-recovery-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with patch.object(host, "command") as command:
+                self.assertTrue(host.ensure_paid_visit_card_recovery_compatible(target))
             command.assert_not_called()
 
 

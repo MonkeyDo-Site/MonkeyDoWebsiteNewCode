@@ -165,6 +165,28 @@ def review_notice(request, pk):
                 changes={"notice_id": notice.pk},
             )
         return redirect("dashboard")
+    if notice.details.get("kind") == "paid_visit_membership":
+        from .membership_paid_visit_records import MembershipPaidVisitRelease
+
+        if not MembershipPaidVisitRelease.objects.filter(
+            intent_id=notice.details.get("intent")
+        ).exists():
+            messages.error(
+                request,
+                "Complete or safely stop the paid-visit application before clearing this notice.",
+            )
+            return redirect("dashboard")
+        if notice.reviewed_at is None:
+            notice.reviewed_at, notice.reviewed_by = timezone.now(), request.user
+            notice.save(update_fields=["reviewed_at", "reviewed_by"])
+            AuditEvent.objects.create(
+                actor=request.user,
+                action="membership.paid_visit_notice_reviewed",
+                record_type="membership",
+                record_id=str(notice.details.get("membership")),
+                changes={"notice_id": notice.pk},
+            )
+        return redirect("dashboard")
     if notice.reviewed_at is None:
         notice.reviewed_at = timezone.now()
         notice.reviewed_by = request.user

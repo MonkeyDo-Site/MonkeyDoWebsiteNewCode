@@ -297,8 +297,13 @@ def request_operation(
     public_membership_authority=None,
     scheduled_membership_claim=None,
     membership_refund_plan_id=None,
+    paid_visit_recovery=None,
 ):
     enabled()
+    if paid_visit_recovery is not None and (
+        kind != "receipt" or tender != "card" or purpose != "member_purchase" or actor is None
+    ):
+        raise PermissionDenied
     if membership_refund_plan_id is not None and kind != "refund":
         raise PermissionDenied
     public = actor is None and public_membership_authority is not None
@@ -391,7 +396,11 @@ def request_operation(
             raise ValidationError(
                 "This installment belongs to the cancelled part of the membership."
             )
-        if tender == "card" and (not mandate or str(mandate.method_id) != str(method_id)):
+        if (
+            tender == "card"
+            and paid_visit_recovery is None
+            and (not mandate or str(mandate.method_id) != str(method_id))
+        ):
             raise ValidationError("Use the currently accepted membership payment method.")
         member_source = True
     if purpose == "correction":
@@ -415,8 +424,16 @@ def request_operation(
         from core.membership_paid_visit_pending import authorize_receipt
 
         authorize_receipt(
-            invoice=invoice, actor=actor, request_key=request_key, tender=tender, allocation=cleaned
+            invoice=invoice,
+            actor=actor,
+            request_key=request_key,
+            tender=tender,
+            allocation=cleaned,
+            recovery=paid_visit_recovery,
+            method_id=method_id,
         )
+    elif paid_visit_recovery is not None:
+        raise PermissionDenied
     if scheduled:
         from core.membership_collection_authority import authorize_operation
 

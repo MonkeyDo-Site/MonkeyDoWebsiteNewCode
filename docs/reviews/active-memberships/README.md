@@ -33,8 +33,9 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: buy a first membership using a paid visit** | **[113–116](#113--apply-a-paid-visit-toward-a-first-membership)** |
 | **New: paid-visit purchase with received split payments** | **[117–118](#117--paid-visit-purchase-with-received-split-payments)** |
 | **New: card remainder, uncertain result and safe owner stop** | **[119–124](#119--paid-visit-membership-with-a-card-remainder)** |
+| **New: retry a known failed paid-visit card remainder** | **[125–128](#125--explicitly-request-the-card-remainder-again)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Samples 111–112 add filtered source balances and receipt/return/application history to the existing export dropdown. Samples 113–116 add an initial membership purchase using paid visit funds with a known cash/check remainder or no new payment. Samples 117–118 extend that page to received cash/check/Zelle/physical-gift-card combinations. Samples 119–124 add a separately authorized card remainder with protected source funds, truthful uncertain outcomes and a safe owner stop. Mixed manual/card remainders and further recovery controls, multi-cohort checkout, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Samples 111–112 add filtered source balances and receipt/return/application history to the existing export dropdown. Samples 113–116 add an initial membership purchase using paid visit funds with a known cash/check remainder or no new payment. Samples 117–118 extend that page to received cash/check/Zelle/physical-gift-card combinations. Samples 119–124 add a separately authorized card remainder with protected source funds, truthful uncertain outcomes and a safe owner stop. Samples 125–128 add an explicitly authorized same-day retry using the original or another eligible saved card after a known failure. Mixed manual/card remainders, alternate tender/date recovery, multi-cohort checkout, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -1259,3 +1260,48 @@ Developer verification: the complete PostgreSQL suite passed **1,629 tests in 70
 All financial data and card outcomes above are fictional local application checks. Provider/storage gateways were mocked and non-local browser requests blocked; the hosted SDK stub initialized no fields and only an existing synthetic saved card was selected. Actual Banquest card fields, processor outcomes, external email delivery and live financial actions are not verified here. The same draft PR remains default-off with no release included. Mixed manual/card remainders, further payment/date recovery, multi-cohort checkout and the remaining owner/credit/reporting scope continue independently.
 
 The pending panel identifies the original session date/time directly. Changing a future billing card preserves the already accepted original request and its recorded card outcome; it does not retarget or retry that payment.
+
+
+## 125 — Explicitly request the card remainder again
+
+Staff open **Try a card payment again** on the same membership page after the original $2.03 request is definitively declined. They choose the eligible saved card ending 6789 and confirm customer authorization for exactly **$2.03**, including its existing $0.06 fee. The card for future installments remains 1234. The original terms, purchased dates, first failed request and $16.47 paid visit remain in place.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Explicitly request the card remainder again, desktop](125-paid-visit-recovery-review-desktop.png)](125-paid-visit-recovery-review-desktop.png) | [![Explicitly request the card remainder again, phone](125-paid-visit-recovery-review-phone.png)](125-paid-visit-recovery-review-phone.png) |
+
+
+## 126 — Replacement request pending
+
+The same membership has one new ready $2.03 request on card 6789. The previous request remains declined. The panel names the card for this payment, separately from the future membership card. Original funds of **$16.02 remain reserved**; **recorded new money is $0.00**, with no conversion, customer-credit application or benefit usage. No automatic retry or second purchase is created.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Replacement request pending, desktop](126-paid-visit-recovery-pending-desktop.png)](126-paid-visit-recovery-pending-desktop.png) | [![Replacement request pending, phone](126-paid-visit-recovery-pending-phone.png)](126-paid-visit-recovery-pending-phone.png) |
+
+
+## 127 — Uncertain replacement outcome
+
+A simulated unknown result keeps the exact existing request and original source funds. Staff cannot request another payment or stop/release the source while the outcome is uncertain. **Check existing card payment** opens that request; reloading does not charge again. Zero recorded receipts does not establish that the processor made no charge.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Uncertain replacement outcome, desktop](127-paid-visit-recovery-unknown-desktop.png)](127-paid-visit-recovery-unknown-desktop.png) | [![Uncertain replacement outcome, phone](127-paid-visit-recovery-unknown-phone.png)](127-paid-visit-recovery-unknown-phone.png) |
+
+
+## 128 — Known replacement funds complete the original application
+
+After the simulated $2.03 outcome is confirmed, a separate pure continuation applies the original $16.02 and uses one visit benefit. The original receipt remains **$16.47**, with its original invoice reduced to **$0.45**. The membership shows **$2.03 new money received**, **$16.02 credit applied**, one used/one available benefit and future **$18.53** installments still on card 1234. Card 6789 paid this remainder only. One combined email is queued but not sent.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Known replacement funds complete the original application, desktop](128-paid-visit-recovery-completed-desktop.png)](128-paid-visit-recovery-completed-desktop.png) | [![Known replacement funds complete the original application, phone](128-paid-visit-recovery-completed-phone.png)](128-paid-visit-recovery-completed-phone.png) |
+
+
+This is an explicit recovery after customer contact, never an automatic retry. Each recovery records its own actor, selected card, previous known failed request, exact frozen amount/allocation, accepted review and 30-minute unattempted deadline. Repeated confirmation returns that existing request; two different reviews cannot both replace one failure. A later confirmed decline permits another fresh review. Expiry before dispatch cancels only that unattempted request, retaining the source reservation for review. An owner stop cancels the latest ready request locally; it cannot race with dispatch and leave a released source supporting a sending request.
+
+Samples 119–124 are refreshed with the active payment card and the **Recorded money received** pending label. Previously completed/paid overviews continue to show **Total money received**. These tests use synthetic already-saved cards; new-card hosted fields and real Banquest outcomes remain unverified. Saving a brand-new replacement card within this conditional recovery, manual alternatives, mixed manual/card remainders, later-day/date exceptions and fee-retained source release remain in development. Features stay off and PR37 stays draft.
+
+The Dashboard notice opens the same paid-visit membership panel and cannot be dismissed while its source application is unresolved. Completion or a safe owner stop clears it. A new failure also creates fresh attention after an older historical acknowledgment. Later scheduled installments retain their own amount, date and payment authority; they do not reuse this first-payment recovery check.
+
+Developer verification: the complete PostgreSQL suite passed **1,656 tests in 736.241 seconds**. After the final first-invoice dispatch and persistent Dashboard-notice corrections, **133 checks passed in 72.767 seconds**, including 19 new recovery cases, six real PostgreSQL concurrency/reversal/runtime cases, existing card/billing/collection/funding checks and three actual Chromium scenarios. Later scheduled installments retain their own payment authority; source notices link to the application, resist premature dismissal and reopen after historical acknowledgment when a new failure occurs. The final native inventory is 1,659; a complete local 1,659-test run is not claimed. Earlier expanded verification passed 68 checks, and the final screenshot capture passed 25 checks. All 20 final new/refreshed images for samples 119–128 were visually inspected; the final browser run repeated behavior/overflow/DOM checks without overwriting those PNGs. There is no overflow, JavaScript error, duplicate ID or nested form in those browser scenarios. All 565 Python files pass lint/format checks; migration drift, diff whitespace, all 256 PNGs/gallery links and all 61 migration pins pass. All 60 previously published migration files/hashes remain unchanged. All four GitHub checks passed for the prior published commit; checks for this increment run after publication. No external provider/storage request, delivered customer email, merge or deployment occurred. Features remain off by default and PR #37 stays draft.

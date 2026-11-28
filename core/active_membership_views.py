@@ -748,6 +748,7 @@ def membership_overview(request, pk):
     if request.method == "POST" and request.POST.get("action") in {
         "paid_visit_complete",
         "paid_visit_stop",
+        "paid_visit_card_recover",
     }:
         from .membership_paid_visit_pending import complete, stop
         from .membership_paid_visit_records import MembershipPaidVisitIntent
@@ -760,7 +761,25 @@ def membership_overview(request, pk):
         if action_intent is None:
             raise Http404
         try:
-            if request.POST["action"] == "paid_visit_complete":
+            if request.POST["action"] == "paid_visit_card_recover":
+                from .membership_paid_visit_recovery import request as recover_card
+
+                choice = request.POST.get("card_choice", "").split(":", 1)
+                if len(choice) != 2:
+                    raise ValidationError("Review an available saved card before confirming.")
+                recover_card(
+                    actor=request.user,
+                    intent_id=action_intent.pk,
+                    method_id=forms.UUIDField().clean(choice[0]),
+                    reviewed=choice[1],
+                    request_key=forms.UUIDField().clean(request.POST.get("request_key")),
+                    confirmed=request.POST.get("confirmed") == "on",
+                )
+                messages.success(
+                    request,
+                    "The reviewed card payment was requested. Its result is not yet confirmed.",
+                )
+            elif request.POST["action"] == "paid_visit_complete":
                 recorded = complete(action_intent.pk)
                 if recorded.kind == "completed":
                     messages.success(
@@ -786,6 +805,11 @@ def membership_overview(request, pk):
         except ValidationError as exc:
             messages.error(request, " ".join(exc.messages))
         return redirect("membership_overview", pk=member.pk)
+    from .membership_paid_visit_recovery import controls as paid_visit_recovery_controls
+
+    paid_visit_recovery = paid_visit_recovery_controls(
+        actor=request.user, pending=pending_paid_visit
+    )
     from .membership_cancellation_views import ACTIONS as cancellation_actions
     from .membership_cancellation_views import overview_controls
 
@@ -976,6 +1000,7 @@ def membership_overview(request, pk):
             **credit_context,
             "member": member,
             "pending_paid_visit": pending_paid_visit,
+            "paid_visit_recovery": paid_visit_recovery,
             "paid_visit_conversion": member.visit_conversions.filter(
                 details__has_key="paid_visit_purchase"
             ).first()
