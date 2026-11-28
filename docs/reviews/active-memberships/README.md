@@ -28,9 +28,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Gift-card goods payment with a separate cancellation fee | [103–104](#103--gift-card-covers-goods-and-the-card-covers-the-cancellation-fee) |
 | Stop a funded arrival while keeping the booking and membership | [105–106](#105--stop-an-arrival-and-keep-the-booking-and-membership) |
 | Return unused visit funds while membership payment is unresolved | [107–108](#107--unused-visit-funds-with-an-unconfirmed-membership-payment) |
-| **New: stop arrival after a recorded membership cancellation** | **[109–110](#109--stop-only-the-arrival-after-membership-cancellation)** |
+| Stop arrival after a recorded membership cancellation | [109–110](#109--stop-only-the-arrival-after-membership-cancellation) |
+| **New: actual arrival funds and audited downloads** | **[111–112](#111--export-actual-arrival-funds-without-counting-applications-twice)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Samples 109–110 close an arrival after a recorded membership cancellation without changing its refund. Samples 111–112 add filtered source balances and receipt/return/application history to the existing export dropdown. Multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -1097,3 +1098,26 @@ Samples 105–106 have also been recaptured with the common **Stopped arrivals**
 ## Current cancellation-linked arrival-stop verification checkpoint
 
 Final developer verification: the complete PostgreSQL application suite passed **1,555 tests in 630.202 seconds**, with all final application/schema/template changes included. After adding one further test for an already-unknown outgoing membership refund, the final focused run passed **15 tests in 18.126 seconds**, including all 13 cancellation-linked stop cases and both actual desktop/phone browser scenarios. The final test inventory is 1,556; a complete local 1,556-test run is not claimed. Earlier targeted verification also passed 55 related migration, concurrency and compatibility checks. Both browser runs confirm one stopped intent, original booking/counts, released extra hold, zero visit invoices/attendance/provider calls/delivered emails and no overflow, duplicate IDs, nested forms or JavaScript errors. The cancelled scenario retains the $15 membership refund and both dashboard refund plans; the kept-purchase scenario retains its $36.61 funding and one queued, unsent membership confirmation. All eight final desktop/phone images for samples 105–106 and 109–110 were visually inspected. The gallery has 110 pairs/220 unique PNGs. Ruff/formatting (547 Python files), migration drift, JavaScript syntax, whitespace and all 57 reviewed migration pins pass; all 56 previously published migration hashes are unchanged. The previous published commit dc63883 passed all four GitHub checks. Checks for this update will be assessed after publication. Feature/collection switches remain off by default; PR #37 stays draft, with no merge, deployment or live financial/email action.
+
+
+## 111 — Export actual arrival funds without counting applications twice
+
+The existing **Export filtered memberships** control now offers **Arrival funds** (one row per original separately received visit receipt) and **Arrival fund history** (one row per actual receipt, unused-fund return or invoice application). Both retain the current membership filters across every results page. The new reports require explicit export, financial-view and booking-view permissions.
+
+This fictional stopped-arrival example has four original sources totalling **$7 received**, four actual original-tender returns totalling **$7**, **$0 applied** and **$0 unapplied**. The separate **$15 membership refund due** is not described as a visit return. The actual downloaded [four-row balances CSV](111-arrival-funds-sample.csv) and [eight-row event CSV](111-arrival-fund-events-sample.csv) are included for review.
+
+Original receipt IDs, dates, collecting actors and Zelle sender remain in evidence. Application rows have zero new money received. Unknown first membership payments do not erase actual visit receipts. Stopped/completed status, linked applications and separately recorded membership cancellation stay identifiable. Original booking Zelle and later invoice refunds remain in their own payment records; these reports do not claim to include them.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Arrival funds export, desktop](111-arrival-fund-export-desktop.png)](111-arrival-fund-export-desktop.png) | [![Arrival funds export, phone](111-arrival-fund-export-phone.png)](111-arrival-fund-export-phone.png) |
+
+## 112 — Existing export history records both downloads
+
+The actual browser download prepares exactly four balance rows and eight event rows. Existing owner export history records the report, matching customer filter, row count and actor. Downloading changes no financial facts and makes no gateway or email call. CSV contact/sender text uses the existing spreadsheet-formula protection; card-storage references, signed evidence, stop reasons and private financial snapshots are excluded.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Arrival fund export history, desktop](112-arrival-fund-export-history-desktop.png)](112-arrival-fund-export-history-desktop.png) | [![Arrival fund export history, phone](112-arrival-fund-export-history-phone.png)](112-arrival-fund-export-history-phone.png) |
+
+Developer verification for this read-only reporting increment: The final combined run passed **20 tests in 12.908 seconds**, covering the nine new source-report cases, all ten existing reporting cases and the actual desktop/phone browser/download scenario, including four/eight-row CSV checks, unchanged three payment operations, exact audit rows and no overflow, JavaScript errors, duplicate IDs, nested forms, provider calls or external delivery. All four final 111–112 images were visually inspected. Source balances use one query for receipt/return/application facts; event history prefetches returns in bounded chunks. Existing filtered selection, spooled generation, formula protection and required audit-before-download remain. There is no migration or financial mutation in this increment. The last full local suite is the 1,555-test cancellation-stop checkpoint above, followed by its 15 focused checks; no complete local 1,565-test run is claimed. The PR remains draft and the remaining Stage 3 work continues.

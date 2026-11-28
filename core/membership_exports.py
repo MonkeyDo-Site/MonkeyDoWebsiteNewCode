@@ -23,6 +23,8 @@ REPORTS = {
     "memberships": "Memberships",
     "payments": "Payment transactions",
     "benefits": "Benefit usage",
+    "arrival_funds": "Arrival funds",
+    "arrival_fund_events": "Arrival fund history",
 }
 CONTACT = ["customer_id", "last_name", "current_phone", "current_email"]
 
@@ -205,6 +207,8 @@ def benefit_rows(records):
 
 
 def export_response(request, records, form):
+    from .membership_source_exports import source_event_rows, source_rows
+
     require_actor(request.user, "core.export_membership_records")
     report = request.POST.get("report")
     if report not in REPORTS:
@@ -213,7 +217,16 @@ def export_response(request, records, form):
         require_actor(request.user, "core.view_paymentoperation")
     if report == "benefits":
         require_actor(request.user, "core.view_booking")
-    makers = {"memberships": membership_rows, "payments": payment_rows, "benefits": benefit_rows}
+    if report in {"arrival_funds", "arrival_fund_events"}:
+        require_actor(request.user, "core.view_booking")
+        require_actor(request.user, "core.view_paymentoperation")
+    makers = {
+        "memberships": membership_rows,
+        "payments": payment_rows,
+        "benefits": benefit_rows,
+        "arrival_funds": source_rows,
+        "arrival_fund_events": source_event_rows,
+    }
     document = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
     text = io.TextIOWrapper(document, encoding="utf-8-sig", newline="")
     try:
