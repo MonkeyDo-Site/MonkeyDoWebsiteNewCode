@@ -65,10 +65,13 @@ def reusable_methods(flow):
     current = PaymentSetup.objects.filter(flow_hash=digest, state="succeeded").values("method_id")
     scope = Q(pk__in=current)
     if customer:
+        from core.membership_paid_visit_new_card import retained_method_ids
         from core.membership_records import MembershipCardMandate
 
         scope |= Q(customer=customer, reusable=True) & (
-            Q(booking__isnull=False) | Q(pk__in=MembershipCardMandate.objects.values("method_id"))
+            Q(booking__isnull=False)
+            | Q(pk__in=MembershipCardMandate.objects.values("method_id"))
+            | Q(pk__in=retained_method_ids())
         )
     return PaymentMethod.objects.filter(scope, state="active", environment="sandbox")
 

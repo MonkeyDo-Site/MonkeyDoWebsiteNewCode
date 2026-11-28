@@ -76,9 +76,11 @@ REVIEWED_NAMES = (
     "0086_paid_visit_card_reservations",
     "0087_paid_visit_card_recovery",
     "0088_paid_visit_cancelled_release",
+    "0089_paid_visit_recovery_card_storage",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "membershippaidvisitcardstorage",
     "membershippaidvisitcancellation",
     "membershippaidvisitrecovery",
     "membershippaidvisitintent",

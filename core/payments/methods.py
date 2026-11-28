@@ -13,9 +13,12 @@ from .models import PaymentMethod, PaymentOperation
 
 
 def outstanding(method):
+    from core.membership_paid_visit_new_card import method_outstanding
     from core.membership_records import MembershipBilling
     from core.membership_sales import installment_paid
 
+    if method_outstanding(method):
+        return True
     if (
         method.agreements.filter(resolved_at__isnull=True).exists()
         or PaymentOperation.objects.filter(
@@ -46,10 +49,13 @@ def queue_disposal(method):
 def expire_membership_sources():
     """Queue an unwanted source only after all fixed-term obligations finish."""
     enabled()
+    from django.db.models import Q
+
+    from core.membership_paid_visit_new_card import method_ids
+
     methods = (
-        PaymentMethod.objects.filter(
-            state="active", reusable=False, membership_mandates__isnull=False
-        )
+        PaymentMethod.objects.filter(state="active", reusable=False)
+        .filter(Q(membership_mandates__isnull=False) | Q(pk__in=method_ids()))
         .distinct()
         .order_by("created_at", "pk")[:100]
     )
@@ -68,12 +74,15 @@ def expire_unused_setups():
         method__booking__isnull=True,
         method__state="active",
     )[:100]
+    from core.membership_paid_visit_new_card import method_claimed
+
     count = 0
     for setup in expired:
         method = PaymentMethod.objects.select_for_update().get(pk=setup.method_id)
         if (
             method.booking_id is not None
             or method.membership_mandates.exists()
+            or method_claimed(method)
             or outstanding(method)
         ):
             continue

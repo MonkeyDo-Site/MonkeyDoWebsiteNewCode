@@ -826,6 +826,13 @@ def membership_overview(request, pk):
     paid_visit_recovery = paid_visit_recovery_controls(
         actor=request.user, pending=pending_paid_visit
     )
+    from .membership_paid_visit_new_card import context as paid_visit_card_storage_context
+
+    paid_visit_new_card = paid_visit_card_storage_context(
+        request, pending_paid_visit=pending_paid_visit
+    )
+    if paid_visit_new_card:
+        paid_visit_new_card["key"] = uuid.uuid4()
     from .membership_paid_visit_cancellation import controls as paid_visit_cancellation_controls
 
     paid_visit_cancellation = paid_visit_cancellation_controls(
@@ -1022,6 +1029,7 @@ def membership_overview(request, pk):
             "member": member,
             "pending_paid_visit": pending_paid_visit,
             "paid_visit_recovery": paid_visit_recovery,
+            "paid_visit_new_card": paid_visit_new_card,
             "paid_visit_cancellation": paid_visit_cancellation,
             "paid_visit_conversion": member.visit_conversions.filter(
                 details__has_key="paid_visit_purchase"

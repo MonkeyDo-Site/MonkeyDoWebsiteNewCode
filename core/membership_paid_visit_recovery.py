@@ -40,6 +40,9 @@ def cards(intent):
     from .models import PaymentMethod
 
     ids = list(available_cards(intent.purchase).values_list("pk", flat=True))
+    from .membership_paid_visit_new_card import scoped_methods
+
+    ids.extend(scoped_methods(intent).values_list("pk", flat=True))
     # The originally accepted nonretained card also belongs to this exact purchase.
     if intent.operation_id:
         ids.append(intent.operation.method_id)
@@ -52,7 +55,7 @@ def cards(intent):
     ).order_by("last_four", "pk")
 
 
-def review(*, actor, intent_id, method_id):
+def source_review(*, actor, intent_id, ignore_storage=False):
     from .membership_paid_visit_pending import fresh
     from .membership_sales import authorize
     from .permissions import require_actor
@@ -76,9 +79,10 @@ def review(*, actor, intent_id, method_id):
         raise ValidationError(
             "Reconcile the existing membership money and corrections before another card attempt."
         )
-    method = cards(intent).filter(pk=method_id).first()
-    if method is None:
-        raise ValidationError("Choose an available saved card belonging to this customer.")
+    if not ignore_storage:
+        from .membership_paid_visit_new_card import require_known_storage
+
+        require_known_storage(intent)
     recovery = latest(intent)
     data = dict(
         intent=str(intent.pk),
@@ -86,13 +90,21 @@ def review(*, actor, intent_id, method_id):
         actor=actor.pk,
         previous=str(current.pk),
         sequence=recovery.sequence + 1 if recovery else 1,
-        method=str(method.pk),
         amount=str(current.amount),
         allocation=current.allocation,
         visit=intent.booking_id,
         source=str(intent.source_sale_id),
         operations=[dict(id=str(op.pk), state=op.state, kind=op.kind) for op in operations],
     )
+    return intent, data
+
+
+def review(*, actor, intent_id, method_id):
+    intent, data = source_review(actor=actor, intent_id=intent_id)
+    method = cards(intent).filter(pk=method_id).first()
+    if method is None:
+        raise ValidationError("Choose an available saved card belonging to this customer.")
+    data["method"] = str(method.pk)
     return data | dict(fingerprint=fingerprint(data))
 
 
@@ -152,6 +164,9 @@ def request(*, actor, intent_id, method_id, request_key, reviewed, confirmed):
         allocation=data["allocation"],
         paid_visit_recovery=recovery,
     )
+    from .membership_paid_visit_new_card import confirm_future_use
+
+    confirm_future_use(intent=intent, method_id=method_id, actor=actor)
     enqueue(kind="payment_dispatch", reference=operation.pk, key=f"dispatch:{operation.pk}")
     AuditEvent.objects.create(
         actor=actor,

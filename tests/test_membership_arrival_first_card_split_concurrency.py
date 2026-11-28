@@ -85,7 +85,9 @@ class SplitFirstCardRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Transacti
         try:
             MigrationExecutor(connection).migrate([("core", "0077_membership_booking_zelle")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0088_paid_visit_cancelled_release")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0089_paid_visit_recovery_card_storage")]
+            )
         self.start()
         self.accept()
         self.assertEqual(MembershipArrivalIntent.objects.count(), 1)

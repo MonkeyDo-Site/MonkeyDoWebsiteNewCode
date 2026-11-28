@@ -383,8 +383,11 @@ def stop_facts(intent):
     returned = sum(
         (op.amount for op in operations if op.kind != "receipt" and op.state == "succeeded"), ZERO
     )
+    from .membership_paid_visit_new_card import pending as storage_pending
+
     allowed = (
-        not any(op.state in {"sending", "unknown", "action"} for op in operations)
+        not storage_pending(intent)
+        and not any(op.state in {"sending", "unknown", "action"} for op in operations)
         and not any(op.kind != "receipt" and op.state == "ready" for op in operations)
         and receipts == returned
     )

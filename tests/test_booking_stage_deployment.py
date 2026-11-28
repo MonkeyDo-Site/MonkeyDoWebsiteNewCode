@@ -23,6 +23,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClosedBookingPlanTests(SimpleTestCase):
+    def test_used_recovery_card_storage_refuses_older_code_switch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            host = deploy.Host({}, Path("/tmp/unused-recovery-storage-compatibility.log"))
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_paid_visit_recovery_storage_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_paid_visit_recovery_storage_compatible(target))
+
     def test_only_exact_forward_suffixes_are_allowed(self):
         for names in [list(schema.REVIEWED_NAMES), list(schema.REVIEWED_NAMES[8:]), []]:
             executor = MagicMock()
@@ -111,7 +121,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_cannot_manage_accepted_first_membership_splits(self):
@@ -132,7 +142,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_membership_allocations_of_recorded_bank_money(self):
@@ -157,7 +167,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 ["f", "f", "f", "f", "f", "f", "f"],
                 ["t", "f", "f", "f", "f", "f", "f", "f"],
             ):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_accepted_split_first_card_arrivals(self):
@@ -180,7 +190,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_accepted_pending_visit_receipts(self):
@@ -204,7 +214,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_recorded_pending_visit_returns(self):
@@ -229,7 +239,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f", "f"], ["t", "f", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_recorded_stopped_arrivals(self):
@@ -255,7 +265,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f", "f"], ["t", "f", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_refuses_cancellation_linked_stopped_arrivals(self):
@@ -282,7 +292,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_compatible_release(target)
             for replies in (["f", "f"], ["t", "f", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     host.ensure_compatible_release(target)
 
     def test_older_release_cannot_manage_paid_visit_membership_purchases(self):
@@ -297,7 +307,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_paid_visit_purchase_compatible(target)
             for replies in (["f"], ["t", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     self.assertTrue(host.ensure_paid_visit_purchase_compatible(target))
 
     def test_older_release_refuses_received_split_paid_visit_purchases(self):
@@ -315,7 +325,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
             ):
                 host.ensure_paid_visit_purchase_compatible(target)
             for replies in (["f"], ["t", "f"]):
-                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
                     self.assertTrue(host.ensure_paid_visit_received_split_compatible(target))
             marker = "paid-visit-received-split-v1.capability"
             (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())

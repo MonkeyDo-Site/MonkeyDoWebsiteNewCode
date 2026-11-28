@@ -106,6 +106,11 @@ urlpatterns = [
         public_membership_views.receipt,
         name="public_membership_receipt",
     ),
+    path(
+        "staff/memberships/<int:pk>/paid-visit-card/",
+        membership_card_views.setup_paid_visit_recovery,
+        name="membership_paid_visit_card_setup",
+    ),
     path("staff/memberships/card/", membership_card_views.setup_card, name="membership_card_setup"),
     path(
         "staff/memberships/card/<uuid:setup_id>/",

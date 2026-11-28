@@ -328,6 +328,10 @@ def setup_status(request, setup_id):
         if status_scope(flow, request.user)[0] != setup.flow_hash:
             raise ValidationError("Use the original membership card session.")
         if setup.state == "succeeded":
+            if flow.get("operation") == "paid_visit_recovery":
+                from .membership_paid_visit_new_card import saved_data
+
+                return JsonResponse(saved_data(authority=authority, actor=request.user))
             current = (
                 MembershipCardAuthorization.objects.filter(
                     customer=setup.customer,
@@ -345,7 +349,11 @@ def setup_status(request, setup_id):
         return JsonResponse(
             dict(
                 state="review",
-                error="This card setup still needs review. No membership payment has been requested.",
+                error=(
+                    "This card setup still needs review. No new payment has been requested."
+                    if flow.get("operation") == "paid_visit_recovery"
+                    else "This card setup still needs review. No membership payment has been requested."
+                ),
             ),
             status=202,
         )
@@ -361,4 +369,88 @@ def setup_status(request, setup_id):
         return JsonResponse(
             {"error": "This membership card setup is unavailable in the current browser session."},
             status=404,
+        )
+
+
+@staff_permission("core.add_membershippurchase")
+@staff_permission("core.view_customer")
+@staff_permission("core.collect_payment")
+@staff_permission("core.change_booking")
+@require_POST
+@sensitive_post_parameters()
+@sensitive_variables()
+def setup_paid_visit_recovery(request, pk):
+    """Save a card inside the existing remainder review; request no payment."""
+    check_enabled()
+    try:
+        limit(request, "membership-card-setup", 10)
+        if len(request.body) > 8192:
+            raise ValidationError("Use the secure card recovery form.")
+        payload = json.loads(request.body)
+        if not isinstance(payload, dict) or set(payload) - {
+            "storage_key",
+            "confirmed",
+            *CardInput.base_fields,
+        }:
+            raise ValidationError("Use the current card recovery form.")
+        if payload.pop("confirmed", None) is not True:
+            raise ValidationError("Confirm the customer's authorization before saving this card.")
+        key = str(forms.UUIDField().clean(payload.pop("storage_key", None)))
+        flow = request.session.get(SESSION_KEY, {}).get(key)
+        if not flow or flow.get("operation") != "paid_visit_recovery" or flow.get("prior_id") != pk:
+            raise ValidationError("Return to this membership's original card recovery session.")
+        card = CardInput(payload)
+        if (
+            not card.is_valid()
+            or card.cleaned_data.get("method")
+            or card.cleaned_data.get("previous_authorization")
+        ):
+            raise ValidationError(
+                "Complete the secure card fields and choose whether to keep this card for future visits."
+            )
+        values = card.cleaned_data
+        if flow.get("setup_key") and flow["setup_key"] != str(values["setup_key"]):
+            raise ValidationError("Check the existing card setup before starting another one.")
+        authorize_flow(flow, request.user)
+        flow["setup_key"] = str(values["setup_key"])
+        flows = request.session.get(SESSION_KEY, {})
+        flows[key] = flow
+        request.session[SESSION_KEY] = flows
+        request.session.save()
+        setup = exchange(
+            actor=request.user,
+            flow=flow,
+            request_key=values["setup_key"],
+            nonce=values["nonce"],
+            expiry_month=values["expiry_month"],
+            expiry_year=values["expiry_year"],
+            retain=values["retention_choice"] == "yes",
+            payment_accepted=True,
+            cancellation_accepted=False,
+        )
+        if setup.state == "succeeded":
+            from .membership_paid_visit_new_card import saved_data
+
+            return JsonResponse(
+                saved_data(authority=setup.membership_authorization, actor=request.user)
+            )
+        from .membership_paid_visit_pending import mark_review
+
+        mark_review(flow["recovery_intent"])
+        return JsonResponse(
+            dict(
+                state="review",
+                error="We couldn't confirm whether the card was saved. Check card setup before another attempt. No new payment was requested.",
+                status_url=reverse("membership_card_status", args=[setup.pk]),
+            ),
+            status=202,
+        )
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+    except (ProviderFailure, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
+        return JsonResponse(
+            {
+                "error": "Check the existing card setup or call/text 848-238-5147 before another attempt. No payment was requested by this save."
+            },
+            status=400,
         )

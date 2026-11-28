@@ -148,6 +148,10 @@ def authorize_flow(flow, actor):
     identity(flow)
     if not flow.get("offer_fingerprint") or not flow.get("terms_text"):
         raise ValidationError("Review the membership terms before saving a card.")
+    if flow.get("operation") == "paid_visit_recovery":
+        from .membership_paid_visit_new_card import validate_flow
+
+        validate_flow(flow, actor)
     if flow.get("operation") == "card_update":
         from .membership_payments import card_update_review
 
@@ -195,6 +199,11 @@ def make_flow(*, actor, customer, request_key, offer, expires=None, authority=No
 
 def prepared_authorization(flow, setup, actor):
     digest, customer = identity(flow)
+    recovery_storage = flow.get("operation") == "paid_visit_recovery"
+    if recovery_storage:
+        from .membership_paid_visit_new_card import VERSION as recovery_version
+        from .membership_paid_visit_new_card import storage_text as recovery_storage_text
+
     authorization, created = MembershipCardAuthorization.objects.get_or_create(
         setup=setup,
         defaults=dict(
@@ -203,10 +212,10 @@ def prepared_authorization(flow, setup, actor):
             flow_hash=digest,
             offer_fingerprint=flow["offer_fingerprint"],
             terms_text=flow["terms_text"],
-            storage_version=CARD_VERSION,
-            storage_text=storage_text(
-                setup.reusable, replacement=flow.get("operation") == "card_update"
-            ),
+            storage_version=recovery_version if recovery_storage else CARD_VERSION,
+            storage_text=recovery_storage_text(setup.reusable)
+            if recovery_storage
+            else storage_text(setup.reusable, replacement=flow.get("operation") == "card_update"),
             expires_at=datetime.fromtimestamp(flow["expires"], dt_timezone.utc),
             retain=setup.reusable,
             actor=actor,
@@ -219,6 +228,10 @@ def prepared_authorization(flow, setup, actor):
         raise ValidationError(
             "Review the saved card for the current membership terms before continuing."
         )
+    if recovery_storage:
+        from .membership_paid_visit_new_card import bind_storage
+
+        bind_storage(flow=flow, authorization=authorization, setup=setup, actor=actor)
     return authorization
 
 

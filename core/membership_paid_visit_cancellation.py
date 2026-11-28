@@ -78,6 +78,9 @@ def review(*, actor, intent):
         raise ValidationError("Complete the reviewed cancellation-source upgrade first.")
     if MembershipPaidVisitRelease.objects.filter(intent=intent).exists():
         raise ValidationError("This visit reservation was already completed or stopped.")
+    from .membership_paid_visit_new_card import require_known_storage
+
+    require_known_storage(intent)
     record = intent.purchase.cancellations.first()
     if not record:
         raise ValidationError(

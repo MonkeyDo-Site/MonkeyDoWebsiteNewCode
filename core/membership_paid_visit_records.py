@@ -111,3 +111,21 @@ class MembershipPaidVisitCancellation(FinancialFact):
     reason = models.CharField(max_length=500)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MembershipPaidVisitCardStorage(FinancialFact):
+    """Storage consent for this unapplied purchase, separate from future billing."""
+
+    authorization = models.OneToOneField(
+        "core.MembershipCardAuthorization",
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="paid_visit_storage",
+    )
+    intent = models.ForeignKey(
+        MembershipPaidVisitIntent, on_delete=models.PROTECT, related_name="card_storage"
+    )
+    previous = models.ForeignKey("core.PaymentOperation", on_delete=models.PROTECT)
+    facts = models.JSONField()
+    fingerprint = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)

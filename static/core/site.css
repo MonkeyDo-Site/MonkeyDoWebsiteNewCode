@@ -1226,3 +1226,6 @@ input[type="checkbox"],input[type="radio"] { width:auto; padding:0; margin-right
 .booking-renewal-row p{margin:.5rem 0}.booking-renewal-row .membership-actions{gap:.5rem;flex-wrap:wrap}
 
 @media(max-width:760px){.arrival-membership [data-membership-zelle] .arrival-counts{grid-template-columns:1fr}.arrival-membership [data-arrival-field="member_billing"],.arrival-membership [data-arrival-field="member_first_method"],.arrival-membership [data-membership-monthly-card]{grid-column:1/-1}}
+
+/* Recovery actions stay absent while the card save is unresolved. */
+[data-recovery-card-form] [hidden] { display:none!important }
