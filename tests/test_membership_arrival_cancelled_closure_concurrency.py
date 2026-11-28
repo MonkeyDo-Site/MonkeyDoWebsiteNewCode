@@ -115,7 +115,9 @@ class CancelledArrivalClosureRaceTests(
         try:
             MigrationExecutor(connection).migrate([("core", "0082_stop_pending_arrival")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         self.returned()
         with self.runtime_role():
             self.stop()
@@ -129,7 +131,9 @@ class CancelledArrivalClosureRaceTests(
         try:
             MigrationExecutor(connection).migrate([("core", "0082_stop_pending_arrival")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         record.refresh_from_db()
         self.assertEqual(record.facts, facts)
         self.assertIsNone(record.cancellation_id)

@@ -154,7 +154,9 @@ class PendingVisitReturnRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Trans
         try:
             MigrationExecutor(connection).migrate([("core", "0079_pending_visit_receipts")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         self.paid()
         self.give_back()
         self.assertEqual(summary(self.intent)["total"], Decimal("5"))

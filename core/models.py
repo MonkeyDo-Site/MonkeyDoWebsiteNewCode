@@ -657,6 +657,11 @@ from .customer_credit_records import (  # noqa: E402,F401
     CustomerCreditIssue,
     VisitMembershipConversion,
 )
+from .membership_batch_credit_records import (  # noqa: E402,F401
+    MembershipCreditRenewalBatch,
+    MembershipCreditRenewalMessage,
+    MembershipCreditRenewalPart,
+)
 from .membership_batch_records import (  # noqa: E402,F401
     MembershipRenewalBatch,
     MembershipRenewalBatchBank,

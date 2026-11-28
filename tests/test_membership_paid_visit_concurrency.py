@@ -98,7 +98,9 @@ class PaidVisitPurchaseRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Transa
                 [("core", "0083_cancelled_membership_arrival_stop")]
             )
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         self.prepare()
         with self.runtime_role():
             self.commit()

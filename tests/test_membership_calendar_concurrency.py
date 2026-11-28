@@ -106,6 +106,8 @@ class CalendarCorrectionRaceTests(RuntimeRoleMixin, TransactionTestCase):
             with self.assertRaisesMessage(ValidationError, "calendar upgrade"):
                 review(**self.inputs)
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         self.correct()
         self.assertEqual(root_for(self.member).starts_on, date(2027, 11, 5))

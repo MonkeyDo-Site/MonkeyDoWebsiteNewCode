@@ -128,7 +128,9 @@ class PaidVisitCancellationRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Tr
         try:
             MigrationExecutor(connection).migrate([("core", "0087_paid_visit_card_recovery")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         self.prepare_release()
         with self.runtime_role():
             release(**self.release_options)

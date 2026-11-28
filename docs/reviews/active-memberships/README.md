@@ -45,6 +45,7 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: correct unused membership dates on the same page** | **[150–152](#150--review-corrected-dates-without-another-page)** |
 | **New: received portion plus an exact card remainder after failure** | **[153–156](#153--split-a-known-failed-remainder-on-the-same-page)** |
 | **New: owner date exceptions for unused started or expired terms** | **[157–159](#157--review-an-owner-date-exception-for-an-unused-expired-term)** |
+| **New: existing credit across separate renewals** | **[160–162](#160--apply-existing-credit-to-several-renewals)** |
 
 Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–149** show combined cash/check/Zelle renewals, separate recorded allocations, split type/term choices and finding additional records while retaining selected details. Samples 147–149 show one shared bank transfer and its original receipt details. Samples 150–152 show date review, saved history under the same membership number and readable history while updates are paused. Samples 153–156 show a received portion with a smaller card remainder, preserved receipts during interruptions and the completed paid-visit application. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
 
@@ -1631,3 +1632,34 @@ Developer verification: the complete PostgreSQL suite passed **1,910 tests in 11
 Actual transaction races permit one current correction or conflicting benefit reservation, never both. Raw SQL rejects missing/false owner authority and forged staff authority. Runtime grants allow the intended append-only correction. Used owner history refuses reversal; unused reversal preserves ordinary correction history and restores the preceding scope exactly. Tests retain original accepted dates/cycle IDs/prices/terms, original cash/complimentary funding, current-cycle eligibility and correct Scheduled/Active/Expired reporting without new money or benefits.
 
 All six new 1440px/390px images were visually inspected. All **612 Python files** pass lint/format checks; system/model-drift/JavaScript/whitespace checks, all **318 PNGs/gallery links** and **69 migration pins** pass. All **68 preceding published migrations/pins**, all **312 previous screenshot bytes** and the earlier actual-download CSV remain unchanged. All four GitHub checks passed for the preceding published commit; this update starts its own checks after publication. External requests were blocked/mocked, no customer email was delivered and no live financial action occurred. Actual Banquest behavior remains unverified; the latest public hosted-field SDK GET returned a workspace-proxy 403 and no network settings were changed. Features/collection remain off by default, PR37 stays draft and the broader stage continues. No merge or deployment occurred.
+
+
+## 160 — Apply existing credit to several renewals
+
+The same combined page now accepts existing backed customer credit to cover all selected first payments. This fictional family has **$95.94 available**. One Subscription renewal uses **$17.99** and one Unlimited renewal uses **$39.99**, leaving **$37.96**. The review distinguishes **$57.98 credit applied** from **$0.00 new money received**. Current terms and credit authorization use one final **Apply $57.98 credit and renew** button. No extra payment screen or zero-dollar card request is created.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Combined credit renewal review, desktop](160-combined-credit-renewal-review-desktop.png)](160-combined-credit-renewal-review-desktop.png) | [![Combined credit renewal review, phone](160-combined-credit-renewal-review-phone.png)](160-combined-credit-renewal-review-phone.png) |
+
+## 161 — Separate renewals, one credit total and confirmation
+
+The saved result lists each membership's dates and exact credit application beneath the combined total. The original paid source receipt remains unchanged; applying credit creates no new receipt or financial posting. Both renewals commit together, and reloading cannot apply the credit again. One shared confirmation email is prepared with credit wording; preparation does not deliver it.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Combined credit renewal result, desktop](161-combined-credit-renewals-recorded-desktop.png)](161-combined-credit-renewals-recorded-desktop.png) | [![Combined credit renewal result, phone](161-combined-credit-renewals-recorded-phone.png)](161-combined-credit-renewals-recorded-phone.png) |
+
+## 162 — Credit covers the first payment; monthly card payments remain separate
+
+The Subscription renewal may retain a three-month monthly schedule while its **$17.99 first payment** is covered by credit. Its remaining accepted card installments are **$18.53** each, including their own fees. The separate prepaid Unlimited renewal still uses **$39.99** credit. This pair intentionally shows the **JavaScript-disabled fallback**, with the accepted terms/schedule expanded and a same-page Review renewals button. Normal JavaScript review uses the single final action in sample 160.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Monthly credit renewal fallback, desktop](162-monthly-credit-renewal-fallback-desktop.png)](162-monthly-credit-renewal-fallback-desktop.png) | [![Monthly credit renewal fallback, phone](162-monthly-credit-renewal-fallback-phone.png)](162-monthly-credit-renewal-fallback-phone.png) |
+
+Only the selected first installments are paid by this combined credit action. Future monthly card collection retains its own accepted authority and default-off controls. Insufficient, held or changed credit refuses confirmation without partial renewals or deductions. Other combined funding combinations and the previously unanswered credit-funded cancellation return policy remain unfinished/guarded.
+
+Developer verification: **129 focused PostgreSQL checks passed in 153.397 seconds**, including all 25 new credit service/screen/SQL cases, six actual-commit source/request/reversal cases, two release-capability cases, existing cash/check/Zelle renewals, initial credit purchases and the reviewed upgrade. Two actual Chromium scenarios passed with the final application/style code in **12.590 seconds**, exercising desktop/phone review, exact credit application, saved history/navigation/reload and a monthly JavaScript-disabled fallback. No page overflow or JavaScript errors were observed. Concurrent requests and credit removal cannot overdraw or duplicate funding; a later-child failure rolls back all selected renewals. SQL rejects incomplete graphs, changed accepted terms and inflated initial sources. Runtime append-only authority and used/unused reversal paths pass.
+
+All six new actual-page images were visually inspected, including the final full-width phone card selector. All **617 Python files** pass lint/format checks; system/model-drift/JavaScript/whitespace checks, all **324 PNGs/gallery links** and **70 migration pins** pass. All **69 preceding migration files/pins**, all **318 preceding screenshot bytes** and the earlier actual-download CSV remain unchanged. The complete local regression is now running; its result is pending and is not claimed as a pass. GitHub checks for this new commit also start after publication. External browser requests were blocked and provider/storage gateways mocked; no customer email was delivered or live financial action performed. Features and scheduled collection remain off by default, PR37 stays draft, and broader Stage3 implementation continues.

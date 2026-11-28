@@ -23,6 +23,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClosedBookingPlanTests(SimpleTestCase):
+    def test_used_credit_renewals_refuse_incompatible_code(self):
+        with tempfile.TemporaryDirectory() as folder:
+            host = deploy.Host({}, Path("/tmp/credit-renewals-compatibility.log"))
+            target = Path(folder)
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_credit_renewals_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_credit_renewals_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_credit_renewals_compatible(target))
+
+    def test_exact_credit_renewal_capability_skips_old_release_probe(self):
+        host = deploy.Host({}, Path("/tmp/credit-renewals-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_credit_renewals_compatible(ROOT))
+            command.assert_not_called()
+
     def test_used_owner_date_exception_refuses_incompatible_code(self):
         with tempfile.TemporaryDirectory() as folder:
             host = deploy.Host({}, Path("/tmp/unused-owner-dates-compatibility.log"))
@@ -224,7 +242,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 
@@ -249,7 +267,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 
@@ -278,7 +296,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 
@@ -305,7 +323,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 
@@ -333,7 +351,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 
@@ -362,7 +380,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 
@@ -392,7 +410,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 
@@ -423,7 +441,7 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(
                     host,
                     "command",
-                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
                 ):
                     host.ensure_compatible_release(target)
 

@@ -167,6 +167,8 @@ class VisitCreditRaceTests(InitialCreditFixtures, TransactionTestCase):
             )
             self.assertEqual(balance(self.customer.pk), Decimal("16.02"))
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         record = self.complete()
         self.assertEqual(record.visit_credit_application.amount, Decimal("10.00"))

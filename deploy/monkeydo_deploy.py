@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0096_credit_funded_membership_renewals.py": "f3224b30bf4a9385d887982475afcf02396dec72cc54f8fe800686ade113a870",
     "0095_unused_membership_owner_dates.py": "46b437e0831b6d68874ef0c26a0d9f08c690a999af22ff521c499eacb74e8154",
     "0094_paid_visit_split_remainder.py": "6bb85194de1e7ff81aede28aea83b648f22293fcf57e6c82c2ebfd1843b64ee0",
     "0093_membership_calendar_corrections.py": "6a8faa1d72fc5139e1438d9ac040a817317ed9d6b03f105db553223cfbf3e2a7",
@@ -1614,6 +1615,49 @@ class Host:
             )
         return True
 
+    def ensure_credit_renewals_compatible(self, target):
+        marker = target / "deploy/credit-renewals-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "b59b87c67e494e27c4060d26c162cebe421366601bfb23addd3823b3f3520439"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershipcreditrenewalbatch')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify credit-funded renewal checkout compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershipcreditrenewalbatch)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage credit-funded renewal checkouts. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_renewal_bank_compatible(self, target):
         marker = target / "deploy/renewal-bank-v1.capability"
         if (
@@ -1812,6 +1856,7 @@ class Host:
             self.ensure_membership_calendar_compatible(target)
             self.ensure_paid_visit_split_compatible(target)
             self.ensure_unused_owner_dates_compatible(target)
+            self.ensure_credit_renewals_compatible(target)
             return compatible
         psql = [
             "/usr/sbin/runuser",

@@ -97,7 +97,9 @@ class OwnerDateRaceTests(owner.OwnerDateFixtures, RuntimeRoleMixin, TransactionT
                 )
                 original = cursor.fetchone()[0]
             self.assertFalse(owner_dates_available())
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
             data = review(**self.inputs)
             normal = confirm(
                 **self.inputs,
@@ -115,7 +117,9 @@ class OwnerDateRaceTests(owner.OwnerDateFixtures, RuntimeRoleMixin, TransactionT
             with self.at(date(2027, 11, 1)), self.assertRaisesMessage(ValidationError, "upgrade"):
                 review(**self.owner_values(starts_on=date(2027, 10, 30)))
         finally:
-            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
+            MigrationExecutor(connection).migrate(
+                [("core", "0096_credit_funded_membership_renewals")]
+            )
         self.date_key = uuid.uuid4()
         with self.at(date(2027, 11, 1)):
             self.save_owner(starts_on=date(2027, 10, 30))

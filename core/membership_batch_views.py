@@ -56,6 +56,7 @@ class CheckoutForm(forms.Form):
             ("cash", "Cash received"),
             ("check", "Check received"),
             ("zelle", "Zelle received"),
+            ("credit", "Customer credit"),
         ],
         label="Payment method",
     )
@@ -107,7 +108,13 @@ def renew_memberships(request, customer_pk):
             key = uuid.UUID(request.GET["checkout"])
         except (ValueError, TypeError):
             raise Http404 from None
-        batch = get_object_or_404(MembershipRenewalBatch, pk=key, customer=customer)
+        batch = MembershipRenewalBatch.objects.filter(pk=key, customer=customer).first()
+        if batch is None and available("core_membershipcreditrenewalbatch"):
+            from .membership_batch_credit_records import MembershipCreditRenewalBatch
+
+            batch = MembershipCreditRenewalBatch.objects.filter(pk=key, customer=customer).first()
+        if batch is None:
+            raise Http404
         return render(
             request,
             "core/membership_batch_renewals.html",
@@ -238,7 +245,11 @@ def renew_memberships(request, customer_pk):
                         request=request,
                     ),
                     fingerprint=data["fingerprint"],
-                    button=f"Confirm renewals and record {data['tender']} — ${data['amount']}",
+                    button=(
+                        f"Apply ${data['amount']} credit and renew"
+                        if data["tender"] == "credit"
+                        else f"Confirm renewals and record {data['tender']} — ${data['amount']}"
+                    ),
                 )
             )
         errors = [*checkout.non_field_errors(), *formset.non_form_errors()]
@@ -275,6 +286,10 @@ def renew_memberships(request, customer_pk):
             original_id = None
         member, details = metadata.get(original_id, (None, None))
         display.append((item, member, details))
+    if checkout["tender"].value() == "credit":
+        label = "I authorize applying the customer credit shown to these renewals."
+        checkout.fields["verified_received"].label = label
+        checkout["verified_received"].label = label
     return render(
         request,
         "core/membership_batch_renewals.html",

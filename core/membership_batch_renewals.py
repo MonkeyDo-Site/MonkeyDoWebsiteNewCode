@@ -36,6 +36,10 @@ def packed(value):
 
 
 def review(*, actor, customer, rows, tender="cash", bank_received_on=None, bank_sender=""):
+    if tender == "credit":
+        from .membership_batch_credit import review as credit_review
+
+        return credit_review(actor=actor, customer=customer, rows=rows)
     authorize(actor, collect=True)
     if tender not in {"cash", "check", "zelle"}:
         raise ValidationError("This combined renewal accepts verified cash, check or Zelle only.")
@@ -167,6 +171,18 @@ def confirm(
     bank_received_on=None,
     bank_sender="",
 ):
+    if tender == "credit":
+        from .membership_batch_credit import confirm as credit_confirm
+
+        return credit_confirm(
+            actor=actor,
+            customer=customer,
+            rows=rows,
+            request_key=request_key,
+            reviewed=reviewed,
+            accepted=accepted,
+            credit_confirmed=verified_received,
+        )
     authorize(actor, collect=True)
     writes_allowed()
     key = lock_request(request_key)
@@ -181,6 +197,13 @@ def confirm(
                 "This checkout identity already belongs to another reviewed renewal."
             )
         return existing
+    if available("core_membershipcreditrenewalbatch"):
+        from .membership_batch_credit_records import MembershipCreditRenewalBatch
+
+        if MembershipCreditRenewalBatch.objects.filter(pk=key).exists():
+            raise ValidationError(
+                "This checkout already applies customer credit. Open that checkout."
+            )
     if accepted is not True or verified_received is not True:
         raise ValidationError(
             "Accept the reviewed terms and confirm the full payment was actually received."
@@ -272,7 +295,18 @@ def group_for(member):
         .filter(purchase_id=member.request_key)
         .first()
     )
-    return part.batch if part else None
+    if part:
+        return part.batch
+    if available("core_membershipcreditrenewalpart"):
+        from .membership_batch_credit_records import MembershipCreditRenewalPart
+
+        part = (
+            MembershipCreditRenewalPart.objects.select_related("batch")
+            .filter(purchase_id=member.request_key)
+            .first()
+        )
+        return part.batch if part else None
+    return None
 
 
 def group_for_message(message):
@@ -283,7 +317,18 @@ def group_for_message(message):
         .filter(message=message)
         .first()
     )
-    return link.batch if link else None
+    if link:
+        return link.batch
+    if available("core_membershipcreditrenewalmessage"):
+        from .membership_batch_credit_records import MembershipCreditRenewalMessage
+
+        link = (
+            MembershipCreditRenewalMessage.objects.select_related("batch")
+            .filter(message=message)
+            .first()
+        )
+        return link.batch if link else None
+    return None
 
 
 def cancel_messages(batch, code, *, exclude=None):
@@ -360,7 +405,11 @@ def queue_confirmation(batch):
             ]
     text += [
         "",
-        f"Your payment of ${batch.amount:.2f} was received.",
+        (
+            f"Existing customer credit of ${batch.amount:.2f} was applied to these renewals."
+            if batch.tender == "credit"
+            else f"Your payment of ${batch.amount:.2f} was received."
+        ),
         "Each membership keeps its own dates and benefits. The purchased terms end without automatic renewal.",
         "",
         "You can always renew your membership.",
@@ -380,6 +429,11 @@ def queue_confirmation(batch):
         membership=parts[0].purchase,
         actor=batch.actor,
     )
-    MembershipRenewalBatchMessage.objects.create(batch=batch, message=message)
+    if batch.tender == "credit":
+        from .membership_batch_credit_records import MembershipCreditRenewalMessage
+
+        MembershipCreditRenewalMessage.objects.create(batch=batch, message=message)
+    else:
+        MembershipRenewalBatchMessage.objects.create(batch=batch, message=message)
     cancel_messages(batch, "contact_changed", exclude=message.pk)
     return message
