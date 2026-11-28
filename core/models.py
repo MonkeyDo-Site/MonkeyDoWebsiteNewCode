@@ -658,6 +658,7 @@ from .customer_credit_records import (  # noqa: E402,F401
     VisitMembershipConversion,
 )
 from .membership_paid_visit_records import (  # noqa: E402,F401
+    MembershipPaidVisitCancellation,
     MembershipPaidVisitIntent,
     MembershipPaidVisitRecovery,
     MembershipPaidVisitRelease,

@@ -414,6 +414,7 @@ class FinancialLineAdjustment(FinancialFact):
             ("tender_change", "Uncharged card fee adjusted for payment method"),
             ("owner_price", "Owner price correction"),
             ("membership_refund", "Membership cancellation refund"),
+            ("membership_uncollected", "Cancelled membership amount never collected"),
             ("membership_conversion", "Visit funds converted to membership credit"),
             ("credit_application", "Uncharged fee adjusted for customer credit"),
         ],

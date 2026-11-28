@@ -1,0 +1,11 @@
+{% if paid_visit_cancellation %}
+{% if paid_visit_cancellation.saved %}
+<p>The recorded membership cancellation and refunds are preserved. The original visit and its payment history stay in place.</p>
+<dl class="membership-totals"><dt>Uncollected membership amount cancelled</dt><dd>${{ paid_visit_cancellation.facts.uncollected }}</dd><dt>New membership money received</dt><dd>${{ paid_visit_cancellation.facts.received }}</dd><dt>Membership refunds completed</dt><dd>${{ paid_visit_cancellation.facts.returned }}</dd><dt>Membership money retained</dt><dd>${{ paid_visit_cancellation.facts.retained }}</dd><dt>Retained card processing fee</dt><dd>${{ paid_visit_cancellation.facts.retained_fee }}</dd></dl>
+{% else %}
+<p>The membership cancellation is recorded. Keep its payment and refunds separate from the original visit.</p>
+<dl class="membership-totals"><dt>New membership money received</dt><dd>${{ paid_visit_cancellation.facts.received }}</dd><dt>Membership refunds completed</dt><dd>${{ paid_visit_cancellation.facts.returned }}</dd><dt>Membership money retained</dt><dd>${{ paid_visit_cancellation.facts.retained }}</dd>{% if paid_visit_cancellation.facts.refund_due %}<dt>Membership refund still due</dt><dd>${{ paid_visit_cancellation.facts.refund_due }}</dd>{% endif %}<dt>Uncollected membership amount to cancel</dt><dd>${{ paid_visit_cancellation.facts.uncollected }}</dd></dl>
+{% if paid_visit_cancellation.error %}<p class="notice">{{ paid_visit_cancellation.error }}</p><p><a href="#membership-refunds">Review membership cancellation and refunds</a></p>
+{% else %}<form method="post" class="record-form">{% csrf_token %}<input type="hidden" name="request_key" value="{{ paid_visit_cancellation.key }}"><input type="hidden" name="reviewed" value="{{ paid_visit_cancellation.reviewed }}"><input type="hidden" name="confirm_release" value="yes"><label>Owner reason<input name="reason" maxlength="500" required></label><p>This cancels only the ${{ paid_visit_cancellation.facts.uncollected }} membership amount never collected. The original visit stays separate. This action sends no refund.</p><button class="button" name="action" value="paid_visit_cancelled_release">Release original visit funds</button></form>{% endif %}
+{% endif %}
+{% endif %}

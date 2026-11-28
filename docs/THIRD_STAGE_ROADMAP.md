@@ -6,6 +6,12 @@ The owner explicitly authorized building the entire mapped third stage while rev
 
 No new business-rule blocker was identified in the initial reconciliation. Production tax/live-account configuration remain launch inputs, not obstacles to local/sandbox development. Browser ZIP and single-command staging deployment follow explicit release approval. Existing test membership drafts remain plans until an explicit purchase; do not activate them automatically.
 
+## Current implementation and review
+
+Continue on draft [PR #37](https://github.com/MonkeyDo-Site/MonkeyDoWebsiteNewCode/pull/37), with the [functional desktop/phone gallery](reviews/active-memberships/README.md) and [owner testing guide](ACTIVE_MEMBERSHIP_OWNER_TESTING.md). Representative purchase, active membership, booking, arrival, renewal and addition pages are available now; later samples cover payment failures, source funds and refunds. Samples 129–132 add cancellation-linked release of unapplied paid-visit funds while retaining the booking and actual membership refunds.
+
+Development remains active. Conditional new-card/manual payment recovery, combined renewal of multiple cohorts, remaining owner corrections/consolidation/grants and broader credit/reporting work are still in progress. Three previously identified business policies remain guarded pending answers; do not infer defaults or repeat the questions. Provider verification and an explicit release decision remain separate from local developer checks. Features and scheduled collection stay off by default.
+
 ## Earlier owner's review gate — historical
 
 The owner reports the seventh booking batch deployed and is reviewing it. Wait for explicit go-ahead before starting membership requirements reconciliation, representative screen design or implementation. Recording this roadmap does not start those activities. The owner will say when the review is complete.

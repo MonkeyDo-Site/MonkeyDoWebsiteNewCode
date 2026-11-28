@@ -749,6 +749,7 @@ def membership_overview(request, pk):
         "paid_visit_complete",
         "paid_visit_stop",
         "paid_visit_card_recover",
+        "paid_visit_cancelled_release",
     }:
         from .membership_paid_visit_pending import complete, stop
         from .membership_paid_visit_records import MembershipPaidVisitIntent
@@ -761,7 +762,22 @@ def membership_overview(request, pk):
         if action_intent is None:
             raise Http404
         try:
-            if request.POST["action"] == "paid_visit_card_recover":
+            if request.POST["action"] == "paid_visit_cancelled_release":
+                from .membership_paid_visit_cancellation import release as release_cancelled_source
+
+                release_cancelled_source(
+                    actor=request.user,
+                    intent_id=action_intent.pk,
+                    request_key=forms.UUIDField().clean(request.POST.get("request_key")),
+                    reviewed=request.POST.get("reviewed"),
+                    reason=request.POST.get("reason", ""),
+                    confirmed=request.POST.get("confirm_release") == "yes",
+                )
+                messages.success(
+                    request,
+                    "The original visit funds were released. The booking, its payment and the membership cancellation/refunds are retained.",
+                )
+            elif request.POST["action"] == "paid_visit_card_recover":
                 from .membership_paid_visit_recovery import request as recover_card
 
                 choice = request.POST.get("card_choice", "").split(":", 1)
@@ -808,6 +824,11 @@ def membership_overview(request, pk):
     from .membership_paid_visit_recovery import controls as paid_visit_recovery_controls
 
     paid_visit_recovery = paid_visit_recovery_controls(
+        actor=request.user, pending=pending_paid_visit
+    )
+    from .membership_paid_visit_cancellation import controls as paid_visit_cancellation_controls
+
+    paid_visit_cancellation = paid_visit_cancellation_controls(
         actor=request.user, pending=pending_paid_visit
     )
     from .membership_cancellation_views import ACTIONS as cancellation_actions
@@ -1001,6 +1022,7 @@ def membership_overview(request, pk):
             "member": member,
             "pending_paid_visit": pending_paid_visit,
             "paid_visit_recovery": paid_visit_recovery,
+            "paid_visit_cancellation": paid_visit_cancellation,
             "paid_visit_conversion": member.visit_conversions.filter(
                 details__has_key="paid_visit_purchase"
             ).first()

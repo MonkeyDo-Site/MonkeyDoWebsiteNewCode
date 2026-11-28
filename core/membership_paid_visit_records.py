@@ -93,3 +93,21 @@ class MembershipPaidVisitRecovery(FinancialFact):
                 fields=["intent", "sequence"], name="paid_visit_recovery_order"
             ),
         ]
+
+
+class MembershipPaidVisitCancellation(FinancialFact):
+    """Owner authority to release an unused source after membership cancellation."""
+
+    release = models.OneToOneField(
+        MembershipPaidVisitRelease,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="cancellation_decision",
+    )
+    cancellation = models.ForeignKey("core.MembershipCancellation", on_delete=models.PROTECT)
+    request_key = models.UUIDField(unique=True)
+    facts = models.JSONField()
+    fingerprint = models.CharField(max_length=64)
+    reason = models.CharField(max_length=500)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)

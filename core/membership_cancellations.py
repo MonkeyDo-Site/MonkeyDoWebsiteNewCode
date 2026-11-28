@@ -458,6 +458,9 @@ def cancel(
                 confirmed=True,
                 manual_returned=manual_refunds_confirmed,
             )
+    from .membership_paid_visit_cancellation import cancellation_updated
+
+    cancellation_updated(record)
     queue_cancellation(record)
     AuditEvent.objects.create(
         actor=actor,
