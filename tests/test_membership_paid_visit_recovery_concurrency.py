@@ -96,7 +96,7 @@ class PaidVisitRecoveryRaceTests(InitialCreditFixtures, RuntimeRoleMixin, Transa
         try:
             MigrationExecutor(connection).migrate([("core", "0086_paid_visit_card_reservations")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0094_paid_visit_split_remainder")])
+            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
         self.setup_decline()
         with self.runtime_role():
             self.request()

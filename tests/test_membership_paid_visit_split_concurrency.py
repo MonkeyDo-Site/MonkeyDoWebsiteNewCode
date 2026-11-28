@@ -154,6 +154,6 @@ class PaidVisitSplitRaceTests(InitialCreditFixtures, TransactionTestCase):
             with self.assertRaisesMessage(ValidationError, "upgrade"):
                 self.receive()
         finally:
-            MigrationExecutor(connection).migrate([("core", "0094_paid_visit_split_remainder")])
+            MigrationExecutor(connection).migrate([("core", "0095_unused_membership_owner_dates")])
         self.confirm()
         self.assertEqual(MembershipPaidVisitSplit.objects.count(), 1)

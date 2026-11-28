@@ -13,6 +13,7 @@ from django.template.loader import render_to_string
 
 from .membership_calendar_changes import (
     ACKNOWLEDGMENT,
+    OWNER_ACKNOWLEDGMENT,
     authorize,
     available,
     confirm,
@@ -39,6 +40,7 @@ class CalendarForm(forms.Form):
     customer_confirmed = forms.BooleanField(required=False, label=ACKNOWLEDGMENT)
     request_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     reviewed = forms.CharField(widget=forms.HiddenInput, required=False)
+    owner_approved = forms.BooleanField(required=False, widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, prefix="calendar", **kwargs)
@@ -87,7 +89,7 @@ def controls(request, member):
             return redirect("membership_overview", pk=member.pk), {}
     if can_edit:
         try:
-            root = eligibility(member)
+            root = eligibility(member, actor=request.user)
         except ValidationError as error:
             problem = " ".join(error.messages)
         else:
@@ -110,6 +112,7 @@ def controls(request, member):
                     request_key=values["request_key"],
                     reviewed=values["reviewed"],
                     customer_confirmed=values["customer_confirmed"],
+                    owner_approved=values["owner_approved"],
                 )
                 message = "Membership dates corrected. The original purchase and payment history are retained."
                 if saved.messages.exists():
@@ -120,9 +123,15 @@ def controls(request, member):
             mutable = form.data.copy()
             mutable[form.add_prefix("reviewed")] = quote["fingerprint"]
             mutable[form.add_prefix("customer_confirmed")] = ""
+            mutable[form.add_prefix("owner_approved")] = (
+                "True" if quote.get("owner_date_exception") else ""
+            )
             form.data = mutable
         except ValidationError as error:
             form.add_error(None, error)
+    if quote and quote.get("owner_date_exception"):
+        form.fields["customer_confirmed"].label = OWNER_ACKNOWLEDGMENT
+        form["customer_confirmed"].label = OWNER_ACKNOWLEDGMENT
     if active_action and request.POST.get("format") == "json":
         if quote:
             return JsonResponse(
@@ -133,6 +142,12 @@ def controls(request, member):
                         request=request,
                     ),
                     fingerprint=quote["fingerprint"],
+                    owner_approved=quote.get("owner_date_exception", False),
+                    acknowledgment=(
+                        OWNER_ACKNOWLEDGMENT
+                        if quote.get("owner_date_exception")
+                        else ACKNOWLEDGMENT
+                    ),
                 )
             ), {}
         errors = [problem]
@@ -145,6 +160,9 @@ def controls(request, member):
             },
             status=400,
         ), {}
+    if active_action and form is None:
+        messages.error(request, problem or "Review this membership before changing its dates.")
+        return redirect("membership_overview", pk=member.pk), {}
     return None, dict(
         calendar_form=form,
         calendar_quote=shown(quote),

@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0095_unused_membership_owner_dates.py": "46b437e0831b6d68874ef0c26a0d9f08c690a999af22ff521c499eacb74e8154",
     "0094_paid_visit_split_remainder.py": "6bb85194de1e7ff81aede28aea83b648f22293fcf57e6c82c2ebfd1843b64ee0",
     "0093_membership_calendar_corrections.py": "6a8faa1d72fc5139e1438d9ac040a817317ed9d6b03f105db553223cfbf3e2a7",
     "0092_combined_renewal_bank_receipt.py": "81bdd06ae27374bd12a010f43e143034ebeb703d295800fa0777c21e1edc7792",
@@ -1740,6 +1741,52 @@ class Host:
             )
         return True
 
+    def ensure_unused_owner_dates_compatible(self, target):
+        marker = target / "deploy/unused-owner-dates-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "12ba8de21f0f09adbc0d6aa5930306f14ddb7d8a19eeda482a24587c01254b74"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershipcalendarcorrection')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify unused membership owner date-exception compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershipcalendarcorrection WHERE facts->'owner_date_exception'='true'::jsonb)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage unused membership owner date-exceptions. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
@@ -1764,6 +1811,7 @@ class Host:
             self.ensure_renewal_bank_compatible(target)
             self.ensure_membership_calendar_compatible(target)
             self.ensure_paid_visit_split_compatible(target)
+            self.ensure_unused_owner_dates_compatible(target)
             return compatible
         psql = [
             "/usr/sbin/runuser",

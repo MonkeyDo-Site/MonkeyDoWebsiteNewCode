@@ -14,6 +14,29 @@ from .membership_calendar_records import MembershipCalendarCorrection, Membershi
 from .payments.ledger import fingerprint, lock_request, writes_allowed
 
 ACKNOWLEDGMENT = "The customer confirmed the corrected membership dates shown."
+OWNER_ACKNOWLEDGMENT = "As owner, I approve this exception. The customer agreed to the dates shown."
+
+
+def owner_dates_available():
+    if connection.vendor != "postgresql":
+        return False
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT to_regprocedure('monkeydo_calendar_owner_dates()') IS NOT NULL")
+        return cursor.fetchone()[0]
+
+
+def date_exception(actor, before, after):
+    from .membership_sales import today
+    from .permissions import require_actor
+
+    needed = before < today() or after < today()
+    if needed:
+        if actor is not None and not actor.is_superuser:
+            raise ValidationError("Only the owner can approve a membership date exception.")
+        require_actor(actor, "core.change_membershipdraft", owner=True)
+        if not owner_dates_available():
+            raise ValidationError("Complete the reviewed owner date-exception upgrade first.")
+    return needed
 
 
 def available():
@@ -123,14 +146,13 @@ def member_record(member_id):
     )
 
 
-def eligibility(member):
+def eligibility(member, *, actor=None):
     from .membership_funding import member_needs_review
     from .membership_sales import installment_paid, today
 
     root = root_for(member)
     if (
-        root.starts_on < today()
-        or member.billing_state.stopped_on
+        member.billing_state.stopped_on
         or member.purpose not in {"purchase", "complimentary"}
         or member.confirmation_mode != "separate"
         or member.follow_on.exists()
@@ -138,8 +160,14 @@ def eligibility(member):
         or hasattr(member, "origin")
     ):
         raise ValidationError(
-            "This date correction is available before a standalone membership starts or is used in a booking. Review other date changes with the owner."
+            "Date corrections require a standalone prepaid or complimentary membership that has not been used in a booking. Review linked terms separately with the owner."
         )
+    if root.starts_on < today():
+        if not actor or not actor.is_superuser:
+            raise ValidationError(
+                "A term that has started or expired needs an explicit owner date exception."
+            )
+        date_exception(actor, root.starts_on, root.starts_on)
     if member.purpose != "complimentary":
         if root.billing != "prepaid":
             raise ValidationError(
@@ -171,16 +199,15 @@ def review(*, actor, member_id, starts_on, reason="", send_confirmation=False):
         raise ValidationError(
             "Complete the reviewed membership calendar upgrade before correcting dates."
         )
-    from .membership_sales import today
-
-    if type(starts_on) is not date or starts_on < today():
-        raise ValidationError("Choose the corrected membership start date, today or later.")
+    if type(starts_on) is not date:
+        raise ValidationError("Choose the corrected membership start date.")
     if not isinstance(reason, str) or len(reason) > 2000:
         raise ValidationError("Enter a correction reason, up to 2,000 characters.")
     if type(send_confirmation) is not bool:
         raise ValidationError("Choose whether to send an updated confirmation email.")
     member = member_record(member_id)
-    root = eligibility(member)
+    root = eligibility(member, actor=actor)
+    owner_exception = date_exception(actor, root.starts_on, starts_on)
     if starts_on == root.starts_on:
         raise ValidationError("The start date is unchanged.")
     before_cycles = cycles_for(member)
@@ -231,6 +258,8 @@ def review(*, actor, member_id, starts_on, reason="", send_confirmation=False):
         customer_acknowledgment=ACKNOWLEDGMENT,
         send_confirmation=send_confirmation,
     )
+    if owner_exception:
+        data.update(owner_date_exception=True, owner_acknowledgment=OWNER_ACKNOWLEDGMENT)
     return data | {"fingerprint": fingerprint(data)}
 
 
@@ -245,6 +274,7 @@ def confirm(
     reviewed,
     customer_confirmed=False,
     send_confirmation=None,
+    owner_approved=False,
 ):
     authorize(actor)
     writes_allowed()
@@ -275,6 +305,10 @@ def confirm(
     )
     if data["fingerprint"] != reviewed:
         raise ValidationError("This membership changed. Review the corrected dates again.")
+    if type(owner_approved) is not bool or owner_approved != data.get(
+        "owner_date_exception", False
+    ):
+        raise ValidationError("Review and explicitly approve the owner date exception shown.")
     correction = MembershipCalendarCorrection.objects.create(
         id=key,
         purchase=member,
@@ -303,6 +337,7 @@ def confirm(
             before=data["before"],
             after=dict(starts_on=data["starts_on"], ends_on=data["ends_on"]),
             reason=reason.strip(),
+            owner_date_exception=data.get("owner_date_exception", False),
         ),
     )
     from .membership_calendar_emails import queue, supersede
