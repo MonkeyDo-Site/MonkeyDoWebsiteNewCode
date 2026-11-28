@@ -332,10 +332,22 @@ def status_data(intent):
             "Membership processing is paused. The accepted payments and visit details are saved for review.",
         )
     elif intent.progress.code == "owner_review_requested":
-        state, message = (
-            "review",
-            "The owner is reviewing the current visit details. The visit card payment has not been requested.",
-        )
+        state = "review"
+        if intent.purchase.cancellations.exists():
+            message = "Arrival is paused. Review the membership cancellation and its funds separately. The visit card payment has not been requested."
+        elif not installment_paid(first):
+            outcome = (
+                "The membership payment outcome is still unconfirmed. "
+                if states & {"unknown", "sending", "action"}
+                else "The membership payment still needs resolution. "
+            )
+            message = (
+                "Arrival is paused for unused-fund review. "
+                + outcome
+                + "Check the existing membership payment before completing the visit. The visit card payment has not been requested."
+            )
+        else:
+            message = "The owner is reviewing the current visit details. The visit card payment has not been requested."
     elif intent.progress.status == "review" or timezone.now() >= intent.expires_at:
         state, message = (
             "review",

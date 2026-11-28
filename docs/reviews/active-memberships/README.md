@@ -26,9 +26,10 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | Received visit funds while membership card is pending | [97–99](#97--received-visit-funds-with-a-pending-membership-card) |
 | Record an unused visit-fund return and review the remaining payment | [100–102](#100--record-an-actual-unused-visit-fund-return) |
 | Gift-card goods payment with a separate cancellation fee | [103–104](#103--gift-card-covers-goods-and-the-card-covers-the-cancellation-fee) |
-| **New: stop a funded arrival while keeping the booking and membership** | **[105–106](#105--stop-an-arrival-and-keep-the-booking-and-membership)** |
+| Stop a funded arrival while keeping the booking and membership | [105–106](#105--stop-an-arrival-and-keep-the-booking-and-membership) |
+| **New: return unused visit funds while membership payment is unresolved** | **[107–108](#107--unused-visit-funds-with-an-unconfirmed-membership-payment)** |
 
-Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Returns before confirmed funding, other terminal reconciliation, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
+Each sample includes desktop and phone images. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected actions and the explicit unfinished scope. Samples 100–102 add actual original-tender returns and reallocation after confirmed membership funding. Samples 105–106 add an explicit owner stop after known membership funding and recorded return of unused new visit funds. The original booking and membership stay in place. Samples 107–108 add owner-paused actual visit-fund returns while the original membership payment is unresolved. Other terminal reconciliation, multi-cohort checkout, already-paid first-purchase conversion, broader credit returns/redemption and remaining owner corrections are still being implemented.
 
 ## 01 — Purchase membership on one page
 
@@ -1033,3 +1034,36 @@ The complete **1,522-test PostgreSQL suite passed in 589.464s**, with all financ
 The browser records exactly one stop, leaves the original booking Upcoming at 3 children/1 adult/0 babies, keeps $36.61 in first membership funds and its three existing operations, and creates no visit invoice or new card request. All $7 of unused new visit funds are already returned and remain visible by tender. Only the extra hold is released; one membership-purchase email is queued and no visit-completion email is created. The four final 1440px/390px images were visually inspected. No overflow, duplicate IDs, nested forms, JavaScript errors or external financial/storage/nonce/gift/bank/mail actions occur.
 
 Ruff/format (**541 Python files**), model drift, JavaScript syntax, whitespace, all **212 image links / 106 desktop–phone pairs** and **56 reviewed migration hashes** pass; all 55 earlier hashes are unchanged. All four GitHub checks passed for the preceding 979df52 revision; checks for this new commit run after publication. Membership/collection flags remain off, the PR stays draft and the remaining scope is still in progress. No merge or deployment is included.
+
+
+## 107 — Unused visit funds with an unconfirmed membership payment
+
+The first membership payment has **$15 confirmed cash/check funds** and an existing **$21.61 card request with an unknown outcome**. Separately, staff already received **$7 for the visit**: $3 cash, $2 check, $1 gift card and $1 new Zelle. Those visit receipts remain independent of the membership invoice.
+
+The owner chooses **Review unused visit funds** on this same page. Arrival is explicitly paused before any return is recorded. The owner then records only an amount actually returned by its original method; here it is **$2 returned from the original $3 visit cash receipt**. The unknown membership card keeps its existing operation and provider reference. No replacement charge, membership cancellation, refund request, attendance, benefit usage or completed-visit email is created.
+
+The original unstarted conditional membership card request must first be handled through its existing payment/purchase controls. The visit-return action does not implicitly cancel it. A request already sending or with an unknown outcome remains for reconciliation. Staff cannot create the owner pause or return, and a stale pause button cannot target another intent.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Owner records a real visit cash return while membership card outcome is unconfirmed, desktop](107-unconfirmed-member-visit-return-desktop.png)](107-unconfirmed-member-visit-return-desktop.png) | [![Owner records a real visit cash return while membership card outcome is unconfirmed, phone](107-unconfirmed-member-visit-return-phone.png)](107-unconfirmed-member-visit-return-phone.png) |
+
+## 108 — Return recorded; membership outcome still unconfirmed
+
+The original visit cash receipt stays **$3**, with **$2 returned** and **$1 remaining**. Across the four visit sources, **$5 remains**. Membership confirmed funds stay **$15**, the original card outcome stays **unknown**, and the same three membership operations remain. There is no visit invoice or applied visit receipt yet. The earlier reviewed visit price is labelled as such; an updated price/card balance needs a fresh arrival review after membership funding is resolved.
+
+The browser test later simulates success of that same membership operation. The owner pause remains in place: no visit card request, receipt application or attendance is created automatically. A new owner review can then apply only the remaining original sources and explicitly confirm the revised price. All financial/card/provider outcomes in this gallery are fictional, and no external request or email delivery occurs.
+
+Original booking Zelle stays separately available to its booking. A membership cancellation and its refund due also stay separate: returning unused visit cash does not pay or reduce that membership refund liability. Closing an unfinished visit after membership cancellation remains separate continuing work.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Unused visit cash return retained with the original unresolved membership payment, desktop](108-unconfirmed-member-return-recorded-desktop.png)](108-unconfirmed-member-return-recorded-desktop.png) | [![Unused visit cash return retained with the original unresolved membership payment, phone](108-unconfirmed-member-return-recorded-phone.png)](108-unconfirmed-member-return-recorded-phone.png) |
+
+## Current unconfirmed-payment visit-return verification checkpoint
+
+The complete **1,536-test PostgreSQL suite passed in 593.362s**, with all final application, template and test changes present before it started. Eleven new native cases and three actual PostgreSQL overlap cases cover original receipt budgets, sending/unknown/unstarted outcomes, roles and stale intents, duplicate returns, late funding, first-payment/visit separation, explicit membership cancellation/refund due, original bank balances and return versus continuation. All prior financial/closure/migration tests also pass.
+
+The final actual desktop/phone browser scenario passed in **5.825s**, after the full suite, and captured all four final 107–108 images. All four were visually inspected. It preserves the unknown original membership card/reference and its three operations, records one actual $2 visit return, leaves $5 original visit funds, and creates no visit invoice/application/attendance or customer confirmation. A later simulated success still leaves arrival paused until fresh owner review. No overflow, duplicate IDs, nested forms, JavaScript errors or external provider/storage/nonce/gift/bank/mail actions occur.
+
+Ruff/format (**544 Python files**), model drift, JavaScript syntax, whitespace, all **216 unique PNG links / 108 desktop–phone pairs** and all **56 unchanged reviewed migration hashes** pass. No new schema, runtime grant or capability format is introduced. All four GitHub checks passed for the preceding db38c5b checkpoint; the new commit starts its own checks after publication. Feature switches remain off, PR37 stays draft, and the remaining Stage 3 scope continues. No release, merge or deployment is included.

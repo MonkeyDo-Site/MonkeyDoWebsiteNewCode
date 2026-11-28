@@ -13,8 +13,9 @@ from .payments.receipts import receipt_date
 
 
 def review(*, actor, receipt_id):
+    from .membership_arrival_funds import authorize
     from .membership_arrival_receipts import rows
-    from .membership_arrival_recovery import authorize, require_owner
+    from .membership_arrival_recovery import require_owner
 
     require_owner(actor)
     source = MembershipArrivalReceipt.objects.select_related(
@@ -56,7 +57,7 @@ def record(
     confirmed=False,
     verified_returned=False,
 ):
-    from .membership_arrival_recovery import begin_review, locked, require_owner
+    from .membership_arrival_recovery import locked, require_owner
     from .membership_schema import available
 
     require_owner(actor)
@@ -96,8 +97,8 @@ def record(
         raise ValidationError(
             "Use a positive amount within the unused balance and an actual return date on or after its receipt date."
         )
-    # Stops the original visit continuation. This records no new card authority.
-    begin_review(actor=actor, intent_id=intent.pk)
+    # The explicit owner pause remains in place. Only this source is returned;
+    # membership funding, its uncertain outcomes and card authority are untouched.
     result = MembershipArrivalReceiptReturn.objects.create(
         receipt=source,
         request_key=key,

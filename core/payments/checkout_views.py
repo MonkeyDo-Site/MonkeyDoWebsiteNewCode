@@ -477,6 +477,17 @@ def checkout(request, pk, kind="arrival"):
                         else redirect("booking_arrival", pk=pk)
                     )
 
+        if request.method == "POST" and request.POST.get("start_funds_review") == "1":
+            from core.membership_arrival_funds import pause
+
+            try:
+                if request.POST.get("funds_review_intent") != str(pending.pk):
+                    raise ValidationError("This visit-fund review has ended. Reopen the booking.")
+                pause(actor=request.user, intent_id=pending.pk)
+            except ValidationError as error:
+                messages.error(request, " ".join(error.messages))
+            return redirect("booking_arrival", pk=pk)
+
         if request.method == "POST" and request.POST.get("start_owner_review") == "1":
             try:
                 state = recovery.begin_review(actor=request.user, intent_id=pending.pk)
@@ -542,18 +553,24 @@ def checkout(request, pk, kind="arrival"):
                     may_start_review = True
                 except ValidationError:
                     pass
-            if (
-                may_start_review
-                and pending.progress.code == "owner_review_requested"
-                and return_form is None
-            ):
+            may_pause_funds = funds_review_ready = False
+            if request.user.is_superuser:
+                from core.membership_arrival_funds import authorize as authorize_visit_funds
                 from core.membership_arrival_receipts import held
                 from core.membership_schema import available
 
-                if held(pending) and available("core_membershiparrivalreceiptreturn"):
-                    from core.membership_arrival_return_forms import PendingVisitReturnForm
+                try:
+                    authorize_visit_funds(request.user, pending)
+                    may_pause_funds = bool(held(pending)) and available(
+                        "core_membershiparrivalreceiptreturn"
+                    )
+                    funds_review_ready = pending.progress.code == "owner_review_requested"
+                except ValidationError:
+                    pass
+            if funds_review_ready and may_pause_funds and return_form is None:
+                from core.membership_arrival_return_forms import PendingVisitReturnForm
 
-                    return_form = PendingVisitReturnForm(intent=pending, actor=request.user)
+                return_form = PendingVisitReturnForm(intent=pending, actor=request.user)
             return render(
                 request,
                 "core/booking_arrival_pending.html",
@@ -564,8 +581,10 @@ def checkout(request, pk, kind="arrival"):
                     "may_recheck": may_recheck,
                     "may_continue": progress["can_continue"] and may_recheck,
                     "may_start_review": may_start_review,
+                    "may_pause_funds": may_pause_funds,
+                    "funds_review_ready": funds_review_ready,
                     "return_form": return_form,
-                    **stop_controls(request, pending),
+                    **(stop_controls(request, pending) if may_start_review else {}),
                     "counts": pending.facts["review"]["arrival"]["counts"],
                     "quote": pending.facts["review"]["arrival"]["quote"],
                     "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),

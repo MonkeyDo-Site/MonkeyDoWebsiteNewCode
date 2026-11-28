@@ -188,7 +188,9 @@ class PendingReturnTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
         self.accept()
         self.result()
         source = self.intent.visit_receipts.get(tender="cash")
-        with self.assertRaisesMessage(ValidationError, "Start a fresh owner review"):
+        with self.assertRaisesMessage(
+            ValidationError, "Start an owner review of unused visit funds"
+        ):
             review(actor=self.owner, receipt_id=source.pk)
         verified_owner_login(self.client, self.owner)
         url = reverse("booking_arrival", args=[self.play.pk])
@@ -201,12 +203,14 @@ class PendingReturnTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
         self.assertEqual(complete(self.intent.pk).code, "owner_review_requested")
         self.assertFalse(MembershipArrivalReceiptApplication.objects.exists())
 
-    def test_unconfirmed_membership_cannot_authorize_unused_visit_return(self):
+    def test_unconfirmed_membership_requires_its_own_explicit_unused_funds_pause(self):
         self.mixed()
         self.accept()
         self.result("unknown")
         source = self.intent.visit_receipts.get(tender="cash")
-        with self.assertRaisesMessage(ValidationError, "Confirm the existing membership payment"):
+        with self.assertRaisesMessage(
+            ValidationError, "Start an owner review of unused visit funds"
+        ):
             review(actor=self.owner, receipt_id=source.pk)
         with self.assertRaises(ValidationError):
             recovery.begin_review(actor=self.owner, intent_id=self.intent.pk)
