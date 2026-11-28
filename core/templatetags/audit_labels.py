@@ -28,6 +28,7 @@ LABELS = {
     "starts_on": "Start date",
     "ends_on": "End date",
     "term_subtotal": "Term estimate",
+    "amount_due": "Booking price estimate",
 }
 
 
@@ -74,6 +75,22 @@ def audit_event(event):
             for key, item in data.items()
             if key in LABELS and isinstance(item, dict) and "before" in item and "after" in item
         ]
+    elif event.action == "membership.booking_exception_recorded":
+        modes = {
+            "ordinary": "Ordinary admission prices",
+            "honor": "Honor reserved membership benefits",
+            "normal": "Normal paid membership rules",
+        }
+        changes = [
+            {"label": "Membership pricing", "after": modes.get(data.get("mode"), data.get("mode"))},
+            {"label": "Reason", "after": data.get("reason", "")},
+            {
+                "label": "Scope",
+                "after": "This booking only; honoring benefits is limited to the approved session",
+            },
+        ]
+    elif event.action == "membership.arrival_re_reviewed":
+        changes = [{"label": "Reason", "after": data.get("reason", "")}]
     elif event.action == "membership.draft_created":
         changes = [
             {"label": LABELS[key], "before": "—", "after": value(key, item)}
@@ -87,8 +104,12 @@ def audit_event(event):
         "booking.test_released": "Booking cancelled",
         "booking.test_created": "Booking created",
         "booking.customer_test_created": "Customer test booking created",
+        "booking.membership_benefit_applied": "Available Unlimited benefit applied",
         "membership.draft_created": "Membership draft created",
         "membership.draft_edited": "Membership draft edited",
+        "membership.booking_exception_recorded": "Owner membership decision recorded",
+        "membership.arrival_review_started": "Owner arrival review started",
+        "membership.arrival_re_reviewed": "Arrival confirmed after owner review",
     }
     return {
         "event": event,

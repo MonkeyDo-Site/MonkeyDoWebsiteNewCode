@@ -1,8 +1,10 @@
 from django.conf import settings
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.management.base import BaseCommand, CommandError
+from django.db import DatabaseError
 
 from core.payments.jobs import run_one
-from core.payments.methods import expire_unused_setups
+from core.payments.methods import expire_membership_sources, expire_unused_setups
 
 
 class Command(BaseCommand):
@@ -20,6 +22,28 @@ class Command(BaseCommand):
         if not 1 <= limit <= 100:
             raise CommandError("Use a limit between 1 and 100.")
         expire_unused_setups()
+        expire_membership_sources()
+        if settings.MEMBERSHIP_SALES_ENABLED:
+            if settings.MEMBERSHIP_COLLECTIONS_ENABLED:
+                from core.membership_collection_queue import prepare_due as prepare_collections
+
+                try:
+                    prepare_collections(limit=limit)
+                except (DatabaseError, ValidationError, PermissionDenied):
+                    self.stderr.write(
+                        "Scheduled membership preparation needs review; existing queued jobs will continue."
+                    )
+            from core.communications.transport import MailUnavailable
+            from core.membership_prompt_emails import prepare_due as prepare_requested
+            from core.membership_renewal_notices import prepare_due
+
+            for producer in (prepare_due, prepare_requested):
+                try:
+                    producer(limit=limit)
+                except (DatabaseError, ValidationError, MailUnavailable):
+                    self.stderr.write(
+                        "Membership reminder preparation needs review; existing queued jobs will continue."
+                    )
         completed = 0
         while completed < limit and run_one():
             completed += 1

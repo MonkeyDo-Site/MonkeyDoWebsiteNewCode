@@ -1,6 +1,7 @@
 {% extends 'core/staff_base.html' %}{% load audit_labels booking_display %}
 {% block staff_content %}
 <h1>{% if perms.core.view_customer %}<a href="{% url 'customer_detail' booking.customer_id %}">{{ booking.customer.last_name }}</a>{% else %}{{ booking.customer.last_name }}{% endif %}</h1>
+{% if pending_membership_arrival %}<p class="notice">Membership purchase and arrival are in progress.{% if pending_visit_received %} Visit funds already received: <strong>${{ pending_visit_received|floatformat:2 }}</strong>.{% endif %} <a href="{% url 'booking_arrival' booking.pk %}">View payment and arrival status</a></p>{% endif %}
 <p class="eyebrow">Booking #{{ booking.pk }} · {{ booking.status_label }}</p>{% if booking.workflow == 'legacy_test' %}<p class="caption">Old test booking · Its original records and history are preserved.</p>{% endif %}
 {% if booking.workflow == 'integrated_v1' and booking.setup_pending and perms.core.change_booking %}<p><a class="button" href="{% url 'staff_booking_setup' booking.pk %}">Complete booking setup</a></p>{% endif %}
 <p>{{ booking.session.starts_at|date:'l, F j, Y' }} · {{ booking.session.starts_at|time_range:booking.session.ends_at }}</p>

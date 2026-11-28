@@ -15,8 +15,18 @@ def confirmation_html(text):
             if line in {
                 "You're all set for your Monkey Do adventure!",
                 "You're all set for your MonkeyDo adventure!",
+                "You're all set for more Monkey Do adventures!",
+                "Ready for more Monkey Do adventures?",
+                "There's still time for more Monkey Do adventures!",
             }:
                 safe = format_html('<strong style="color:#ad415d;font-size:24px">{}</strong>', safe)
+            elif line.startswith("Renew membership: ") and line.removeprefix(
+                "Renew membership: "
+            ).startswith(settings.BOOKING_STAGING_ORIGIN.rstrip("/") + "/membership/renew/"):
+                safe = format_html(
+                    '<a href="{}" style="display:inline-block;padding:13px 22px;background:#293e34;color:#fff;border-radius:30px;font-weight:bold;text-decoration:none">Renew membership</a>',
+                    line.removeprefix("Renew membership: "),
+                )
             elif line.startswith(
                 ("We look forward to seeing you ", "Your total is $", "You selected to pay via ")
             ):

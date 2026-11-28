@@ -1,5 +1,6 @@
 """Two-step staff review/confirm forms. Merely opening or previewing never charges."""
 
+import json
 import uuid
 from decimal import Decimal
 from functools import wraps
@@ -11,12 +12,41 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from core.membership_arrival_forms import card_purchase, card_review
+from core.membership_arrival_forms import confirm as arrival_confirm
+from core.membership_arrival_forms import preview as arrival_preview
+from core.membership_arrival_forms import ready as membership_ready
+from core.membership_arrival_receipts import proofs_ready as visit_proofs_ready
+from core.membership_sales import card_required
 from core.models import Booking
 from core.permissions import staff_permission
 
-from .checkout import charge_state, confirm, coverage_facts, preview
+from .checkout import charge_state, coverage_facts, preview
+
+
+def combined_label(combined):
+    tender = combined["offer"]["expected_method"]
+    facts = combined["facts"]
+    if facts.get("membership_card_due"):
+        manual = Decimal(facts["received_today"])
+        prefix = f"record ${manual:.2f} and " if manual else ""
+        return f"Confirm arrival and membership — {prefix}charge membership card ${facts['membership_card_due']}"
+    if facts.get("split_visit"):
+        manual = Decimal(facts["received_today"])
+        card = Decimal(facts.get("payment_due_today", "0.00"))
+        if manual and card:
+            return f"Confirm arrival and membership — record ${manual:.2f} and charge visit card ${card:.2f}"
+        if card:
+            return f"Confirm arrival and membership — charge visit card ${card:.2f}"
+        if manual:
+            return f"Confirm arrival and membership — record received payments ${manual:.2f}"
+        return "Confirm arrival and membership — no new payment due"
+    if tender == "card":
+        return f"Confirm arrival and membership — charge card ${combined['facts']['payment_due_today']}"
+    return f"Confirm arrival and membership — record {tender.replace('_', ' ')} ${combined['facts']['received_today']}"
 
 
 class ReceiptForm(forms.Form):
@@ -37,6 +67,9 @@ class ReceiptForm(forms.Form):
 
 
 class ArrivalForm(ReceiptForm):
+    apply_available_benefits = forms.BooleanField(
+        required=False, label="Apply available Unlimited benefit"
+    )
     request_key = forms.UUIDField(widget=forms.HiddenInput)
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     reviewed_hash = forms.CharField(required=False, max_length=64, widget=forms.HiddenInput)
@@ -78,7 +111,8 @@ class ArrivalForm(ReceiptForm):
         help_text="A customer screenshot alone does not confirm receipt.",
     )
     gift_card_verified = forms.BooleanField(
-        required=False, label="The physical gift card has been presented and verified."
+        required=False,
+        label="The physical gift card has been presented and verified.",
     )
     override_capacity = forms.BooleanField(
         required=False,
@@ -94,11 +128,42 @@ class ArrivalForm(ReceiptForm):
         help_text="Attendee counts changed? Keep or adjust the agreed total. Socks stay separate; no automatic partial cancellation fee is added.",
     )
 
-    def __init__(self, *args, booking, owner=False, previewing=False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        booking,
+        owner=False,
+        previewing=False,
+        actor=None,
+        pending_intent=None,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.previewing = previewing
         self.fields["waiver_confirmed"].required = not previewing
         self.booking = booking
+        self.pending_intent = pending_intent
+        from core.membership_arrival_forms import configure
+
+        if pending_intent is None:
+            configure(self, booking, actor)
+        else:
+            self.fields["pending_review"] = forms.UUIDField(widget=forms.HiddenInput)
+            self.fields["pending_reason"] = forms.CharField(
+                max_length=500,
+                required=not previewing,
+                label="Reason for reviewing this arrival again",
+            )
+        from core.visit_credit import configure as configure_credit
+
+        configure_credit(self, booking, actor)
+        from core.membership_booking_exceptions import add_fields
+
+        add_fields(self, booking=booking, owner=owner)
+        from core.membership_booking import has_available_daily
+
+        if not has_available_daily(booking):
+            self.fields.pop("apply_available_benefits")
         special = charge_state(booking)
         if not owner or special.special_subtotal is None or special.comped:
             self.fields.pop("special_admissions")
@@ -133,21 +198,63 @@ class ArrivalForm(ReceiptForm):
             ]
         if charge_state(booking).comped:
             self.fields["method"].choices = [("comped", "Owner-comped booking — no payment")]
+            if "member_add" in self.fields:
+                self.owner_comped_membership = True
+                choices = [
+                    ("", "Choose membership payment"),
+                    ("card", "Charge membership card"),
+                    ("cash", "Cash received"),
+                    ("check", "Check received"),
+                    ("gift_card", "Physical gift card presented"),
+                ]
+                self.fields["method"].widget.attrs["data-comped-membership-methods"] = json.dumps(
+                    choices
+                )
+                values = self.data if self.is_bound else self.initial
+                if self.fields["member_add"].to_python(values.get("member_add")):
+                    self.fields["method"].choices = choices
+                    self.fields["method"].label = "Membership payment (visit is owner-comped)"
+        elif "member_add" in self.fields:
+            values = self.data if self.is_bound else self.initial
+            if values.get("member_add") and values.get("method") == "split":
+                self.fields["method"].label = "Visit payment"
+        if self.pending_intent:
+            from core.membership_arrival_receipts import held
+
+            if held(self.pending_intent):
+                self.fields["method"].choices = [
+                    ("card", "Received funds + card balance"),
+                    ("split", "Add another payment"),
+                ]
 
     def clean(self):
         data = super().clean()
         if self.errors:
             return data
         method = data["method"]
-        needs_zelle = method == "split" and data.get("zelle_amount")
+        from core.membership_arrival_receipts import held
+
+        stored = held(self.pending_intent) if self.pending_intent else {}
+        needs_zelle = method == "split" and (data.get("zelle_amount") or Decimal("0")) > Decimal(
+            stored.get("zelle", "0")
+        )
         if not self.previewing and needs_zelle and not data["zelle_verified"]:
             self.add_error(
                 "zelle_verified", "Verify the received Zelle payment in the business bank account."
             )
         if (
-            (method == "gift_card" or (method == "split" and data.get("gift_card_amount")))
+            (
+                method == "gift_card"
+                or (
+                    method == "split"
+                    and (data.get("gift_card_amount") or Decimal("0"))
+                    > Decimal(stored.get("gift_card", "0"))
+                )
+            )
             and not self.previewing
             and not data["gift_card_verified"]
+            and not data.get("visit_credit")
+            and not (data.get("member_add") and data.get("member_credit"))
         ):
             self.add_error(
                 "gift_card_verified",
@@ -155,10 +262,15 @@ class ArrivalForm(ReceiptForm):
             )
         data["waiver_confirmed"] = data.get("waiver_confirmed") == "yes"
         data["waiver_mismatch_accepted"] = data.get("waiver_mismatch_accepted") == "yes"
+        if self.pending_intent and data.get("pending_review") != self.pending_intent.pk:
+            self.add_error("pending_review", "Return to this booking's unfinished arrival.")
         data["split"] = {
             kind: str(data.get(kind + "_amount") or "0.00")
             for kind in ("cash", "check", "zelle", "gift_card")
         }
+        from core.membership_arrival_forms import clean
+
+        clean(self)
         return data
 
 
@@ -228,12 +340,34 @@ def guarded(view):
     return inner
 
 
-def confirm_label(kind, quote, plan):
+def confirm_label(kind, quote, plan, *, stored=None):
+    if kind == "arrival" and stored:
+        actions = [
+            f"apply received visit funds ${sum((Decimal(v) for v in stored.values()), Decimal('0')):.2f}"
+        ]
+        for part in plan:
+            value = Decimal(part["amount"])
+            if part.get("advance"):
+                actions.append(f"apply recorded Zelle ${value:.2f}")
+            elif part["tender"] == "card":
+                actions.append(f"charge card ${value:.2f}")
+            elif part["tender"] == "credit":
+                actions.append(f"apply existing customer credit ${value:.2f}")
+            elif value > Decimal(stored.get(part["tender"], "0")):
+                new = value - Decimal(stored.get(part["tender"], "0"))
+                actions.append(f"record new {part['tender'].replace('_', ' ')} ${new:.2f}")
+        return "Confirm arrival — " + " and ".join(actions)
+    from core.visit_credit import confirm_label as credit_label
+
+    if kind == "arrival" and (label := credit_label(plan)):
+        return label
     noun = {"arrival": "arrival", "cancellation": "cancellation", "no_show": "no show"}[kind]
     if not plan:
         return (
             f"Confirm {noun} without a fee"
             if kind != "arrival"
+            else "Confirm arrival — no payment due"
+            if not quote.get("owner_comped")
             else "Confirm arrival — owner-comped $0"
         )
     if any(p.get("advance") for p in plan):
@@ -263,6 +397,265 @@ def checkout(request, pk, kind="arrival"):
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "session"), pk=pk, workflow="integrated_v1"
     )
+    from core.membership_arrival_closure_views import controls as stop_controls
+    from core.membership_arrival_pending import active_for_booking, status_data
+    from core.membership_records import MembershipArrivalIntent
+
+    pending = active_for_booking(pk)
+    if (
+        not pending
+        and kind == "arrival"
+        and (
+            request.GET.get("review_pending") == "1"
+            or request.POST.get("pending_review")
+            or request.POST.get("start_funds_review") == "1"
+            or request.POST.get("start_cancelled_arrival_review") == "1"
+        )
+    ):
+        if request.headers.get("Accept") == "application/json":
+            return JsonResponse(
+                {
+                    "arrival_ended": True,
+                    "booking_url": reverse("booking_detail", args=[pk]),
+                    "errors": {
+                        "__all__": [
+                            {"message": "This arrival review has ended. Open the saved booking."}
+                        ]
+                    },
+                },
+                status=409,
+            )
+        messages.info(
+            request, "This arrival review has ended. Open a fresh arrival from the booking."
+        )
+        return redirect("booking_detail", pk=pk)
+    recovering = False
+    return_form = None
+    returning = request.method == "POST" and request.POST.get("record_visit_return") == "1"
+    if pending and kind == "arrival":
+        from core import membership_arrival_recovery as recovery
+
+        if returning:
+            from core.membership_arrival_return_forms import PendingVisitReturnForm
+
+            recovery.require_owner(request.user)
+            return_form = PendingVisitReturnForm(request.POST, intent=pending, actor=request.user)
+            if return_form.is_valid():
+                return_draft = request.POST.get("arrival_draft")
+                try:
+                    if return_draft:
+                        from . import arrival_drafts
+
+                        arrival_drafts.get(request, booking, return_draft)
+                        if request.POST.get("arrival_fields"):
+                            try:
+                                raw = request.POST["arrival_fields"]
+                                fields = json.loads(raw) if len(raw) <= 32000 else None
+                                if not isinstance(fields, dict) or any(
+                                    not isinstance(v, str) for v in fields.values()
+                                ):
+                                    raise ValueError
+                            except (ValueError, TypeError):
+                                raise ValidationError(
+                                    "Review the current arrival entries before recording this return."
+                                ) from None
+                            arrival_drafts.save(request, booking, return_draft, fields)
+                    returned = return_form.save()
+                    if return_draft:
+                        arrival_drafts.returned_funds(
+                            request,
+                            booking,
+                            return_draft,
+                            returned,
+                            fresh_entries=bool(request.POST.get("arrival_fields")),
+                        )
+                except ValidationError as error:
+                    return_form.add_error(None, error)
+                else:
+                    messages.success(
+                        request,
+                        "Completed return recorded. Review the current arrival before taking any remaining payment.",
+                    )
+                    return (
+                        redirect(arrival_drafts.url(booking, return_draft))
+                        if return_draft
+                        else redirect("booking_arrival", pk=pk)
+                    )
+
+        if request.method == "POST" and request.POST.get("start_cancelled_arrival_review") == "1":
+            from core.membership_arrival_closure import begin_cancelled_review
+
+            try:
+                if request.POST.get("cancelled_review_intent") != str(pending.pk):
+                    raise ValidationError(
+                        "This stopped-arrival review has ended. Reopen the booking."
+                    )
+                begin_cancelled_review(actor=request.user, intent_id=pending.pk)
+            except ValidationError as error:
+                messages.error(request, " ".join(error.messages))
+            return redirect("booking_arrival", pk=pk)
+
+        if request.method == "POST" and request.POST.get("start_funds_review") == "1":
+            from core.membership_arrival_funds import pause
+
+            try:
+                if request.POST.get("funds_review_intent") != str(pending.pk):
+                    raise ValidationError("This visit-fund review has ended. Reopen the booking.")
+                pause(actor=request.user, intent_id=pending.pk)
+            except ValidationError as error:
+                messages.error(request, " ".join(error.messages))
+            return redirect("booking_arrival", pk=pk)
+
+        if request.method == "POST" and request.POST.get("start_owner_review") == "1":
+            try:
+                state = recovery.begin_review(actor=request.user, intent_id=pending.pk)
+            except ValidationError as error:
+                messages.error(request, " ".join(error.messages))
+                return redirect("booking_arrival", pk=pk)
+            return (
+                redirect("booking_detail", pk=pk)
+                if state.status == "completed"
+                else redirect(reverse("booking_arrival", args=[pk]) + "?review_pending=1")
+            )
+        recovering = request.GET.get("review_pending") == "1" or str(
+            request.POST.get("pending_review", "")
+        ) == str(pending.pk)
+        token = request.POST.get("arrival_draft") or request.GET.get("draft")
+        if not recovering and token:
+            from . import arrival_drafts
+
+            try:
+                saved = arrival_drafts.get(request, booking, token)
+                recovering = saved["fields"].get("pending_review") == str(pending.pk)
+            except ValidationError:
+                pass
+        if recovering:
+            try:
+                recovery.authorize(request.user, pending, reviewing=True)
+            except ValidationError as error:
+                if request.headers.get("Accept") == "application/json":
+                    return JsonResponse(
+                        {"errors": {"__all__": [{"message": " ".join(error.messages)}]}}, status=409
+                    )
+                messages.error(request, " ".join(error.messages))
+                return redirect("booking_arrival", pk=pk)
+    if pending and not recovering:
+        if not request.user.has_perm("core.view_membershippurchase"):
+            raise PermissionDenied
+        if request.method == "POST" and request.POST.get("continue_approved") == "1":
+            if request.user.pk != pending.actor_id and not request.user.is_superuser:
+                raise PermissionDenied
+            progress = status_data(pending)
+            if not progress["can_continue"]:
+                messages.error(request, progress["message"])
+                return redirect("booking_arrival", pk=pk)
+            from core.membership_arrival_pending import complete
+            from core.models import AuditEvent
+
+            complete(pending.pk)
+            AuditEvent.objects.create(
+                actor=request.user,
+                action="membership.arrival_rechecked",
+                record_type="booking",
+                record_id=str(booking.reference),
+                changes={"intent_id": str(pending.pk)},
+            )
+            return redirect("booking_arrival", pk=pk)
+        if (request.method == "GET" or returning) and kind == "arrival":
+            progress = status_data(pending)
+            may_recheck = request.user.pk == pending.actor_id or request.user.is_superuser
+            may_start_review = False
+            if request.user.is_superuser:
+                try:
+                    recovery.authorize(request.user, pending)
+                    may_start_review = True
+                except ValidationError:
+                    pass
+            may_review_cancelled = False
+            if request.user.is_superuser:
+                from core.membership_arrival_closure import authorize_cancelled
+
+                try:
+                    authorize_cancelled(request.user, pending)
+                    may_review_cancelled = True
+                except ValidationError:
+                    pass
+            may_pause_funds = funds_review_ready = False
+            if request.user.is_superuser:
+                from core.membership_arrival_funds import authorize as authorize_visit_funds
+                from core.membership_arrival_receipts import held
+                from core.membership_schema import available
+
+                try:
+                    authorize_visit_funds(request.user, pending)
+                    may_pause_funds = bool(held(pending)) and available(
+                        "core_membershiparrivalreceiptreturn"
+                    )
+                    funds_review_ready = pending.progress.code == "owner_review_requested"
+                except ValidationError:
+                    pass
+            if funds_review_ready and may_pause_funds and return_form is None:
+                from core.membership_arrival_return_forms import PendingVisitReturnForm
+
+                return_form = PendingVisitReturnForm(intent=pending, actor=request.user)
+            return render(
+                request,
+                "core/booking_arrival_pending.html",
+                {
+                    "booking": booking,
+                    "intent": pending,
+                    "progress": progress,
+                    "may_recheck": may_recheck,
+                    "may_continue": progress["can_continue"] and may_recheck,
+                    "may_start_review": may_start_review,
+                    "may_pause_funds": may_pause_funds,
+                    "funds_review_ready": funds_review_ready,
+                    "may_review_cancelled": may_review_cancelled,
+                    "return_form": return_form,
+                    **(
+                        stop_controls(request, pending)
+                        if may_start_review or may_review_cancelled
+                        else {}
+                    ),
+                    "counts": pending.facts["review"]["arrival"]["counts"],
+                    "quote": pending.facts["review"]["arrival"]["quote"],
+                    "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),
+                    "sales_enabled": settings.MEMBERSHIP_SALES_ENABLED,
+                    "has_extra_hold": booking.session.capacity_holds.filter(
+                        pk=pending.hold_key, expires_at__gt=timezone.now()
+                    ).exists(),
+                },
+            )
+        if request.headers.get("Accept") == "application/json":
+            if (
+                request.POST.get("confirm_review") == "1"
+                and str(request.POST.get("request_key")) == str(pending.pk)
+                and request.POST.get("reviewed_hash") == pending.fingerprint
+                and pending.actor_id == request.user.pk
+            ):
+                return JsonResponse(
+                    {
+                        "accepted": True,
+                        "pending_membership": True,
+                        "pending_url": reverse("booking_arrival", args=[pk]),
+                        "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),
+                        "booking_url": reverse("booking_detail", args=[pk]),
+                    },
+                    headers={"Cache-Control": "no-store"},
+                )
+            return JsonResponse(
+                {
+                    "errors": {
+                        "__all__": [
+                            {
+                                "message": "Membership and arrival are already in progress. Open their current status."
+                            }
+                        ]
+                    }
+                },
+                status=409,
+            )
+        return redirect("booking_arrival", pk=pk)
     form_type = ArrivalForm if kind == "arrival" else ClosureForm
     initial = {
         "request_key": uuid.uuid4(),
@@ -274,9 +667,19 @@ def checkout(request, pk, kind="arrival"):
         initial.update(
             {name: getattr(booking, name) for name in ("children", "adults", "babies", "socks")}
         )
+        if recovering:
+            initial.update(pending.facts["review"]["arrival"]["counts"])
+            initial.update(pending_review=str(pending.pk), apply_available_benefits=True)
+            from core.membership_arrival_receipts import held
+
+            initial.update(method="card")
+            initial.update({k + "_amount": v for k, v in held(pending).items()})
     else:
         initial["method"] = "card"
     args = {"booking": booking, "owner": request.user.is_superuser}
+    if kind == "arrival":
+        args["actor"] = request.user
+        args["pending_intent"] = pending if recovering else None
     if kind != "arrival":
         args["kind"] = kind
         args["owner"] = request.user.is_superuser
@@ -299,6 +702,24 @@ def checkout(request, pk, kind="arrival"):
                     )
                 messages.warning(request, " ".join(error.messages))
                 return redirect("booking_arrival", pk=pk)
+            if not pending and draft["fields"].get("pending_review"):
+                arrival_drafts.discard(request, draft_token)
+                if is_live:
+                    return JsonResponse(
+                        {
+                            "arrival_ended": True,
+                            "booking_url": reverse("booking_detail", args=[pk]),
+                            "errors": {
+                                "__all__": [
+                                    {
+                                        "message": "This arrival review has ended. Open the saved booking."
+                                    }
+                                ]
+                            },
+                        },
+                        status=409,
+                    )
+                return redirect("booking_detail", pk=pk)
             if request.method == "GET":
                 initial.update(draft["fields"])
         else:
@@ -318,12 +739,13 @@ def checkout(request, pk, kind="arrival"):
         args["previewing"] = request.method == "POST" and request.POST.get("confirm_review") != "1"
     form = form_type(request.POST if request.method == "POST" else None, initial=initial, **args)
     reviewed = None
+    combined = None
     label = None
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         try:
             if request.POST.get("confirm_review") == "1":
-                result = confirm(
+                result = arrival_confirm(
                     actor=request.user,
                     booking_id=pk,
                     kind=kind,
@@ -331,7 +753,24 @@ def checkout(request, pk, kind="arrival"):
                     request_key=data["request_key"],
                     reviewed_hash=data["reviewed_hash"],
                     confirmed=True,
+                    pending_intent=pending if recovering else None,
                 )
+                if isinstance(result, MembershipArrivalIntent):
+                    arrival_drafts.discard(request, draft_token)
+                    if is_live:
+                        return JsonResponse(
+                            {
+                                "accepted": True,
+                                "pending_membership": True,
+                                "pending_url": reverse("booking_arrival", args=[pk]),
+                                "status_url": reverse(
+                                    "booking_arrival_status", args=[pk, result.pk]
+                                ),
+                                "booking_url": reverse("booking_detail", args=[pk]),
+                            },
+                            headers={"Cache-Control": "no-store"},
+                        )
+                    return redirect("booking_arrival", pk=pk)
                 queued = bool(
                     result.sale
                     and result.sale.operations.filter(
@@ -364,19 +803,25 @@ def checkout(request, pk, kind="arrival"):
                 raise ValidationError(
                     "The booking changed. Reload it and review the current details."
                 )
-            _, _, quote, plan, _, digest = preview(
+            (_, _, quote, plan, facts, digest), combined = arrival_preview(
                 actor=request.user,
                 booking_id=pk,
                 kind=kind,
                 data=data,
                 validate_waivers=not is_live,
+                pending_intent=pending if recovering else None,
             )
             values = request.POST.copy()
             values["reviewed_hash"] = digest
             form = form_type(values, **args)
             form.is_valid()
-            reviewed = {"quote": quote, "plan": plan}
-            label = confirm_label(kind, quote, plan)
+            reviewed = {
+                "quote": quote,
+                "plan": plan,
+                "combined": combined,
+                "credit": (facts or {}).get("credit"),
+            }
+            label = combined_label(combined) if combined else confirm_label(kind, quote, plan)
         except ValidationError as error:
             form.add_error(None, " ".join(error.messages))
     from core.waivers.paper import active_customer_waivers
@@ -387,7 +832,8 @@ def checkout(request, pk, kind="arrival"):
     from .zelle_views import ZelleReceiptForm
 
     zelle_form = ZelleReceiptForm(
-        initial={"request_key": uuid.uuid4(), "sender_name": booking.zelle_sender}
+        auto_id="id_inline_zelle_%s",
+        initial={"request_key": uuid.uuid4(), "sender_name": booking.zelle_sender},
     )
     from core.waivers.forms import NamedPaperWaiverForm
 
@@ -407,26 +853,62 @@ def checkout(request, pk, kind="arrival"):
         preview_form = ArrivalForm(values, **(args | {"previewing": True}))
         if preview_form.is_valid():
             try:
-                _, _, quote, plan, _, digest = preview(
+                (_, _, quote, plan, facts, digest), combined = arrival_preview(
                     actor=request.user,
                     booking_id=pk,
                     kind=kind,
                     data=preview_form.cleaned_data,
                     validate_waivers=False,
+                    pending_intent=pending if recovering else None,
                 )
-                reviewed = {"quote": quote, "plan": plan}
+                reviewed = {
+                    "quote": quote,
+                    "plan": plan,
+                    "combined": combined,
+                    "credit": (facts or {}).get("credit"),
+                }
                 form.initial["reviewed_hash"] = digest
-                label = confirm_label(kind, quote, plan)
+                label = combined_label(combined) if combined else confirm_label(kind, quote, plan)
             except ValidationError as error:
                 form = preview_form
                 form.add_error(None, error)
     if reviewed:
         from core.price_adjustments import booking_price_adjustment
 
+        member_prepaid = (
+            Decimal(combined["facts"].get("membership_prepaid", "0.00"))
+            if combined
+            else Decimal("0.00")
+        )
+        prepaid = prepaid | {"available": prepaid["available"] - member_prepaid}
         reviewed["adjustment"] = booking_price_adjustment(booking, reviewed["quote"])
-        reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"]
+        reviewed["prepaid"] = prepaid["received"] - prepaid["refunded"] - member_prepaid
         reviewed["refund_due"] = max(0, prepaid["available"] - Decimal(reviewed["quote"]["total"]))
         reviewed["remaining"] = max(0, Decimal(reviewed["quote"]["total"]) - prepaid["available"])
+    held_payments = {}
+    if recovering and reviewed:
+        held_payments = {
+            r["tender"]: r["available"]
+            for r in (facts or {}).get("pending_receipts", [])
+            if Decimal(r["available"])
+        }
+        label = confirm_label(kind, quote, plan, stored=held_payments)
+        displayed = []
+        for part in reviewed["plan"]:
+            saved_amount = (
+                Decimal(held_payments.get(part["tender"], "0"))
+                if not part.get("advance")
+                else Decimal("0")
+            )
+            displayed.append(
+                part
+                | {
+                    "held_amount": f"{saved_amount:.2f}",
+                    "new_amount": f"{Decimal(part['amount']) - saved_amount:.2f}",
+                }
+            )
+        reviewed["plan"] = displayed
+
     waiver = (
         coverage_facts(
             booking,
@@ -447,18 +929,22 @@ def checkout(request, pk, kind="arrival"):
                 "hash": "",
                 "can_confirm": False,
                 "waiver": waiver,
+                "credit_available": str(getattr(form, "visit_credit_available", Decimal("0.00"))),
             }
-            if kind == "arrival":
+            if kind == "arrival" and not form.cleaned_data.get("member_add"):
                 try:
                     from core.pricing import Line, quote_lines
 
-                    valid = dict(form.cleaned_data, method="cash", split={})
-                    _, _, safe_quote, _, _, _ = preview(
+                    valid = dict(
+                        form.cleaned_data, method="cash", split={}, visit_credit=Decimal("0")
+                    )
+                    _, _, safe_quote, safe_plan, _, _ = preview(
                         actor=request.user,
                         booking_id=pk,
                         kind=kind,
-                        data=valid,
+                        data=recovery.data_for(pending, valid) if recovering else valid,
                         validate_waivers=False,
+                        membership_intent=pending if recovering else None,
                     )
                     lines = [
                         Line(
@@ -481,6 +967,18 @@ def checkout(request, pk, kind="arrival"):
                             request=request,
                         ),
                     )
+                    from .credit_pricing import credit_limit, gift_limit
+
+                    payload["credit_limit"] = str(
+                        credit_limit(booking.quotes.first().policy, lines, prepaid["available"])
+                    )
+                    payload["gift_limit"] = str(
+                        max(
+                            Decimal("0.00"),
+                            gift_limit(safe_quote, safe_plan)
+                            - (form.cleaned_data.get("visit_credit") or Decimal("0.00")),
+                        )
+                    )
                 except ValidationError:
                     pass
             return JsonResponse(payload, status=400)
@@ -491,6 +989,9 @@ def checkout(request, pk, kind="arrival"):
             for row in quote["lines"]
         ]
         noncard = quote_lines(lines, booking.quotes.first().policy, card_base=Decimal("0"))
+        from .credit_pricing import credit_limit, gift_limit
+
+        eligible_credit = credit_limit(booking.quotes.first().policy, lines, prepaid["available"])
         return JsonResponse(
             {
                 "html": render_to_string(
@@ -499,21 +1000,42 @@ def checkout(request, pk, kind="arrival"):
                 "hash": form["reviewed_hash"].value(),
                 "label": label,
                 "can_confirm": form.cleaned_data.get("waiver_confirmed") is True
+                and membership_ready(form.cleaned_data, combined)
                 and (
                     not waiver["mismatch"]
                     or form.cleaned_data.get("waiver_mismatch_accepted") is True
                 )
-                and (
-                    not any(p["tender"] == "gift_card" for p in plan)
-                    or form.cleaned_data.get("gift_card_verified") is True
-                )
-                and (
-                    not any(p["tender"] == "zelle" and not p.get("advance") for p in plan)
-                    or form.cleaned_data.get("zelle_verified") is True
-                ),
+                and visit_proofs_ready(form.cleaned_data, plan, pending if recovering else None),
                 "waiver": waiver,
+                "held_receipts": held_payments,
+                "pending_funds_html": render_to_string(
+                    "core/partials/pending_visit_funds.html",
+                    {"funding": status_data(pending)},
+                    request=request,
+                )
+                if recovering
+                else "",
+                "membership_terms": combined["offer"]["terms"] if combined else "",
+                "membership_due_today": combined["facts"]["membership_due"] if combined else None,
+                "membership_zelle_available": str(getattr(form, "membership_zelle_available", 0)),
+                "membership_card_purchase": card_purchase(booking, form.cleaned_data, combined),
+                "membership_card_review": card_review(combined),
+                "membership_card_authorization_offer": getattr(
+                    form, "arrival_card_authority", None
+                ).offer_fingerprint
+                if getattr(form, "arrival_card_authority", None)
+                else "",
+                "membership_card_authorization_expired": bool(
+                    getattr(form, "arrival_card_authority", None)
+                    and form.arrival_card_authority.expires_at < timezone.now()
+                ),
+                "membership_ready": membership_ready(form.cleaned_data, combined),
+                "membership_needs_card": bool(combined and card_required(combined["offer"])),
                 "noncard_total": noncard["total"],
                 "prepaid_available": str(prepaid["available"]),
+                "credit_available": str(getattr(form, "visit_credit_available", Decimal("0.00"))),
+                "credit_limit": str(eligible_credit),
+                "gift_limit": str(gift_limit(quote, plan)),
                 "plan": [
                     {
                         "tender": p["tender"],
@@ -530,6 +1052,30 @@ def checkout(request, pk, kind="arrival"):
         "cancellation": "Cancel booking",
         "no_show": "Mark as no show",
     }[kind]
+    membership_card_configured = bool(
+        form.fields.get("member_add")
+        and settings.PAYMENT_SANDBOX_ENABLED
+        and settings.BANQUEST_API_SOURCE_KEY
+        and settings.BANQUEST_TOKENIZATION_PUBLIC_KEY.startswith("pk_")
+    )
+    if recovering:
+        from core.membership_arrival_receipts import held
+        from core.membership_schema import available
+
+        if held(pending) and available("core_membershiparrivalreceiptreturn"):
+            from core.membership_arrival_return_forms import PendingVisitReturnForm
+
+            return_form = PendingVisitReturnForm(intent=pending, actor=request.user)
+    setup_flow = {}
+    if membership_card_configured:
+        from core.membership_arrival_forms import purchase_key
+
+        try:
+            setup_flow = request.session.get("membership_card_flows", {}).get(
+                str(purchase_key(form["request_key"].value())), {}
+            )
+        except (ValueError, TypeError):
+            pass
     return render(
         request,
         "core/booking_checkout.html",
@@ -539,6 +1085,21 @@ def checkout(request, pk, kind="arrival"):
             "reviewed": reviewed,
             "confirm_label": label,
             "heading": heading,
+            "membership_card_configured": membership_card_configured,
+            "membership_card_public_key": settings.BANQUEST_TOKENIZATION_PUBLIC_KEY,
+            "membership_card_status_url": reverse(
+                "membership_card_status", args=[setup_flow["setup_key"]]
+            )
+            if setup_flow.get("setup_key")
+            else "",
+            "membership_card_retain": (request.POST if request.method == "POST" else initial).get(
+                "member_retain", ""
+            ),
+            "pending_membership": pending if recovering else None,
+            **(stop_controls(request, pending) if recovering else {}),
+            "pending_receipt": status_data(pending) if recovering else None,
+            "return_form": return_form,
+            "held_receipts_json": json.dumps(held_payments),
             "kind": kind,
             "zelle": prepaid,
             "zelle_form": zelle_form,
@@ -738,6 +1299,28 @@ def arrival_status(request, pk, checkout_id):
     from .invoices import received
     from .models import BookingCheckout
 
+    pending = None
+    from core.membership_schema import available
+
+    if available("core_membershiparrivalintent"):
+        from core.membership_arrival_pending import status_data
+        from core.membership_records import MembershipArrivalCheckout, MembershipArrivalIntent
+
+        pending = (
+            MembershipArrivalIntent.objects.filter(pk=checkout_id, booking_id=pk)
+            .select_related("progress", "purchase__membership", "purchase__billing_state")
+            .first()
+        )
+        if pending:
+            if not request.user.has_perm("core.view_membershippurchase"):
+                raise PermissionDenied
+            if pending.progress.status != "completed":
+                return JsonResponse(
+                    status_data(pending) | {"booking_url": reverse("booking_detail", args=[pk])},
+                    headers={"Cache-Control": "no-store"},
+                )
+            checkout_id = MembershipArrivalCheckout.objects.get(pk=pending.pk).checkout_id
+
     checkout = get_object_or_404(
         BookingCheckout.objects.select_related("booking", "sale"),
         pk=checkout_id,
@@ -766,12 +1349,59 @@ def arrival_status(request, pk, checkout_id):
             "succeeded",
             "Arrival confirmed. The reviewed received payment was recorded.",
         )
+    combined = (
+        getattr(checkout, "membership_purchase", None)
+        if available("core_membershiparrivalcheckout")
+        else None
+    )
+    new_received = received(checkout.sale) if checkout.sale_id else Decimal("0.00")
+    from core.customer_credit import applied as applied_credit
+    from core.customer_credit import held_on
+
+    credit_used = applied_credit(checkout.sale) if checkout.sale_id else Decimal("0.00")
+    if checkout.sale_id and held_on(checkout.sale):
+        state, message = (
+            "review",
+            "Arrival saved. A customer-credit source needs owner review before another collection.",
+        )
+    elif credit_used and state == "succeeded" and not new_received:
+        message = "Arrival confirmed. Customer credit applied; no new payment was received."
+    if combined:
+        from core.membership_arrival import membership_funded
+
+        if not membership_funded(combined):
+            state, message = (
+                "review",
+                "The membership funding needs owner review before another payment.",
+            )
+    if combined and state == "succeeded":
+        # The visit status must include the simultaneously collected membership
+        # payment, while applied credit and earlier Zelle stay separate.
+
+        from core.membership_arrival import receipt_summary
+
+        new_received = receipt_summary(combined)["new_received"]
+        message = "Arrival and membership confirmed. The reviewed received payment was recorded."
+    pending_data = {}
+    if pending:
+        from .invoices import settled, total
+
+        first_sale = pending.purchase.installments.first().invoice.sale
+        pending_data = {
+            "membership_received": str(received(first_sale)),
+            "membership_balance": str(
+                max(Decimal("0.00"), total(first_sale) - settled(first_sale))
+            ),
+            "pending_membership": False,
+        }
     return JsonResponse(
         {
             "state": state,
+            "credit_applied": str(credit_used),
             "message": message,
-            "received": str(received(checkout.sale)) if checkout.sale_id else "0.00",
+            "received": str(new_received),
             "booking_url": reverse("booking_detail", args=[pk]),
+            **pending_data,
         },
         headers={"Cache-Control": "no-store"},
     )

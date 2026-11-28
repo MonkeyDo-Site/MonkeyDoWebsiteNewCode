@@ -33,7 +33,7 @@ class Line:
     taxable: bool
 
 
-def quote_lines(lines, policy, card_base=None):
+def quote_lines(lines, policy, card_base=None, *, card_taxable_base=None):
     if settings.APP_ENV not in {"development", "test", "staging"}:
         raise ValidationError("Production pricing is not configured or approved.")
     items = []
@@ -57,7 +57,13 @@ def quote_lines(lines, policy, card_base=None):
     if base > subtotal:
         raise ValidationError("Card-funded base exceeds purchase subtotal.")
     fee = money(base * decimal(policy.card_fee_rate))
-    taxable_fee = money(fee * taxable / subtotal) if subtotal else Decimal("0.00")
+    if card_taxable_base is None:
+        taxable_fee = money(fee * taxable / subtotal) if subtotal else Decimal("0.00")
+    else:
+        taxable_card = money(card_taxable_base)
+        if not Decimal("0") <= taxable_card <= min(base, taxable):
+            raise ValidationError("Taxable card funding exceeds the accepted purchase.")
+        taxable_fee = money(fee * taxable_card / base) if base else Decimal("0.00")
     tax = money((taxable + taxable_fee) * decimal(policy.tax_rate))
     rates = {
         name: str(getattr(policy, name))

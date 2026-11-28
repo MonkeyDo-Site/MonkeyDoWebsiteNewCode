@@ -9,3 +9,8 @@ docs/design-review/ninth-review/*.png export-ignore
 
 # Single-page backend booking review images are not release source assets.
 docs/design-review/single-page-staff-booking/*.png export-ignore
+
+# Membership review files stay on GitHub and out of deployment archives.
+docs/reviews/active-memberships/*.png export-ignore
+# Preserve the actual CSV download bytes, including standard CRLF line endings.
+docs/reviews/active-memberships/*.csv -text whitespace=cr-at-eol export-ignore

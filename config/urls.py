@@ -5,12 +5,21 @@ from django.views.generic import RedirectView
 
 from core import (
     account_views,
+    active_membership_views,
     booking_comments,
     booking_views,
     customer_views,
     dashboard,
+    membership_arrival_closure_views,
+    membership_batch_views,
+    membership_card_views,
+    membership_exports,
+    membership_prompt_views,
     membership_views,
     public_booking_views,
+    public_membership_join,
+    public_membership_receipt,
+    public_membership_views,
     recurring_views,
     scheduling_views,
     staging_access,
@@ -32,6 +41,83 @@ from core.security import ProtectedLoginView
 from core.waivers import views as waiver_views
 
 urlpatterns = [
+    path(
+        "booking/membership-choice/",
+        membership_prompt_views.public_choice,
+        name="public_membership_choice",
+    ),
+    path(
+        "staff/bookings/draft/<uuid:token>/membership-choice/",
+        membership_prompt_views.staff_choice,
+        name="staff_membership_choice",
+    ),
+    path(
+        "staff/memberships/<int:pk>/card/",
+        membership_card_views.setup_replacement,
+        name="membership_card_replacement",
+    ),
+    path("membership/join/", public_membership_join.join, name="public_membership_join"),
+    path(
+        "membership/join/verify-receipt/",
+        public_membership_receipt.verify,
+        name="public_membership_receipt_verify",
+    ),
+    path(
+        "membership/join/offer/",
+        public_membership_views.live_offer,
+        name="public_membership_join_offer",
+    ),
+    path(
+        "membership/join/card/",
+        public_membership_views.setup_card,
+        name="public_membership_join_card",
+    ),
+    path(
+        "membership/join/card/<uuid:setup_id>/",
+        public_membership_views.setup_status,
+        name="public_membership_join_card_status",
+    ),
+    path(
+        "membership/join/complete/",
+        public_membership_views.receipt,
+        name="public_membership_join_receipt",
+    ),
+    path(
+        "membership/renew/<str:token>/",
+        public_membership_views.renewal,
+        name="public_membership_renewal",
+    ),
+    path(
+        "membership/renew/<str:token>/offer/",
+        public_membership_views.live_offer,
+        name="public_membership_offer",
+    ),
+    path(
+        "membership/renew/<str:token>/card/",
+        public_membership_views.setup_card,
+        name="public_membership_card",
+    ),
+    path(
+        "membership/renew/<str:token>/card/<uuid:setup_id>/",
+        public_membership_views.setup_status,
+        name="public_membership_card_status",
+    ),
+    path(
+        "membership/renew/<str:token>/complete/",
+        public_membership_views.receipt,
+        name="public_membership_receipt",
+    ),
+    path(
+        "staff/memberships/<int:pk>/paid-visit-card/",
+        membership_card_views.setup_paid_visit_recovery,
+        name="membership_paid_visit_card_setup",
+    ),
+    path("staff/memberships/card/", membership_card_views.setup_card, name="membership_card_setup"),
+    path(
+        "staff/memberships/card/<uuid:setup_id>/",
+        membership_card_views.setup_status,
+        name="membership_card_status",
+    ),
     path("staff/bookings/draft/<uuid:token>/card/", staff_create.card, name="staff_create_card"),
     path(
         "staff/bookings/draft/<uuid:token>/card/<uuid:setup_id>/",
@@ -92,6 +178,11 @@ urlpatterns = [
         name="booking_comment_edit",
     ),
     path("staff/bookings/<int:pk>/arrival/", booking_checkout, name="booking_arrival"),
+    path(
+        "staff/bookings/<int:pk>/arrival/<uuid:intent_id>/stop/",
+        membership_arrival_closure_views.stop_arrival,
+        name="booking_arrival_stop",
+    ),
     path(
         "staff/bookings/<int:pk>/arrival/status/<uuid:checkout_id>/",
         payment_checkout_views.arrival_status,
@@ -170,12 +261,54 @@ urlpatterns = [
     ),
     path("staff/scheduling/horizon/", recurring_views.horizon_settings, name="horizon_settings"),
     path("staff/memberships/", membership_views.drafts, name="membership_drafts"),
+    path(
+        "staff/memberships/exports/history/",
+        membership_exports.history,
+        name="membership_export_history",
+    ),
+    path(
+        "staff/memberships/purchased/",
+        active_membership_views.memberships,
+        name="active_memberships",
+    ),
+    path(
+        "staff/memberships/purchase/",
+        active_membership_views.membership_purchase,
+        name="membership_purchase",
+    ),
+    path(
+        "staff/memberships/offer/",
+        active_membership_views.membership_offer,
+        name="membership_offer",
+    ),
+    path(
+        "staff/memberships/purchased/<int:pk>/",
+        active_membership_views.membership_overview,
+        name="membership_overview",
+    ),
     path("staff/memberships/new/", membership_views.draft_create, name="membership_create"),
     path(
         "staff/memberships/pricing/", membership_views.membership_pricing, name="membership_pricing"
     ),
     path("staff/memberships/<int:pk>/edit/", membership_views.draft_edit, name="membership_edit"),
     path("staff/memberships/<int:pk>/", membership_views.draft_detail, name="membership_detail"),
+    path(
+        "staff/memberships/purchased/<int:prior_pk>/renew/",
+        active_membership_views.membership_purchase,
+        {"operation": "renewal"},
+        name="membership_renew",
+    ),
+    path(
+        "staff/memberships/purchased/<int:prior_pk>/add/",
+        active_membership_views.membership_purchase,
+        {"operation": "addition"},
+        name="membership_add",
+    ),
+    path(
+        "staff/customers/<int:customer_pk>/renew-memberships/",
+        membership_batch_views.renew_memberships,
+        name="membership_renewals",
+    ),
     path("staff/scheduling/", scheduling_views.scheduling, name="scheduling"),
     path("staff/scheduling/new/", scheduling_views.session_edit, name="session_create"),
     path("staff/scheduling/date/", scheduling_views.date_edit, name="date_edit"),

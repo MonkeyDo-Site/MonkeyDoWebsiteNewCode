@@ -168,6 +168,38 @@ def waiver_completed(signature, booking):
 
 
 def owner_payment_issue(operation):
+    if operation.sale.kind == "membership":
+        from core.membership_notices import affected_bookings
+        from core.membership_records import MembershipInvoice
+
+        invoice = (
+            MembershipInvoice.objects.select_related("installment__purchase__membership")
+            .filter(sale=operation.sale)
+            .first()
+        )
+        if invoice:
+            item = invoice.installment
+            member = item.purchase
+            return "\n".join(
+                [
+                    "A MonkeyDo membership refund needs review."
+                    if operation.kind == "refund"
+                    else "A MonkeyDo membership payment needs review.",
+                    "Family: " + operation.sale.customer.last_name,
+                    "Phone: " + operation.sale.customer.phone,
+                    f"Membership: #{member.membership_number} · {member.membership.get_kind_display()}",
+                    f"Installment: {item.number} · Due {display_date(item.due_on, 'F j, Y')}",
+                    f"Amount: ${operation.amount}",
+                    "Status: " + operation.get_state_display(),
+                    f"Future bookings with reserved benefits to review: {affected_bookings(member).count()}",
+                    "Review: "
+                    + settings.BOOKING_STAGING_ORIGIN
+                    + reverse("membership_overview", args=[member.pk]),
+                    "No automatic refund retry will be made. No returned funds are claimed until the outcome is confirmed."
+                    if operation.kind == "refund"
+                    else "No automatic payment retry will be made. Existing bookings have not been cancelled or repriced.",
+                ]
+            )
     booking = operation.sale.booking
     appointment = (
         display_date(booking.session.starts_at, "l, F j, Y g:i A")

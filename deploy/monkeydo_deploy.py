@@ -51,6 +51,46 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0096_credit_funded_membership_renewals.py": "f3224b30bf4a9385d887982475afcf02396dec72cc54f8fe800686ade113a870",
+    "0095_unused_membership_owner_dates.py": "46b437e0831b6d68874ef0c26a0d9f08c690a999af22ff521c499eacb74e8154",
+    "0094_paid_visit_split_remainder.py": "6bb85194de1e7ff81aede28aea83b648f22293fcf57e6c82c2ebfd1843b64ee0",
+    "0093_membership_calendar_corrections.py": "6a8faa1d72fc5139e1438d9ac040a817317ed9d6b03f105db553223cfbf3e2a7",
+    "0092_combined_renewal_bank_receipt.py": "81bdd06ae27374bd12a010f43e143034ebeb703d295800fa0777c21e1edc7792",
+    "0091_combined_membership_renewals.py": "4d7c3fd74e8e827ef4ed62e71671a937f9785d6bbfb8ebdeee9f13052c726697",
+    "0090_paid_visit_manual_payment.py": "b421124c9ffb2bd3d2d498ade7e71bf579cb09c9f2a75aba564bf7f9fb6da498",
+    "0089_paid_visit_recovery_card_storage.py": "7ed1a4fdf4f2ecae271914842e9f64ef4156e69e5a8bf5c66f823798b6d7364a",
+    "0088_paid_visit_cancelled_release.py": "29a8e124431b90603a54ca0e1878093fab35d9bfe67200f35e996aa6c6c55cd8",
+    "0087_paid_visit_card_recovery.py": "f6a898fcc83e1a7e817526b625a0d6e5200fd541bc982805191e6178560d43d5",
+    "0086_paid_visit_card_reservations.py": "c00647376f0f46d0cfd0486e4b46ae2de0fcd3c2f0c65e84d7fcab61024293c6",
+    "0085_paid_visit_received_split.py": "8d17c2620092d022a75ebc335b1cadacc151e7fd197f40538613e03d20314417",
+    "0084_paid_visit_purchase.py": "1ea54e866e5dc9aba3cd762446b20b5602b2cb105a650aa786bf08a65ce8844c",
+    "0083_cancelled_membership_arrival_stop.py": "fa056c603af49668f583f8f5ea58a3107074e0cedbbcb0af367edea93c101266",
+    "0082_stop_pending_arrival.py": "036b29e1bd4ebaa478f38ffda87364337b60bed0d61435f5495162c748980738",
+    "0081_gift_cancellation_scope.py": "d517d62366d2248c3b430437d7db5635982435170d0426e61bd11b705ceb6b06",
+    "0080_pending_visit_returns.py": "2c1370e113019299e2d330f5442bba2b7ceec89e24c30ca61c71109954064958",
+    "0079_pending_visit_receipts.py": "47332a8cea223239700cd882c6827e97304c1f6a1014044415d80535f878348c",
+    "0078_split_membership_arrival.py": "f7858df2caff7f1f6ed196b312688a9a681901171c8e82876d4ce33e5fc7854f",
+    "0077_membership_booking_zelle.py": "2c393689bcc7ed1b870d03d3e02d5f947fc9fad9127d527e0cda9bdbc7bc9170",
+    "0076_membership_first_split.py": "2d421da06f91daa90760ef7f796d55cb42705585aefa4432e19a2b59329682de",
+    "0075_visit_customer_credit.py": "df972fb578370a3db917cec5930841b969ab59a2b014408a2e5b20173c84c3d2",
+    "0074_scheduled_membership_credit_authority.py": "6d7c9a7f364a682832169c35a7323668b96b98fda526c3719b58a67a851df135",
+    "0073_scheduled_membership_claims.py": "d75728f4b761f9f04f5e2b8c44ba693f83b940c9d30c1229316659a8e5bda783",
+    "0072_initial_public_membership_authority.py": "472a7643f28ba0fd383eb269d4a54135b90b1c2bb687e56fe7e3f6be063bb51e",
+    "0071_membership_arrival_owner_resolution.py": "2f603844cf425c9ffb0c05056f9ee2b48ccc1cf0023e6932ab6e23f87b031ad1",
+    "0070_pending_membership_arrival.py": "9d73b647628f86a0d8dcae566159fbc78346881905313a514e7f346719771186",
+    "0069_combined_membership_arrival.py": "a89c26a3a791567385642e9be6c087fa06fb5a91f72d55e1b228b672ad8bae95",
+    "0068_booking_membership_renewal_prompts.py": "c5d4e1a036c61104f14648f46ad83b8d71078c8592c09dc32ed9f4a5a5014313",
+    "0067_membership_renewal_notices.py": "1917ed8e799e51899fca4eb652697c59d093b8ceaebcee14849fa7c802b5ff8d",
+    "0066_membership_operational_exports.py": "7aec1b0a9e25a8c28b697cb541c4faf44607454f69d1e5c890b3de317a879eb1",
+    "0065_owner_credit_corrections.py": "a58ff8b2b370039f9fa31078ac0b99882206f5623e0a267e03c8297208d53236",
+    "0063_membership_cancellation_refunds.py": "e1600a0d3079bb8064ad822d1362ceb49ff6aa0c915db630281b6aad03fabba6",
+    "0064_customer_credit_conversion.py": "3e16eecc69373e3b8508e8fe2264ab30cd92c2445ce8fbd33fb91e9cde772d4d",
+    "0062_booking_membership_owner_decisions.py": "277ed2336d857160cabf28d1367fff828f6a63cb412926ba0ff9c5719d70df3d",
+    "0058_membership_follow_on_cohorts.py": "cc2d855ac67e12fd508b4b4cffb57ecf389be736e31c4a8a220967dfba17e4c0",
+    "0059_membership_billing_actions.py": "42216fe77b5b8172a4307e95a2b6b21f8e0d342ef7085bc2a9a894c452a3e8c9",
+    "0060_membership_card_authorizations.py": "cda39f8af2a1415142b11c4478e0f4af940559de85d37791e71851ba7880909c",
+    "0061_verified_membership_renewal_authority.py": "45c2d3a3f5133aa73e15f40ca7b912e8decb90daab35b316eab53fdaaf26a516",
+    "0057_membership_benefit_reservations.py": "5bc11feecb58be60aadf0f70ff777b0c883bb4d32d1124fe8d3617465048c992",
     "0027_payment_foundation.py": "d9ddf42e75cb21d1549a403556e4c16073c9cbc3cd4102317f7f155cbcd455e8",
     "0028_financial_record_guards.py": "e3b182b45f60e0e21c11aec5240af42fb883af5dc2b8572043c84cb182f21ea4",
     "0029_waiver_evidence.py": "59436757945de6ac2564d22b36b192152140ed45192e366f9596acb03493068f",
@@ -78,6 +118,9 @@ BOOKING_MIGRATIONS = {
     "0051_paper_waiver_version.py": "5dc195ee1151ada3c6f2f412f38917b077399ee467ee5823270bfc4230f2cb11",
     "0052_booking_comment_scope.py": "66880bf106cd5430b2f0dbe160fdd5838958c2aeef20e53e40cbe267d40a99e8",
     "0053_staff_capacity_hold.py": "888b8bf991c8f465428c6565996481d34c9d3cef31608b768e473522ee1011e5",
+    "0056_membership_message_link.py": "7c95ec3672675c942cd1cb59427c05cf193617de5c9ae5f99beda0c1fb5b9d83",
+    "0055_membership_payment_purposes.py": "3236e553b0eec76ba041a8c40da921f69c41ee8dbe7ed0c16ae2d310fae4ece8",
+    "0054_active_membership_purchases.py": "73bc2c7336a5c3d39e071411b130252972559377f29f25b2322bdb016ce96c2d",
 }
 BOOKING_UNITS = {
     "monkeydo-functional-backup.service.example": "1975613e1c7bc71881ffba37a41e56f66474f7044f2c72fba2103c08b9b6e1af",
@@ -894,13 +937,927 @@ class Host:
         )
         return candidate
 
+    def ensure_visit_credit_compatible(self, target):
+        marker = target / "deploy/visit-credit-v2.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "bd2c0d93924523d4e6a482ab4d045327c27c360b77451631d04636d108bfbb72"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='core_customercreditapplication' AND column_name='booking_checkout_id')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify visit-credit compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_customercreditapplication WHERE booking_checkout_id IS NOT NULL)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted visit credit. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_membership_split_compatible(self, target):
+        marker = target / "deploy/membership-first-split-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "59c17332da9384dc05f07934a083f9ad768f161cdafdb65028d68ce168cf818b"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershippurchase') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify membership-split compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershippurchase p JOIN core_membershipdraft m ON m.id=p.membership_id WHERE m.expected_method='split')"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted split membership payments. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_membership_bank_compatible(self, target):
+        marker = target / "deploy/membership-booking-zelle-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "e919a1144cae7919f679ac31f76f9e1d5c2d00fdd938361f7a4e3b069a428a19"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershipbankallocation') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify membership bank-allocation compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershipbankallocation)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted membership bank allocations. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_split_arrival_compatible(self, target):
+        marker = target / "deploy/split-membership-arrival-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "291070a4283ec7f21d83209baa81b679e96330d76be13f70892f9ab5d929fe4f"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershiparrivalintent') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify split-arrival compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershiparrivalintent i JOIN core_membershipdraft m ON m.id=i.purchase_id WHERE m.expected_method='split')"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted split membership arrivals. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_pending_visit_compatible(self, target):
+        marker = target / "deploy/pending-visit-receipts-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "98ac8c638022d629404dece199f6fa0044cf42e6cbca5a1ebc8216a8988ac7e9"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershiparrivalreceipt') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify pending-visit receipt compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershiparrivalreceipt)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage accepted pending visit receipts. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_pending_return_compatible(self, target):
+        marker = target / "deploy/pending-visit-returns-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "f9cfe86e376275139e387a265b01dc47518bad45a585a8b230b6ed0f4664e99c"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershiparrivalreceiptreturn') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify pending-visit return compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershiparrivalreceiptreturn)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage recorded pending visit returns. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_pending_stop_compatible(self, target):
+        marker = target / "deploy/pending-arrival-stop-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "5cffd9bbf098fce1e189b343bfbf834e253fc23f2a490661fddfd2bc2ae8c7e8"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql + ["SELECT to_regclass('public.core_membershiparrivalclosure') IS NOT NULL"]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify pending-arrival stop compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershiparrivalclosure)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage recorded stopped arrivals. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_cancelled_member_stop_compatible(self, target):
+        marker = target / "deploy/pending-cancelled-membership-stop-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "0eef0d1e00f8a58d9682048eed7866bbae5d61f0082b01ebfb7de894eb462a9e"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='core_membershiparrivalclosure' AND column_name='cancellation_id')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify cancelled-membership arrival-stop compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershiparrivalclosure WHERE cancellation_id IS NOT NULL)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage cancellation-linked stopped arrivals. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_purchase_compatible(self, target):
+        marker = target / "deploy/paid-visit-purchase-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "0e523ae9dc9c0cf0edba4a1b67b77d1ae2a171176f20c51d3908a00fea6cfa9f"
+        ):
+            return self.ensure_paid_visit_received_split_compatible(target)
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippurchase')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit purchase compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershippurchase p JOIN core_membershipdraft d ON d.id=p.membership_id WHERE d.snapshot ? 'paid_visit_purchase')"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit membership purchases. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_received_split_compatible(self, target):
+        marker = target / "deploy/paid-visit-received-split-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "786ec7a2763dc4adaca49da62b7d47a21574468cd548c205fe9d0a7ce0783fa8"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippurchase')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit received-split compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershippurchase p JOIN core_membershipdraft d ON d.id=p.membership_id WHERE d.expected_method='split' AND d.snapshot ? 'paid_visit_purchase')"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit received-split membership purchases. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_card_compatible(self, target):
+        marker = target / "deploy/paid-visit-card-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "b2c1d5b915a81f1e89dd83d4619a2599a147b31347991e4e0846bb2e01645e54"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippaidvisitintent')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit card compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershippaidvisitintent)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit card reservations. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_card_recovery_compatible(self, target):
+        marker = target / "deploy/paid-visit-card-recovery-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "c9923fde85107ccf2c489440fc27d855df8a1f59bc8a692c8abdeb19411f99c9"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippaidvisitrecovery')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit card recovery compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershippaidvisitrecovery)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit card recoveries. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_cancelled_release_compatible(self, target):
+        marker = target / "deploy/paid-visit-cancelled-release-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "e18281acb6210cb5f8eadcbc12c8ad4d48f23808d83b36ebf95f18f0e8db4440"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippaidvisitcancellation')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify cancelled paid-visit release compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershippaidvisitcancellation)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage cancelled paid-visit releases. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_recovery_storage_compatible(self, target):
+        marker = target / "deploy/paid-visit-recovery-card-storage-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "d73f5ddfa7faa2636be8795ffb1b451175e4c1614903e9346f8927a2b84f0ae7"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippaidvisitcardstorage')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit recovery card storage compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershippaidvisitcardstorage)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit recovery card storages. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_manual_compatible(self, target):
+        marker = target / "deploy/paid-visit-manual-payment-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "ea86d3725ea53d98a951fb49af12550a5d70d997c9b45649f37cb0048ffade3e"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippaidvisitmanualpayment')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit received replacement payment compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershippaidvisitmanualpayment)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit received replacement payments. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_combined_renewals_compatible(self, target):
+        marker = target / "deploy/combined-renewals-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "e6436b78adfd55e0632b3b2a9b72f0aa7dbc6a77617ce05e1348bbb5ae86ce01"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershiprenewalbatch')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify combined renewal checkout compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershiprenewalbatch)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage combined renewal checkouts. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_credit_renewals_compatible(self, target):
+        marker = target / "deploy/credit-renewals-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "b59b87c67e494e27c4060d26c162cebe421366601bfb23addd3823b3f3520439"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershipcreditrenewalbatch')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify credit-funded renewal checkout compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershipcreditrenewalbatch)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage credit-funded renewal checkouts. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_renewal_bank_compatible(self, target):
+        marker = target / "deploy/renewal-bank-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "2afbce221e71f3f88887c34dc1c009b7a72433efefb27f9d3a5f19345adc4808"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershiprenewalbatchbank')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify combined renewal bank receipt compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershiprenewalbatchbank)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage combined renewal bank receipts. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_membership_calendar_compatible(self, target):
+        marker = target / "deploy/membership-calendar-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "cca488a5adc22035532565aeaddee2a5890f63f3f02528ce9cb70990bf0de304"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershipcalendarcorrection')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify membership calendar correction compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql + ["SELECT EXISTS (SELECT 1 FROM core_membershipcalendarcorrection)"]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage membership calendar corrections. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_split_compatible(self, target):
+        marker = target / "deploy/paid-visit-split-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "885eff0cbc9e4a33abef71f2b0c9a6e30cfaefcd1f3d38277f69ff2f6f7c8da1"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippaidvisitsplit')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit split-remainder compatibility; no release switch allowed."
+            )
+        used = self.command(psql + ["SELECT EXISTS (SELECT 1 FROM core_membershippaidvisitsplit)"])
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit split-remainders. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_unused_owner_dates_compatible(self, target):
+        marker = target / "deploy/unused-owner-dates-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "12ba8de21f0f09adbc0d6aa5930306f14ddb7d8a19eeda482a24587c01254b74"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershipcalendarcorrection')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify unused membership owner date-exception compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershipcalendarcorrection WHERE facts->'owner_date_exception'='true'::jsonb)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage unused membership owner date-exceptions. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
             marker.is_file()
             and hashlib.sha256(marker.read_bytes()).hexdigest() == BOOKING_CAPABILITY
         ):
-            return True
+            self.ensure_visit_credit_compatible(target)
+            self.ensure_membership_split_compatible(target)
+            self.ensure_membership_bank_compatible(target)
+            self.ensure_split_arrival_compatible(target)
+            self.ensure_pending_visit_compatible(target)
+            self.ensure_pending_return_compatible(target)
+            self.ensure_pending_stop_compatible(target)
+            self.ensure_cancelled_member_stop_compatible(target)
+            compatible = self.ensure_paid_visit_purchase_compatible(target)
+            self.ensure_paid_visit_card_compatible(target)
+            self.ensure_paid_visit_card_recovery_compatible(target)
+            self.ensure_paid_visit_cancelled_release_compatible(target)
+            self.ensure_paid_visit_recovery_storage_compatible(target)
+            self.ensure_paid_visit_manual_compatible(target)
+            self.ensure_combined_renewals_compatible(target)
+            self.ensure_renewal_bank_compatible(target)
+            self.ensure_membership_calendar_compatible(target)
+            self.ensure_paid_visit_split_compatible(target)
+            self.ensure_unused_owner_dates_compatible(target)
+            self.ensure_credit_renewals_compatible(target)
+            return compatible
         psql = [
             "/usr/sbin/runuser",
             "-u",

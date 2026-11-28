@@ -1,0 +1,50 @@
+{% if form.member_add %}
+<section class="panel arrival-membership">
+{% include 'core/partials/arrival_field.html' with field=form.member_add %}
+<div data-arrival-membership-fields>
+<p class="caption">{% if form.owner_comped_membership %}The visit stays owner-comped at $0. Choose the membership payment below.{% else %}Review the membership and adjusted visit together using the payment choice below.{% endif %} Monthly installments require the customer’s accepted saved card.</p>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_kind %}
+{% include 'core/partials/arrival_field.html' with field=form.member_places %}
+{% include 'core/partials/arrival_field.html' with field=form.member_months %}
+{% include 'core/partials/arrival_field.html' with field=form.member_billing %}
+</div>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_starts_on %}
+{% include 'core/partials/arrival_field.html' with field=form.member_credit %}
+<div data-membership-monthly-card>{% include 'core/partials/arrival_field.html' with field=form.member_card %}</div>
+{% include 'core/partials/arrival_field.html' with field=form.member_first_method %}
+</div>
+<div data-membership-first-split{% if form.member_first_method.value != 'split' %} hidden{% endif %}>
+<div data-membership-recorded-zelle data-available="{{ form.membership_zelle_available }}"{% if not form.membership_zelle_available %} hidden{% endif %}>
+<p class="caption">Recorded booking Zelle available: ${{ form.membership_zelle_available|floatformat:2 }}. Apply an amount to membership here; the remaining recorded funds stay with the visit.</p>
+{% include 'core/partials/arrival_field.html' with field=form.member_recorded_zelle %}
+</div>
+<p class="caption">Enter the membership amounts received, after recorded funds and credit. Its card remainder is charged first. Visit card payment follows confirmed membership funding. Received visit funds are saved immediately and applied once when arrival completes.</p>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_cash_amount %}
+{% include 'core/partials/arrival_field.html' with field=form.member_check_amount %}
+{% include 'core/partials/arrival_field.html' with field=form.member_zelle_amount %}
+{% include 'core/partials/arrival_field.html' with field=form.member_gift_card_amount %}
+</div>
+</div>
+<div data-membership-zelle{% if form.member_first_method.value != 'zelle' and form.member_first_method.value != 'split' %} hidden{% endif %}>
+<p class="caption">Use a separate membership transfer here. Previously recorded Zelle is selected separately above.</p>
+<div class="arrival-counts">
+{% include 'core/partials/arrival_field.html' with field=form.member_received_on %}
+{% include 'core/partials/arrival_field.html' with field=form.member_zelle_sender %}
+</div>
+{% include 'core/partials/arrival_field.html' with field=form.member_zelle_verified %}
+</div>
+<div data-arrival-membership-card>{% include 'core/partials/membership_card_entry.html' %}</div>
+{% if form.member_minimum_override %}<details><summary>Owner membership exceptions</summary>
+{% include 'core/partials/arrival_field.html' with field=form.member_minimum_override %}
+{% include 'core/partials/arrival_field.html' with field=form.member_comped %}
+<div data-membership-comped-email>{% include 'core/partials/arrival_field.html' with field=form.member_send_confirmation %}</div>
+</details>{% endif %}
+<details><summary>Membership terms to review with the customer</summary><p data-arrival-membership-terms>{{ reviewed.combined.offer.terms }}</p></details>
+{% include 'core/partials/arrival_field.html' with field=form.member_accepted %}
+{% include 'core/partials/arrival_field.html' with field=form.member_received %}
+</div>
+</section>
+{% endif %}

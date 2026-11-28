@@ -1,6 +1,7 @@
 """Durable financial dispatch: an uncertain POST is never automatically replayed."""
 
-from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
@@ -150,12 +151,89 @@ def refresh_completed(operation):
 
 @transaction.atomic
 def begin_dispatch(operation_id):
+    candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    from core.membership_paid_visit_pending import (
+        allow_dispatch as allow_paid_visit,
+    )
+    from core.membership_paid_visit_pending import (
+        lock_operation as lock_paid_visit,
+    )
+
+    paid_visit = lock_paid_visit(candidate)
+    from core.membership_arrival_pending import allow_dispatch, lock_operation
+
+    pending_arrival = lock_operation(candidate)
+    from core.membership_arrival import lock_payment
+
+    combined = lock_payment(candidate)
+    visit_credit = candidate.sale.kind == "visit" and candidate.sale.credit_applications.exists()
+    if visit_credit:
+        # Match arrival's booking-then-customer lock order before checking a
+        # credit source that may have been returned while dispatch was queued.
+        Booking.objects.select_for_update().get(pk=candidate.sale.booking_id)
+        from core.membership_reservations import lock_customer
+
+        lock_customer(candidate.sale.customer_id)
+    if candidate.sale.kind == "membership":
+        from core.membership_reservations import lock_customer
+
+        lock_customer(candidate.sale.customer_id)
     operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
     if operation.tender != "card":
         raise ValidationError("Non-card receipt must be explicitly recorded by staff.")
     if operation.state != "ready":
         return None
-    require_actor(operation.actor, "core.collect_payment", owner=operation.kind != "receipt")
+    if not allow_dispatch(pending_arrival) or not allow_paid_visit(paid_visit, operation):
+        operation.state, operation.result_code = "cancelled", "changed_before_dispatch"
+        operation.completed_at = timezone.now()
+        operation.save(update_fields=["state", "result_code", "completed_at"])
+        PaymentEvent.objects.create(
+            operation=operation, state="cancelled", source="worker", code="changed_before_dispatch"
+        )
+        return None
+    if operation.sale.kind == "membership":
+        from core.membership_sales import enabled as membership_enabled
+
+        membership_enabled()
+    if operation.actor_id is None and operation.purpose == "member_installment":
+        from core.membership_collection_authority import authorize_dispatch
+
+        try:
+            authorize_dispatch(operation)
+        except (PermissionDenied, ValidationError):
+            # This exact unattempted scope cannot be silently replaced. Leave
+            # the installment due for the existing explicit owner controls.
+            operation.state, operation.result_code = "cancelled", "scheduled_scope_changed"
+            operation.completed_at = timezone.now()
+            operation.save(update_fields=["state", "result_code", "completed_at"])
+            PaymentEvent.objects.create(
+                operation=operation,
+                state="cancelled",
+                source="worker",
+                code="scheduled_scope_changed",
+            )
+            return None
+    elif operation.actor_id is None:
+        from core.membership_public_authority import authorize_dispatch
+
+        authorize_dispatch(operation)
+    else:
+        require_actor(operation.actor, "core.collect_payment", owner=operation.kind != "receipt")
+    if operation.sale.kind == "membership" and operation.kind != "receipt":
+        from core.membership_cancellations import unrecorded_provider_return
+
+        if unrecorded_provider_return(operation.original):
+            operation.state = "cancelled"
+            operation.result_code = "external_correction_review"
+            operation.completed_at = timezone.now()
+            operation.save(update_fields=["state", "result_code", "completed_at"])
+            PaymentEvent.objects.create(
+                operation=operation,
+                state="cancelled",
+                source="worker",
+                code="external_correction_review",
+            )
+            return None
     if operation.kind == "receipt":
         booking = (
             Booking.objects.select_for_update().get(pk=operation.sale.booking_id)
@@ -163,12 +241,32 @@ def begin_dispatch(operation_id):
             else None
         )
         method = PaymentMethod.objects.select_for_update().get(pk=operation.method_id)
-        invalid = method.state != "active" or not method.provider_method
+        invalid = (
+            method.state != "active"
+            or not method.provider_method
+            or method.customer_id != operation.sale.customer_id
+        )
+        if visit_credit:
+            from core.customer_credit import held_on
+
+            invalid |= held_on(operation.sale)
+        if operation.sale.kind == "membership":
+            from core.membership_funding import member_needs_review
+
+            invoice = operation.sale.membership_invoice
+            stopped = invoice.installment.purchase.billing_state.stopped_on
+            invalid |= bool(stopped and invoice.installment.cycle.starts_on >= stopped)
+            invalid |= member_needs_review(invoice.installment.purchase)
         if booking:
             invalid |= booking.workflow != "integrated_v1" or (
                 operation.sale.kind == "visit"
                 and operation.sale.booking_version != booking.edit_version
             )
+            if combined:
+                from core.membership_arrival import membership_funded
+
+                invalid |= not membership_funded(combined)
+                invalid |= not settings.MEMBERSHIP_SALES_ENABLED
         if invalid:
             operation.state = "cancelled"
             operation.result_code = "changed_before_dispatch"
@@ -191,6 +289,9 @@ def begin_dispatch(operation_id):
 def execute(operation_id):
     enabled()
     writes_allowed()
+    existing = PaymentOperation.objects.get(pk=operation_id)
+    if existing.tender == "card" and existing.state in {"succeeded", "declined", "cancelled"}:
+        return existing
     gateway = Gateway()  # Fail before reserving/sending if configuration is absent.
     operation = begin_dispatch(operation_id)
     if operation is None:

@@ -115,6 +115,17 @@ def review_quote(flow, data):
     policy = PricingPolicy.objects.first()
     if policy is None:
         raise ValidationError("Pricing is not available yet.")
+    from . import membership_booking
+
+    if (
+        membership_booking.active()
+        and flow.get("proof")
+        and flow.get("workflow") == "integrated_v1"
+    ):
+        customer = customer_from_flow(flow)
+        return membership_booking.new_quote(
+            policy, customer_id=customer.pk, session=session, values=data
+        )
     return booking_quote(policy, **{k: data[k] for k in DETAILS})
 
 

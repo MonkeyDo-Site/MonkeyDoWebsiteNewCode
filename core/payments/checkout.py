@@ -18,7 +18,7 @@ from core.waivers.models import BookingWaiverReview
 
 from .amounts import COMPONENTS, ZERO, amount
 from .checkout_pricing import visit_lines
-from .invoices import received, total
+from .invoices import received, settled, total
 from .jobs import enqueue
 from .ledger import accept_booking_sale, fingerprint, lock_request, record_manual, request_operation
 from .methods import queue_disposal
@@ -42,7 +42,7 @@ def charge_state(booking):
     )
 
 
-def require_current(booking, kind):
+def require_current(booking, kind, membership_intent=None):
     if booking.workflow != "integrated_v1":
         raise ValidationError(
             "Use a new integrated booking. Earlier test records cannot be charged."
@@ -51,6 +51,9 @@ def require_current(booking, kind):
         raise ValidationError(
             "Attendance is already recorded. Review the existing payment balance instead."
         )
+    from core.membership_arrival_pending import check_access
+
+    check_access(booking, membership_intent)
     if kind not in {"arrival", "cancellation", "no_show"}:
         raise ValidationError("Choose an ordinary booking action.")
     if booking.session.kind != "ordinary":
@@ -61,13 +64,14 @@ def require_current(booking, kind):
         )
 
 
-def check_arrival_capacity(booking, counts, override, actor):
-    others = booking.session.bookings.exclude(pk=booking.pk).exclude(
-        attendance__in=["cancelled", "no_show"]
+def check_arrival_capacity(booking, counts, override, actor, membership_intent=None):
+    from core.availability import occupancy
+
+    children, adults, supervised = occupancy(
+        booking.session,
+        ignore_booking_id=booking.pk,
+        ignore_hold=membership_intent.hold_key if membership_intent else None,
     )
-    children = sum(others.values_list("children", flat=True))
-    adults = sum(others.values_list("adults", flat=True))
-    supervised = sum(others.filter(supervised=True).values_list("children", flat=True))
     over = (
         children + counts["children"] > booking.session.child_capacity
         or children + adults + counts["children"] + counts["adults"]
@@ -117,10 +121,37 @@ def verify_coverage(booking, counts, confirmed, acknowledged=False):
         )
 
 
-def preview(*, actor, booking_id, kind, data, validate_waivers=True):
+def preview(
+    *,
+    actor,
+    booking_id,
+    kind,
+    data,
+    validate_waivers=True,
+    proposed_membership=None,
+    membership_intent=None,
+    combined_purchase=None,
+):
     authorize(actor)
     booking = Booking.objects.select_related("customer", "session").get(pk=booking_id)
-    require_current(booking, kind)
+    require_current(booking, kind, membership_intent)
+    if combined_purchase is not None:
+        from core.membership_sales import installment_paid
+
+        first = combined_purchase.installments.first()
+        if (
+            kind != "arrival"
+            or combined_purchase.customer_id != booking.customer_id
+            or combined_purchase.actor_id != actor.pk
+            or combined_purchase.confirmation_mode != "combined"
+            or (
+                combined_purchase.purpose != "complimentary"
+                and (first is None or not installment_paid(first))
+            )
+        ):
+            raise ValidationError(
+                "Use this actor's funded combined membership purchase for arrival."
+            )
     state = charge_state(booking)
     if kind != "arrival" and type(data.get("send_email", False)) is not bool:
         raise ValidationError("Choose whether to send a customer email.")
@@ -130,6 +161,8 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
     if reopen:
         require_actor(actor, "core.change_session", owner=True)
     saved = booking.quotes.first()
+    membership_meta = {}
+    membership_resolution = None
     if saved is None:
         raise ValidationError("No accepted pricing policy exists for this booking.")
     counts = {
@@ -142,12 +175,20 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
     if type(override) is not bool:
         raise ValidationError("Review the arrival capacity choice.")
     if kind == "arrival":
+        from core.membership_booking_exceptions import resolve
+
+        membership_resolution = resolve(
+            booking,
+            actor=actor,
+            choice=data.get("membership_resolution", ""),
+            reason=data.get("membership_resolution_reason", ""),
+        )
         if booking.setup_pending:
             raise ValidationError(
                 "Complete booking setup before arrival. Complimentary bookings require no card."
             )
         validate_attendees(**counts, supervised=booking.supervised)
-        check_arrival_capacity(booking, counts, override, actor)
+        check_arrival_capacity(booking, counts, override, actor, membership_intent)
         if validate_waivers:
             verify_coverage(
                 booking, counts, data.get("waiver_confirmed"), data.get("waiver_mismatch_accepted")
@@ -172,6 +213,23 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
             fee_units=units,
             special_admissions=special,
         )
+        from core import membership_booking
+
+        if membership_booking.active(booking):
+            lines, membership_meta = membership_booking.lines_for(
+                saved.policy,
+                customer_id=booking.customer_id,
+                session=booking.session,
+                values=counts | {"supervised": booking.supervised},
+                booking=booking,
+                special_admissions=special,
+                comped=state.comped,
+                apply_available=data.get("apply_available_benefits", False),
+                resolution=membership_resolution,
+                proposed_membership=proposed_membership,
+            )
+            if units:
+                lines.append(Line("Partial cancellation fee", units, Decimal("3.00"), False))
     else:
         if data.get("method", "card") != "card":
             raise ValidationError(
@@ -184,22 +242,63 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
                 "Explicitly choose whether to charge the cancellation/no-show fee."
             )
     no_charge = state.comped or (kind != "arrival" and not data["charge_fee"])
+    from core.visit_credit import review as review_credit
+
+    credit = review_credit(
+        booking=booking,
+        policy=saved.policy,
+        lines=lines,
+        value=data.get("visit_credit"),
+        kind=kind,
+        comped=state.comped,
+        combined=bool(
+            proposed_membership is not None
+            or membership_intent is not None
+            or data.get("member_add")
+        ),
+    )
     if no_charge:
         lines = [Line(line.label, line.quantity, ZERO, line.taxable) for line in lines]
         quote = quote_lines(lines, saved.policy, card_base=ZERO)
         plan = []
     else:
         method = data.get("method", "card")
+        if (
+            method == "split"
+            and (
+                proposed_membership is not None
+                or membership_intent is not None
+                or combined_purchase is not None
+            )
+            and isinstance(data.get("split"), dict)
+            and not any(amount(value) for value in data["split"].values())
+        ):
+            method = "card"
         from .zelle import facts as zelle_facts
         from .zelle import plan_with_prepayment
 
         prepaid = zelle_facts(booking)
+        from core.membership_bank import preview_facts
+
+        prepaid = preview_facts(proposed_membership, prepaid)
         quote, plan, _ = plan_with_prepayment(
-            saved.policy, lines, method, data.get("split"), prepaid["available"]
+            saved.policy,
+            lines,
+            method,
+            data.get("split"),
+            prepaid["available"],
+            credit=amount(credit["amount"]) if credit else ZERO,
         )
     from .zelle import facts as zelle_facts
 
+    quote.update(membership_meta)
+    quote["owner_comped"] = state.comped
+    if amount(quote["total"]) == ZERO:
+        plan = []
     prepaid = zelle_facts(booking)
+    from core.membership_bank import preview_facts
+
+    prepaid = preview_facts(proposed_membership, prepaid)
     if any(part["tender"] == "card" for part in plan):
         try:
             agreement = booking.card_agreement
@@ -214,7 +313,9 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
         card_identity = None
     from .receipts import receipt_date, sender
 
-    manual = any(part["tender"] != "card" and not part.get("advance") for part in plan)
+    manual = any(
+        part["tender"] not in {"card", "credit"} and not part.get("advance") for part in plan
+    )
     zelle = any(part["tender"] == "zelle" and not part.get("advance") for part in plan)
     received_on = receipt_date(data.get("received_on") if zelle else None) if manual else None
     zelle_sender = (
@@ -238,6 +339,13 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
         "waiver_review": coverage_facts(booking, counts) if kind == "arrival" else None,
         "waiver_mismatch_accepted": data.get("waiver_mismatch_accepted") is True,
         "comped": state.comped,
+        "membership_resolution_choice": data.get("membership_resolution", "")
+        if kind == "arrival"
+        else "",
+        "membership_resolution_reason": data.get("membership_resolution_reason", "")
+        if kind == "arrival"
+        else "",
+        "membership_resolution_decision": membership_resolution,
         "owner_special_admissions": str(special)
         if kind == "arrival" and special is not None
         else None,
@@ -248,11 +356,39 @@ def preview(*, actor, booking_id, kind, data, validate_waivers=True):
             for p in plan
         ],
     }
+    if credit:
+        part = next(part for part in plan if part["tender"] == "credit")
+        facts["credit"] = credit | {
+            "parts": [{key: str(value) for key, value in row.items()} for row in part["parts"]]
+        }
+    if membership_intent and data.get("pending_review"):
+        from core.membership_arrival_recovery import marker
+
+        facts["membership_arrival_recovery"] = marker(actor, membership_intent, data)
+    if membership_intent:
+        from core.membership_arrival_receipts import validate
+
+        validate(membership_intent, plan, owner_review=bool(data.get("pending_review")))
+        if data.get("pending_review"):
+            from core.membership_arrival_receipts import snapshot as receipt_snapshot
+
+            facts["pending_receipts"] = receipt_snapshot(membership_intent)
     return booking, state, quote, plan, facts, fingerprint(facts)
 
 
 @transaction.atomic
-def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confirmed):
+def confirm(
+    *,
+    actor,
+    booking_id,
+    kind,
+    data,
+    request_key,
+    reviewed_hash,
+    confirmed,
+    membership_intent=None,
+    combined_purchase=None,
+):
     authorize(actor)
     if confirmed is not True:
         raise ValidationError("Explicitly confirm the reviewed attendance and payment action.")
@@ -270,13 +406,30 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
     lock_calendar(exclusive=data.get("reopen_affected_sessions") is True)
     booking = Booking.objects.select_for_update().get(pk=booking_id)
     Session.objects.select_for_update().get(pk=booking.session_id)
+    from core import membership_booking
+
+    membership_booking.lock(booking)
     booking, state, quote, plan, facts, digest = preview(
-        actor=actor, booking_id=booking_id, kind=kind, data=data
+        actor=actor,
+        booking_id=booking_id,
+        kind=kind,
+        data=data,
+        membership_intent=membership_intent,
+        combined_purchase=combined_purchase,
     )
     if digest != reviewed_hash:
         raise ValidationError(
             "The booking or reviewed price changed. Review it again before confirming."
         )
+    if facts.get("credit"):
+        from core.visit_credit import verify_receipts
+
+        verify_receipts(data, plan)
+    elif kind == "arrival":
+        from core.membership_arrival_receipts import proofs_ready
+
+        if not proofs_ready(data, plan, membership_intent):
+            raise ValidationError("Verify any newly received Zelle amount or physical gift card.")
     if PaymentOperation.objects.filter(
         sale__booking=booking, state__in=["ready", "sending", "unknown", "action", "succeeded"]
     ).exists():
@@ -300,6 +453,17 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         reopen_for_booking(actor, booking, booking.session)
     if state.pk is None:
         state.booking = booking
+    if kind == "arrival" and facts["membership_resolution_choice"]:
+        from core.membership_booking_exceptions import persist
+
+        persist(
+            actor=actor,
+            booking=booking,
+            state=state,
+            choice=facts["membership_resolution_choice"],
+            reason=facts["membership_resolution_reason"],
+            request_key=uuid.uuid5(key, "owner-membership-decision"),
+        )
     if kind == "arrival" and facts["owner_special_admissions"] is not None:
         state.special_subtotal = amount(facts["owner_special_admissions"])
     state.pending_fee_units = facts["fee_units"] if kind == "arrival" else 0
@@ -337,6 +501,33 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
         snapshot=quote,
         actor=actor,
     )
+    if membership_booking.active(booking):
+        from core.membership_reservations import finish as finish_benefits
+        from core.membership_reservations import reserve as reserve_benefits
+
+        if kind == "arrival":
+            reserve_benefits(
+                actor=actor,
+                booking_id=booking.pk,
+                quote_id=saved.pk,
+                request_key=uuid.uuid5(key, "member-arrival-reserve"),
+                for_arrival=True,
+            )
+            finish_benefits(
+                actor=actor,
+                booking_id=booking.pk,
+                request_key=uuid.uuid5(key, "member-arrival-use"),
+                action="used",
+                reason="arrival",
+            )
+        else:
+            finish_benefits(
+                actor=actor,
+                booking_id=booking.pk,
+                request_key=uuid.uuid5(key, "member-release"),
+                action="released",
+                reason=kind,
+            )
     sale = None
     if amount(quote["total"]):
         sale = accept_booking_sale(
@@ -358,7 +549,18 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
     )
     if sale:
         lines = list(sale.lines.all())
+        if facts.get("credit"):
+            from core.visit_credit import apply as apply_credit
+
+            apply_credit(
+                actor=actor,
+                checkout=checkout,
+                plan=facts["credit"],
+                part=next(part for part in plan if part["tender"] == "credit"),
+            )
         for position, part in enumerate(plan):
+            if part["tender"] == "credit":
+                continue
             if part.get("advance"):
                 from .zelle import apply_receipts
 
@@ -373,6 +575,19 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
             ]
             if not amount(part["amount"]):
                 continue
+            if part["tender"] != "card" and membership_intent:
+                from core.membership_arrival_receipts import apply as apply_pending_receipt
+
+                allocation = apply_pending_receipt(
+                    intent=membership_intent,
+                    actor=actor,
+                    sale=sale,
+                    part=part,
+                    key=key,
+                    allocation=allocation,
+                )
+                if not any(amount(entry[k]) for entry in allocation for k in COMPONENTS):
+                    continue
             op = request_operation(
                 actor=actor,
                 sale_id=sale.pk,
@@ -382,7 +597,7 @@ def confirm(*, actor, booking_id, kind, data, request_key, reviewed_hash, confir
                 method_id=booking.card_agreement.method_id if part["tender"] == "card" else None,
                 purpose="arrival" if kind == "arrival" else kind,
                 received_on=date.fromisoformat(facts["received_on"])
-                if part["tender"] != "card"
+                if part["tender"] == "zelle"
                 else None,
             )
             if part["tender"] == "card":
@@ -430,8 +645,11 @@ def resolve_if_settled(booking_id):
 
     if zelle_facts(booking)["refund_due"]:
         return False
-    if checkout.sale and received(checkout.sale) < total(checkout.sale):
-        return False
+    if checkout.sale:
+        from core.customer_credit import held_on
+
+        if held_on(checkout.sale) or settled(checkout.sale) < total(checkout.sale):
+            return False
     PaymentFollowup.objects.filter(
         operation__sale__booking=booking, resolved_at__isnull=True
     ).update(resolved_at=timezone.now())
@@ -483,12 +701,17 @@ def summary(booking):
     prepaid = zelle_facts(booking)
     state = charge_state(booking)
     checkout = booking.checkouts.select_related("sale").order_by("-created_at").first()
+    held = prepaid["received"] - prepaid["refunded"]
+    if held and (checkout is None or checkout.sale_id is None):
+        from core.membership_bank import assigned_from_booking
+
+        held -= assigned_from_booking(booking)
     if checkout is None:
         return {
             "zelle": prepaid,
             "status": "Comped" if state.comped else "Awaiting arrival",
-            "received": prepaid["received"],
-            "total_received": prepaid["received"] - prepaid["refunded"],
+            "received": held,
+            "total_received": held,
             "due": ZERO if state.comped else None,
             "sale": None,
             "pending": False,
@@ -501,9 +724,14 @@ def summary(booking):
             if prepaid["refund_due"]
             else "Comped"
             if state.comped
+            else "Covered by membership"
+            if checkout.kind == "arrival"
+            and checkout.details.get("quote", {}).get("membership_benefits_applied")
+            else "No payment due"
+            if checkout.kind == "arrival"
             else "No fee",
             "received": ZERO,
-            "total_received": prepaid["received"] - prepaid["refunded"],
+            "total_received": held,
             "due": ZERO,
             "sale": None,
             "pending": False,
@@ -511,12 +739,15 @@ def summary(booking):
     operations = sale.operations.all()
     expected = total(sale)
     paid = received(sale)
-    due = max(ZERO, expected - paid)
+    due = max(ZERO, expected - settled(sale))
     pending = operations.filter(state__in=["ready", "sending", "unknown", "action"]).exists()
     external_review = operations.filter(
         events__code="external_correction_review", followup__resolved_at__isnull=True
     ).exists()
-    corrected = operations.exclude(kind="receipt").exists() or external_review
+    from core.customer_credit import applied, held_on
+
+    credit = applied(sale)
+    corrected = operations.exclude(kind="receipt").exists() or external_review or held_on(sale)
     if corrected:
         status = "Payment correction requires owner review"
     elif operations.filter(state="unknown").exists():
@@ -526,17 +757,21 @@ def summary(booking):
     elif pending:
         status = "Charge pending"
     elif not due:
-        status = "Paid"
+        status = "Covered by customer credit" if credit and not paid else "Paid"
     elif operations.filter(state="declined").exists():
         status = "Card declined — balance unpaid"
     else:
         status = "Partially paid" if paid else "Unpaid"
     if prepaid["refund_due"]:
         status = "Zelle refund due"
+    from core.customer_credit import transferred
+
     return {
         "zelle": prepaid,
         "status": status,
         "received": paid,
+        "credit_applied": credit,
+        "converted_credit": transferred(sale),
         # Applied advance receipts are already included in paid; only add the unused balance.
         "total_received": paid + prepaid["available"],
         "due": None if corrected else due,

@@ -264,6 +264,10 @@ def edit_draft(
         raise ValidationError(
             "Membership changed while you were editing. Reload and review the latest version."
         )
+    if hasattr(root, "purchase"):
+        raise ValidationError(
+            "This is a purchased membership. Use its renewal, addition or correction controls to preserve payments and benefits."
+        )
     if type(places) is not int or not 1 <= places <= 2147483647:
         raise ValidationError("Choose a positive whole number for Amount.")
     if minimum_override:

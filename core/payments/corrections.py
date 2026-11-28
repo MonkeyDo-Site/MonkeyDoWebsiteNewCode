@@ -34,6 +34,7 @@ def record_correction(
     provider_reference="",
     received_on=None,
     confirmed=False,
+    membership_refund_plan_id=None,
 ):
     enabled()
     require_actor(actor, "core.review_payment", owner=True)
@@ -98,6 +99,7 @@ def record_correction(
         method_id=original.method_id,
         purpose="correction",
         received_on=received_on if original.tender != "card" else None,
+        membership_refund_plan_id=membership_refund_plan_id,
     )
     when = None
     if evidence is not None:

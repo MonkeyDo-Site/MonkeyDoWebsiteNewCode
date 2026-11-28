@@ -7,7 +7,7 @@ import uuid
 from decimal import Decimal
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import connection, transaction
 from django.utils import timezone
 
@@ -27,6 +27,10 @@ from .models import (
 )
 
 CATEGORIES = {
+    "Child admissions — Unlimited membership": "member_unlimited_visit",
+    "Child admissions — Subscription free visits": "member_subscription_free",
+    "Child admissions — Subscription additional visits": "member_subscription_additional",
+    "Supervised child admissions — Subscription discount": "member_subscription_supervised",
     "Child admissions": "open_child",
     "Owner-priced admissions": "owner_priced_admissions",
     "Supervised child admissions": "supervised_child",
@@ -84,6 +88,10 @@ def lock_sale(sale_id):
     Sales without a booking still get the same allocation/reversal protection.
     """
     sale = FinancialSale.objects.get(pk=sale_id)
+    if sale.kind == "membership":
+        from core.membership_reservations import lock_customer
+
+        lock_customer(sale.customer_id)
     if sale.booking_id:
         Booking.objects.select_for_update().get(pk=sale.booking_id)
     if connection.vendor == "postgresql":
@@ -164,6 +172,12 @@ def accept_booking_sale(*, actor, booking_id, quote_id, creation_key, kind="visi
     for line, taxable_fee in zip(lines, taxable_fee_parts):
         tax_weights.extend([amount(line["amount"]) if line["taxable"] else ZERO, taxable_fee])
     taxes = allocate(tax, tax_weights)
+    if "card_funding" in data:
+        from .credit_pricing import components
+
+        accepted = components(data)
+        fee_parts = [row["fee"] for row in accepted]
+        taxes = [row[key] for row in accepted for key in ("item_tax", "fee_tax")]
     sale = FinancialSale.objects.create(
         creation_key=creation_key,
         fingerprint=identity,
@@ -239,6 +253,24 @@ def checked_allocation(sale, allocation):
     return cleaned
 
 
+def check_receipt_tender(sale, allocation, tender):
+    if tender != "gift_card":
+        return
+    fee_lines = {
+        str(pk)
+        for pk in sale.lines.filter(
+            category__in=("partial_cancellation", "cancellation_fee")
+        ).values_list("pk", flat=True)
+    }
+    if any(
+        part["line"] in fee_lines and any(amount(part[key]) for key in COMPONENTS)
+        for part in allocation
+    ):
+        raise ValidationError(
+            "Gift-card payments cannot cover cancellation or no-show fees. Choose another payment method for the fee."
+        )
+
+
 def used_components(operations):
     totals = {}
     for operation in operations:
@@ -262,9 +294,63 @@ def request_operation(
     kind="receipt",
     purpose="arrival",
     received_on=None,
+    public_membership_authority=None,
+    scheduled_membership_claim=None,
+    membership_refund_plan_id=None,
+    paid_visit_recovery=None,
+    paid_visit_manual=None,
+    paid_visit_split=None,
 ):
     enabled()
-    require_actor(actor, "core.collect_payment", owner=kind != "receipt")
+    if paid_visit_split is not None and (
+        paid_visit_recovery is not None
+        or paid_visit_manual is not None
+        or public_membership_authority is not None
+        or scheduled_membership_claim is not None
+        or kind != "receipt"
+        or purpose != "member_purchase"
+        or actor is None
+    ):
+        raise PermissionDenied
+    if paid_visit_recovery is not None and (
+        kind != "receipt" or tender != "card" or purpose != "member_purchase" or actor is None
+    ):
+        raise PermissionDenied
+    if paid_visit_manual is not None and (
+        paid_visit_recovery is not None
+        or kind != "receipt"
+        or tender not in {"cash", "check", "zelle", "gift_card"}
+        or purpose != "member_purchase"
+        or actor is None
+        or method_id is not None
+    ):
+        raise PermissionDenied
+    if membership_refund_plan_id is not None and kind != "refund":
+        raise PermissionDenied
+    public = actor is None and public_membership_authority is not None
+    scheduled = scheduled_membership_claim is not None
+    if scheduled:
+        from core.membership_collection_authority import current_claim
+
+        if (
+            actor is not None
+            or public_membership_authority is not None
+            or kind != "receipt"
+            or tender != "card"
+            or purpose != "member_installment"
+            or original_id is not None
+            or received_on is not None
+        ):
+            raise PermissionDenied
+        current_claim(scheduled_membership_claim)
+    elif public:
+        from core.membership_public_authority import verified_scope
+
+        verified_scope(public_membership_authority)
+        if kind != "receipt" or tender != "card" or purpose != "member_purchase":
+            raise PermissionDenied
+    else:
+        require_actor(actor, "core.collect_payment", owner=kind != "receipt")
     request_key = lock_request(request_key)
     sale = lock_sale(sale_id)
     if (
@@ -272,12 +358,73 @@ def request_operation(
         or kind not in PaymentOperation.Kind.values
     ):
         raise ValidationError("Choose a supported payment operation.")
-    if purpose not in {"arrival", "cancellation", "no_show", "follow_up", "correction"}:
+    if purpose not in {
+        "arrival",
+        "cancellation",
+        "no_show",
+        "follow_up",
+        "correction",
+        "member_purchase",
+        "member_installment",
+    }:
         raise ValidationError("Choose a supported payment purpose.")
     if kind == "receipt":
         writes_allowed()
     if kind != "receipt":
         purpose = "correction"
+    member_source = False
+    if kind == "receipt" and sale.kind == "visit":
+        from core.customer_credit import held_on
+
+        if held_on(sale):
+            raise ValidationError(
+                "A customer-credit source needs owner review before new collection."
+            )
+    if kind == "receipt" and (sale.kind == "membership" or purpose.startswith("member_")):
+        from core.membership_records import MembershipInvoice
+        from core.membership_sales import authorize
+
+        if not scheduled:
+            authorize(actor, collect=True, authority=public_membership_authority)
+        invoice = (
+            MembershipInvoice.objects.select_related(
+                "installment__purchase__billing_state__mandate"
+            )
+            .filter(sale=sale)
+            .first()
+        )
+        if not invoice or purpose != (
+            "member_purchase" if invoice.installment.number == 1 else "member_installment"
+        ):
+            raise ValidationError("Use the accepted membership installment before collecting.")
+        from core.customer_credit import held_on
+
+        if held_on(sale):
+            raise ValidationError(
+                "A customer-credit source needs owner review before new collection."
+            )
+        if public:
+            from core.membership_public_authority import check_purchase
+
+            check_purchase(public_membership_authority, invoice.installment.purchase)
+            if invoice.installment.number != 1 or request_key != uuid.uuid5(
+                invoice.installment.purchase.request_key, "first-payment"
+            ):
+                raise PermissionDenied
+        mandate = invoice.installment.purchase.billing_state.mandate
+        stopped = invoice.installment.purchase.billing_state.stopped_on
+        if stopped and invoice.installment.cycle.starts_on >= stopped:
+            raise ValidationError(
+                "This installment belongs to the cancelled part of the membership."
+            )
+        if (
+            tender == "card"
+            and paid_visit_recovery is None
+            and paid_visit_split is None
+            and (not mandate or str(mandate.method_id) != str(method_id))
+        ):
+            raise ValidationError("Use the currently accepted membership payment method.")
+        member_source = True
     if purpose == "correction":
         require_actor(actor, "core.collect_payment", owner=True)
     if tender != "card":
@@ -295,6 +442,40 @@ def request_operation(
         ):
             raise ValidationError("Review the current integrated booking before collection.")
     cleaned = checked_allocation(sale, allocation)
+    if member_source:
+        from core.membership_paid_visit_pending import authorize_receipt
+
+        authorize_receipt(
+            invoice=invoice,
+            actor=actor,
+            request_key=request_key,
+            tender=tender,
+            allocation=cleaned,
+            recovery=paid_visit_recovery,
+            manual=paid_visit_manual,
+            split=paid_visit_split,
+            method_id=method_id,
+        )
+    elif (
+        paid_visit_recovery is not None
+        or paid_visit_manual is not None
+        or paid_visit_split is not None
+    ):
+        raise PermissionDenied
+    if scheduled:
+        from core.membership_collection_authority import authorize_operation
+
+        if not member_source:
+            raise PermissionDenied
+        authorize_operation(
+            scheduled_membership_claim,
+            sale_id=sale.pk,
+            request_key=request_key,
+            method_id=method_id,
+            allocation=cleaned,
+        )
+    if public and (not member_source or cleaned != full_allocation(sale)):
+        raise PermissionDenied
     value = sum((amount(part[k]) for part in cleaned for k in COMPONENTS), ZERO)
     if not ZERO < value <= Decimal("20000000.00"):
         raise ValidationError("Payment amount is outside the supported range.")
@@ -317,6 +498,8 @@ def request_operation(
         if prior.fingerprint != identity:
             raise ValidationError("This payment request key has already been used.")
         return prior
+    if kind == "receipt":
+        check_receipt_tender(sale, cleaned, tender)
     method = None
     if tender == "card":
         method = PaymentMethod.objects.select_for_update().get(
@@ -332,6 +515,7 @@ def request_operation(
                 raise ValidationError("Use the currently reviewed card agreement for this booking.")
         if (
             not method.reusable
+            and not member_source
             and method.booking_id != sale.booking_id
             and not method.agreements.filter(
                 booking_id=sale.booking_id, resolved_at__isnull=True
@@ -343,6 +527,12 @@ def request_operation(
         if original_id:
             raise ValidationError("A receipt cannot be a refund of another operation.")
         used = used_components(sale.operations.filter(kind="receipt", state__in=RESERVED))
+        from core.customer_credit import applied_components
+
+        for line, values in applied_components(sale).items():
+            target = used.setdefault(line, {key: ZERO for key in COMPONENTS})
+            for component in COMPONENTS:
+                target[component] += values[component]
         from .invoices import effective_components
 
         limits = effective_components(sale)
@@ -350,12 +540,22 @@ def request_operation(
         original = PaymentOperation.objects.select_for_update().get(
             pk=original_id, sale=sale, kind="receipt", state="succeeded", tender=tender
         )
+        from core.membership_paid_visit_pending import protect_source as protect_paid_visit
+
+        protect_paid_visit(original)
         if tender == "card" and original.method_id != method_id:
             raise ValidationError("A refund must use the original payment source.")
         used = used_components(original.adjustments.filter(state__in=RESERVED))
         limits = {p["line"]: {k: amount(p[k]) for k in COMPONENTS} for p in original.allocation}
         if kind == "void" and cleaned != original.allocation:
             raise ValidationError("A void must reverse the whole original payment.")
+        from core.customer_credit import protect_source
+
+        protect_source(original, cleaned)
+        if sale.kind == "membership" or membership_refund_plan_id is not None:
+            from core.membership_cancellations import protect_refund
+
+            protect_refund(original, cleaned, plan_id=membership_refund_plan_id)
     for part in cleaned:
         for key in COMPONENTS:
             if amount(part[key]) + used.get(part["line"], {}).get(key, ZERO) > limits.get(
@@ -380,7 +580,9 @@ def request_operation(
         allocation=cleaned,
         actor=actor,
     )
-    PaymentEvent.objects.create(operation=operation, state="ready", source="staff", actor=actor)
+    PaymentEvent.objects.create(
+        operation=operation, state="ready", source="worker" if scheduled else "staff", actor=actor
+    )
     audit(actor, "payment.requested", operation)
     return operation
 
@@ -390,6 +592,17 @@ def record_result(
     *, operation_id, state, source, provider_reference="", code="", occurred_at=None, actor=None
 ):
     enabled()
+    candidate = PaymentOperation.objects.select_related("sale").get(pk=operation_id)
+    from core.membership_paid_visit_pending import lock_operation as lock_paid_visit
+
+    lock_paid_visit(candidate)
+    from core.membership_arrival import lock_payment
+
+    lock_payment(candidate)
+    if candidate.sale.kind == "membership":
+        from core.membership_reservations import lock_customer
+
+        lock_customer(candidate.sale.customer_id)
     operation = PaymentOperation.objects.select_for_update().get(pk=operation_id)
     if source not in {
         "provider",
@@ -415,6 +628,8 @@ def record_result(
     if operation.tender == "card" and state == "succeeded" and not provider_reference:
         raise ValidationError("A successful card operation needs its provider reference.")
     if state == "succeeded":
+        if operation.kind == "receipt":
+            check_receipt_tender(operation.sale, operation.allocation, operation.tender)
         when = occurred_at
         for part in operation.allocation:
             FinancialPosting.objects.create(
@@ -441,6 +656,9 @@ def record_result(
         operation=operation, state=state, source=source, code=code, actor=actor
     )
     audit(actor, "payment.result_recorded", operation)
+    from core.membership_paid_visit_pending import outcome_updated as paid_visit_updated
+
+    paid_visit_updated(operation)
     if state in {"unknown", "action", "declined"}:
         PaymentFollowup.objects.get_or_create(
             operation=operation, defaults={"plan": "owner_review"}
@@ -449,6 +667,13 @@ def record_result(
         from .checkout import resolve_if_settled
 
         resolve_if_settled(operation.sale.booking_id)
+        from core.membership_arrival import payment_updated as combined_payment_updated
+
+        combined_payment_updated(operation)
+    if state == "succeeded" and operation.sale.kind == "membership":
+        from core.membership_sales import payment_updated
+
+        payment_updated(operation)
     if state in {"unknown", "action", "declined"} and settings.BOOKING_EMAIL_ENABLED:
         from core.communications.content import owner_payment_issue
         from core.communications.models import MessageDelivery

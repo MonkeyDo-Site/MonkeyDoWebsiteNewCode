@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'The 30-minute reservation expired and these places were released. Reserve them again before confirming.';
   };
   const apply = answer => {
+    if (answer.membership_html !== undefined) main.querySelector('[data-create-memberships]').innerHTML = answer.membership_html;
     if (answer.hold) { hold = answer.hold; deadline = Date.now() + (hold.seconds_remaining || 0) * 1000; showHold(); }
     if (answer.html !== undefined || !answer.valid) estimate.innerHTML = answer.html || '<p>Complete the visit details to see the price.</p>';
     if (answer.capacity) main.querySelector('.session-capacity-info').textContent = answer.capacity;
@@ -105,6 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = new FormData(main);
     queue = queue.then(() => send('preview', data)).catch(error => { announce(error.message); return null; });
     return queue;
+  };
+  main.staffCreateFlush = () => {
+    clearTimeout(timer);
+    if (busy || paused) return Promise.reject(new Error('Finish the current booking action before choosing renewal.'));
+    const pending = queue.then(() => send('preview', new FormData(main)));
+    queue = pending.catch(() => null);
+    return pending;
   };
   const changed = event => {
     if (event.target.form !== main || event.target.type === 'search') return;

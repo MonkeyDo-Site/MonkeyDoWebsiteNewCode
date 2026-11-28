@@ -180,6 +180,10 @@ def flag_external_credit(event):
     ):
         raise ProviderFailure("external_credit_not_verified")
     with transaction.atomic():
+        if original.sale.kind == "membership":
+            from core.membership_reservations import lock_customer
+
+            lock_customer(original.sale.customer_id)
         PaymentOperation.objects.select_for_update().get(pk=original.pk)
         ProviderObservation.objects.get_or_create(
             operation=original,
@@ -196,19 +200,25 @@ def flag_external_credit(event):
                 "amount": value,
             },
         )
+        if original.sale.kind == "membership":
+            from core.membership_cancellations import unrecorded_provider_return
+
+            if not unrecorded_provider_return(original):
+                return
         _, created = PaymentEvent.objects.get_or_create(
             operation=original,
             state=original.state,
             source="provider",
             code="external_correction_review",
         )
-        if created:
+        if created or original.sale.kind == "membership":
             PaymentFollowup.objects.update_or_create(
                 operation=original, defaults={"plan": "owner_review", "resolved_at": None}
             )
-            OwnerNotice.objects.create(
+            OwnerNotice.objects.get_or_create(
                 customer=original.sale.customer,
                 subject="Provider refund needs recording",
+                reviewed_at__isnull=True,
                 details={
                     "kind": "payment_correction",
                     "operation_id": str(original.pk),

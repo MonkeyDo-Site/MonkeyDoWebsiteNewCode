@@ -23,6 +23,134 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClosedBookingPlanTests(SimpleTestCase):
+    def test_used_credit_renewals_refuse_incompatible_code(self):
+        with tempfile.TemporaryDirectory() as folder:
+            host = deploy.Host({}, Path("/tmp/credit-renewals-compatibility.log"))
+            target = Path(folder)
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_credit_renewals_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_credit_renewals_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_credit_renewals_compatible(target))
+
+    def test_exact_credit_renewal_capability_skips_old_release_probe(self):
+        host = deploy.Host({}, Path("/tmp/credit-renewals-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_credit_renewals_compatible(ROOT))
+            command.assert_not_called()
+
+    def test_used_owner_date_exception_refuses_incompatible_code(self):
+        with tempfile.TemporaryDirectory() as folder:
+            host = deploy.Host({}, Path("/tmp/unused-owner-dates-compatibility.log"))
+            target = Path(folder)
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_unused_owner_dates_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_unused_owner_dates_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_unused_owner_dates_compatible(target))
+
+    def test_exact_owner_date_capability_skips_old_release_probe(self):
+        host = deploy.Host({}, Path("/tmp/unused-owner-dates-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_unused_owner_dates_compatible(ROOT))
+            command.assert_not_called()
+
+    def test_used_split_receipt_refuses_incompatible_code(self):
+        with tempfile.TemporaryDirectory() as folder:
+            host = deploy.Host({}, Path("/tmp/unused-paid-visit-split-compatibility.log"))
+            target = Path(folder)
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_paid_visit_split_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_paid_visit_split_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_paid_visit_split_compatible(target))
+
+    def test_exact_split_capability_skips_old_release_probe(self):
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-split-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_paid_visit_split_compatible(ROOT))
+            command.assert_not_called()
+
+    def test_used_calendar_history_refuses_older_code(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            host = deploy.Host({}, Path("/tmp/unused-calendar-compatibility.log"))
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_membership_calendar_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_membership_calendar_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_membership_calendar_compatible(target))
+
+    def test_exact_calendar_capability_skips_old_release_probe(self):
+        host = deploy.Host({}, Path("/tmp/unused-calendar-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_membership_calendar_compatible(ROOT))
+            command.assert_not_called()
+
+    def test_used_renewal_bank_source_refuses_older_code(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            host = deploy.Host({}, Path("/tmp/unused-renewal-bank-compatibility.log"))
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_renewal_bank_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_renewal_bank_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_renewal_bank_compatible(target))
+
+    def test_exact_renewal_bank_capability_skips_old_release_probe(self):
+        host = deploy.Host({}, Path("/tmp/unused-renewal-bank-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_renewal_bank_compatible(ROOT))
+            command.assert_not_called()
+
+    def test_used_combined_renewals_refuse_an_incompatible_code_switch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            host = deploy.Host({}, Path("/tmp/unused-combined-renewals-compatibility.log"))
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_combined_renewals_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_combined_renewals_compatible(target))
+            with patch.object(host, "command", return_value="f"):
+                self.assertTrue(host.ensure_combined_renewals_compatible(target))
+
+    def test_reviewed_combined_renewal_capability_skips_legacy_probe(self):
+        host = deploy.Host({}, Path("/tmp/unused-combined-renewals-compatibility.log"))
+        with patch.object(host, "command") as command:
+            self.assertTrue(host.ensure_combined_renewals_compatible(ROOT))
+            command.assert_not_called()
+
+    def test_used_recovery_card_storage_refuses_older_code_switch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            host = deploy.Host({}, Path("/tmp/unused-recovery-storage-compatibility.log"))
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_paid_visit_recovery_storage_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_paid_visit_recovery_storage_compatible(target))
+
+    def test_used_paid_visit_manual_receipt_refuses_older_code_switch(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder)
+            host = deploy.Host({}, Path("/tmp/unused-recovery-storage-compatibility.log"))
+            with patch.object(host, "command", side_effect=["t", "t"]):
+                with self.assertRaises(deploy.DeployError):
+                    host.ensure_paid_visit_manual_compatible(target)
+            with patch.object(host, "command", side_effect=["t", "f"]):
+                self.assertTrue(host.ensure_paid_visit_manual_compatible(target))
+
     def test_only_exact_forward_suffixes_are_allowed(self):
         for names in [list(schema.REVIEWED_NAMES), list(schema.REVIEWED_NAMES[8:]), []]:
             executor = MagicMock()
@@ -86,6 +214,337 @@ class ClosedBookingPlanTests(SimpleTestCase):
         ):
             host.reviewed_booking(ROOT, "a" * 40)
         command.assert_not_called()
+
+    def test_old_booking_release_cannot_hide_accepted_visit_credit(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-visit-credit-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            (target / "deploy/booking-completion-v1.capability").write_bytes(
+                (ROOT / "deploy/booking-completion-v1.capability").read_bytes()
+            )
+            # The earlier visit-credit capability cannot read the newer
+            # fee-eligible component format; it still requires the database probe.
+            (target / "deploy/visit-credit-v1.capability").write_bytes(
+                (ROOT / "deploy/visit-credit-v1.capability").read_bytes()
+            )
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "visit credit"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (
+                ["f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ["t", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+            ):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_cannot_manage_accepted_first_membership_splits(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-membership-split-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in ("booking-completion-v1.capability", "visit-credit-v2.capability"):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "split membership"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (
+                ["f", "f", "f", "f", "f", "f", "f", "f"],
+                ["t", "f", "f", "f", "f", "f", "f", "f", "f"],
+            ):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_refuses_membership_allocations_of_recorded_bank_money(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-member-bank-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in (
+                "booking-completion-v1.capability",
+                "visit-credit-v2.capability",
+                "membership-first-split-v1.capability",
+            ):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "membership bank allocations"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (
+                ["f", "f", "f", "f", "f", "f", "f"],
+                ["t", "f", "f", "f", "f", "f", "f", "f"],
+            ):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_refuses_accepted_split_first_card_arrivals(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-first-card-arrival-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in (
+                "booking-completion-v1.capability",
+                "visit-credit-v2.capability",
+                "membership-first-split-v1.capability",
+                "membership-booking-zelle-v1.capability",
+            ):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "split membership arrivals"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (["f", "f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_refuses_accepted_pending_visit_receipts(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-first-card-arrival-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in (
+                "booking-completion-v1.capability",
+                "visit-credit-v2.capability",
+                "membership-first-split-v1.capability",
+                "membership-booking-zelle-v1.capability",
+                "split-membership-arrival-v1.capability",
+            ):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "pending visit receipts"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (["f", "f", "f", "f", "f"], ["t", "f", "f", "f", "f", "f"]):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_refuses_recorded_pending_visit_returns(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-first-card-arrival-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in (
+                "booking-completion-v1.capability",
+                "visit-credit-v2.capability",
+                "membership-first-split-v1.capability",
+                "membership-booking-zelle-v1.capability",
+                "split-membership-arrival-v1.capability",
+                "pending-visit-receipts-v1.capability",
+            ):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "pending visit returns"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (["f", "f", "f", "f"], ["t", "f", "f", "f", "f"]):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_refuses_recorded_stopped_arrivals(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-first-card-arrival-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in (
+                "booking-completion-v1.capability",
+                "visit-credit-v2.capability",
+                "membership-first-split-v1.capability",
+                "membership-booking-zelle-v1.capability",
+                "split-membership-arrival-v1.capability",
+                "pending-visit-receipts-v1.capability",
+                "pending-visit-returns-v1.capability",
+            ):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "stopped arrivals"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (["f", "f", "f"], ["t", "f", "f", "f"]):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_refuses_cancellation_linked_stopped_arrivals(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-first-card-arrival-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            for marker in (
+                "booking-completion-v1.capability",
+                "visit-credit-v2.capability",
+                "membership-first-split-v1.capability",
+                "membership-booking-zelle-v1.capability",
+                "split-membership-arrival-v1.capability",
+                "pending-visit-receipts-v1.capability",
+                "pending-visit-returns-v1.capability",
+                "pending-arrival-stop-v1.capability",
+            ):
+                (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "cancellation-linked stopped arrivals"),
+            ):
+                host.ensure_compatible_release(target)
+            for replies in (["f", "f"], ["t", "f", "f"]):
+                with patch.object(
+                    host,
+                    "command",
+                    side_effect=[*replies, "f", "f", "f", "f", "f", "f", "f", "f", "f", "f", "f"],
+                ):
+                    host.ensure_compatible_release(target)
+
+    def test_older_release_cannot_manage_paid_visit_membership_purchases(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-purchase-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "paid-visit membership purchases"),
+            ):
+                host.ensure_paid_visit_purchase_compatible(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
+                    self.assertTrue(host.ensure_paid_visit_purchase_compatible(target))
+
+    def test_older_release_refuses_received_split_paid_visit_purchases(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-split-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            marker = "paid-visit-purchase-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "received-split membership purchases"),
+            ):
+                host.ensure_paid_visit_purchase_compatible(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=[*replies, "f", "f", "f", "f"]):
+                    self.assertTrue(host.ensure_paid_visit_received_split_compatible(target))
+            marker = "paid-visit-received-split-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with patch.object(host, "command") as command:
+                self.assertTrue(host.ensure_paid_visit_purchase_compatible(target))
+            command.assert_not_called()
+
+    def test_older_release_cannot_manage_conditional_paid_visit_card_reservations(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-card-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "paid-visit card reservations"),
+            ):
+                host.ensure_paid_visit_card_compatible(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    self.assertTrue(host.ensure_paid_visit_card_compatible(target))
+            (target / "deploy").mkdir()
+            marker = "paid-visit-card-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with patch.object(host, "command") as command:
+                self.assertTrue(host.ensure_paid_visit_card_compatible(target))
+            command.assert_not_called()
+
+    def test_older_release_cannot_manage_explicit_paid_visit_card_recoveries(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-recovery-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "paid-visit card recoveries"),
+            ):
+                host.ensure_paid_visit_card_recovery_compatible(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    self.assertTrue(host.ensure_paid_visit_card_recovery_compatible(target))
+            (target / "deploy").mkdir()
+            marker = "paid-visit-card-recovery-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with patch.object(host, "command") as command:
+                self.assertTrue(host.ensure_paid_visit_card_recovery_compatible(target))
+            command.assert_not_called()
+
+    def test_older_release_cannot_manage_cancelled_paid_visit_source_releases(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-cancelled-release.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "cancelled paid-visit releases"),
+            ):
+                host.ensure_paid_visit_cancelled_release_compatible(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    self.assertTrue(host.ensure_paid_visit_cancelled_release_compatible(target))
+            (target / "deploy").mkdir()
+            marker = "paid-visit-cancelled-release-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with patch.object(host, "command") as command:
+                self.assertTrue(host.ensure_paid_visit_cancelled_release_compatible(target))
+            command.assert_not_called()
 
 
 class BookingUpgradeTests(TransactionTestCase):

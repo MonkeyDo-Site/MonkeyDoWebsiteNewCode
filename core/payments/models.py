@@ -75,7 +75,7 @@ class FinancialSale(FinancialFact):
         default="visit",
         choices=[
             (x, x.replace("_", " ").title())
-            for x in ("visit", "cancellation", "partial_fee", "adjustment")
+            for x in ("visit", "cancellation", "partial_fee", "adjustment", "membership")
         ],
     )
     booking_version = models.PositiveIntegerField(default=1)
@@ -177,7 +177,15 @@ class PaymentOperation(models.Model):
         default="arrival",
         choices=[
             (x, x.replace("_", " ").title())
-            for x in ("arrival", "cancellation", "no_show", "follow_up", "correction")
+            for x in (
+                "arrival",
+                "cancellation",
+                "no_show",
+                "follow_up",
+                "correction",
+                "member_purchase",
+                "member_installment",
+            )
         ],
     )
     amount = models.DecimalField(max_digits=14, decimal_places=2)
@@ -191,7 +199,7 @@ class PaymentOperation(models.Model):
     requested_at = models.DateTimeField(auto_now_add=True)
     dispatched_at = models.DateTimeField(null=True)
     completed_at = models.DateTimeField(null=True)
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
 
     class Meta:
         constraints = [
@@ -319,6 +327,11 @@ class PaymentSetup(models.Model):
     """One durable claim for a transient nonce exchange; the nonce is never saved."""
 
     id = models.UUIDField(primary_key=True, editable=False)
+    kind = models.CharField(
+        max_length=12,
+        default="booking",
+        choices=[("booking", "Booking"), ("membership", "Membership")],
+    )
     flow_hash = models.CharField(max_length=64, db_index=True)
     nonce_hash = models.CharField(max_length=64)
     customer = models.ForeignKey("core.Customer", null=True, on_delete=models.PROTECT)
@@ -398,26 +411,49 @@ class FinancialLineAdjustment(FinancialFact):
     reason = models.CharField(
         max_length=30,
         choices=[
-            ("tender_change", "Uncharged fee removed after tender change"),
+            ("tender_change", "Uncharged card fee adjusted for payment method"),
             ("owner_price", "Owner price correction"),
+            ("membership_refund", "Membership cancellation refund"),
+            ("membership_uncollected", "Cancelled membership amount never collected"),
+            ("membership_conversion", "Visit funds converted to membership credit"),
+            ("credit_application", "Uncharged fee adjusted for customer credit"),
         ],
     )
     net = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     fee = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     item_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     fee_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    scheduled_claim = models.OneToOneField(
+        "core.MembershipCollectionClaim",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="fee_adjustment",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["request_key", "line"], name="invoice_adjustment_line_unique"
-            )
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(actor__isnull=False, scheduled_claim__isnull=True)
+                    | models.Q(actor__isnull=True, scheduled_claim__isnull=False)
+                ),
+                name="invoice_adjustment_authority",
+            ),
         ]
 
 
 class BookingChargeState(models.Model):
+    membership_decision = models.ForeignKey(
+        "core.MembershipBookingDecision",
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="current_booking_states",
+    )
     supervised_exception_session = models.ForeignKey(
         "core.Session",
         null=True,

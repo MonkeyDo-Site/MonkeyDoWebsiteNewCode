@@ -1,0 +1,2 @@
+membership,customer_id,last_name,current_phone,current_email,type,places,starts_on,original_ends_on,effective_ends_on,billing,status,recorded_at_new_york
+M4,000004,Levin,2025550152,levin-membership@example.invalid,Subscription,1,2026-10-31,2026-11-30,2026-11-30,Complimentary,active,2026-10-31T10:00:00-04:00

@@ -2,6 +2,7 @@
 <h1>Add booking</h1><p class="caption">Review the visit, waivers and card, then confirm. Admission payment is collected at arrival.</p>
 <form id="customer-booking-form" class="record-form staff-create-form" method="post" data-staff-create data-draft="{{ flow.key }}" data-customer="{{ flow.customer_id|default:'' }}" data-sign-url="{% url 'staff_create_waiver' flow.key %}">
 {% include 'core/partials/wizard_identity.html' %}<input type="hidden" name="draft" value="{{ flow.key }}">{{ form.creation_key }}<input type="hidden" name="payment_consent" value="{{ card_accepted_consent }}"><input type="hidden" name="reviewed_hash"><input type="hidden" name="confirm" value="on">
+<div data-create-memberships>{% include 'core/partials/booking_memberships.html' %}</div>
 <div class="staff-create-top"><section class="panel"><h2>Visit details</h2>
 {% include 'core/partials/staff_create_field.html' with field=form.customer %}
 <div class="staff-create-session">{% include 'core/partials/staff_create_field.html' with field=form.session_date %}{% include 'core/partials/staff_create_field.html' with field=form.session %}</div>
@@ -21,4 +22,5 @@
 <p><a href="{% url 'bookings' %}">Return to bookings</a></p>
 <dialog class="staff-create-waiver-dialog" data-create-sign-dialog aria-label="Sign Waiver"><button type="button" class="text-button" data-create-sign-close>Close and return to booking</button><div data-create-sign-content></div><p role="status" data-create-sign-status></p></dialog>
 <script src="{% static 'core/staff-booking-create.js' %}" defer></script>
+{% include 'core/partials/booking_renewal_form.html' %}
 {% endblock %}

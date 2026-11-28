@@ -6,7 +6,18 @@ ZERO = Decimal("0.00")
 SOCKS = "Grip socks — pick up upon arrival"
 FEE_LABELS = {"Partial cancellation fee", "Cancellation fee"}
 OWNER = "Owner-priced admissions"
+MEMBER_CHILDREN = {
+    "Child admissions — Unlimited membership",
+    "Child admissions — Subscription free visits",
+    "Child admissions — Subscription additional visits",
+    "Supervised child admissions — Subscription discount",
+}
+CHILDREN = MEMBER_CHILDREN | {"Child admissions", "Supervised child admissions"}
 TYPES = {
+    "Child admissions — Unlimited membership": ("children", "admissions"),
+    "Child admissions — Subscription free visits": ("children", "admissions"),
+    "Child admissions — Subscription additional visits": ("children", "admissions"),
+    "Supervised child admissions — Subscription discount": ("children", "admissions"),
     "Child admissions": ("children", "admissions"),
     "Supervised child admissions": ("children", "admissions"),
     "Required baby admission": ("baby_minimum", "admissions"),
@@ -79,13 +90,90 @@ def compare_prices(original, current):
             entry["amount"] += Decimal(line["amount"])
         return result
 
-    old = items(old_lines)
-    new = items(new_lines)
     added = ZERO
     removed = ZERO
     add_names = []
     remove_names = []
     repricing = ZERO
+    benefit_delta = ZERO
+    if (
+        not owner_priced
+        and not complimentary
+        and any(line["label"] in MEMBER_CHILDREN for line in old_lines + new_lines)
+    ):
+        # Preserve the marginal paid admissions when free and paid children
+        # coexist. Averaging $15 over two free and one paid child would falsely
+        # describe a removed $15 admission as $5 plus a $10 price change.
+        def cost(lines, units):
+            remaining = units
+            result = ZERO
+            baskets = sorted(
+                (
+                    (Decimal(line["amount"]) / line["quantity"], line["quantity"])
+                    for line in lines
+                    if line["quantity"]
+                ),
+                reverse=True,
+            )
+            for unit, quantity in baskets:
+                taken = min(remaining, quantity)
+                result += unit * taken
+                remaining -= taken
+            return result.quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
+
+        categories = [(CHILDREN, "admissions", None)]
+        old_attendees, new_attendees = (
+            original.get("membership_attendees", {}),
+            current.get("membership_attendees", {}),
+        )
+        # Pre-membership ordinary quotes did not store attendee metadata. Their
+        # paid adult quantity excludes the first free adult. Recover that bound
+        # for comparison with a member quote so an allowance is not described
+        # as adults leaving the visit. Never infer an older member allowance.
+        old_adults_known = "adults" in old_attendees or not any(
+            line["label"] in MEMBER_CHILDREN for line in old_lines
+        )
+        new_adults_known = "adults" in new_attendees or not any(
+            line["label"] in MEMBER_CHILDREN for line in new_lines
+        )
+        if (
+            old_adults_known
+            and new_adults_known
+            and ("adults" in old_attendees or "adults" in new_attendees)
+        ):
+            categories.append(({"Additional adults"}, "adult admissions", "adults"))
+        for labels, name, attendee in categories:
+            before = [line for line in old_lines if line["label"] in labels]
+            after = [line for line in new_lines if line["label"] in labels]
+            old_qty = (
+                old_attendees.get(attendee, sum(line["quantity"] for line in before) + 1)
+                if attendee
+                else sum(line["quantity"] for line in before)
+            )
+            new_qty = (
+                new_attendees.get(attendee, sum(line["quantity"] for line in after) + 1)
+                if attendee
+                else sum(line["quantity"] for line in after)
+            )
+            plus, minus = (
+                cost(after, max(0, new_qty - old_qty)),
+                cost(before, max(0, old_qty - new_qty)),
+            )
+            added += plus
+            removed += minus
+            if plus:
+                add_names.append(name)
+            if minus:
+                remove_names.append(name)
+            benefit_delta += (
+                sum((Decimal(line["amount"]) for line in after), ZERO)
+                - sum((Decimal(line["amount"]) for line in before), ZERO)
+                - plus
+                + minus
+            )
+            skipped.update(labels)
+    old = items(old_lines)
+    new = items(new_lines)
     for key in sorted(old.keys() | new.keys()):
         before = (
             old[key] if key in old else {"quantity": 0, "amount": ZERO, "type": new[key]["type"]}
@@ -116,6 +204,7 @@ def compare_prices(original, current):
     row("Plus additional " + named_types(add_names) if add_names else "", added)
     row("Minus cancelled " + named_types(remove_names) if remove_names else "", -removed)
     row("Admission/item price adjustment", repricing)
+    row("Membership benefit adjustment", benefit_delta)
     old_fees = sum(
         (Decimal(line["amount"]) for line in old_lines if line["label"] in FEE_LABELS), ZERO
     )

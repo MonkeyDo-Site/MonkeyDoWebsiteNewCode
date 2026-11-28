@@ -1,3 +1,4 @@
 {% extends 'core/base.html' %}{% block title %}Memberships · MonkeyDo{% endblock %}{% block content %}
 {% include 'core/partials/memberships.html' with standalone=True %}
+{% if membership_sales_enabled %}<p><a class="button" href="{% url 'public_membership_join' %}">Choose a membership</a></p>{% endif %}
 {% endblock %}

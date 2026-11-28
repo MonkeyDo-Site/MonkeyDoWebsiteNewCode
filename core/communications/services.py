@@ -22,6 +22,7 @@ def enqueue(
     text,
     customer=None,
     booking=None,
+    membership=None,
     unsigned_waiver=False,
     actor=None,
 ):
@@ -38,6 +39,10 @@ def enqueue(
         "booking_id": booking.pk if booking else None,
         "template_version": "MD-EMAIL-2026-03",
     }
+    if membership is not None:
+        if customer is None or membership.customer_id != customer.pk:
+            raise ValidationError("The membership message belongs to another customer.")
+        data["membership_id"] = membership.pk
     message, created = MessageDelivery.objects.get_or_create(
         dedupe_key=key, defaults=data | {"fingerprint": fingerprint(data), "actor": actor}
     )
@@ -53,6 +58,18 @@ def enqueue(
 
 @transaction.atomic
 def claim(message_id):
+    notice_kinds = {"membership_expiry_notice", "membership_grace_notice"}
+    confirmation_kinds = {
+        "membership_confirmation",
+        "membership_renewal",
+        "membership_addition",
+        "membership_visit_confirmation",
+    }
+    scope = MessageDelivery.objects.only("kind", "customer_id", "membership_id").get(pk=message_id)
+    if (scope.kind in notice_kinds or scope.membership_id) and scope.customer_id:
+        from core.membership_reservations import lock_customer
+
+        lock_customer(scope.customer_id)
     # Lock this attempt only; its optional customer uses a nullable outer join.
     message = MessageDelivery.objects.select_for_update().get(pk=message_id)
     if message.state != "queued":
@@ -62,11 +79,116 @@ def claim(message_id):
             message.save(update_fields=["state", "code"])
             MessageEvent.objects.create(delivery=message, state="unknown", code=message.code)
         return None
+    from core.membership_calendar_emails import queue as refresh_calendar
+    from core.membership_calendar_emails import refresh_for_claim
+
+    calendar_current, calendar_source = refresh_for_claim(message)
+    if not calendar_current:
+        return None
+    scoped_refresh = (refresh_calendar, calendar_source) if calendar_source else None
+    if message.kind == "membership_renewal":
+        from core.membership_batch_renewals import group_for_message, queue_confirmation
+
+        batch = group_for_message(message)
+        if batch:
+            refreshed = queue_confirmation(batch)
+            if refreshed is None or refreshed.pk != message.pk or refreshed.state != "queued":
+                return None
+            scoped_refresh = (queue_confirmation, batch)
+    if message.kind in confirmation_kinds and message.membership_id:
+        from core.membership_funding import member_needs_review
+
+        if member_needs_review(message.membership):
+            message.state, message.code = "cancelled", "membership_funding_review"
+            message.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+            return None
+    if message.kind == "membership_visit_confirmation":
+        from core.membership_arrival import queue_confirmation as refresh_combined
+        from core.membership_records import MembershipArrivalCheckout
+
+        combined = (
+            MembershipArrivalCheckout.objects.filter(
+                purchase_id=message.membership_id, checkout__booking_id=message.booking_id
+            )
+            .select_related(
+                "purchase__billing_state", "checkout__booking__session", "checkout__sale"
+            )
+            .first()
+        )
+        if combined is None:
+            from core.membership_paid_visit import (
+                conversion_for,
+            )
+            from core.membership_paid_visit import (
+                queue_confirmation as refresh_paid_visit,
+            )
+
+            converted = conversion_for(message.membership)
+            if converted is None or converted.booking_id != message.booking_id:
+                message.state, message.code = "cancelled", "combined_payment_changed"
+                message.save(update_fields=["state", "code"])
+                MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+                return None
+            refresh_combined, combined = refresh_paid_visit, converted.purchase
+        refreshed = refresh_combined(combined)
+        if refreshed is None or refreshed.pk != message.pk or refreshed.state != "queued":
+            return None
+        scoped_refresh = (refresh_combined, combined)
+    if message.kind == "membership_requested_renewal":
+        from core.membership_prompt_emails import refresh
+        from core.membership_records import MembershipPromptEmail
+
+        evidence = (
+            MembershipPromptEmail.objects.select_related("authority")
+            .filter(message=message)
+            .first()
+        )
+        if evidence is None:
+            message.state, message.code = "cancelled", "requested_renewal_invalid"
+            message.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+            return None
+        refreshed = refresh(evidence.authority)
+        if refreshed is None or refreshed.pk != message.pk:
+            return None
+        scoped_refresh = (refresh, evidence.authority)
+    if message.kind in notice_kinds:
+        from core.membership_records import MembershipRenewalNoticeDelivery
+        from core.membership_renewal_notices import refresh_notice
+
+        evidence = (
+            MembershipRenewalNoticeDelivery.objects.select_related("notice")
+            .filter(message=message)
+            .first()
+        )
+        if evidence is None:
+            message.state, message.code = "cancelled", "membership_notice_invalid"
+            message.save(update_fields=["state", "code"])
+            MessageEvent.objects.create(delivery=message, state="cancelled", code=message.code)
+            return None
+        refreshed = refresh_notice(evidence.notice)
+        if refreshed is None or refreshed.pk != message.pk:
+            return None
+        scoped_refresh = (refresh_notice, evidence.notice)
+    if message.kind == "membership_cancellation" and message.membership_id:
+        from core.membership_cancellations import queue_cancellation
+
+        cancellation = message.membership.cancellations.order_by("-created_at").first()
+        if cancellation:
+            refreshed = queue_cancellation(cancellation, initial=False)
+            if refreshed and refreshed.pk != message.pk:
+                return None
     if (
         message.kind not in {"payment_issue", "email_issue", "backup_alert"}
         and message.customer_id
         and message.customer.email.casefold() != message.recipient.casefold()
     ):
+        if scoped_refresh:
+            # A contact can change after the first scope review. Keep the
+            # replacement tied to its original request/notice authority.
+            scoped_refresh[0](scoped_refresh[1])
+            return None
         message.state = "cancelled"
         message.code = "contact_changed"
         message.save(update_fields=["state", "code"])
@@ -94,6 +216,7 @@ def claim(message_id):
                 text=message.text_body,
                 customer=message.customer,
                 booking=message.booking,
+                membership=message.membership,
                 unsigned_waiver=message.unsigned_waiver,
                 actor=message.actor,
             )

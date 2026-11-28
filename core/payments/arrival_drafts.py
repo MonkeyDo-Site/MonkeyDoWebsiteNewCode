@@ -9,6 +9,8 @@ from django.utils import timezone
 
 KEY = "arrival_review_drafts"
 FIELDS = (
+    "pending_review",
+    "pending_reason",
     "request_key",
     "version",
     "children",
@@ -16,6 +18,7 @@ FIELDS = (
     "babies",
     "socks",
     "method",
+    "visit_credit",
     "cash_amount",
     "check_amount",
     "zelle_amount",
@@ -26,9 +29,36 @@ FIELDS = (
     "zelle_sender",
     "override_capacity",
     "special_admissions",
+    "apply_available_benefits",
+    "membership_resolution",
+    "membership_resolution_reason",
     "waiver_confirmed",
     "waiver_mismatch_accepted",
     "split_rows",
+    "member_add",
+    "member_kind",
+    "member_places",
+    "member_months",
+    "member_billing",
+    "member_first_method",
+    "member_cash_amount",
+    "member_check_amount",
+    "member_zelle_amount",
+    "member_gift_card_amount",
+    "member_recorded_zelle",
+    "member_received_on",
+    "member_zelle_sender",
+    "member_zelle_verified",
+    "member_starts_on",
+    "member_card",
+    "member_card_authorization",
+    "member_retain",
+    "member_credit",
+    "member_accepted",
+    "member_received",
+    "member_minimum_override",
+    "member_comped",
+    "member_send_confirmation",
 )
 PAPER_FIELDS = ("paper_signed", "signed_on", "signer_name", "relationship", "minors", "request_key")
 
@@ -95,4 +125,32 @@ def url(booking, token):
 def discard(request, token):
     values = drafts(request)
     values.pop(str(token), None)
+    request.session[KEY] = values
+
+
+def returned_funds(request, booking, token, returned, *, fresh_entries=False):
+    """Keep unsaved counts; a returned source must not become new received money."""
+    from .amounts import ZERO, amount
+
+    value = get(request, booking, token)
+    applied = value.setdefault("recorded_return_ids", [])
+    if str(returned.pk) in applied and not fresh_entries:
+        return
+    fields = value["fields"]
+    tender = returned.receipt.tender
+    name = tender + "_amount"
+    try:
+        prior = amount(fields.get(name) or "0")
+        fields[name] = f"{max(ZERO, prior - returned.amount):.2f}"
+    except ValidationError:
+        fields[name] = ""
+    # Rebuild split rows from the adjusted tender totals. Financial/waiver proofs
+    # are deliberately fresh; this draft is never payment authority.
+    fields["split_rows"] = ""
+    for name in ("zelle_verified", "gift_card_verified", "waiver_mismatch_accepted"):
+        fields[name] = ""
+    if str(returned.pk) not in applied:
+        applied.append(str(returned.pk))
+    values = drafts(request)
+    values[str(token)] = value
     request.session[KEY] = values

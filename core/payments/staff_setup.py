@@ -193,6 +193,9 @@ def finalize(*, actor, booking_id, flow, values):
         review.coverage_confirmed = True
         review.revision += 1
         review.save(update_fields=["coverage_confirmed", "revision", "updated_at"])
+    from core.membership_booking import confirm as confirm_membership
+
+    confirm_membership(booking, actor=actor)
     booking.setup_pending = False
     booking.save(update_fields=["setup_pending"])
     if booking.customer.email:
@@ -201,7 +204,7 @@ def finalize(*, actor, booking_id, flow, values):
             _, token = create_share(actor=actor, booking_id=booking.pk)
             waiver_url = settings.BOOKING_STAGING_ORIGIN + reverse("shared_waiver", args=[token])
         enqueue(
-            key=f"booking-confirmation:{booking.pk}",
+            key=f"booking-setup-confirmation:{booking.pk}:{booking.edit_version}",
             kind="booking_waiver" if waiver_url else "booking_confirmation",
             recipient=booking.customer.email,
             subject=session_subject(booking),

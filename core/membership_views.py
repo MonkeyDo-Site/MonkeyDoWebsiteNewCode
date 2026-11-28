@@ -69,9 +69,11 @@ class MembershipPricingForm(forms.ModelForm):
 @require_safe
 def drafts(request):
     customer = request.GET.get("customer", "")
-    records = MembershipDraft.objects.select_related(
-        "customer", "actor", "pricing", "fee_policy"
-    ).prefetch_related("revisions")
+    records = (
+        MembershipDraft.objects.select_related("customer", "actor", "pricing", "fee_policy")
+        .filter(purchase__isnull=True)
+        .prefetch_related("revisions")
+    )
     if customer.isascii() and customer.isdigit() and len(customer) <= 18:
         records = records.filter(customer_id=int(customer))
     page = paginate(request, records)
@@ -116,6 +118,8 @@ def draft_detail(request, pk):
         pk=pk,
     )
     root = draft
+    if hasattr(root, "purchase"):
+        return redirect("membership_overview", pk=root.pk)
     draft = current_draft(root)
     latest_number = draft.version_number
     selected = request.GET.get("revision", "")
@@ -230,6 +234,8 @@ def draft_edit(request, pk):
     root = get_object_or_404(
         MembershipDraft.objects.select_related("customer", "pricing", "fee_policy"), pk=pk
     )
+    if hasattr(root, "purchase"):
+        return redirect("membership_overview", pk=root.pk)
     draft = current_draft(root)
     form = DraftEditForm(
         request.POST if request.method == "POST" else None,

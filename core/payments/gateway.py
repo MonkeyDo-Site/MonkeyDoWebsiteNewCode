@@ -129,6 +129,12 @@ class Gateway:
         method = operation.method
         if not method or method.state != "active" or not method.provider_method:
             raise ProviderFailure("payment_method_unavailable")
+        installment = operation.purpose == "member_installment"
+        if operation.purpose == "member_purchase":
+            installment = (
+                operation.sale.membership_invoice.installment.purchase.membership.billing
+                == "monthly"
+            )
         payload = {
             "source": "pm-" + reference(method.provider_method),
             "amount": amount(operation.amount),
@@ -146,8 +152,8 @@ class Gateway:
             "transaction_flags": {
                 "allow_partial_approval": False,
                 "is_recurring": False,
-                "is_installment": False,
-                "is_customer_initiated": operation.purpose == "arrival",
+                "is_installment": installment,
+                "is_customer_initiated": operation.purpose in {"arrival", "member_purchase"},
                 "cardholder_present": operation.purpose == "arrival",
                 "card_present": False,
             },

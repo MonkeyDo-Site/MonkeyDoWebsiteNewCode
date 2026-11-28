@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
@@ -24,6 +25,11 @@ from .permissions import staff_permission
 @staff_permission("core.view_booking")
 @require_safe
 def dashboard(request):
+    from .customer_credit import expiry_notices as credit_expiry_notices
+    from .customer_credit import hold_notices as credit_hold_notices
+    from .membership_cancellations import notices as membership_cancellation_notices
+    from .membership_notices import payment_notices
+    from .membership_renewal_review import reviews as renewal_reviews
     from .payments.zelle import refund_notices
 
     alerts = (
@@ -33,6 +39,21 @@ def dashboard(request):
         request,
         "core/dashboard.html",
         {
+            "customer_credit_expiry": credit_expiry_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
+            "customer_credit_holds": credit_hold_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
+            "membership_cancellation_issues": membership_cancellation_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else {},
+            "membership_renewal_reviews": renewal_reviews(live_only=True)
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
+            "membership_payment_issues": payment_notices()
+            if settings.MEMBERSHIP_SALES_ENABLED and request.user.is_superuser
+            else [],
             "alerts": alerts,
             "waiver_pending_bookings": Booking.objects.filter(
                 workflow="integrated_v1",
@@ -127,6 +148,49 @@ def review_notice(request, pk):
     if not request.user.is_superuser:
         raise PermissionDenied
     notice = get_object_or_404(OwnerNotice.objects.select_for_update(), pk=pk)
+    if notice.details.get("kind") == "membership_arrival":
+        from .membership_records import MembershipArrivalState
+
+        if not MembershipArrivalState.objects.filter(
+            intent_id=notice.details.get("intent_id"), status="completed"
+        ).exists():
+            messages.error(
+                request, "Review and complete the membership arrival before clearing this notice."
+            )
+            return redirect("dashboard")
+        if notice.reviewed_at is None:
+            notice.reviewed_at, notice.reviewed_by = timezone.now(), request.user
+            notice.save(update_fields=["reviewed_at", "reviewed_by"])
+            AuditEvent.objects.create(
+                actor=request.user,
+                action="membership.arrival_notice_reviewed",
+                record_type="booking",
+                record_id=notice.details.get("booking_reference", str(notice.customer_id)),
+                changes={"notice_id": notice.pk},
+            )
+        return redirect("dashboard")
+    if notice.details.get("kind") == "paid_visit_membership":
+        from .membership_paid_visit_records import MembershipPaidVisitRelease
+
+        if not MembershipPaidVisitRelease.objects.filter(
+            intent_id=notice.details.get("intent")
+        ).exists():
+            messages.error(
+                request,
+                "Complete or safely stop the paid-visit application before clearing this notice.",
+            )
+            return redirect("dashboard")
+        if notice.reviewed_at is None:
+            notice.reviewed_at, notice.reviewed_by = timezone.now(), request.user
+            notice.save(update_fields=["reviewed_at", "reviewed_by"])
+            AuditEvent.objects.create(
+                actor=request.user,
+                action="membership.paid_visit_notice_reviewed",
+                record_type="membership",
+                record_id=str(notice.details.get("membership")),
+                changes={"notice_id": notice.pk},
+            )
+        return redirect("dashboard")
     if notice.reviewed_at is None:
         notice.reviewed_at = timezone.now()
         notice.reviewed_by = request.user

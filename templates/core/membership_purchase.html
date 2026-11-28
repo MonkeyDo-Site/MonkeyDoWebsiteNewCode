@@ -1,0 +1,37 @@
+{% extends 'core/staff_base.html' %}{% load static %}
+{% block staff_content %}
+<h1>{{ heading|default:'Purchase membership' }}</h1>
+{% if prior %}<p><a href="{% url 'customer_detail' prior.customer_id %}">{{ prior.customer.last_name }}</a> · <a href="{% url 'membership_overview' prior.pk %}">Original membership #{{ prior.membership_number }}</a> · {{ prior.membership.places }} {{ prior.membership.get_kind_display }} place{{ prior.membership.places|pluralize }}</p><p class="caption">The original membership keeps its accepted dates, price and history. This purchase creates a separate membership record.</p>{% endif %}
+{% if paid_visit %}<p><a href="{% url 'booking_detail' paid_visit.pk %}">{{ paid_visit.customer.last_name }} · {{ paid_visit.session.starts_at|date:'l, F j' }} · {{ paid_visit.session.starts_at|date:'g:i A' }}</a></p><p>Apply this visit's paid admissions toward the membership. Review the remaining payment and membership terms together.</p>{% else %}<p>Choose the membership, review the terms and collect the first payment together.</p>{% endif %}
+<form method="post" class="record-form membership-purchase" data-membership-purchase data-preview-url="{% url 'membership_offer' %}">{% csrf_token %}
+{{ form.non_field_errors }}{% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
+<div class="membership-purchase-grid">
+<div class="panel">
+<h2>{% if paid_visit %}Membership{% else %}Customer &amp; membership{% endif %}</h2>
+{% for field in form.visible_fields %}{% if field.name == 'customer' %}<div class="form-field">{{ field.errors }}<label for="customer-picker-search">Search customer by name or phone</label><input type="search" id="customer-picker-search" data-customer-search aria-controls="{{ field.id_for_label }}" autocomplete="off" placeholder="Type at least two characters"><span class="caption" data-picker-status role="status"></span>{{ field.label_tag }}{{ field }}</div>{% endif %}{% endfor %}
+<div class="membership-choice-grid">{% for field in form.visible_fields %}{% if field.name == 'kind' or field.name == 'places' or field.name == 'months' or field.name == 'billing' or field.name == 'starts_on' or field.name == 'expected_method' %}<div class="form-field">{{ field.errors }}{{ field.label_tag }}{{ field }}</div>{% endif %}{% endfor %}</div>
+{% if user.is_superuser %}<details><summary>Owner exceptions</summary>{% for field in form.visible_fields %}{% if field.name == 'minimum_override' or field.name == 'comped' and not paid_visit %}<div class="form-field checkbox-field">{{ field.errors }}<label>{{ field }} <span>{{ field.label }}</span></label></div>{% endif %}{% endfor %}<div class="form-field" data-comped-email hidden>{{ form.send_confirmation.errors }}{{ form.send_confirmation.label_tag }}{{ form.send_confirmation }}</div></details>{% endif %}
+<h2>Payment</h2>
+<div data-initial-credit{% if not credit_available %} hidden{% endif %}><p class="caption">Customer credit available: $<span data-credit-available>{{ credit_available|floatformat:2 }}</span></p><div class="form-field">{{ form.credit_amount.errors }}{{ form.credit_amount.label_tag }}{{ form.credit_amount }}<button type="button" class="button small secondary" data-use-initial-credit>Use available credit</button></div><p class="caption">Credit uses money already recorded. Only the remaining payment is collected now.</p></div>
+<div data-membership-first-split hidden><h3>First payment amounts received</h3><p class="caption">{% if paid_visit %}Enter only the new amounts received for the remaining membership balance. Cash, check, verified Zelle and a presented verified physical gift card can be combined. Original visit funds are already included; do not enter them again.{% else %}Enter only the amounts actually received for this membership. Any remaining amount is charged to the accepted card when you confirm.{% endif %}</p><div class="membership-choice-grid">{% for field in form.visible_fields %}{% if field.name == 'first_cash' or field.name == 'first_check' or field.name == 'first_zelle' or field.name == 'first_gift_card' %}<div class="form-field">{{ field.errors }}{{ field.label_tag }}{{ field }}</div>{% endif %}{% endfor %}</div><div data-first-zelle hidden>{% for field in form.visible_fields %}{% if field.name == 'first_zelle_sender' or field.name == 'first_zelle_received_on' %}<div class="form-field">{{ field.errors }}{{ field.label_tag }}{{ field }}</div>{% elif field.name == 'first_zelle_verified' %}<div class="form-field checkbox-field">{{ field.errors }}<label>{{ field }} <span>{{ field.label }}</span></label></div>{% endif %}{% endfor %}</div><div class="form-field checkbox-field" data-first-gift hidden>{{ form.first_gift_verified.errors }}<label>{{ form.first_gift_verified }} <span>{{ form.first_gift_verified.label }}</span></label></div></div>
+<div class="form-field" data-membership-card>{{ form.method.errors }}{{ form.method.label_tag }}{{ form.method }}<p class="caption" data-card-description>Monthly billing uses this card for the scheduled installments.</p></div>
+{% include 'core/partials/membership_card_entry.html' %}
+<div class="form-field checkbox-field" data-membership-receipt hidden>{{ form.verified_received.errors }}<label>{{ form.verified_received }} <span>{{ form.verified_received.label }}</span></label></div>
+<p class="caption" data-no-card-needed hidden>No saved card is required for this payment.</p>
+</div>
+<div>
+<article class="membership-price-card" data-membership-offer aria-live="polite">{% include 'core/partials/membership_offer.html' %}</article>
+<div class="membership-terms panel"><h2>Membership terms</h2><details><summary>Review the membership agreement</summary><p data-membership-terms>{{ offer.terms|default:'Your selected membership terms will appear here.' }}</p></details>
+<div class="form-field checkbox-field">{{ form.accepted.errors }}<label>{{ form.accepted }} <span>{{ form.accepted.label }}</span></label></div>
+<p class="notice" data-membership-error role="alert" hidden></p>
+<button type="submit" class="button" name="action" value="confirm" data-membership-confirm disabled>Confirm membership purchase</button>
+<p class="caption">Only this confirmation saves the purchase and collects the selected first payment.</p>
+<noscript><style>.membership-purchase [data-membership-first-split],.membership-purchase [data-first-zelle],.membership-purchase [data-first-gift],.membership-purchase [data-membership-receipt]{display:block!important}</style><p>Use Review total before confirming. For split payments, enter only the amounts actually received and verify each used payment source.</p><button type="submit" name="action" value="review">Review total</button>{% if offer %}<input type="hidden" name="reviewed" value="{{ offer.fingerprint }}"><button type="submit" name="action" value="confirm">Confirm membership purchase</button>{% endif %}</noscript>
+</div>
+</div>
+</div>
+</form>
+<p>{% if paid_visit %}<a href="{% url 'booking_detail' paid_visit.pk %}">Return to visit</a> · {% endif %}<a href="{% url 'active_memberships' %}">Return to memberships</a></p>
+<script src="{% static 'core/membership-purchase.js' %}" defer></script>
+{% if membership_card_configured %}<script src="https://tokenization.sandbox.banquestgateway.com/tokenization/v0.3" defer></script><script src="{% static 'core/membership-card.js' %}" defer></script>{% endif %}
+{% endblock %}

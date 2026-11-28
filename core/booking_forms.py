@@ -111,6 +111,11 @@ class TestBookingForm(forms.Form):
         label="Owner: adjust admissions price (optional)",
         help_text="Keep the agreed admissions total or adjust it here. Socks remain separate; attendee changes do not add an automatic cancellation fee.",
     )
+    apply_available_benefits = forms.BooleanField(
+        required=False,
+        label="Apply available Unlimited benefit",
+        help_text="Review the updated price before saving. Existing reservations are preserved until you save.",
+    )
     zelle_sender = forms.CharField(
         required=False, max_length=160, label="Zelle sender name/account"
     )
@@ -189,8 +194,15 @@ class TestBookingForm(forms.Form):
             self.fields.pop("special_admissions")
         else:
             self.initial["special_admissions"] = special.special_subtotal
+        from .membership_booking_exceptions import add_fields
+
+        add_fields(self, booking=booking, owner=owner)
         session_date_picker(self, booking)
         customer_picker(self)
+        from .membership_booking import has_available_daily
+
+        if booking is None or not has_available_daily(booking):
+            self.fields.pop("apply_available_benefits")
 
     def clean(self):
         data = super().clean()

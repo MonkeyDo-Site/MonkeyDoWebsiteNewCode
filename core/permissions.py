@@ -21,7 +21,8 @@ def staff_permission(permission):
 
 def require_actor(actor, permission, owner=False):
     if (
-        not actor.is_active
+        actor is None
+        or not actor.is_active
         or not actor.is_staff
         or not actor.has_perm(permission)
         or (owner and not actor.is_superuser)

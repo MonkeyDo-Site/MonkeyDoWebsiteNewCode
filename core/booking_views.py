@@ -41,6 +41,28 @@ def booking_detail(request, pk):
     booking = get_object_or_404(Booking.objects.select_related("customer", "session"), pk=pk)
     waiver_context = {}
     payment_context = {}
+    from .membership_arrival_pending import active_for_booking
+    from .membership_schema import available
+
+    if (
+        settings.MEMBERSHIP_SALES_ENABLED
+        and request.user.has_perm("core.view_membershippurchase")
+        and request.user.has_perm("core.view_paymentoperation")
+        and available("core_membershiparrivalclosure")
+    ):
+        from .membership_records import MembershipArrivalClosure
+
+        payment_context["stopped_arrivals"] = (
+            MembershipArrivalClosure.objects.filter(intent__booking=booking)
+            .select_related("intent__purchase__membership", "actor")
+            .order_by("-created_at")[:10]
+        )
+    pending_arrival = active_for_booking(pk)
+    if pending_arrival and request.user.has_perm("core.view_membershippurchase"):
+        payment_context["pending_membership_arrival"] = pending_arrival
+        from .membership_arrival_receipts import summary as pending_funds
+
+        payment_context["pending_visit_received"] = pending_funds(pending_arrival)["total"]
     if (
         settings.BOOKING_COMPLETION_ENABLED
         and request.user.has_perm("core.view_paymentoperation")
@@ -49,6 +71,68 @@ def booking_detail(request, pk):
         from .payments.checkout import summary
 
         payment_context["payment_summary"] = summary(booking)
+        if request.user.has_perm("core.view_membershippurchase") and available(
+            "core_visitmembershipconversion"
+        ):
+            from .customer_credit_records import VisitMembershipConversion
+
+            converted = (
+                VisitMembershipConversion.objects.filter(booking=booking)
+                .select_related("purchase__membership")
+                .first()
+            )
+            if converted and converted.details.get("paid_visit_purchase"):
+                payment_context["paid_visit_conversion"] = converted
+            from .membership_paid_visit_pending import active as paid_visit_active
+            from .membership_paid_visit_pending import available as paid_visit_available
+
+            held_visit = (
+                paid_visit_active()
+                .filter(booking=booking)
+                .select_related("purchase__membership")
+                .first()
+                if paid_visit_available()
+                else None
+            )
+            payment_context["pending_paid_visit"] = held_visit
+            from .availability import NEW_YORK
+            from .membership_sales import today
+
+            facts = payment_context["payment_summary"]
+            payment_context["can_purchase_from_paid_visit"] = bool(
+                settings.MEMBERSHIP_SALES_ENABLED
+                and converted is None
+                and held_visit is None
+                and booking.attendance == "arrived"
+                and booking.children
+                and booking.session.starts_at.astimezone(NEW_YORK).date() == today()
+                and facts.get("status") == "Paid"
+                and facts.get("received", 0) > 0
+                and request.user.has_perms(
+                    [
+                        "core.add_membershippurchase",
+                        "core.collect_payment",
+                        "core.change_booking",
+                        "core.view_customer",
+                    ]
+                )
+            )
+        if settings.MEMBERSHIP_SALES_ENABLED and request.user.has_perm(
+            "core.view_membershippurchase"
+        ):
+            from .membership_records import MembershipArrivalCheckout
+
+            payment_context["combined_arrival"] = (
+                MembershipArrivalCheckout.objects.filter(checkout__booking=booking)
+                .select_related("purchase__membership")
+                .first()
+            )
+            if payment_context["combined_arrival"]:
+                from .membership_arrival import receipt_summary
+
+                payment_context["combined_payment"] = receipt_summary(
+                    payment_context["combined_arrival"]
+                )
     if settings.WAIVER_ENABLED and request.user.has_perm("core.view_waiversignature"):
         from .waivers.forms import NamedPaperWaiverForm
 
@@ -189,7 +273,7 @@ def booking_edit(request, pk):
     show_reminder = False
     if request.method == "POST" and request.POST.get("load_sessions") != "1" and form.is_valid():
         try:
-            estimate = edit_estimate(booking, form.cleaned_data)
+            estimate = edit_estimate(booking, form.cleaned_data, actor=request.user)
             if estimate["amount_changed"] and not amount_reviewed(
                 form.cleaned_data.get("estimate_token", ""), estimate
             ):
@@ -251,7 +335,7 @@ def booking_estimate(request, pk):
     if not form.is_valid():
         return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
     try:
-        estimate = edit_estimate(booking, form.cleaned_data)
+        estimate = edit_estimate(booking, form.cleaned_data, actor=request.user)
     except ValidationError as exc:
         return JsonResponse({"error": " ".join(exc.messages)}, status=400)
     return JsonResponse(

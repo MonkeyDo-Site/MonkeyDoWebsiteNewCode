@@ -56,6 +56,14 @@ def send(delivery):
         "booking_waiver",
         "booking_cancelled",
         "booking_no_show",
+        "membership_cancellation",
+        "membership_confirmation",
+        "membership_visit_confirmation",
+        "membership_renewal",
+        "membership_addition",
+        "membership_expiry_notice",
+        "membership_grace_notice",
+        "membership_requested_renewal",
     }:
         from .presentation import confirmation_html
 

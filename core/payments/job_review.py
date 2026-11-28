@@ -15,6 +15,10 @@ from .models import DurableJob, PaymentMethod, PaymentOperation
 def disposition(job):
     if job.state != "blocked":
         return None, "This background task is not blocked."
+    if job.kind == "membership_collection":
+        from core.membership_collection_queue import disposition as membership_disposition
+
+        return membership_disposition(job)
     if job.kind == "payment_dispatch":
         operation = PaymentOperation.objects.get(pk=job.reference)
         if operation.state == "ready":

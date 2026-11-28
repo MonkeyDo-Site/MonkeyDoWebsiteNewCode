@@ -21,6 +21,9 @@ def enqueue(*, kind, reference, key):
         "method_remove",
         "customer_email",
         "email_event",
+        "membership_arrival",
+        "membership_collection",
+        "membership_paid_visit",
     }:
         raise ValidationError("Unsupported worker operation.")
     job, created = DurableJob.objects.get_or_create(
@@ -86,6 +89,18 @@ def run_one():
             message = deliver(job.reference)
             if message.state in {"sending", "unknown", "failed", "queued"}:
                 raise ValidationError("Email requires review before another attempt.")
+        elif job.kind == "membership_collection":
+            from core.membership_collection_queue import process
+
+            process(job)
+        elif job.kind == "membership_paid_visit":
+            from core.membership_paid_visit_pending import complete
+
+            complete(job.reference)
+        elif job.kind == "membership_arrival":
+            from core.membership_arrival_pending import complete
+
+            complete(job.reference)
         elif job.kind == "method_remove":
             from .methods import remove_unused
 

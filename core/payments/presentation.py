@@ -5,7 +5,7 @@ from .invoices import effective_components
 def invoice_breakdown(sale):
     effective = effective_components(sale)
     totals = {key: sum((row[key] for row in effective.values()), ZERO) for key in COMPONENTS}
-    return {
+    result = {
         "lines": [
             {
                 "label": line.description,
@@ -20,3 +20,25 @@ def invoice_breakdown(sale):
         "sales_tax": f"{totals['item_tax'] + totals['fee_tax']:.2f}",
         "total": f"{sum(totals.values(), ZERO):.2f}",
     }
+    if sale.booking_id:
+        # Member adult allowances change billable quantities without changing
+        # who attended. Preserve the accepted counts for the price explanation.
+        if "membership_attendees" in sale.quote.snapshot:
+            result["membership_attendees"] = sale.quote.snapshot["membership_attendees"]
+        from core.customer_credit_records import VisitMembershipConversion
+
+        conversion = (
+            VisitMembershipConversion.objects.select_related("updated_quote")
+            .filter(booking_id=sale.booking_id)
+            .first()
+        )
+        if conversion and str(sale.pk) == conversion.details.get("sale"):
+            saved = conversion.updated_quote.snapshot
+            if all(
+                saved.get(key) == result[key]
+                for key in ("subtotal", "processing_fee", "sales_tax", "total")
+            ):
+                result["lines"] = saved["lines"]
+                if "membership_attendees" in saved:
+                    result["membership_attendees"] = saved["membership_attendees"]
+    return result

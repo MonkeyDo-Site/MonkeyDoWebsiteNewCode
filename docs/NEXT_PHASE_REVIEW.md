@@ -2,6 +2,8 @@
 
 ## Latest owner direction
 
+**November 26, 2026:** the owner authorized all mapped active-membership development as one ongoing goal. Work has started in draft PR #37; representative samples will be presented early, with independent implementation/testing continuing during review. [Current implementation/evidence](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). This supersedes the earlier review hold in the next paragraph; no repeated go-ahead is required for the agreed scope. Merge/deployment/live activation remain separate.
+
 The owner reports PR #33 deployed and is reviewing the completed booking edits. Active membership planning/design/development remains on hold until explicit go-ahead. Preserve the [third-stage roadmap and experience principles](THIRD_STAGE_ROADMAP.md): at-a-glance information, compact pages, combined workflows, clear navigation and minimal clicks. This records the direction without beginning requirements reconciliation or screen design. Earlier status snapshots below are historical.
 
 Initial review: November 16, 2026. Updated after the owner-reported PR #27

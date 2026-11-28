@@ -11,7 +11,7 @@ from .booking_management import calculate_quote, check_editable
 SALT = "staff-booking-amount-reminder-v1"
 
 
-def edit_estimate(booking, data):
+def edit_estimate(booking, data, *, actor=None):
     check_editable(booking, data["version"])
     saved = booking.quotes.first()
     if not saved:
@@ -24,10 +24,27 @@ def edit_estimate(booking, data):
     }
     if data.get("special_admissions") is not None:
         values["special_admissions"] = data["special_admissions"]
+    values["session"] = data["session"]
+    if data.get("membership_resolution"):
+        from .membership_booking_exceptions import resolve
+
+        values["membership_resolution_decision"] = resolve(
+            booking,
+            actor=actor,
+            choice=data["membership_resolution"],
+            reason=data.get("membership_resolution_reason", ""),
+            session=data["session"],
+        )
+    if data.get("apply_available_benefits"):
+        values["apply_available_benefits"] = True
     quote = calculate_quote(booking, saved.policy, values)
     payload = {
         **{
-            key: str(value) if key == "special_admissions" else value
+            key: str(value)
+            if key == "special_admissions"
+            else value.pk
+            if key == "session"
+            else value
             for key, value in values.items()
         },
         "session": data["session"].pk,

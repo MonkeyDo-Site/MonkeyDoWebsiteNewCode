@@ -41,6 +41,13 @@ def received(sale):
     return value
 
 
+def settled(sale):
+    """Funding assigned to this invoice; converted money is not assigned twice."""
+    from core.customer_credit import applied, transferred
+
+    return received(sale) + applied(sale) - transferred(sale)
+
+
 def noncard_components(sale):
     from .ledger import RESERVED, used_components
 
@@ -49,6 +56,12 @@ def noncard_components(sale):
     ).exists():
         raise ValidationError("Reconcile the uncertain card outcome before changing its tender.")
     used = used_components(sale.operations.filter(kind="receipt", state__in=RESERVED))
+    from core.customer_credit import applied_components
+
+    for key, values in applied_components(sale).items():
+        prior = used.setdefault(key, {part: ZERO for part in COMPONENTS})
+        for part in COMPONENTS:
+            prior[part] += values[part]
     current = effective_components(sale)
     lines = list(sale.lines.all())
     retained_fees = [used.get(str(line.pk), {}).get("fee", ZERO) for line in lines]

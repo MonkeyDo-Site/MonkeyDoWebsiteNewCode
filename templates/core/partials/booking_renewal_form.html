@@ -1,0 +1,1 @@
+{% load static %}{% if membership_sales_enabled and renewal_form_url %}<form id="membership-renewal-actions" action="{{ renewal_form_url }}" method="post" target="_blank" rel="noopener" hidden>{% csrf_token %}</form><script src="{% static 'core/booking-renewal.js' %}" defer></script>{% endif %}

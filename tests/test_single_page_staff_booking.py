@@ -188,6 +188,7 @@ class SinglePageStaffBookingTests(RuntimeRoleMixin, TestCase):
         lines = booking.quotes.first().snapshot["lines"]
         self.assertEqual(lines[0]["amount"], "20.00")
         self.assertEqual(lines[1]["amount"], "3.98")
+        self.assertFalse(lines[1]["taxable"])
         self.assertEqual(str(booking.charge_state.special_subtotal), "20.00")
 
     def test_nonowner_cannot_forge_complimentary_price_or_close_session(self):

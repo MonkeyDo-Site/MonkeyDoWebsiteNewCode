@@ -1,0 +1,11 @@
+{% if benefit_error %}<p class="notice" role="alert">{{ benefit_error }}</p>{% endif %}
+{% if benefit_updated %}<p class="notice" role="status">Your available Unlimited benefit has been applied. No payment was taken.</p>{% endif %}
+{% if available_benefit %}
+<section class="membership-price-card" aria-labelledby="available-benefit-heading">
+<h3 id="available-benefit-heading">Apply available Unlimited benefit</h3>
+<dl class="membership-totals"><dt>Current booking total</dt><dd>${{ available_benefit.previous.snapshot.total }}</dd><dt class="total">With the available benefit</dt><dd class="total">${{ available_benefit.quote.total }}</dd></dl>
+<details><summary>See updated price breakdown</summary>{% include 'core/partials/payment_quote.html' with data=available_benefit.quote receipt_adjustment=available_benefit.adjustment %}</details>
+<p class="caption">Confirm to reserve this benefit and update your booking price.</p>
+<form method="post" data-available-membership-benefit>{% csrf_token %}{{ benefit_form.request_key }}{{ benefit_form.reviewed_hash }}<button type="submit" name="confirmed" value="1" class="button">Confirm updated price — ${{ available_benefit.quote.total }}</button></form>
+</section>
+{% endif %}

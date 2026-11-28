@@ -203,3 +203,92 @@ class AdjustmentWorkflowTests(TestCase):
         self.assertEqual(booking.children, 1)
         self.assertFalse(booking.attendance)
         self.assertFalse(PaymentOperation.objects.exists())
+
+
+class MemberAdjustmentTests(SimpleTestCase):
+    def test_ordinary_quote_without_metadata_keeps_new_adult_allowance_out_of_cancellations(self):
+        old = quote([("Child admissions", 1, "15"), ("Additional adults", 2, "10")])
+        new = quote(
+            [("Child admissions — Unlimited membership", 1, "0"), ("Additional adults", 1, "5")],
+            membership_attendees={"adults": 3},
+        )
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [("Membership benefit adjustment", Decimal("-20"))],
+        )
+
+    def test_ordinary_historical_quote_still_separates_an_actual_removed_adult(self):
+        old = quote([("Child admissions", 1, "15"), ("Additional adults", 2, "10")])
+        new = quote(
+            [("Child admissions — Unlimited membership", 1, "0")],
+            membership_attendees={"adults": 2},
+        )
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [
+                ("Minus cancelled adult admissions", Decimal("-5")),
+                ("Membership benefit adjustment", Decimal("-20")),
+            ],
+        )
+
+    def test_removing_one_paid_child_does_not_average_its_price_with_two_free_children(self):
+        free = "Child admissions — Subscription free visits"
+        old = quote([(free, 2, "0"), ("Child admissions", 1, "15")])
+        new = quote([(free, 2, "0")])
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [("Minus cancelled admissions", Decimal("-15"))],
+        )
+
+    def test_applying_benefit_to_same_child_is_price_adjustment_not_cancellation(self):
+        old = quote([("Child admissions", 1, "15")])
+        new = quote([("Child admissions — Unlimited membership", 1, "0")])
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [("Membership benefit adjustment", Decimal("-15"))],
+        )
+
+    def test_stacked_adult_allowance_is_benefit_adjustment_when_no_adults_leave(self):
+        old = quote(
+            [
+                ("Child admissions — Subscription free visits", 1, "0"),
+                ("Additional adults", 1, "5"),
+            ],
+            membership_attendees={"adults": 3},
+        )
+        new = quote(
+            [
+                ("Child admissions — Subscription free visits", 1, "0"),
+                ("Child admissions — Unlimited membership", 1, "0"),
+            ],
+            membership_attendees={"adults": 3},
+        )
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [("Membership benefit adjustment", Decimal("-5"))],
+        )
+
+    def test_paid_admissions_are_removed_before_free_and_discounted_places(self):
+        old = quote(
+            [
+                ("Child admissions — Subscription free visits", 2, "0"),
+                ("Child admissions — Subscription additional visits", 1, "5.99"),
+                ("Child admissions", 2, "30"),
+            ]
+        )
+        new = quote(
+            [
+                ("Child admissions — Subscription free visits", 2, "0"),
+                ("Child admissions — Subscription additional visits", 1, "5.99"),
+            ]
+        )
+        result = compare_prices(old, new)
+        self.assertEqual(
+            [(row["label"], row["delta"]) for row in result["rows"]],
+            [("Minus cancelled admissions", Decimal("-30"))],
+        )

@@ -1,5 +1,6 @@
 import uuid
 from datetime import timedelta
+from decimal import Decimal
 from functools import wraps
 
 from django import forms
@@ -7,28 +8,26 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.cache import add_never_cache_headers
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
-from . import public_verification
+from . import public_identity, public_verification
 from .account_security import allow_security_request
 from .booking_progress import progress
-from .forms import normalize_phone, payment_method_choices
+from .forms import payment_method_choices
 from .models import Booking, Customer, PricingPolicy, SiteSettings
-from .name_matching import similar_name
 from .public_booking import (
     LIFETIME,
     assert_flow,
-    canonical_name,
     customer_from_flow,
-    lookup_phone,
-    profile_proof,
     public_session,
     review_quote,
     submit_booking,
 )
+from .public_identity import ContactForm, RequiredEmailForm
 
 SESSION_KEY = "customer_test_booking"
 
@@ -82,115 +81,6 @@ def limit(request, action, count=30):
         f"public-booking:{action}:{request.META.get('REMOTE_ADDR', 'unknown')}", count
     ):
         raise ValidationError("Please wait before trying again, or call/text 848-238-5147.")
-
-
-class PhoneForm(forms.Form):
-    visited = forms.ChoiceField(
-        choices=[("no", "No"), ("yes", "Yes")],
-        widget=forms.RadioSelect,
-        label="Have you visited MonkeyDo before?",
-    )
-    phone = forms.CharField(
-        max_length=40,
-        label="Enter your phone number",
-        widget=forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}),
-    )
-
-    def clean_phone(self):
-        return normalize_phone(self.cleaned_data["phone"])
-
-
-class NameForm(forms.Form):
-    last_name = forms.CharField(max_length=120, label="Last Name")
-
-
-class SimilarNameForm(forms.Form):
-    pass  # The explicit Continue action confirms the phone-selected spelling match.
-
-
-class RetryPhoneForm(forms.Form):
-    phone = forms.CharField(
-        max_length=40,
-        required=False,
-        label="Try another phone number",
-        widget=forms.TextInput(attrs={"type": "tel"}),
-    )
-
-    def clean_phone(self):
-        if self.data.get("continue_new") == "1":
-            return ""
-        return normalize_phone(self.cleaned_data["phone"], optional=True)
-
-
-class EmailRecoveryForm(forms.Form):
-    email = forms.EmailField(label="Email address")
-
-
-def recovery_match_kind(flow, customer):
-    """Match current email plus earlier inputs; never request a surname twice."""
-    phone_customer = lookup_phone(flow["phone"])
-    if phone_customer is not None:
-        return "phone_email" if phone_customer.pk == customer.pk else None
-    entered_name = flow.get("entered_name", "")
-    return "name_email" if entered_name and similar_name(entered_name, customer.last_name) else None
-
-
-class ContactForm(forms.Form):
-    show_required_contact = True
-
-    last_name = forms.CharField(max_length=120, label="Last Name")
-    email = forms.EmailField(label="Email address")
-    referral_source = forms.CharField(
-        max_length=240, required=False, label="How did you hear about MonkeyDo?"
-    )
-
-    def __init__(self, *args, phone=None, **kwargs):
-        self.phone = phone
-        super().__init__(*args, **kwargs)
-
-    def clean_email(self):
-        from .customers import check_email_available
-
-        email = self.cleaned_data["email"].strip().lower()
-        try:
-            check_email_available(email)
-        except ValidationError:
-            from .customers import public_duplicate_email_message
-
-            raise ValidationError(
-                public_duplicate_email_message(email, self.phone), code="duplicate_email"
-            ) from None
-        return email
-
-
-class RequiredEmailForm(forms.Form):
-    email = forms.EmailField(label="Email address")
-
-    def __init__(self, *args, phone=None, **kwargs):
-        self.phone = phone
-        super().__init__(*args, **kwargs)
-
-    def clean_email(self):
-        from .customers import check_email_available
-
-        email = self.cleaned_data["email"].strip().lower()
-        try:
-            check_email_available(email)
-        except ValidationError:
-            from .customers import public_duplicate_email_message
-
-            raise ValidationError(
-                public_duplicate_email_message(email, self.phone), code="duplicate_email"
-            ) from None
-        return email
-
-
-class PreviousPhoneForm(forms.Form):
-    confirm_phone = forms.ChoiceField(
-        choices=[("yes", "Yes"), ("no", "No")],
-        widget=forms.RadioSelect,
-        label="Is this your current phone number?",
-    )
 
 
 class AvailablePlayRadio(forms.RadioSelect):
@@ -325,6 +215,14 @@ def display(request, flow, *, form=None, error=None, notice=None):
     session = public_session(flow["session_id"])
     customer = customer_from_flow(flow) if flow.get("proof") else None
     completing = flow.get("workflow") == "integrated_v1"
+    from .membership_booking import summaries
+    from .membership_booking_prompts import context as prompt_context
+
+    membership_rows = (
+        summaries(customer.pk if customer else None, session, flow.get("quote"))
+        if completing
+        else []
+    )
     card = {}
     if completing and flow["stage"] == "review":
         from .payments.setup import selected_consent
@@ -350,6 +248,18 @@ def display(request, flow, *, form=None, error=None, notice=None):
                 waivers=completing,
             ),
             "flow": flow,
+            "membership_rows": membership_rows,
+            **(
+                prompt_context(
+                    customer=customer,
+                    flow=flow,
+                    source="public",
+                    pending_email=flow.get("contact_email", ""),
+                )
+                if completing and flow["stage"] == "details"
+                else {}
+            ),
+            "renewal_form_url": reverse("public_membership_choice"),
             "booking_history_page": True,
             "waiver_choices": form if flow["stage"] == "waiver" else None,
             **card,
@@ -427,22 +337,10 @@ def wizard(request):
         from .waivers.coverage_forms import CoverageForm
 
         confirm_type = CompletedConfirmForm if completing else ConfirmForm
-        form_type = {
-            "phone": PhoneForm,
-            "retry_phone": RetryPhoneForm,
-            "name": public_verification.NameOrEmailForm
-            if flow.get("verification_entry") == "returning_current"
-            else NameForm,
-            "name_confirm": SimilarNameForm,
-            "email_lookup": EmailRecoveryForm,
-            "email_confirm": SimilarNameForm,
-            "previous": PreviousPhoneForm,
-            "contact": ContactForm,
-            "email": RequiredEmailForm,
+        form_type = public_identity.form_type(flow) or {
             "details": DetailsForm,
             "review": confirm_type,
             "waiver": CoverageForm if completing else None,
-            **public_verification.FORMS,
         }.get(stage)
         if form_type is None:
             raise ValidationError("Start a new booking session.")
@@ -493,158 +391,20 @@ def wizard(request):
 
             remember_answers(flow, stage, form, request.POST)
             save(request, flow)
-            if public_verification.handle(flow, form, stage):
+            identity_step = public_identity.advance(flow, form, post=request.POST)
+            if identity_step is not None:
                 save(request, flow)
-                if form.errors:
-                    return display(request, flow, form=form)
-                return redirect("customer_booking")
-            if stage == "phone":
-                # Re-entering identity always re-verifies it; never retain an old
-                # profile proof or contact while processing another phone.
-                for field in (
-                    "proof",
-                    "candidate",
-                    "candidate_name",
-                    "contact",
-                    "contact_email",
-                    "payment_consent",
-                    "waiver_coverage",
-                    "waiver_share_requested",
-                ):
-                    flow.pop(field, None)
-                if not allow_security_request("public-booking-phone:" + data["phone"], 8):
-                    raise ValidationError(
-                        "Please call or text 848-238-5147 for help with this booking."
-                    )
-                customer = lookup_phone(data["phone"])
-                flow["phone"] = data["phone"]
-                flow["visited"] = data["visited"]
-                flow["stage"] = "contact"
-                flow["contact_origin"] = "new"
-                flow["lookup_note"] = not bool(customer)
-                if not customer and data["visited"] == "yes":
-                    flow["stage"] = "retry_phone"
-                if customer:
-                    flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
-                    flow["stage"] = "name" if customer.phone == data["phone"] else "previous"
-                    if flow["stage"] == "name":
-                        flow["verification_entry"] = "returning_current"
-                    if flow["stage"] == "previous":
-                        flow["current_phone"] = customer.phone
-            elif stage == "retry_phone":
-                phone = data.get("phone")
-                if request.POST.get("continue_new") == "1":
-                    flow["stage"] = "contact"
-                    flow["contact_origin"] = "explicit_new"
-                elif not phone:
-                    form.add_error(
-                        "phone", "Enter another phone number, or choose Continue as a new customer."
-                    )
-                    return display(request, flow, form=form)
-                else:
-                    if not allow_security_request("public-booking-phone:" + phone, 8):
-                        raise ValidationError(
-                            "Please call/text 848-238-5147 for help with this booking."
-                        )
-                    customer = lookup_phone(phone)
-                    flow["phone"] = phone
-                    if customer:
-                        flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
-                        flow["stage"] = "name" if customer.phone == phone else "previous"
-                        if flow["stage"] == "name":
-                            flow["verification_entry"] = "returning_current"
-                        if flow["stage"] == "previous":
-                            flow["current_phone"] = customer.phone
-                    else:
-                        flow["stage"] = "contact"
-                        flow["contact_origin"] = "retry_unmatched"
-                        flow["lookup_note"] = True
-            elif stage == "email_lookup":
-                address = data["email"].strip().lower()
-                if not allow_security_request("public-booking-email:" + address, 8):
-                    raise ValidationError(
-                        "Please wait before trying again, or call/text 848-238-5147."
-                    )
-                customer = Customer.objects.filter(email__iexact=address).first()
-                matched_by = recovery_match_kind(flow, customer) if customer is not None else None
-                if not matched_by:
-                    # Only the unmatched-phone failure from comment 8 loses its
-                    # introduction. Other legacy recovery contexts retain theirs.
-                    if lookup_phone(flow["phone"]) is None:
-                        flow["unmatched_email_failed"] = True
-                        save(request, flow)
-                    form.add_error(
-                        None,
-                        "We couldn't match those details. Please try again or call/text 848-238-5147 for help.",
-                    )
-                    return display(request, flow, form=form)
-                flow["candidate"] = {"id": customer.pk, "revision": customer.revision}
-                flow["candidate_name"] = customer.last_name
-                flow["recovery_match_kind"] = matched_by
-                flow["recovery_email"] = address
-                flow["stage"] = "email_confirm"
-            elif stage in {"name", "name_confirm", "previous", "email_confirm"}:
-                candidate = flow["candidate"]
-                customer = Customer.objects.get(pk=candidate["id"])
-                if customer.revision != candidate["revision"]:
-                    raise ValidationError("Customer details changed. Please start again.")
-                if stage == "name":
-                    flow["entered_name"] = data["last_name"]
-                    exact = canonical_name(data["last_name"]) == canonical_name(customer.last_name)
-                    if not exact and similar_name(data["last_name"], customer.last_name):
-                        flow["entered_name"] = data["last_name"]
-                        flow["candidate_name"] = customer.last_name
-                        flow["stage"] = "name_confirm"
-                        save(request, flow)
-                        return redirect("customer_booking")
-                    matched = exact
-                elif stage == "email_confirm":
-                    matched = customer.email.casefold() == flow.get(
-                        "recovery_email", ""
-                    ).casefold() and bool(recovery_match_kind(flow, customer))
-                elif stage == "name_confirm":
-                    matched = similar_name(flow.get("entered_name", ""), customer.last_name)
-                else:
-                    matched = data["confirm_phone"] == "yes"
-                if not matched and stage in {"name", "name_confirm"}:
-                    flow["stage"] = "email_lookup"
-                    flow.pop("candidate_name", None)
-                    save(request, flow)
-                    recovery = EmailRecoveryForm()
-                    flow["recovery_notice"] = (
-                        "We couldn't match that name to the entered phone number."
-                    )
-                    save(request, flow)
-                    return display(request, flow, form=recovery)
-                if not matched:
-                    flow["stage"] = "blocked"
-                    save(request, flow)
-                    message = (
-                        f"The last name you entered doesn't match the name on record for number {flow['phone']}. We would love to get your booking completed as soon as possible. Please call or text 848-238-5147 and we'll be happy to help you with it."
-                        if stage in {"name", "name_confirm"}
-                        else "We would love to get your booking finalized as soon as possible. Please call/text 848-238-5147 for assistance with this booking."
-                    )
+                if identity_step.error:
                     return render(
-                        request, "core/customer_booking.html", {"error": message}, status=400
+                        request,
+                        "core/customer_booking.html",
+                        {"error": identity_step.error},
+                        status=400,
                     )
-                flow.pop("lookup_note", None)
-                flow.pop("contact", None)
-                flow["proof"] = profile_proof(customer, flow["key"])
-                flow["verification_mode"] = stage
-                flow["stage"] = "details" if customer.email else "email"
-            elif stage == "email":
-                flow["contact_email"] = data["email"]
-                flow["stage"] = "details"
-            elif stage == "contact":
-                flow.pop("lookup_note", None)
-                flow["new_contact_ready"] = True
-                flow["contact"] = {
-                    "last_name": data["last_name"].strip(),
-                    "email": data["email"],
-                    "referral_source": data["referral_source"],
-                }
-                flow["stage"] = "details"
-            elif stage == "details":
+                if identity_step.display:
+                    return display(request, flow, form=identity_step.form)
+                return redirect("customer_booking")
+            if stage == "details":
                 if (
                     flow.get("details", {}).get("expected_method", data["expected_method"])
                     != data["expected_method"]
@@ -739,8 +499,14 @@ def wizard(request):
         return render(request, "core/customer_booking.html", {"error": message}, status=400)
 
 
+class AvailableBenefitForm(forms.Form):
+    request_key = forms.UUIDField(widget=forms.HiddenInput)
+    reviewed_hash = forms.CharField(max_length=64, widget=forms.HiddenInput)
+    confirmed = forms.BooleanField(label="Confirm the updated booking price")
+
+
 @enabled
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def receipt(request):
     try:
         flow = current(request)
@@ -757,20 +523,82 @@ def receipt(request):
         raise Http404
     from .communications.content import zelle_instructions
 
+    benefit, benefit_form, benefit_error = None, None, ""
+    if settings.MEMBERSHIP_SALES_ENABLED and booking.workflow == "integrated_v1":
+        from . import membership_public_benefits
+
+        if request.method == "POST":
+            posted = AvailableBenefitForm(request.POST)
+            if posted.is_valid():
+                try:
+                    limit(request, "available-membership-benefit", 15)
+                    membership_public_benefits.confirm(flow=flow, **posted.cleaned_data)
+                    return redirect(reverse("customer_booking_receipt") + "?benefit=updated")
+                except ValidationError as error:
+                    benefit_error = " ".join(error.messages)
+            else:
+                benefit_error = "Review the updated price and confirm it using the button below."
+        try:
+            benefit = membership_public_benefits.review(flow=flow)
+        except ValidationError:
+            pass
+        if benefit:
+            benefit_form = AvailableBenefitForm(
+                initial={"request_key": uuid.uuid4(), "reviewed_hash": benefit["fingerprint"]}
+            )
+    elif request.method == "POST":
+        raise Http404
     quote = booking.quotes.first()
+    from .payments.zelle import facts as zelle_facts
+    from .price_adjustments import booking_price_adjustment
+
+    prepaid = zelle_facts(booking) if booking.workflow == "integrated_v1" else None
+    credit_receipt = None
+    if booking.attendance == "arrived" and booking.workflow == "integrated_v1":
+        from .payments.checkout import summary as payment_summary
+
+        funding = payment_summary(booking)
+        if funding.get("credit_applied"):
+            # Only this private booking's aggregate funding is exposed, never
+            # the wallet, original source references or other visits.
+            credit_receipt = {
+                "applied": funding["credit_applied"],
+                "received": funding["total_received"],
+                "due": funding["due"],
+            }
+
     return render(
         request,
         "core/customer_booking_receipt.html",
         {
             "booking": booking,
+            "available_benefit": benefit,
+            "benefit_form": benefit_form,
+            "benefit_error": benefit_error,
+            "receipt_prepayment": prepaid if not booking.attendance else None,
+            "receipt_credit": credit_receipt,
+            "receipt_quote_label": "Reviewed visit total"
+            if credit_receipt
+            else "Booking price estimate"
+            if prepaid and prepaid["received"] and not booking.attendance
+            else "",
+            "benefit_updated": bool(
+                request.GET.get("benefit") == "updated"
+                and quote
+                and quote.snapshot.get("public_membership_benefit")
+            ),
             "zelle_instructions": zelle_instructions()
             if booking.workflow == "integrated_v1"
             and booking.expected_method == "zelle"
             and not booking.attendance
             and quote is not None
             and not quote.snapshot.get("owner_comped")
+            and (not prepaid or prepaid["available"] < Decimal(quote.snapshot["total"]))
             else "",
             "quote": quote,
+            "receipt_adjustment": booking_price_adjustment(booking, quote.snapshot)
+            if quote and booking.workflow == "integrated_v1"
+            else None,
             "progress_steps": progress(
                 5 if booking.workflow == "integrated_v1" else 4,
                 done=True,
@@ -939,11 +767,30 @@ def live_estimate(request):
                 status=400,
             )
         quote = review_quote(flow, form.cleaned_data)
+        from .membership_booking import summaries
+        from .membership_booking_prompts import context as prompt_context
+
+        customer = customer_from_flow(flow) if flow.get("proof") else None
+        membership = {
+            **prompt_context(
+                customer=customer,
+                flow=flow,
+                source="public",
+                pending_email=flow.get("contact_email", ""),
+            ),
+            "membership_rows": summaries(
+                customer.pk if customer else None, public_session(flow["session_id"]), quote
+            ),
+            "session": public_session(flow["session_id"]),
+        }
         return JsonResponse(
             {
+                "membership_html": render_to_string(
+                    "core/partials/booking_memberships.html", membership, request=request
+                ),
                 "html": render_to_string(
                     "core/partials/live_quote.html", {"data": quote}, request=request
-                )
+                ),
             },
             headers={"Cache-Control": "private, no-store"},
         )

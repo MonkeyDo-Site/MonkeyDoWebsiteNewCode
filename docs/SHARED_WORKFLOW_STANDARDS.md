@@ -1,5 +1,9 @@
 # Shared workflow and screen standards for the remaining stages
 
+## Active-membership stage now authorized
+
+The owner authorized the full third-stage scope on November 26, 2026; the earlier review holds below are historical. Draft PR #37 follows [the current implementation plan](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). Carry forward PR #36's combined backend booking page, visible capacity/session-block controls, 30-minute backend capacity holds and read-only current-waiver summaries with an explicit coverage/email-link choice. The public 20-minute booking-form limit is unchanged. Benefit reservations occur at confirmed booking, separately from temporary capacity holds. Retain the at-a-glance, compact, clear-navigation and few-click principles throughout member workflows.
+
 ## Ninth review carry-forward
 
 Separate live estimate validation from final action validation. Keep prices updating while a waiver or tender verification answer is still missing, but disable final confirmation until all required decisions are explicit. Preserve private actor/booking/version-bound arrival drafts through card/signing side flows, serializing saves before departure. A draft is never attendance, money received or a payment request. Read-only result polling must not dispatch another card operation.

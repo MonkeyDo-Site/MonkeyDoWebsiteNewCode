@@ -3,12 +3,14 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_safe
 
 from .customers import correct_previous_phone, create_customer, save_comment, update_customer
 from .forms import CommentForm, CustomerForm, PreviousPhoneForm, phone_search_digits
+from .membership_sales import membership_status
 from .memberships import current_draft
 from .models import AuditEvent, Customer, CustomerComment, PaymentOperation, WaiverSignature
 from .name_matching import match_rank, name_candidates
@@ -111,9 +113,23 @@ def customer_list(request):
 
 
 @staff_permission("core.view_customer")
-@require_safe
+@require_http_methods(["GET", "HEAD", "POST"])
 def customer_detail(request, pk):
+    from .customer_credit import balance as credit_balance
+    from .customer_credit import held_balance
+    from .customer_credit_correction_views import ACTIONS, controls
+    from .customer_credit_records import (
+        CustomerCreditApplication,
+        CustomerCreditCorrection,
+        CustomerCreditIssue,
+    )
+
     customer = get_object_or_404(Customer, pk=pk)
+    if request.method == "POST" and request.POST.get("action") not in ACTIONS:
+        return HttpResponseNotAllowed(["GET", "HEAD"])
+    response, correction_context = controls(request, customer)
+    if response is not None:
+        return response
     bookings = customer.bookings.select_related("session").order_by("session__starts_at", "pk")
     can_view_bookings = request.user.has_perm("core.view_booking")
     if not can_view_bookings:
@@ -125,11 +141,51 @@ def customer_detail(request, pk):
         if request.user.has_perm("core.view_customercomment")
         else []
     )
+    purchased_memberships = []
+    if settings.MEMBERSHIP_SALES_ENABLED and request.user.has_perm("core.view_membershippurchase"):
+        from .membership_calendar_changes import with_calendar
+
+        for member in (
+            with_calendar(customer.membership_purchases.all())
+            .filter(calendar_ends_on__gte=today)
+            .select_related("membership", "billing_state")
+            .order_by("calendar_ends_on", "pk")[:3]
+        ):
+            purchased_memberships.append((member, membership_status(member)))
     return render(
         request,
         "core/customer_detail.html",
         {
+            **correction_context,
             "customer": customer,
+            "credit_corrections": CustomerCreditCorrection.objects.filter(customer=customer)
+            .select_related("actor")
+            .order_by("-created_at", "-pk")[:10]
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else [],
+            "credit_held": held_balance(customer.pk)
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else 0,
+            "credit_issues": CustomerCreditIssue.objects.filter(customer=customer)
+            .select_related("conversion__booking")
+            .order_by("-created_at", "-pk")[:5]
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else [],
+            "credit_applications": CustomerCreditApplication.objects.filter(customer=customer)
+            .select_related(
+                "sale__membership_invoice__installment__purchase", "booking_checkout__booking"
+            )
+            .order_by("-created_at", "-pk")[:5]
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else [],
+            "credit_balance": credit_balance(customer.pk)
+            if settings.MEMBERSHIP_SALES_ENABLED
+            and request.user.has_perm("core.view_paymentoperation")
+            else 0,
             "customer_waivers": WaiverSignature.objects.filter(
                 Q(customer_links__customer=customer) | Q(booking_links__booking__customer=customer)
             )
@@ -156,12 +212,13 @@ def customer_detail(request, pk):
             "comments": comments,
             "membership_drafts": [
                 current_draft(root)
-                for root in customer.membership_drafts.select_related(
-                    "pricing", "fee_policy"
-                ).prefetch_related("revisions")
+                for root in customer.membership_drafts.filter(purchase__isnull=True)
+                .select_related("pricing", "fee_policy")
+                .prefetch_related("revisions")
             ]
             if request.user.has_perm("core.view_membershipdraft")
             else [],
+            "purchased_memberships": purchased_memberships,
             "can_view_bookings": can_view_bookings,
             "first_today": todays[0] if todays else None,
             "more_today": todays[1:],
@@ -319,6 +376,8 @@ def customer_history(request, pk):
     )
     if not request.user.has_perm("core.view_customercomment"):
         events = events.exclude(action__in=["customer.comment_added", "customer.comment_updated"])
+    if not request.user.has_perm("core.view_paymentoperation"):
+        events = events.exclude(action__in=["customer.credit_removed", "customer.credit_restored"])
     page = Paginator(events, 30).get_page(request.GET.get("page"))
     labels = {
         "customer.created": "Customer created",
@@ -332,6 +391,8 @@ def customer_history(request, pk):
         "customer.comment_updated": "Comment edited",
         "customer.email_history_archived": "Previous email archived",
         "customer.previous_phone_corrected": "Previous phone corrected",
+        "customer.credit_removed": "Customer credit removed",
+        "customer.credit_restored": "Customer credit restored",
     }
     fields = {
         "last_name": "Last Name",
@@ -377,6 +438,19 @@ def customer_history(request, pk):
                     "after": "Preserved in a dated staff comment",
                 }
             ]
+        elif event.action in {"customer.credit_removed", "customer.credit_restored"}:
+            rows = [
+                {"label": "Amount", "before": "", "after": "$" + data.get("amount", "")},
+                {"label": "Reason", "before": "", "after": data.get("reason", "")},
+            ]
+            for key, label in (
+                ("before_available", "Available before"),
+                ("after_available", "Available afterward"),
+                ("before_held", "Awaiting source-payment review before"),
+                ("after_held", "Awaiting source-payment review afterward"),
+            ):
+                if key in data:
+                    rows.append({"label": label, "before": "", "after": "$" + data[key]})
         for row in rows:
             if row["label"] == "Customer type":
                 row["before"] = dict(Customer._meta.get_field("customer_type").choices).get(
@@ -389,6 +463,8 @@ def customer_history(request, pk):
             "customer.created",
             "customer.public_test_created",
             "customer.comment_added",
+            "customer.credit_removed",
+            "customer.credit_restored",
         }
         event.change_rows = rows
     return render(request, "core/customer_history.html", {"customer": customer, "events": page})

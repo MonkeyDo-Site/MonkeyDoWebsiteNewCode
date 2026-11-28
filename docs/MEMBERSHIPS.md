@@ -1,5 +1,7 @@
 # Membership requirements
 
+Active-membership implementation is now authorized and underway in draft PR #37. The [implementation plan](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md) tracks the full scope, early sample review and actual evidence. Current functional purchases, payments, reservations, owner controls and renewal communications, together with unfinished work, are recorded there. Existing draft records remain inactive until an explicit purchase.
+
 Current owner decisions consolidated November 5, 2026. [Main requirements](MONKEYDO_REQUIREMENTS.md), [payments](PAYMENTS.md), and [email wording](EMAIL_TEMPLATES.md) supply shared behavior. These rules are not implemented by this documentation change.
 
 ## Current foundation and next-stage inheritance

@@ -1,6 +1,12 @@
 # Staging build status
 
-## Current: ninth review and tenth-document follow-up — draft PR #35
+## Current: active memberships — draft PR #37 in progress
+
+The owner authorized the entire saved third stage under one ongoing goal, with compact combined screens, early sample review and no repeated go-ahead requests. PR #36 is merged and its verified deployment handoff was supplied; the owner said deployment would begin, without a completion report yet. The baseline has 712 passing application tests and passing GitHub checks.
+
+The first new implementation increment adds a pure membership-benefit pricing planner with **26 passing focused tests** for the approved examples, anonymous-place limits, mixed adult allowances, appointment-month/day eligibility, exclusions and owner-price/comped separation. No active memberships, payments or durable benefit reservations are claimed yet. Purchase/member-overview/booking samples and the remaining payment, entitlement, renewal, conversion and credit scenarios are in progress. See [the implementation plan](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md). No deployment or external financial action has occurred.
+
+## Earlier: ninth review and tenth-document follow-up — PR #35
 
 PR #34 is merged; the ninth source screenshots predate that deployment. PR #35 covers preserved staff arrival/card/signing flows, named waivers and audited discrepancy confirmation, non-card splits/card remainders, true processing/results, pricing fixes, compact backend notices/cards and booking comments. The tenth document combines gallery corrections with deployed-site issues and stays in this same PR. It adds verified email-profile recovery/confirmation, the approved clear profile-choice wording, linked child/minimum pricing, card-only cancellation/no-show fees (with existing Zelle reconciliation), payment/layout/copy corrections and immediate attendee guidance. See the [updated gallery](design-review/ninth-review/README.md), [ninth scope](NINTH_BATCH_REVIEW.md) and [tenth follow-up](TENTH_BATCH_REVIEW.md). Actual Banquest field rendering remains pending access to its tokenization host; gallery card fields/outcomes are simulated. All 688 local PostgreSQL tests and desktop/phone browser checks pass. Migration 0052 remains the only schema addition; no hosted migration or deployment has been performed. The owner now authorizes merge and deployment while deferring the cloud-settings/actual Banquest layout check. See [the as-built test guide](NINTH_TENTH_TEST_GUIDE.md) and its Word copy; the pinned ZIP and one PowerShell block accompany the merged release. Cash change is deferred, and active membership stage work remains on hold.
 

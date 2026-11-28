@@ -1,6 +1,10 @@
 # MonkeyDo current website requirements
 
-Latest release authorization: merge PR #35 and prepare the pinned ZIP/single deployment block now. The owner defers the cloud-environment issue and actual Banquest layout acceptance until later. No production activation is requested.
+## Current third-stage authorization — November 26, 2026
+
+The owner authorized the complete active-membership roadmap under one continuing goal, with early functional samples and review in draft PR #37. No repeated go-ahead is needed for mapped development. Use [the implementation plan](ACTIVE_MEMBERSHIP_IMPLEMENTATION.md) and [third-stage experience principles](THIRD_STAGE_ROADMAP.md). PR #36 is merged at `91612c8bea19cd951afb390ab7194da61edd3f57`; the owner said deployment would begin, without a completion report yet. Initial member-pricing work is tested but not connected to active purchase/benefit persistence. Older review holds below are historical and superseded. Merge/deployment/live activation retain their separate release authorization.
+
+Earlier release authorization: merge PR #35 and prepare the pinned ZIP/single deployment block. The owner defers the cloud-environment issue and actual Banquest layout acceptance until later. No production activation is requested.
 
 ## Tenth document follow-up — same PR #35
 

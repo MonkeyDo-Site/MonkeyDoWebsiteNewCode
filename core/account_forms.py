@@ -10,6 +10,10 @@ SAFE_STAFF_PERMISSIONS = {
     "view_paymentoperation",
     "collect_payment",
     "change_membershipdraft",
+    "view_membershippurchase",
+    "add_membershippurchase",
+    "change_membershippurchase",
+    "export_membership_records",
     "view_membershipdraft",
     "add_membershipdraft",
     "view_booking",
@@ -23,6 +27,7 @@ SAFE_STAFF_PERMISSIONS = {
     "add_customercomment",
     "change_customercomment",
 }
+DEFAULT_STAFF_PERMISSIONS = SAFE_STAFF_PERMISSIONS - {"export_membership_records"}
 
 
 class OwnerCodeForm(forms.Form):
@@ -70,7 +75,7 @@ class StaffAccountForm(forms.Form):
             )
         else:
             initial["permissions"] = Permission.objects.filter(
-                content_type__app_label="core", codename__in=SAFE_STAFF_PERMISSIONS
+                content_type__app_label="core", codename__in=DEFAULT_STAFF_PERMISSIONS
             )
             initial["is_active"] = True
         super().__init__(*args, initial=initial, **kwargs)

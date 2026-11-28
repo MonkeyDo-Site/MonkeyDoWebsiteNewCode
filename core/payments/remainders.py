@@ -15,6 +15,7 @@ from .invoices import effective_components, noncard_components, remove_unpaid_ca
 from .jobs import enqueue
 from .ledger import (
     RESERVED,
+    check_receipt_tender,
     fingerprint,
     lock_request,
     record_manual,
@@ -59,6 +60,19 @@ def preview(
     if checkout is None or checkout.sale is None:
         raise ValidationError("There is no reviewed balance to collect.")
     sale = checkout.sale
+    from core.customer_credit import applied_components, held_on
+
+    if held_on(sale):
+        raise ValidationError(
+            "A customer-credit source needs owner review before another collection."
+        )
+    from core.membership_arrival import for_sale, membership_funded
+
+    combined = for_sale(sale.pk)
+    if combined and not membership_funded(combined):
+        raise ValidationError(
+            "The membership funding needs owner reconciliation before another visit payment. No new charge was requested."
+        )
     if (
         retry_declined
         and not sale.operations.filter(kind="receipt", tender="card", state="declined").exists()
@@ -77,6 +91,10 @@ def preview(
         )
     desired = effective_components(sale) if method == "card" else noncard_components(sale)
     used = used_components(sale.operations.filter(kind="receipt", state__in=RESERVED))
+    for key, values in applied_components(sale).items():
+        prior = used.setdefault(key, {part: ZERO for part in COMPONENTS})
+        for part in COMPONENTS:
+            prior[part] += values[part]
     allocation = []
     for key, values in desired.items():
         remaining = {part: values[part] - used.get(key, {}).get(part, ZERO) for part in COMPONENTS}
@@ -94,6 +112,7 @@ def preview(
     )
     if value <= ZERO:
         raise ValidationError("This reviewed balance is already settled.")
+    check_receipt_tender(sale, allocation, method)
     method_id = None
     last_four = ""
     if method == "card":

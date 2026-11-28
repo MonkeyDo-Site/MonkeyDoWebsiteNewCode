@@ -504,11 +504,12 @@ class MembershipDraft(ImmutablePriceRecord):
             ("check", "Check"),
             ("zelle", "Zelle"),
             ("gift_card", "Gift card"),
+            ("split", "Split payment"),
         ],
     )
     snapshot = models.JSONField()
     creation_key = models.UUIDField(unique=True, editable=False)
-    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -648,6 +649,77 @@ class SessionReservationBlock(models.Model):
 # Registered with the existing core app; strings in FKs avoid import cycles.
 from .backups.models import BackupDownload, BackupRestoreCheck, BackupRun  # noqa: E402,F401
 from .communications.models import MailProviderEvent, MessageDelivery, MessageEvent  # noqa: E402,F401
+from .customer_credit_records import (  # noqa: E402,F401
+    CustomerCreditAllocation,
+    CustomerCreditApplication,
+    CustomerCreditCorrection,
+    CustomerCreditCorrectionAllocation,
+    CustomerCreditIssue,
+    VisitMembershipConversion,
+)
+from .membership_batch_credit_records import (  # noqa: E402,F401
+    MembershipCreditRenewalBatch,
+    MembershipCreditRenewalMessage,
+    MembershipCreditRenewalPart,
+)
+from .membership_batch_records import (  # noqa: E402,F401
+    MembershipRenewalBatch,
+    MembershipRenewalBatchBank,
+    MembershipRenewalBatchMessage,
+    MembershipRenewalBatchPart,
+)
+from .membership_calendar_records import (  # noqa: E402,F401
+    MembershipCalendarCorrection,
+    MembershipCalendarMessage,
+    MembershipCalendarState,
+)
+from .membership_paid_visit_records import (  # noqa: E402,F401
+    MembershipPaidVisitCancellation,
+    MembershipPaidVisitCardStorage,
+    MembershipPaidVisitIntent,
+    MembershipPaidVisitManualPayment,
+    MembershipPaidVisitRecovery,
+    MembershipPaidVisitRelease,
+)
+from .membership_paid_visit_split_records import (  # noqa: E402,F401
+    MembershipPaidVisitSplit,
+    MembershipPaidVisitSplitCard,
+)
+from .membership_records import (  # noqa: E402,F401
+    MembershipArrivalCheckout,
+    MembershipArrivalClosure,
+    MembershipArrivalEvent,
+    MembershipArrivalIntent,
+    MembershipArrivalReceipt,
+    MembershipArrivalReceiptApplication,
+    MembershipArrivalReceiptReturn,
+    MembershipArrivalResolution,
+    MembershipArrivalState,
+    MembershipBankAllocation,
+    MembershipBenefitAssignment,
+    MembershipBenefitBatch,
+    MembershipBenefitEvent,
+    MembershipBenefitState,
+    MembershipBilling,
+    MembershipBillingAction,
+    MembershipBookingDecision,
+    MembershipCancellation,
+    MembershipCardAuthorization,
+    MembershipCardMandate,
+    MembershipCollectionClaim,
+    MembershipInstallment,
+    MembershipInvoice,
+    MembershipOrigin,
+    MembershipPublicAcceptance,
+    MembershipPublicCheckout,
+    MembershipPurchase,
+    MembershipRefundAttempt,
+    MembershipRefundPlan,
+    MembershipRenewalLink,
+    MembershipRenewalLinkRevocation,
+    MembershipRenewalNotice,
+    MembershipRenewalNoticeDelivery,
+)
 from .payments.models import (  # noqa: E402,F401
     BookingCardAgreement,
     BookingChargeState,

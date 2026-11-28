@@ -161,6 +161,9 @@ def check_editable(booking, version):
             "Booking changed while you were editing. Reload and review the latest record."
         )
     if booking.workflow == "integrated_v1":
+        from .membership_arrival_pending import check_access
+
+        check_access(booking)
         from .booking_completion import enabled
         from .payments.models import PaymentOperation
 
@@ -183,6 +186,10 @@ def check_editable(booking, version):
 
 
 def calculate_quote(booking, policy, values=None):
+    from . import membership_booking
+
+    if membership_booking.active(booking):
+        return membership_booking.booking_quote(booking, policy, values)
     fields = ("children", "adults", "babies", "socks", "supervised", "expected_method")
     editing = values is not None
     values = values or {key: getattr(booking, key) for key in fields}
@@ -243,12 +250,32 @@ def calculate_quote(booking, policy, values=None):
     return data
 
 
-def write_quote(booking, policy, actor):
+def write_quote(booking, policy, actor, *, apply_available_benefits=False):
+    from .membership_booking import lock
+
+    lock(booking)
     return BookingQuote.objects.create(
         booking=booking,
         policy=policy,
         revision=booking.edit_version,
-        snapshot=calculate_quote(booking, policy),
+        snapshot=calculate_quote(
+            booking,
+            policy,
+            {
+                key: getattr(booking, key)
+                for key in (
+                    "children",
+                    "adults",
+                    "babies",
+                    "socks",
+                    "supervised",
+                    "expected_method",
+                )
+            }
+            | {"apply_available_benefits": True}
+            if apply_available_benefits
+            else None,
+        ),
         actor=actor,
     )
 
@@ -396,14 +423,30 @@ def edit_test_booking(
     zelle_sender=None,
     special_admissions=None,
     supervised_exception=False,
+    apply_available_benefits=False,
+    membership_resolution="",
+    membership_resolution_reason="",
 ):
     lock_calendar(exclusive=close_session or reopen_affected_sessions)
     if close_session or reopen_affected_sessions:
         require_actor(actor, "core.change_session", owner=True)
     require_actor(actor, "core.change_booking")
     require_actor(actor, "core.view_booking")
+    if type(apply_available_benefits) is not bool:
+        raise ValidationError("Review the available membership benefit choice.")
     booking = Booking.objects.select_for_update().get(pk=booking_id)
     check_editable(booking, version)
+    from .membership_booking_exceptions import persist as persist_membership_decision
+    from .membership_booking_exceptions import resolve as resolve_membership_decision
+
+    if membership_resolution:
+        resolve_membership_decision(
+            booking,
+            actor=actor,
+            choice=membership_resolution,
+            reason=membership_resolution_reason,
+            session=session,
+        )
     target_id = session.pk if session is not None else booking.session_id
     supervised = booking.supervised if supervised is None else supervised
     sessions = {
@@ -460,6 +503,20 @@ def edit_test_booking(
         from .waivers.models import BookingWaiverReview
 
         state, _ = BookingChargeState.objects.get_or_create(booking=booking)
+        if membership_resolution:
+            from .membership_booking import lock
+
+            lock(booking)
+            persist_membership_decision(
+                actor=actor,
+                booking=booking,
+                state=state,
+                choice=membership_resolution,
+                reason=membership_resolution_reason,
+                request_key=uuid.uuid5(
+                    booking.reference, f"owner-membership:{booking.edit_version}"
+                ),
+            )
         if supervised_exception:
             require_actor(actor, "core.change_booking", owner=True)
             state.supervised_exception_session = session
@@ -480,7 +537,15 @@ def edit_test_booking(
             else max(0, state.pending_fee_units + before["children"] - booking.children)
         )
         state.revision += 1
-        state.save(update_fields=["pending_fee_units", "revision", "special_subtotal"])
+        state.save(
+            update_fields=[
+                "pending_fee_units",
+                "revision",
+                "special_subtotal",
+                "membership_decision",
+            ]
+        )
+        booking.charge_state = state
         from .payments.comped import notify_count_change
 
         notify_count_change(
@@ -512,9 +577,26 @@ def edit_test_booking(
         before[field] != getattr(booking, field)
         for field in ("children", "adults", "babies", "socks", "supervised", "expected_method")
     )
+    from . import membership_booking
+
+    if membership_booking.active(booking):
+        price_changed = (
+            price_changed
+            or old_session.pk != session.pk
+            or apply_available_benefits
+            or bool(membership_resolution)
+        )
     if booking.workflow == "integrated_v1" and special_admissions is not None:
         price_changed = price_changed or old_special != state.special_subtotal
-    quote = write_quote(booking, current.policy, actor) if price_changed else current
+    quote = (
+        write_quote(
+            booking, current.policy, actor, apply_available_benefits=apply_available_benefits
+        )
+        if price_changed
+        else current
+    )
+    if price_changed and not booking.setup_pending:
+        membership_booking.confirm(booking, actor=actor)
     AuditEvent.objects.create(
         actor=actor,
         action="booking.updated",
@@ -582,6 +664,15 @@ def move_test_booking(
     booking.session = target
     booking.edit_version += 1
     booking.save()
+    from . import membership_booking
+
+    if membership_booking.active(booking):
+        saved = booking.quotes.first()
+        if saved is None:
+            raise ValidationError("Review the current membership price before changing timing.")
+        write_quote(booking, saved.policy, actor)
+        if not booking.setup_pending:
+            membership_booking.confirm(booking, actor=actor)
     AuditEvent.objects.create(
         actor=actor,
         action="booking.timing_changed",
