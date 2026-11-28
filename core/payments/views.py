@@ -191,11 +191,15 @@ def payment_detail(request, pk):
         and operation.sale.booking_id
         and summary(operation.sale.booking).get("can_retry")
     )
+    from core.payment_receipt_evidence import receipt_evidence
+
+    evidence = receipt_evidence([operation]).get(operation.pk)
     return render(
         request,
         "core/payment_detail.html",
         {
             "operation": operation,
+            "receipt_evidence": evidence,
             "form": form,
             "followup_form": followup_form,
             "can_retry": can_retry,

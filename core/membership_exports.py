@@ -4,6 +4,7 @@ import csv
 import io
 import tempfile
 import uuid
+from itertools import batched
 
 from django import forms
 from django.core.exceptions import PermissionDenied
@@ -25,6 +26,7 @@ REPORTS = {
     "benefits": "Benefit usage",
     "arrival_funds": "Arrival funds",
     "arrival_fund_events": "Arrival fund history",
+    "paid_visit_events": "Paid visit application history",
 }
 CONTACT = ["customer_id", "last_name", "current_phone", "current_email"]
 
@@ -103,6 +105,11 @@ def payment_rows(records):
         "completed_at_new_york",
         "latest_reported_settlement_date",
         "provider_observed_at_new_york",
+        "receipt_origin",
+        "recorded_sender",
+        "earlier_receipt_reference",
+        "earlier_receipt_recorded_by_id",
+        "earlier_receipt_recorded_at_new_york",
     ]
     operations = PaymentOperation.objects.filter(
         sale__membership_invoice__installment__purchase_id__in=records.values("pk")
@@ -114,39 +121,50 @@ def payment_rows(records):
         .prefetch_related("postings", "observations")
         .order_by("requested_at", "pk")
     )
-    for operation in operations.iterator(chunk_size=500):
-        installment = operation.sale.membership_invoice.installment
-        parts = {
-            key: sum((getattr(posting, key) for posting in operation.postings.all()), ZERO)
-            if operation.state == "succeeded"
-            else ZERO
-            for key in COMPONENTS
-        }
-        observed = max(
-            operation.observations.all(), key=lambda row: (row.observed_at, row.pk), default=None
-        )
-        yield [
-            installment.purchase.membership_number,
-            *contact(operation.sale.customer),
-            installment.number,
-            installment.due_on,
-            stamp(operation.sale.service_at),
-            operation.sale.environment,
-            operation.sale.currency,
-            str(operation.pk),
-            str(operation.original_id or ""),
-            operation.kind,
-            operation.tender,
-            operation.state,
-            operation.amount,
-            *[parts[key] for key in COMPONENTS],
-            sum(parts.values(), ZERO),
-            stamp(operation.requested_at),
-            operation.manual_received_on,
-            stamp(operation.completed_at),
-            observed.settled_date if observed else "",
-            stamp(observed.observed_at) if observed else "",
-        ]
+    from .payment_receipt_evidence import receipt_evidence
+
+    for batch in batched(operations.iterator(chunk_size=500), 500):
+        evidence = receipt_evidence(batch)
+        for operation in batch:
+            installment = operation.sale.membership_invoice.installment
+            parts = {
+                key: sum((getattr(posting, key) for posting in operation.postings.all()), ZERO)
+                if operation.state == "succeeded"
+                else ZERO
+                for key in COMPONENTS
+            }
+            observed = max(
+                operation.observations.all(),
+                key=lambda row: (row.observed_at, row.pk),
+                default=None,
+            )
+            yield [
+                installment.purchase.membership_number,
+                *contact(operation.sale.customer),
+                installment.number,
+                installment.due_on,
+                stamp(operation.sale.service_at),
+                operation.sale.environment,
+                operation.sale.currency,
+                str(operation.pk),
+                str(operation.original_id or ""),
+                operation.kind,
+                operation.tender,
+                operation.state,
+                operation.amount,
+                *[parts[key] for key in COMPONENTS],
+                sum(parts.values(), ZERO),
+                stamp(operation.requested_at),
+                operation.manual_received_on,
+                stamp(operation.completed_at),
+                observed.settled_date if observed else "",
+                stamp(observed.observed_at) if observed else "",
+                evidence.get(operation.pk, {}).get("origin", ""),
+                evidence.get(operation.pk, {}).get("sender", ""),
+                evidence.get(operation.pk, {}).get("receipt_id", ""),
+                evidence.get(operation.pk, {}).get("source_actor_id", ""),
+                stamp(evidence.get(operation.pk, {}).get("source_recorded_at")),
+            ]
 
 
 def benefit_rows(records):
@@ -207,6 +225,7 @@ def benefit_rows(records):
 
 
 def export_response(request, records, form):
+    from .membership_paid_visit_exports import paid_visit_rows
     from .membership_source_exports import source_event_rows, source_rows
 
     require_actor(request.user, "core.export_membership_records")
@@ -217,7 +236,7 @@ def export_response(request, records, form):
         require_actor(request.user, "core.view_paymentoperation")
     if report == "benefits":
         require_actor(request.user, "core.view_booking")
-    if report in {"arrival_funds", "arrival_fund_events"}:
+    if report in {"arrival_funds", "arrival_fund_events", "paid_visit_events"}:
         require_actor(request.user, "core.view_booking")
         require_actor(request.user, "core.view_paymentoperation")
     makers = {
@@ -226,6 +245,7 @@ def export_response(request, records, form):
         "benefits": benefit_rows,
         "arrival_funds": source_rows,
         "arrival_fund_events": source_event_rows,
+        "paid_visit_events": paid_visit_rows,
     }
     document = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
     text = io.TextIOWrapper(document, encoding="utf-8-sig", newline="")

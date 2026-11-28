@@ -37,6 +37,7 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: release original visit funds after membership cancellation** | **[129–132](#129--cancelled-membership-with-a-refund-still-due)** |
 | **New: enter a card for the remaining first payment** | **[133–135](#133--enter-a-new-card-for-the-original-remainder)** |
 | **New: record a received replacement payment on the same page** | **[136–138](#136--record-a-received-replacement-after-a-known-card-failure)** |
+| **New: recorded bank details and paid-visit history download** | **[139–140](#139--recorded-bank-details-on-the-existing-payment-page)** |
 
 Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **136–138** show the full received-payment alternative after a known card failure, including recovery without duplicate collection. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
 
@@ -1409,3 +1410,22 @@ A simulated local conversion failure leaves a real recorded fictional check rece
 
 
 Developer verification: the complete PostgreSQL suite passed **1,730 tests in 841.103 seconds** before the final manual-only cancellation-source safeguard and removal of the redundant application checkbox. After those changes, **111 focused checks passed in 133.077 seconds**, including all 18 manual-receipt cases, seven real PostgreSQL concurrency/reversal/runtime cases, existing card/storage/cancellation behavior, reviewed deployment and two actual Chromium scenarios. The final native inventory is 1,731; a complete local 1,731-test run is not claimed. All six final 1440px/390px images for samples 136–138 were visually inspected. Browser checks cover conditional bank fields, exact receipt/application totals and recovery without duplicate money; no overflow, JavaScript errors, duplicate IDs or nested forms were found. All 577 Python files pass lint/format checks; model drift, JavaScript syntax, diff whitespace, all 276 PNGs/gallery links and all 64 migration pins pass. All 63 previously published migration files/hashes remain unchanged. Provider/storage calls were mocked or blocked, and no customer email was delivered. All four GitHub checks passed for the prior published commit; new checks run after publication. Features/collection remain off by default, PR37 stays draft, and no merge, deployment or live financial action occurred.
+
+
+## 139 — Recorded bank details on the existing payment page
+
+The actual payment page shows the recorded bank receipt date and sender for the fictional $1.97 Zelle remainder. That date is separate from when staff entered the outcome. An earlier receipt applied to an invoice is identified as such; its original reference, recording staff and timestamp are retained in the payment download. Missing evidence stays blank. Card-provider controls appear for card transactions.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Recorded bank receipt, desktop](139-recorded-membership-bank-receipt-desktop.png)](139-recorded-membership-bank-receipt-desktop.png) | [![Recorded bank receipt, phone](139-recorded-membership-bank-receipt-phone.png)](139-recorded-membership-bank-receipt-phone.png) |
+
+## 140 — Paid-visit history from the existing export controls
+
+Choose **Paid visit application history** from the existing **Export filtered memberships** controls. The actual downloaded [fictional review CSV](140-paid-visit-application-history.csv) keeps original invoice funds, new membership money, returns, converted credit and fee adjustments in separate columns. Source invoices appear once even when a stopped application was followed by a new purchase. Conversion of a visit toward an existing membership does not reclassify that membership's earlier purchase payment as new money.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Paid-visit history download, desktop](140-paid-visit-history-download-desktop.png)](140-paid-visit-history-download-desktop.png) | [![Paid-visit history download, phone](140-paid-visit-history-download-phone.png)](140-paid-visit-history-download-phone.png) |
+
+Developer verification: **91 focused PostgreSQL/application/browser checks passed in 62.138 seconds** with the final code and compact layout, including all 15 new history/evidence cases, existing payment views/runtime grants, Zelle/source reports and the actual Chromium download scenario. The browser downloaded both CSV reports and verified original invoice funds $16.47, new money $1.97, converted credit created/applied $16.02, unused fee removed $0.06 and retained original fee $0.45. Receipt/posting counts stayed unchanged; two export audits were recorded. All four final 1440px/390px images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. All 580 Python files pass lint/format checks; system checks, model drift, diff whitespace, all 280 PNGs/gallery links, the nine-row actual-download review CSV and all 64 migration pins pass. All 64 previously published migration files/hashes are unchanged. All four GitHub checks passed for the prior published commit; the full suite for this new increment runs after publication. External provider requests were blocked/mocked and no customer email was delivered. Actual Banquest hosted fields/processor behavior remain unverified. Features and collection stay off by default; PR37 remains draft with the broader stage still in progress. No merge, deployment or live financial action occurred.
