@@ -13,7 +13,17 @@ from .payments.ledger import fingerprint, lock_sale
 MARKER = "paid_visit_purchase"
 
 
-def prepare_offer(*, actor, booking_id, data, credit_amount):
+def prepare_offer(
+    *,
+    actor,
+    booking_id,
+    data,
+    credit_amount,
+    split=None,
+    split_sender="",
+    split_received_on=None,
+    policy=None,
+):
     from .membership_conversion import review
     from .models import Booking
 
@@ -28,11 +38,10 @@ def prepare_offer(*, actor, booking_id, data, credit_amount):
         data["operation"] != "purchase"
         or data["comped"]
         or amount(credit_amount)
-        or data.get("first_payment_plan")
-        or data["expected_method"] not in {"cash", "check"}
+        or data["expected_method"] not in {"cash", "check", "split"}
     ):
         raise ValidationError(
-            "Use cash or check for the remaining payment in this combined paid-visit conversion. Other payment combinations are still in development."
+            "Use cash/check or received split payments for this paid-visit conversion. Card remainders are still in development."
         )
     proposed = ProposedMembership(data)
     converted = review(actor=actor, booking_id=booking_id, proposed_membership=proposed)
@@ -43,10 +52,45 @@ def prepare_offer(*, actor, booking_id, data, credit_amount):
     principal = amount(data["installments"][0]["quote"]["subtotal"])
     applied = min(principal, amount(converted["credit"]))
     remaining = principal - applied
-    terms = data["terms"].replace(
-        f"The first payment due today is ${data['installments'][0]['quote']['total']}, including",
-        f"The new payment due today is ${remaining:.2f}, after applying ${applied:.2f} from this paid visit, including",
-    )
+    if data["expected_method"] == "split":
+        from .membership_first_split import review as split_review
+        from .pricing import Line, quote_lines
+
+        plan = split_review(
+            principal=principal,
+            credit=applied,
+            split=split or {},
+            policy=policy,
+            sender_name=split_sender,
+            received_on=split_received_on,
+        )
+        # No card remainder is authorized in this flow yet. Show the actual
+        # uncovered principal, without inventing a card receipt or its fee.
+        plan.update(
+            version="paid-visit-received-split-v1",
+            parts=[part for part in plan["parts"] if part["tender"] != "card"],
+            unallocated=plan["card_net"],
+            card_net="0.00",
+            card_total="0.00",
+        )
+        quote = quote_lines(
+            [
+                Line(
+                    f"{data['kind'].title()} Membership",
+                    data["places"],
+                    amount(data["unit_price"])
+                    * (data["months"] if data["billing"] == "prepaid" else 1),
+                    False,
+                )
+            ],
+            policy,
+            card_base=ZERO,
+        )
+        quote["initial_split"] = plan
+        data["installments"][0]["quote"] = quote
+        data["first_payment_plan"] = plan
+        remaining = amount(quote["total"]) - applied
+    terms = data["terms"]
     terms += (
         f" Today's paid admissions and associated reversed tax supply ${converted['credit']} in existing funds."
         f" ${applied:.2f} is applied to this membership; ${amount(converted['credit']) - applied:.2f} remains as customer credit."
@@ -64,6 +108,16 @@ def prepare_offer(*, actor, booking_id, data, credit_amount):
             new_payment=str(remaining),
         ),
     )
+
+
+def require_known_split(data):
+    """An incomplete preview is useful, but cannot consume funds or benefits."""
+    if amount(data["first_payment_plan"].get("unallocated", ZERO)) or amount(
+        data["first_payment_plan"]["card_total"]
+    ):
+        raise ValidationError(
+            "Cover the remaining membership amount with received cash, check, verified Zelle or a verified physical gift card before confirming. No purchase or conversion was recorded."
+        )
 
 
 def complete_purchase(*, actor, member, offer, invoice):
@@ -152,7 +206,18 @@ def complete_purchase(*, actor, member, offer, invoice):
             ),
         )
     remaining = amount(plan["new_payment"])
-    if remaining:
+    if offer.get("first_payment_plan"):
+        from .membership_first_split import record
+
+        require_known_split(offer)
+        record(
+            actor=actor,
+            member=member,
+            invoice=invoice,
+            plan=offer["first_payment_plan"],
+            method=None,
+        )
+    elif remaining:
         operation = request_operation(
             actor=actor,
             sale_id=invoice.sale_id,

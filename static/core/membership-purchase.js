@@ -47,6 +47,7 @@
     const noun = field('operation')?.value === 'renewal' ? 'renewal' : field('operation')?.value === 'addition' ? 'additional places' : 'membership';
     button.textContent = comped ? `Confirm complimentary ${noun}` : !paymentRequired ? `Confirm ${noun} and apply credit` : split ? `Confirm ${noun} — ${Number(form.dataset.splitManualTotal)>0?`record $${Number(form.dataset.splitManualTotal).toFixed(2)}`:''}${Number(form.dataset.splitManualTotal)>0&&Number(form.dataset.splitCardTotal)>0?' and ':''}${Number(form.dataset.splitCardTotal)>0?`charge card $${Number(form.dataset.splitCardTotal).toFixed(2)}`:''}` : field('expected_method').value === 'card' ? `Confirm ${noun} and charge card` : `Confirm ${noun} and record payment`;
     if (paidVisit) button.textContent = paymentRequired ? 'Apply visit and confirm membership — record $' + Number(due || 0).toFixed(2) : 'Apply visit and confirm membership';
+    if (paidVisit && split && Number(form.dataset.paidVisitUnallocated || 0) > 0) button.disabled = true;
   }
   async function preview() {
     const current = ++sequence;
@@ -66,6 +67,7 @@
       if (result.payment_due_today !== undefined) form.dataset.paymentDue = result.payment_due_today;
       if (result.needs_card !== undefined) form.dataset.needsCard = result.needs_card ? '1' : '0';
       form.dataset.splitCardTotal=result.split_card_total||'0.00';form.dataset.splitManualTotal=result.split_manual_total||'0.00';
+      form.dataset.paidVisitUnallocated=result.paid_visit_unallocated||'0.00';
       if (result.credit_available !== undefined) {
         creditAvailable = Number(result.credit_available); initialNet = Number(result.initial_net);
         const balance = form.querySelector('[data-credit-available]');

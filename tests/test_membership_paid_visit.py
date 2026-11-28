@@ -264,7 +264,7 @@ class PaidVisitPurchaseTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
         self.assertEqual(page.context["form"]["paid_visit_id"].value(), self.visit.pk)
         self.assertEqual(
             {k for k, _ in page.context["form"].fields["expected_method"].choices},
-            {"cash", "check"},
+            {"cash", "check", "split"},
         )
         values = self.web_values()
         preview = self.client.post(reverse("membership_offer"), values)

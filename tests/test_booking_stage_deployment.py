@@ -300,6 +300,29 @@ class ClosedBookingPlanTests(SimpleTestCase):
                 with patch.object(host, "command", side_effect=replies):
                     self.assertTrue(host.ensure_paid_visit_purchase_compatible(target))
 
+    def test_older_release_refuses_received_split_paid_visit_purchases(self):
+        deploy.select_target("functional")
+        self.addCleanup(deploy.select_target, "design")
+        host = deploy.Host({}, Path("/tmp/unused-paid-visit-split-compatibility.log"))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "deploy").mkdir()
+            marker = "paid-visit-purchase-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with (
+                patch.object(host, "command", side_effect=["t", "t"]),
+                self.assertRaisesRegex(deploy.DeployError, "received-split membership purchases"),
+            ):
+                host.ensure_paid_visit_purchase_compatible(target)
+            for replies in (["f"], ["t", "f"]):
+                with patch.object(host, "command", side_effect=replies):
+                    self.assertTrue(host.ensure_paid_visit_received_split_compatible(target))
+            marker = "paid-visit-received-split-v1.capability"
+            (target / "deploy" / marker).write_bytes((ROOT / "deploy" / marker).read_bytes())
+            with patch.object(host, "command") as command:
+                self.assertTrue(host.ensure_paid_visit_purchase_compatible(target))
+            command.assert_not_called()
+
 
 class BookingUpgradeTests(TransactionTestCase):
     def test_actual_additive_upgrade_preserves_legacy_booking_and_grant_failure_rolls_back(self):

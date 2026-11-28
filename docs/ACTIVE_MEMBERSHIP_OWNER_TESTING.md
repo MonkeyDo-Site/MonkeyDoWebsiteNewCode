@@ -560,7 +560,7 @@ Developer checks: the final combined run passed 20 tests in 12.908s, including n
 
 ## First membership from an already-paid visit
 
-From a fully paid arrived booking for today, choose **Apply today's visit toward a membership purchase**. The combined page reuses the customer, shows the original payment/fee, membership price, amount applied and new cash/check payment. Review the selected term, any scheduled card installments and agreement before the one final confirmation. New card/other remainder tenders are still being implemented for this particular flow; ordinary membership purchases retain their existing payment options.
+From a fully paid arrived booking for today, choose **Apply today's visit toward a membership purchase**. The combined page reuses the customer, shows the original payment/fee, membership price, amount applied and new cash/check payment. Review the selected term, any scheduled card installments and agreement before the one final confirmation. Choose Split for one or more new Zelle, physical gift-card, cash or check amounts (samples 117–118). Card remainders are still being implemented for this particular flow; ordinary membership purchases retain their existing payment options.
 
 | Scenario | Expected result |
 | --- | --- |
@@ -578,3 +578,24 @@ From a fully paid arrived booking for today, choose **Apply today's visit toward
 Existing original visits, accepted terms and signed waiver evidence remain unchanged. The financial history adds a conversion and exact linked reversals/credit allocations. There is no separate cash/card refund for the converted funds. Cancellation of credit-funded membership retains the earlier guarded refund-destination policy; this flow does not choose a new destination.
 
 The complete **1,588-test PostgreSQL suite passed in 673.174s**. After the final receipt-proof reset, **70 focused checks passed in 73.378s**, covering the new conversion, real PostgreSQL overlap/reversal races, affected public/card/deployment paths and three actual Chromium scenarios. A changed server price clears both accepted terms and every old receipt-verification checkbox, including without JavaScript; it cannot convert the visit using proof of an older, smaller amount. The browser checks cover the $1.97 remainder, $1.33 excess credit and stale-price refusal with original funds untouched. All eight final 113–116 desktop/phone images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. All 553 Python files pass lint/format checks; model drift, both affected JavaScript syntax checks, diff whitespace, all 232 PNGs and all 58 migration pins pass. The final native inventory is 1,589; a complete local run of that later inventory is not claimed. No external provider/storage request, delivered email, merge or deployment occurred. The same PR37 remains draft with default-off features.
+
+
+## Received split payments when applying a paid visit
+
+Review samples **117–118**. From the combined paid-visit page, select **Split** to use one or more new manual receipts, including a Zelle-only or gift-card-only remainder. Original visit funds are already applied; never enter them as another receipt.
+
+| Scenario | Expected result |
+| --- | --- |
+| $16.47 original card-paid visit; $1.97 remaining | Enter $0.50 cash, $0.50 check, $0.47 Zelle and $0.50 physical gift card. Confirm cash/check received, verify the bank transfer, and verify the presented physical gift card. All four are recorded separately; the original $16.02 applies once and its $0.45 fee stays on the visit. |
+| Only part of the $1.97 entered | The original balance stays $1.97, without a hypothetical card fee. The price card shows how much remains unallocated and the final button stays disabled. A direct confirmation also refuses before saving a purchase, conversion or receipt. |
+| Too much entered | Correct the applied amounts; they cannot exceed the balance after original visit funds. Cash change is not inferred. |
+| One required proof missing or entered as a non-boolean API value | No purchase/conversion is recorded. Cash/check, Zelle and gift-card proof are independent. |
+| Earlier verified Zelle bank receipt | Keep its actual earlier date and sender; today's cash/check/gift receipts keep today's date. Missing sender/future date is refused. A transfer already recorded elsewhere must not be entered as new money. |
+| Zelle-only or gift-card-only remainder | Use the corresponding received amount and its own required proof. Unused cash/check and bank/gift acknowledgments are not required. |
+| Prepaid membership | Record only the remaining full-term payment through supported manual sources. No saved card or fabricated card operation. |
+| Duplicate submission or overlapping source purchase | One conversion and one set of receipts; the original funds cannot be used twice. |
+| Receipt/benefit/message failure near confirmation | Every new receipt and the source conversion roll back together. The original paid visit remains. |
+
+The receipt date and source belong to each original record. Applied funds are not new money received. Manual gift verification does not call an external gift-card system. One combined message is queued without sending it. Original waivers, counts, capacity and signed evidence remain unchanged.
+
+The final affected-path run passed **102 checks in 88.755s**, including 98 native PostgreSQL cases and four actual Chromium scenarios. It covers all 11 new received-split cases, four new real concurrency/reversal cases, existing paid-visit and first-split behavior, public/card checkout and the reviewed additive upgrade/capability guard. After shortening the selected dropdown label for phones, the final 12-case check passed in 11.845s and the final browser capture passed again in 6.213s. All 12 final 113–118 desktop/phone images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. Lint/format (556 Python files), model drift, affected JavaScript syntax, whitespace, all 236 PNGs/links and all 59 migration pins pass; all 58 published migration files/hashes remain unchanged. The prior complete local PostgreSQL suite was 1,588 tests before this increment; the final native inventory is 1,605, and a complete local run of that later inventory is not claimed. The prior published commit passed all four GitHub checks; new CI awaits publication. No external provider/storage call, delivered email, merge or deployment occurred.

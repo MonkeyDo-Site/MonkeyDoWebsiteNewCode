@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0085_paid_visit_received_split.py": "8d17c2620092d022a75ebc335b1cadacc151e7fd197f40538613e03d20314417",
     "0084_paid_visit_purchase.py": "1ea54e866e5dc9aba3cd762446b20b5602b2cb105a650aa786bf08a65ce8844c",
     "0083_cancelled_membership_arrival_stop.py": "fa056c603af49668f583f8f5ea58a3107074e0cedbbcb0af367edea93c101266",
     "0082_stop_pending_arrival.py": "036b29e1bd4ebaa478f38ffda87364337b60bed0d61435f5495162c748980738",
@@ -1264,7 +1265,7 @@ class Host:
             and hashlib.sha256(marker.read_bytes()).hexdigest()
             == "0e523ae9dc9c0cf0edba4a1b67b77d1ae2a171176f20c51d3908a00fea6cfa9f"
         ):
-            return True
+            return self.ensure_paid_visit_received_split_compatible(target)
         psql = [
             "/usr/sbin/runuser",
             "-u",
@@ -1300,6 +1301,52 @@ class Host:
         if used != "f":
             raise DeployError(
                 "This older release cannot manage paid-visit membership purchases. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
+    def ensure_paid_visit_received_split_compatible(self, target):
+        marker = target / "deploy/paid-visit-received-split-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "786ec7a2763dc4adaca49da62b7d47a21574468cd548c205fe9d0a7ce0783fa8"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='core_membershippurchase')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify paid-visit received-split compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershippurchase p JOIN core_membershipdraft d ON d.id=p.membership_id WHERE d.expected_method='split' AND d.snapshot ? 'paid_visit_purchase')"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage paid-visit received-split membership purchases. Keep compatible code or fix forward; no database rollback was performed."
             )
         return True
 

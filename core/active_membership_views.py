@@ -217,9 +217,9 @@ class PurchaseForm(forms.Form):
         ] + [("split", "Split payment")]
         if (self.data if self.is_bound else self.initial).get("paid_visit_id"):
             self.fields["expected_method"].choices = [
-                (key, label)
+                (key, "Split" if key == "split" else label)
                 for key, label in self.fields["expected_method"].choices
-                if key in {"cash", "check"}
+                if key in {"cash", "check", "split"}
             ]
             self.fields["expected_method"].label = "Remaining payment"
             self.fields["customer"].widget = forms.HiddenInput()
@@ -712,6 +712,9 @@ def membership_offer(request):
             "split_card_total": (data.get("first_payment_plan") or {}).get("card_total", "0.00"),
             "split_manual_total": (data.get("first_payment_plan") or {}).get(
                 "manual_total", "0.00"
+            ),
+            "paid_visit_unallocated": (data.get("first_payment_plan") or {}).get(
+                "unallocated", "0.00"
             ),
             "credit_available": balance(form.cleaned_data["customer"].pk),
             "initial_net": data["installments"][0]["quote"]["subtotal"]

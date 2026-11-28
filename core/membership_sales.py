@@ -267,6 +267,25 @@ def offer(
             minimum_months=minimum,
         ),
     }
+    if paid_visit_id is not None:
+        from .membership_paid_visit import prepare_offer
+
+        if bank:
+            raise ValidationError(
+                "Keep unapplied booking Zelle separate from an already-paid visit conversion."
+            )
+        data = prepare_offer(
+            actor=actor,
+            booking_id=paid_visit_id,
+            data=data | {"cycles": rows},
+            credit_amount=credit_amount,
+            split=split,
+            split_sender=split_sender,
+            split_received_on=split_received_on,
+            policy=policy,
+        )
+        data.pop("cycles")
+        installments = data["installments"]
     if installments:
         first = installments[0]
         if first["quote"].get("initial_split"):
@@ -319,20 +338,6 @@ def offer(
                 if months > 1
                 else " There are no further installments in this term."
             )
-    if paid_visit_id is not None:
-        from .membership_paid_visit import prepare_offer
-
-        if bank:
-            raise ValidationError(
-                "Keep unapplied booking Zelle separate from an already-paid visit conversion."
-            )
-        data = prepare_offer(
-            actor=actor,
-            booking_id=paid_visit_id,
-            data=data | {"cycles": rows},
-            credit_amount=credit_amount,
-        )
-        data.pop("cycles")
     return data | {"fingerprint": fingerprint(data), "cycles": rows}
 
 
@@ -428,6 +433,10 @@ def purchase(
         raise ValidationError(
             "Choose Yes or No for sending the complimentary membership confirmation."
         )
+    if data.get("paid_visit") and data.get("first_payment_plan"):
+        from .membership_paid_visit import require_known_split
+
+        require_known_split(data)
     method = None
     due_now = (
         amount(data.get("first_payment_total", data["installments"][0]["quote"]["total"]))
@@ -512,6 +521,18 @@ def purchase(
                         "booking": data["paid_visit"]["booking"],
                         "applied": data["paid_visit"]["applied"],
                         "new_payment": data["paid_visit"]["new_payment"],
+                        **(
+                            {
+                                "received_split": data["first_payment_plan"],
+                                "verification": {
+                                    "cash_check": verified_received,
+                                    "gift_card": gift_card_verified,
+                                    "zelle": zelle_verified,
+                                },
+                            }
+                            if data.get("first_payment_plan")
+                            else {}
+                        ),
                     }
                 }
                 if data.get("paid_visit")
@@ -675,6 +696,9 @@ def purchase(
 def card_required(data):
     if data["comped"]:
         return False
+    if data.get("paid_visit"):
+        # The initial paid-visit path only accepts known manual remainders.
+        return data["billing"] == "monthly"
     card = (
         amount(data["first_payment_plan"]["card_total"])
         if data.get("first_payment_plan")
