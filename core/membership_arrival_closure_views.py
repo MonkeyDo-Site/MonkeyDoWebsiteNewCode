@@ -23,6 +23,10 @@ class StopArrivalForm(forms.Form):
     def __init__(self, *args, actor, intent, **kwargs):
         super().__init__(*args, auto_id="id_stop_%s", **kwargs)
         self.actor, self.intent = actor, intent
+        if service.cancellation_for(intent):
+            self.fields[
+                "confirmed"
+            ].label = "Keep the original booking; membership cancellation and refund stay separate."
         if not self.is_bound:
             _, digest = service.review(actor=actor, intent=intent)
             self.initial.update(request_key=uuid.uuid4(), reviewed_hash=digest)
@@ -40,14 +44,18 @@ def controls(request, intent):
         or not available("core_membershiparrivalclosure")
     ):
         return {}
+    cancellation = service.cancellation_for(intent)
+    context = (
+        {"stop_cancellation": service.cancellation_snapshot(cancellation)} if cancellation else {}
+    )
     try:
         form = StopArrivalForm(actor=request.user, intent=intent)
     except ValidationError as error:
-        return {"stop_block_reason": " ".join(error.messages), "stop_intent": intent}
+        return context | {"stop_block_reason": " ".join(error.messages), "stop_intent": intent}
     saved = request.session.get("pending_stop_reason", {})
     if saved.get("intent") == str(intent.pk) and saved.get("booking") == intent.booking_id:
         form.initial["reason"] = saved.get("reason", "")
-    return {"stop_arrival_form": form, "stop_intent": intent}
+    return context | {"stop_arrival_form": form, "stop_intent": intent}
 
 
 @staff_permission("core.view_booking")
@@ -79,11 +87,14 @@ def stop_arrival(request, pk, intent_id):
                     arrival_drafts.discard(request, token)
             request.session.pop("pending_stop_reason", None)
             messages.success(
-                request, "Arrival stopped. The original booking and membership are kept."
+                request, "Arrival stopped. Review the booking’s current details below."
             )
             return redirect("booking_detail", pk=pk)
     request.session["pending_stop_reason"] = dict(
         booking=pk, intent=str(intent.pk), reason=str(request.POST.get("reason", ""))[:500]
     )
     messages.error(request, " ".join(e for errors in form.errors.values() for e in errors))
-    return redirect(reverse("booking_arrival", args=[pk]) + "?review_pending=1")
+    return redirect(
+        reverse("booking_arrival", args=[pk])
+        + ("" if service.cancellation_for(intent) else "?review_pending=1")
+    )

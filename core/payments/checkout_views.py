@@ -405,7 +405,12 @@ def checkout(request, pk, kind="arrival"):
     if (
         not pending
         and kind == "arrival"
-        and (request.GET.get("review_pending") == "1" or request.POST.get("pending_review"))
+        and (
+            request.GET.get("review_pending") == "1"
+            or request.POST.get("pending_review")
+            or request.POST.get("start_funds_review") == "1"
+            or request.POST.get("start_cancelled_arrival_review") == "1"
+        )
     ):
         if request.headers.get("Accept") == "application/json":
             return JsonResponse(
@@ -476,6 +481,19 @@ def checkout(request, pk, kind="arrival"):
                         if return_draft
                         else redirect("booking_arrival", pk=pk)
                     )
+
+        if request.method == "POST" and request.POST.get("start_cancelled_arrival_review") == "1":
+            from core.membership_arrival_closure import begin_cancelled_review
+
+            try:
+                if request.POST.get("cancelled_review_intent") != str(pending.pk):
+                    raise ValidationError(
+                        "This stopped-arrival review has ended. Reopen the booking."
+                    )
+                begin_cancelled_review(actor=request.user, intent_id=pending.pk)
+            except ValidationError as error:
+                messages.error(request, " ".join(error.messages))
+            return redirect("booking_arrival", pk=pk)
 
         if request.method == "POST" and request.POST.get("start_funds_review") == "1":
             from core.membership_arrival_funds import pause
@@ -553,6 +571,15 @@ def checkout(request, pk, kind="arrival"):
                     may_start_review = True
                 except ValidationError:
                     pass
+            may_review_cancelled = False
+            if request.user.is_superuser:
+                from core.membership_arrival_closure import authorize_cancelled
+
+                try:
+                    authorize_cancelled(request.user, pending)
+                    may_review_cancelled = True
+                except ValidationError:
+                    pass
             may_pause_funds = funds_review_ready = False
             if request.user.is_superuser:
                 from core.membership_arrival_funds import authorize as authorize_visit_funds
@@ -583,8 +610,13 @@ def checkout(request, pk, kind="arrival"):
                     "may_start_review": may_start_review,
                     "may_pause_funds": may_pause_funds,
                     "funds_review_ready": funds_review_ready,
+                    "may_review_cancelled": may_review_cancelled,
                     "return_form": return_form,
-                    **(stop_controls(request, pending) if may_start_review else {}),
+                    **(
+                        stop_controls(request, pending)
+                        if may_start_review or may_review_cancelled
+                        else {}
+                    ),
                     "counts": pending.facts["review"]["arrival"]["counts"],
                     "quote": pending.facts["review"]["arrival"]["quote"],
                     "status_url": reverse("booking_arrival_status", args=[pk, pending.pk]),

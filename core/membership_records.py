@@ -183,10 +183,17 @@ class MembershipArrivalReceiptReturn(FinancialFact):
 
 
 class MembershipArrivalClosure(FinancialFact):
-    """Owner stops only the conditional arrival; purchase and booking survive."""
+    """Owner stops the visit while retaining the booking and purchase history."""
 
     intent = models.OneToOneField(
         MembershipArrivalIntent, primary_key=True, on_delete=models.PROTECT, related_name="closure"
+    )
+    cancellation = models.ForeignKey(
+        "core.MembershipCancellation",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="stopped_arrivals",
     )
     request_key = models.UUIDField(unique=True)
     fingerprint = models.CharField(max_length=64)

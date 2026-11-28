@@ -208,7 +208,7 @@ class ArrivalClosureTests(InitialCreditFixtures, RuntimeRoleMixin, TestCase):
         self.assertEqual(MembershipArrivalClosure.objects.count(), 1)
         self.assertEqual(PaymentOperation.objects.count(), before)
         detail = self.client.get(reverse("booking_detail", args=[self.play.pk]))
-        self.assertContains(detail, "Stopped arrivals — membership kept")
+        self.assertContains(detail, "Stopped arrivals")
         self.assertContains(detail, "First membership payment received when stopped: $36.61")
         self.assertContains(detail, "Unused visit funds returned:")
         self.assertContains(detail, "Cash $3.00")

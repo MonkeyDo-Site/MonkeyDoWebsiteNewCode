@@ -1,4 +1,4 @@
-"""Stop a funded conditional arrival without undoing its purchase or booking."""
+"""Stop only a pending visit; preserve purchase, cancellation and booking history."""
 
 import uuid
 
@@ -17,13 +17,91 @@ from .payments.amounts import ZERO
 from .payments.ledger import fingerprint, lock_request
 
 
+def cancellation_for(intent):
+    return intent.purchase.cancellations.order_by("created_at", "pk").first()
+
+
+def authorize_cancelled(actor, intent, *, reviewing=False):
+    from .membership_arrival_funds import authorize as authorize_visit_funds
+    from .models import PaymentOperation
+
+    authorize_visit_funds(actor, intent, reviewing=reviewing)
+    record = cancellation_for(intent)
+    if not record:
+        raise ValidationError(
+            "Review the existing membership cancellation before stopping arrival."
+        )
+    if PaymentOperation.objects.filter(
+        sale__membership_invoice__installment__purchase=intent.purchase,
+        kind="receipt",
+        state__in=("ready", "sending", "unknown", "action"),
+    ).exists():
+        raise ValidationError("Reconcile the existing membership receipts before stopping arrival.")
+    return record
+
+
+@transaction.atomic
+def begin_cancelled_review(*, actor, intent_id):
+    from .membership_arrival_pending import mark_review
+
+    require_owner(actor)
+    intent = locked(intent_id)
+    authorize_cancelled(actor, intent)
+    if intent.progress.code == "owner_review_requested":
+        return intent.progress
+    state = mark_review(intent, "owner_review_requested")
+    AuditEvent.objects.create(
+        actor=actor,
+        action="membership.arrival_close_review_started",
+        record_type="booking",
+        record_id=str(intent.booking.reference),
+        changes={"intent_id": str(intent.pk)},
+    )
+    return state
+
+
+def cancellation_snapshot(record):
+    from .membership_cancellations import plan_paid, plan_pending
+
+    plans = list(record.refund_plans.order_by("created_at", "pk"))
+    rows = [
+        dict(
+            plan=str(plan.pk),
+            amount=str(plan.amount),
+            paid=str(plan_paid(plan)),
+            pending=plan_pending(plan),
+            attempts=[
+                (str(a.operation_id), a.operation.state)
+                for a in plan.attempts.select_related("operation").order_by(
+                    "operation__requested_at", "pk"
+                )
+            ],
+        )
+        for plan in plans
+    ]
+    return dict(
+        id=str(record.pk),
+        stopped_on=record.stopped_on.isoformat(),
+        timing=record.timing,
+        fingerprint=record.fingerprint,
+        refund_amount=str(record.refund_amount),
+        refund_paid=str(sum((plan_paid(plan) for plan in plans), ZERO)),
+        refund_due=str(sum((max(ZERO, plan.amount - plan_paid(plan)) for plan in plans), ZERO)),
+        refund_plans=rows,
+    )
+
+
 def review(*, actor, intent):
     from .customer_credit import applied
     from .membership_arrival_receipts import rows, snapshot
     from .payments.invoices import received, total
     from .payments.zelle import facts as bank_facts
 
-    authorize(actor, intent, reviewing=True)
+    cancellation = cancellation_for(intent)
+    if cancellation:
+        authorize_cancelled(actor, intent, reviewing=True)
+    else:
+        authorize(actor, intent, reviewing=True)
     booking = intent.booking
     if booking.attendance or hasattr(intent, "closure"):
         raise ValidationError("This arrival has already ended. Open the saved booking.")
@@ -33,7 +111,10 @@ def review(*, actor, intent):
             "Return and record all unused visit funds before stopping this arrival. Keep their original receipts."
         )
     sale = intent.purchase.installments.first().invoice.sale
-    if sale.operations.filter(state__in=("ready", "sending", "unknown", "action")).exists():
+    if (
+        not cancellation
+        and sale.operations.filter(state__in=("ready", "sending", "unknown", "action")).exists()
+    ):
         raise ValidationError("Reconcile the existing membership payment before stopping arrival.")
     bank = bank_facts(booking)
     hold = BookingCapacityHold.objects.filter(pk=intent.hold_key).first()
@@ -63,6 +144,8 @@ def review(*, actor, intent):
         if hold
         else None,
     )
+    if cancellation:
+        facts["cancellation"] = cancellation_snapshot(cancellation)
     return facts, fingerprint(facts)
 
 
@@ -75,7 +158,9 @@ def stop(*, actor, intent_id, request_key, reviewed_hash, reason, confirmed=Fals
     if not available("core_membershiparrivalclosure"):
         raise ValidationError("Stopping this arrival is not available for this release yet.")
     if confirmed is not True:
-        raise ValidationError("Confirm that the original booking and membership will be kept.")
+        raise ValidationError(
+            "Confirm that the original booking will be kept and membership records stay separate."
+        )
     if not isinstance(reason, str) or not 0 < len(reason.strip()) <= 500:
         raise ValidationError("Enter a reason using 500 characters or fewer.")
     try:
@@ -103,6 +188,7 @@ def stop(*, actor, intent_id, request_key, reviewed_hash, reason, confirmed=Fals
     facts["reviewed_hash"] = current_hash
     result = MembershipArrivalClosure.objects.create(
         intent=intent,
+        cancellation=cancellation_for(intent),
         request_key=key,
         reason=reason,
         facts=facts,
@@ -129,5 +215,6 @@ def stop(*, actor, intent_id, request_key, reviewed_hash, reason, confirmed=Fals
         record_id=str(intent.booking.reference),
         changes=dict(intent=str(intent.pk), purchase=intent.purchase_id, reason=reason),
     )
-    queue_confirmation(intent.purchase)
+    if result.cancellation_id is None:
+        queue_confirmation(intent.purchase)
     return result

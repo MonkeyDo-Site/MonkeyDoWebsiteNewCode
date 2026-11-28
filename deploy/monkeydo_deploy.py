@@ -51,6 +51,7 @@ BATCH_THREE_MIGRATIONS = {
 }
 
 BOOKING_MIGRATIONS = {
+    "0083_cancelled_membership_arrival_stop.py": "fa056c603af49668f583f8f5ea58a3107074e0cedbbcb0af367edea93c101266",
     "0082_stop_pending_arrival.py": "036b29e1bd4ebaa478f38ffda87364337b60bed0d61435f5495162c748980738",
     "0081_gift_cancellation_scope.py": "d517d62366d2248c3b430437d7db5635982435170d0426e61bd11b705ceb6b06",
     "0080_pending_visit_returns.py": "2c1370e113019299e2d330f5442bba2b7ceec89e24c30ca61c71109954064958",
@@ -1209,6 +1210,52 @@ class Host:
             )
         return True
 
+    def ensure_cancelled_member_stop_compatible(self, target):
+        marker = target / "deploy/pending-cancelled-membership-stop-v1.capability"
+        if (
+            marker.is_file()
+            and hashlib.sha256(marker.read_bytes()).hexdigest()
+            == "0eef0d1e00f8a58d9682048eed7866bbae5d61f0082b01ebfb7de894eb462a9e"
+        ):
+            return True
+        psql = [
+            "/usr/sbin/runuser",
+            "-u",
+            "postgres",
+            "--",
+            "/usr/bin/psql",
+            "-X",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-At",
+            "-d",
+            "monkeydo_functional",
+            "-c",
+        ]
+        present = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='core_membershiparrivalclosure' AND column_name='cancellation_id')"
+            ]
+        )
+        if present == "f":
+            return True
+        if present != "t":
+            raise DeployError(
+                "Cannot verify cancelled-membership arrival-stop compatibility; no release switch allowed."
+            )
+        used = self.command(
+            psql
+            + [
+                "SELECT EXISTS (SELECT 1 FROM core_membershiparrivalclosure WHERE cancellation_id IS NOT NULL)"
+            ]
+        )
+        if used != "f":
+            raise DeployError(
+                "This older release cannot manage cancellation-linked stopped arrivals. Keep compatible code or fix forward; no database rollback was performed."
+            )
+        return True
+
     def ensure_booking_compatible(self, target):
         marker = target / "deploy/booking-completion-v1.capability"
         if (
@@ -1221,7 +1268,8 @@ class Host:
             self.ensure_split_arrival_compatible(target)
             self.ensure_pending_visit_compatible(target)
             self.ensure_pending_return_compatible(target)
-            return self.ensure_pending_stop_compatible(target)
+            self.ensure_pending_stop_compatible(target)
+            return self.ensure_cancelled_member_stop_compatible(target)
         psql = [
             "/usr/sbin/runuser",
             "-u",
