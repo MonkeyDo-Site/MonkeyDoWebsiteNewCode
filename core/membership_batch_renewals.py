@@ -1,4 +1,4 @@
-"""Atomic, explicitly received cash/check renewals with separate cohort history."""
+"""Atomic received renewals; a shared bank source is allocated to separate cohorts."""
 
 import json
 import uuid
@@ -13,6 +13,7 @@ from django.db.models import Q
 
 from .membership_batch_records import (
     MembershipRenewalBatch,
+    MembershipRenewalBatchBank,
     MembershipRenewalBatchMessage,
     MembershipRenewalBatchPart,
 )
@@ -25,19 +26,29 @@ ZERO = Decimal("0.00")
 FIELDS = {"prior_id", "kind", "places", "months", "billing", "minimum_override", "method_id"}
 
 
-def available():
+def available(table="core_membershiprenewalbatch"):
     with connection.cursor() as cursor:
-        return "core_membershiprenewalbatch" in connection.introspection.table_names(cursor)
+        return table in connection.introspection.table_names(cursor)
 
 
 def packed(value):
     return json.loads(json.dumps(value, cls=DjangoJSONEncoder))
 
 
-def review(*, actor, customer, rows, tender="cash"):
+def review(*, actor, customer, rows, tender="cash", bank_received_on=None, bank_sender=""):
     authorize(actor, collect=True)
-    if tender not in {"cash", "check"}:
-        raise ValidationError("This combined renewal accepts verified cash or check only.")
+    if tender not in {"cash", "check", "zelle"}:
+        raise ValidationError("This combined renewal accepts verified cash, check or Zelle only.")
+    bank = None
+    if tender == "zelle":
+        from .payments.receipts import receipt_date, sender
+
+        if not available("core_membershiprenewalbatchbank"):
+            raise ValidationError("Combined renewal Zelle is not available in this release.")
+        bank = dict(
+            received_on=receipt_date(bank_received_on).isoformat(),
+            sender=sender(bank_sender, required=True),
+        )
     if not isinstance(rows, list) or not rows or len(rows) > 100:
         raise ValidationError("Choose between one and 100 renewal entries.")
     lines, counts, sources = [], Counter(), {}
@@ -112,7 +123,7 @@ def review(*, actor, customer, rows, tender="cash"):
                     "Choose a current saved card for future membership installments."
                 )
         elif method:
-            raise ValidationError("A prepaid cash/check renewal does not need a card.")
+            raise ValidationError("A prepaid received-payment renewal does not need a card.")
         selection["method_id"] = method
         lines.append(
             dict(
@@ -126,10 +137,12 @@ def review(*, actor, customer, rows, tender="cash"):
         customer=customer.pk,
         contact=dict(last_name=customer.last_name, phone=customer.phone, email=customer.email),
         tender=tender,
-        received_on=today().isoformat(),
+        received_on=bank["received_on"] if bank else today().isoformat(),
         lines=lines,
         amount=str(sum((amount(row["amount"]) for row in lines), ZERO)),
     )
+    if bank:
+        facts["bank"] = bank
     return facts | {"fingerprint": fingerprint(facts)}
 
 
@@ -141,7 +154,19 @@ def normalized_offer(data):
 
 
 @transaction.atomic
-def confirm(*, actor, customer, rows, tender, request_key, reviewed, accepted, verified_received):
+def confirm(
+    *,
+    actor,
+    customer,
+    rows,
+    tender,
+    request_key,
+    reviewed,
+    accepted,
+    verified_received,
+    bank_received_on=None,
+    bank_sender="",
+):
     authorize(actor, collect=True)
     writes_allowed()
     key = lock_request(request_key)
@@ -165,7 +190,14 @@ def confirm(*, actor, customer, rows, tender, request_key, reviewed, accepted, v
 
     customer = Customer.objects.select_for_update(no_key=True).get(pk=customer.pk)
     lock_customer(customer.pk)
-    data = review(actor=actor, customer=customer, rows=rows, tender=tender)
+    data = review(
+        actor=actor,
+        customer=customer,
+        rows=rows,
+        tender=tender,
+        bank_received_on=bank_received_on,
+        bank_sender=bank_sender,
+    )
     if data["fingerprint"] != reviewed:
         raise ValidationError(
             "The selected memberships, prices or customer details changed. Review the combined renewal again."
@@ -180,6 +212,13 @@ def confirm(*, actor, customer, rows, tender, request_key, reviewed, accepted, v
         tender=tender,
         received_on=date.fromisoformat(data["received_on"]),
     )
+    if tender == "zelle":
+        MembershipRenewalBatchBank.objects.create(
+            batch=batch,
+            amount=batch.amount,
+            received_on=batch.received_on,
+            sender=data["bank"]["sender"],
+        )
     for position, line in enumerate(data["lines"], 1):
         MembershipRenewalBatchPart.objects.create(
             batch=batch,
@@ -212,6 +251,7 @@ def confirm(*, actor, customer, rows, tender, request_key, reviewed, accepted, v
             accepted=True,
             verified_received=True,
             method_id=method,
+            received_on=batch.received_on,
         )
     queue_confirmation(batch)
     AuditEvent.objects.create(

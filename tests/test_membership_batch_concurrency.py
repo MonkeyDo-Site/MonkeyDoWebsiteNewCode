@@ -81,7 +81,7 @@ class CombinedRenewalRaceTests(RuntimeRoleMixin, TransactionTestCase):
     def test_unused_group_schema_can_reverse_and_reapply_with_runtime_grants(self):
         MigrationExecutor(connection).migrate([("core", "0090_paid_visit_manual_payment")])
         self.assertNotIn("core_membershiprenewalbatch", connection.introspection.table_names())
-        MigrationExecutor(connection).migrate([("core", "0091_combined_membership_renewals")])
+        MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
         self.family()
         with self.runtime_role():
             self.confirm()

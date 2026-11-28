@@ -9,6 +9,12 @@
   const verified = form.querySelector('[name="verified_received"]');
   let timer, sequence = 0;
   function cards() {
+    const bank = form.querySelector('[data-batch-bank]');
+    if (bank) bank.hidden = form.querySelector('[name="tender"]').value !== 'zelle';
+    const label = form.querySelector('[data-batch-verified-label]');
+    if (label) label.textContent = form.querySelector('[name="tender"]').value === 'zelle'
+      ? 'I verified the full transfer shown in the business bank account.'
+      : 'I verified that the full payment shown was actually received.';
     form.querySelectorAll('.renewal-batch-row').forEach(row => {
       const monthly = row.querySelector('[name$="-billing"]').value === 'monthly';
       row.querySelector('[data-renewal-options]').hidden = !row.querySelector('[name$="-renew"]').checked;

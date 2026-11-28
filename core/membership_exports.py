@@ -110,6 +110,10 @@ def payment_rows(records):
         "earlier_receipt_reference",
         "earlier_receipt_recorded_by_id",
         "earlier_receipt_recorded_at_new_york",
+        "shared_bank_receipt_reference",
+        "shared_bank_total_reference_only",
+        "shared_bank_receipt_recorded_by_id",
+        "shared_bank_receipt_recorded_at_new_york",
     ]
     operations = PaymentOperation.objects.filter(
         sale__membership_invoice__installment__purchase_id__in=records.values("pk")
@@ -164,6 +168,10 @@ def payment_rows(records):
                 evidence.get(operation.pk, {}).get("receipt_id", ""),
                 evidence.get(operation.pk, {}).get("source_actor_id", ""),
                 stamp(evidence.get(operation.pk, {}).get("source_recorded_at")),
+                evidence.get(operation.pk, {}).get("shared_bank_receipt", ""),
+                evidence.get(operation.pk, {}).get("shared_bank_total", ""),
+                evidence.get(operation.pk, {}).get("shared_bank_actor_id", ""),
+                stamp(evidence.get(operation.pk, {}).get("shared_bank_recorded_at")),
             ]
 
 

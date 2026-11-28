@@ -52,6 +52,37 @@ def receipt_evidence(operations):
         query = records(name)
         if query is not None:
             earlier(query.filter(operation_id__in=manual).select_related("receipt"))
+    query = records("MembershipRenewalBatchBank")
+    if query is not None:
+        first = {
+            operation.sale.membership_invoice.installment.purchase.request_key: operation
+            for operation in manual.values()
+            if operation.tender == "zelle"
+            and operation.sale.kind == "membership"
+            and operation.sale.membership_invoice.installment.number == 1
+        }
+        for source in (
+            query.filter(batch__parts__purchase_id__in=first)
+            .select_related("batch")
+            .distinct()
+            .prefetch_related("batch__parts")
+        ):
+            for part in source.batch.parts.all():
+                operation = first.get(part.purchase_id)
+                if operation is None or operation.request_key != uuid.uuid5(
+                    part.purchase_id, "first-payment"
+                ):
+                    continue
+                result[operation.pk] = dict(
+                    origin="Shared bank transfer allocation",
+                    earlier=False,
+                    received_on=source.received_on,
+                    sender=source.sender,
+                    shared_bank_receipt=str(source.pk),
+                    shared_bank_total=source.amount,
+                    shared_bank_actor_id=source.batch.actor_id,
+                    shared_bank_recorded_at=source.created_at,
+                )
     query = records("MembershipPaidVisitManualPayment")
     if query is not None:
         by_key = {operation.request_key: operation.pk for operation in manual.values()}

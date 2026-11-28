@@ -41,8 +41,9 @@ Purchases, booking benefits, payment resolution and customer credit use the exis
 | **New: paid early-renewal review and owner reminder** | **[141–142](#141--paid-early-renewal-with-an-earlier-payment-needing-review)** |
 | **New: combined cash/check renewals and partial/type selection** | **[143–145](#143--renew-several-memberships-on-one-page)** |
 | **New: find another renewal while keeping selected details** | **[146](#146--find-another-renewal-without-losing-selected-details)** |
+| **New: one verified Zelle transfer across separate renewals** | **[147–149](#147--review-one-zelle-transfer-for-several-renewals)** |
 
-Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–146** show one-page combined cash/check renewals, recorded allocations, split type/term choices and finding additional records while retaining selected details. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
+Each sample includes desktop and phone images. Start with the purchase, membership overview and booking/arrival examples above; the later samples cover specific payment and recovery cases. New samples **143–149** show combined cash/check/Zelle renewals, separate recorded allocations, split type/term choices and finding additional records while retaining selected details. Samples 147–149 show one shared bank transfer and its original receipt details. See the [owner testing guide](../../ACTIVE_MEMBERSHIP_OWNER_TESTING.md) for expected results and the explicit unfinished scope.
 
 ## 01 — Purchase membership on one page
 
@@ -1493,3 +1494,32 @@ Browsing creates no renewal, receipt, booking or benefit use. The reviewed total
 | [![Find another renewal, desktop](146-search-renewals-keep-selection-desktop.png)](146-search-renewals-keep-selection-desktop.png) | [![Find another renewal, phone](146-search-renewals-keep-selection-phone.png)](146-search-renewals-keep-selection-phone.png) |
 
 Developer verification: the final expanded PostgreSQL run passed **109 checks in 48.736 seconds**, including eight new renewal-list cases, combined and individual renewal services/views, real concurrency, notices and booking renewal prompts. The earlier focused run passed 69 checks. Two actual Chromium scenarios passed in 13.413 seconds: search/show-more retained the selected monthly details, future card, payment method and request identity without recording money; final combined confirmation recorded fictional $17.99 + $39.99 once, with one shared prepared confirmation and no duplicate on reload. All eight refreshed/new desktop/phone images were visually inspected, with no overflow, JavaScript errors, duplicate IDs or nested forms. All 591 Python files pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all 292 PNGs/gallery links and all 65 migration pins pass. All 65 published migration files/hashes and the earlier CSV sample remain unchanged. The published baseline passed the complete 1,795-test suite; the current native inventory is 1,803, and a complete local 1,803-test run is not claimed. All four GitHub checks passed for the prior published commit; new checks run after publication. External requests were blocked/mocked and no customer email was delivered. Actual Banquest behavior remains unverified. Features and scheduled collection stay off by default, PR37 stays draft and the broader stage continues. No merge, deployment or live financial action occurred.
+
+
+## 147 — Review one Zelle transfer for several renewals
+
+On the same combined renewal page, choose **Zelle received**, enter the actual bank receipt date and sender, and review the full amount before final confirmation. This fictional example records one **$57.98** transfer received **October 29**, allocated as **$17.99 Subscription** and **$39.99 Unlimited**. Their separate January 31 and March 1 renewal starts stay intact. Bank details and selected rows survive Show more; preview records no receipt or renewal. Staff explicitly verifies the transfer in the business bank account.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Combined renewal Zelle review, desktop](147-combined-renewal-zelle-review-desktop.png)](147-combined-renewal-zelle-review-desktop.png) | [![Combined renewal Zelle review, phone](147-combined-renewal-zelle-review-phone.png)](147-combined-renewal-zelle-review-phone.png) |
+
+## 148 — One verified transfer with separate allocations
+
+After one explicit confirmation, the receipt shows **$57.98 received**, its original bank date/sender and each membership allocation. One immutable source backs both allocations. They are portions of the same transfer; there is no additional aggregate financial posting or second bank receipt. Reload creates no duplicate, and one combined confirmation is prepared. Cash/check still use today without another receipt-date step.
+
+| Desktop | Phone |
+| --- | --- |
+| [![One Zelle transfer allocated, desktop](148-one-zelle-transfer-allocated-desktop.png)](148-one-zelle-transfer-allocated-desktop.png) | [![One Zelle transfer allocated, phone](148-one-zelle-transfer-allocated-phone.png)](148-one-zelle-transfer-allocated-phone.png) |
+
+## 149 — Original transfer visible from either membership payment
+
+The existing payment page identifies **$17.99 allocated from one verified $57.98 transfer**, retains its bank date/sender and links back to the complete transfer and allocations. Payment exports identify the shared source while the additive transaction-money columns contain only the allocated portions. The repeated original-transfer total is explicitly labelled reference-only. Original receipt history remains intact if one allocation is later refunded through the existing owner-confirmed return workflow.
+
+| Desktop | Phone |
+| --- | --- |
+| [![Zelle allocation original source, desktop](149-zelle-allocation-original-source-desktop.png)](149-zelle-allocation-original-source-desktop.png) | [![Zelle allocation original source, phone](149-zelle-allocation-original-source-phone.png)](149-zelle-allocation-original-source-phone.png) |
+
+This records a manually verified transfer; it does not connect to the bank or send a transfer/refund. A payment already recorded elsewhere stays in its existing application workflow. Card/gift-card/customer-credit/split funding and a group with no payment due remain unfinished, with individual renewal workflows retained. Monthly renewals keep their separately accepted future card schedules.
+
+Developer verification: The complete PostgreSQL suite passed **1,826 tests in 1,028.921 seconds** with the final application code. The final focused run passed **46 checks in 61.324 seconds**, including all 16 new bank-funding cases, five real transaction/concurrency/reversal cases and reviewed deployment compatibility. Three final actual Chromium scenarios passed in 19.880 seconds, covering cash confirmation, same-source split preview, search/show-more with preserved monthly selections, and the new Zelle flow: one fictional $57.98 verified transfer, $17.99/$39.99 allocations, actual October 29 bank date and sender preserved during browsing, one unsent shared confirmation, reload without duplication, shared-source payment links and $57.98 total in transaction exports. All fourteen refreshed/new 1440px/390px images were visually inspected with no overflow, JavaScript errors, duplicate IDs or nested forms. All 594 Python files pass lint/format checks; system checks, model drift, JavaScript syntax, whitespace, all 298 PNGs/gallery links and all 66 migration pins pass. All 65 previously published migration files/hashes and the earlier actual-download CSV sample remain unchanged. All four GitHub checks passed for the prior published commit; new checks run after publication. External provider/storage requests were mocked or blocked, no bank API was called and no customer email was delivered. Actual Banquest behavior remains unverified. Features/collection remain off by default, PR37 stays draft and broader stage work continues. No merge, deployment or live financial action occurred.

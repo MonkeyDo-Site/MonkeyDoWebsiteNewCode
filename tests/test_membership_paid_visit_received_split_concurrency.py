@@ -67,7 +67,7 @@ class PaidVisitReceivedSplitRaceTests(InitialCreditFixtures, RuntimeRoleMixin, T
         try:
             MigrationExecutor(connection).migrate([("core", "0084_paid_visit_purchase")])
         finally:
-            MigrationExecutor(connection).migrate([("core", "0091_combined_membership_renewals")])
+            MigrationExecutor(connection).migrate([("core", "0092_combined_renewal_bank_receipt")])
         self.prepare_split()
         data = offer(**self.options)
         with self.runtime_role():

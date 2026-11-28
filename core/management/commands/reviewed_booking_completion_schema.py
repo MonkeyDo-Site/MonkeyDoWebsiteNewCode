@@ -79,9 +79,11 @@ REVIEWED_NAMES = (
     "0089_paid_visit_recovery_card_storage",
     "0090_paid_visit_manual_payment",
     "0091_combined_membership_renewals",
+    "0092_combined_renewal_bank_receipt",
 )
 # A hardcoded suffix allowlist supports an idempotent retry of this same reviewed stage.
 IMMUTABLE = (
+    "membershiprenewalbatchbank",
     "membershiprenewalbatch",
     "membershiprenewalbatchpart",
     "membershiprenewalbatchmessage",

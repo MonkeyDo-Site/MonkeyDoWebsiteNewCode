@@ -14,7 +14,9 @@ class MembershipRenewalBatch(FinancialFact):
     fingerprint = models.CharField(max_length=64)
     facts = models.JSONField(encoder=DjangoJSONEncoder)
     amount = models.DecimalField(max_digits=14, decimal_places=2)
-    tender = models.CharField(max_length=5, choices=[("cash", "Cash"), ("check", "Check")])
+    tender = models.CharField(
+        max_length=5, choices=[("cash", "Cash"), ("check", "Check"), ("zelle", "Zelle")]
+    )
     received_on = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -22,7 +24,8 @@ class MembershipRenewalBatch(FinancialFact):
         constraints = [
             models.CheckConstraint(condition=models.Q(amount__gt=0), name="renewal_batch_positive"),
             models.CheckConstraint(
-                condition=models.Q(tender__in=["cash", "check"]), name="renewal_batch_manual"
+                condition=models.Q(tender__in=["cash", "check", "zelle"]),
+                name="renewal_batch_manual",
             ),
         ]
 
@@ -60,3 +63,23 @@ class MembershipRenewalBatchMessage(FinancialFact):
         MembershipRenewalBatch, on_delete=models.PROTECT, related_name="messages"
     )
     message = models.OneToOneField("core.MessageDelivery", on_delete=models.PROTECT)
+
+
+class MembershipRenewalBatchBank(FinancialFact):
+    """One verified transfer; the batch parts allocate this source, not new transfers."""
+
+    batch = models.OneToOneField(
+        MembershipRenewalBatch,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="bank_receipt",
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    received_on = models.DateField()
+    sender = models.CharField(max_length=160)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="renewal_bank_positive")
+        ]

@@ -18,7 +18,7 @@ from .membership_batch_records import MembershipRenewalBatch
 from .membership_batch_renewals import available, confirm, review
 from .membership_records import MembershipPurchase
 from .membership_renewals import renewal_details
-from .membership_sales import authorize
+from .membership_sales import authorize, today
 from .models import Customer, PaymentMethod
 from .permissions import require_actor, staff_permission
 
@@ -52,8 +52,17 @@ class CheckoutForm(forms.Form):
     request_key = forms.UUIDField(widget=forms.HiddenInput)
     reviewed = forms.CharField(required=False, widget=forms.HiddenInput)
     tender = forms.ChoiceField(
-        choices=[("cash", "Cash received"), ("check", "Check received")], label="Payment method"
+        choices=[
+            ("cash", "Cash received"),
+            ("check", "Check received"),
+            ("zelle", "Zelle received"),
+        ],
+        label="Payment method",
     )
+    bank_received_on = forms.DateField(
+        required=False, label="Bank receipt date", widget=forms.DateInput(attrs={"type": "date"})
+    )
+    bank_sender = forms.CharField(required=False, max_length=160, label="Zelle sender name/account")
     query = forms.CharField(required=False, max_length=64, label="Search membership number or type")
     query_used = forms.CharField(required=False, max_length=64, widget=forms.HiddenInput)
     cursor = forms.IntegerField(required=False, min_value=1, widget=forms.HiddenInput)
@@ -112,7 +121,7 @@ def renew_memberships(request, customer_pk):
         raise Http404
     authorize(request.user, collect=True)
     initial, unavailable = [], []
-    checkout_initial = {"request_key": uuid.uuid4(), "tender": "cash"}
+    checkout_initial = {"request_key": uuid.uuid4(), "tender": "cash", "bank_received_on": today()}
     if request.method == "GET":
         candidates, unavailable, cursor = choices.page(customer.pk)
         initial = [choices.initial(member, details) for member, details in candidates]
@@ -136,7 +145,8 @@ def renew_memberships(request, customer_pk):
         request.POST if request.method == "POST" else None,
         initial=checkout_initial,
     )
-    checkout.fields["tender"].widget.attrs["data-batch-input"] = ""
+    for name in ("tender", "bank_received_on", "bank_sender"):
+        checkout.fields[name].widget.attrs["data-batch-input"] = ""
     data = None
     action = request.POST.get("action", "review")
     if request.method == "POST" and checkout.is_valid() and formset.is_valid():
@@ -154,6 +164,8 @@ def renew_memberships(request, customer_pk):
                 customer=customer,
                 rows=selected,
                 tender=checkout.cleaned_data["tender"],
+                bank_received_on=checkout.cleaned_data["bank_received_on"],
+                bank_sender=checkout.cleaned_data["bank_sender"],
             )
             if action in {"search", "more"}:
                 if len(selected) >= choices.MAX_ENTRIES:
@@ -180,13 +192,16 @@ def renew_memberships(request, customer_pk):
                     dict(
                         request_key=checkout.cleaned_data["request_key"],
                         tender=checkout.cleaned_data["tender"],
+                        bank_received_on=checkout.cleaned_data["bank_received_on"],
+                        bank_sender=checkout.cleaned_data["bank_sender"],
                         query=query,
                         query_used=query,
                         cursor=cursor,
                         browse_active=True,
                     )
                 )
-                checkout.fields["tender"].widget.attrs["data-batch-input"] = ""
+                for name in ("tender", "bank_received_on", "bank_sender"):
+                    checkout.fields[name].widget.attrs["data-batch-input"] = ""
                 checkout.is_valid()
                 if selected:
                     data = review(**values)
